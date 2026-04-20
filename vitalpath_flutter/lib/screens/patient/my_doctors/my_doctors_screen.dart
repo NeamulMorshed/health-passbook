@@ -114,10 +114,10 @@ class _DoctorCard extends ConsumerWidget {
                 Expanded(child: Text('Dr. ${doctor.name}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
                 if (doctor.isVerified) const Icon(Icons.verified_rounded, color: AppColors.primary, size: 18),
               ]),
-              if (doctor.specialty \!= null)
-                Text(doctor.specialty\!, style: const TextStyle(fontSize: 13, color: AppColors.doctorPrimary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
-              if (doctor.hospital \!= null)
-                Text(doctor.hospital\!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              if (doctor.specialty != null)
+                Text(doctor.specialty!, style: const TextStyle(fontSize: 13, color: AppColors.doctorPrimary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+              if (doctor.hospital != null)
+                Text(doctor.hospital!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
             ])),
             Column(children: [
               Row(children: [
@@ -209,9 +209,9 @@ class _BookAppointmentSheetState extends ConsumerState<_BookAppointmentSheet> {
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
             Text('Book with Dr. ${widget.doctor.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            if (widget.doctor.specialty \!= null) ...[
+            if (widget.doctor.specialty != null) ...[
               const SizedBox(height: 4),
-              Text(widget.doctor.specialty\!, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              Text(widget.doctor.specialty!, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
             ],
             const SizedBox(height: 20),
             TextField(
@@ -283,7 +283,7 @@ class _PrescriptionCard extends StatelessWidget {
           ])),
           StatusBadge.success('${rx.medicines.length} meds'),
         ]),
-        if (rx.diagnosis \!= null) ...[
+        if (rx.diagnosis != null) ...[
           const SizedBox(height: 10),
           Text('Diagnosis: ${rx.diagnosis}', style: const TextStyle(fontSize: 13, color: AppColors.foreground, fontFamily: 'Inter')),
         ],
@@ -299,7 +299,7 @@ class _PrescriptionCard extends StatelessWidget {
             Text(med.frequency, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
           ]),
         )),
-        if (rx.notes \!= null) ...[
+        if (rx.notes != null) ...[
           const SizedBox(height: 8),
           Text('Note: ${rx.notes}', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontStyle: FontStyle.italic, fontFamily: 'Inter')),
         ],

@@ -29,7 +29,7 @@ class TodayAdherence extends _$TodayAdherence {
   @override
   AsyncValue<({int total, int completed, double pct})> build() {
     final user = ref.watch(authStateProvider).valueOrNull;
-    if (user == null || \!user.isLoggedIn) {
+    if (user == null || !user.isLoggedIn) {
       return const AsyncData((total: 0, completed: 0, pct: 0));
     }
 

@@ -35,7 +35,7 @@ GoRouter appRouter(AppRouterRef ref) {
                           state.matchedLocation == AppConstants.routeOtp  ||
                           state.matchedLocation == AppConstants.routeSplash;
 
-      if (\!isLoggedIn && \!isAuthRoute) return AppConstants.routeLogin;
+      if (!isLoggedIn && !isAuthRoute) return AppConstants.routeLogin;
       if (isLoggedIn  && state.matchedLocation == AppConstants.routeLogin) {
         return AppConstants.routeHome;
       }
@@ -104,7 +104,7 @@ GoRouter appRouter(AppRouterRef ref) {
         path: '/doctor/patient/:patientId',
         pageBuilder: (c, s) => _slideUpTransition(
           s,
-          DoctorPatientScreen(patientId: s.pathParameters['patientId']\!),
+          DoctorPatientScreen(patientId: s.pathParameters['patientId']!),
         ),
       ),
     ],

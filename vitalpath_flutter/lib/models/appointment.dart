@@ -55,7 +55,7 @@ class Appointment {
         'doctorName': doctorName,
         'doctorSpecialty': doctorSpecialty,
         'status': status,
-        'scheduledAt': scheduledAt \!= null ? Timestamp.fromDate(scheduledAt\!) : null,
+        'scheduledAt': scheduledAt != null ? Timestamp.fromDate(scheduledAt!) : null,
         'notes': notes,
         'patientNote': patientNote,
         'createdAt': Timestamp.fromDate(createdAt),

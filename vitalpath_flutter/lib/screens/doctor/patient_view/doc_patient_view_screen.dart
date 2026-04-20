@@ -124,7 +124,7 @@ class DocPatientViewScreen extends ConsumerWidget {
                             const Spacer(),
                             Text('${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
                           ]),
-                          if (rx.diagnosis \!= null) Text(rx.diagnosis\!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                          if (rx.diagnosis != null) Text(rx.diagnosis!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
                           const SizedBox(height: 6),
                           ...rx.medicines.map((m) => Text('  - ${m.name} ${m.dosage} (${m.frequency})', style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
                         ]),

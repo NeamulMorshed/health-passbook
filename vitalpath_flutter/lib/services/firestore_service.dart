@@ -15,8 +15,8 @@ class FirestoreService {
 
   Future<PatientProfile?> getPatient(String uid) async {
     final doc = await _db.collection(AppConstants.colPatients).doc(uid).get();
-    if (\!doc.exists) return null;
-    return PatientProfile.fromMap(doc.data()\!, uid);
+    if (!doc.exists) return null;
+    return PatientProfile.fromMap(doc.data()!, uid);
   }
 
   Future<void> updatePatientProfile(String uid, Map<String, dynamic> data) async {
@@ -27,8 +27,8 @@ class FirestoreService {
 
   Future<DoctorProfile?> getDoctor(String uid) async {
     final doc = await _db.collection(AppConstants.colDoctors).doc(uid).get();
-    if (\!doc.exists) return null;
-    return DoctorProfile.fromMap(doc.data()\!, uid);
+    if (!doc.exists) return null;
+    return DoctorProfile.fromMap(doc.data()!, uid);
   }
 
   Future<void> updateDoctorProfile(String uid, Map<String, dynamic> data) async {
@@ -37,7 +37,7 @@ class FirestoreService {
 
   Future<List<DoctorProfile>> searchDoctors({String? specialty, String? name}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
-    if (specialty \!= null && specialty.isNotEmpty) {
+    if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
     }
     final snap = await query.limit(50).get();
@@ -184,8 +184,8 @@ class FirestoreService {
 
   Future<void> updateAppointmentStatus(String apptId, String status, {DateTime? scheduledAt, String? notes}) async {
     final data = <String, dynamic>{'status': status};
-    if (scheduledAt \!= null) data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
-    if (notes \!= null) data['notes'] = notes;
+    if (scheduledAt != null) data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+    if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
   }
 

@@ -33,10 +33,10 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
   }
 
   void _save() async {
-    if (\!_formKey.currentState\!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
     // Soft weight validation
     final w = double.tryParse(_weightCtrl.text);
-    if (w \!= null && w > 300) {
+    if (w != null && w > 300) {
       final ok = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
@@ -48,7 +48,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
           ],
         ),
       );
-      if (ok \!= true) return;
+      if (ok != true) return;
     }
 
     setState(() => _saving = true);

@@ -46,7 +46,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
 
   Future<void> _checkAuth() async {
     await Future.delayed(const Duration(milliseconds: 400));
-    if (\!mounted) return;
+    if (!mounted) return;
     final authState = ref.read(authStateProvider);
     if (authState.valueOrNull?.isLoggedIn ?? false) {
       context.go(AppConstants.routeHome);
@@ -130,7 +130,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
     final isLast = _page == _pages.length - 1;
     return Row(
       children: [
-        if (\!isLast)
+        if (!isLast)
           Expanded(
             child: OutlinedButton(
               onPressed: () => context.go(AppConstants.routeLogin),
@@ -141,7 +141,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with TickerProvider
               child: const Text('Skip'),
             ),
           ),
-        if (\!isLast) const SizedBox(width: 12),
+        if (!isLast) const SizedBox(width: 12),
         Expanded(
           flex: isLast ? 1 : 1,
           child: ElevatedButton(
@@ -217,5 +217,5 @@ class _SplashIlloPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SplashIlloPainter old) => old.progress \!= progress || old.page \!= page;
+  bool shouldRepaint(_SplashIlloPainter old) => old.progress != progress || old.page != page;
 }

@@ -278,8 +278,8 @@ class _DoctorPatientScreenState extends ConsumerState<DoctorPatientScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(rx['name']\!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                          Text(rx['dose']\!, style: const TextStyle(fontSize: 12, color: AppColors.text3)),
+                          Text(rx['name']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                          Text(rx['dose']!, style: const TextStyle(fontSize: 12, color: AppColors.text3)),
                         ]),
                       ),
                       Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -336,5 +336,5 @@ class _AdherenceRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_AdherenceRingPainter old) => old.pct \!= pct;
+  bool shouldRepaint(_AdherenceRingPainter old) => old.pct != pct;
 }

@@ -36,7 +36,7 @@ class AuthState extends _$AuthState {
   AsyncValue<UserEntity> build() {
     final stream = ref.watch(authStateStreamProvider);
     return stream.when(
-      data:    (u) => u \!= null ? AsyncData(u) : AsyncData(UserEntity.empty()),
+      data:    (u) => u != null ? AsyncData(u) : AsyncData(UserEntity.empty()),
       loading: () => const AsyncLoading(),
       error:   (e, s) => AsyncError(e, s),
     );

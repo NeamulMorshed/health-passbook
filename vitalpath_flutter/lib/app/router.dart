@@ -29,7 +29,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
-      final isAuthenticated = authState.asData?.value \!= null;
+      final isAuthenticated = authState.asData?.value != null;
       final loc = state.matchedLocation;
 
       // Allow splash and user-select always
@@ -37,7 +37,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Auth screens
       final isAuthRoute = loc.startsWith('/auth');
-      if (\!isAuthenticated && \!isAuthRoute) return '/auth/login';
+      if (!isAuthenticated && !isAuthRoute) return '/auth/login';
 
       return null;
     },
@@ -88,7 +88,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Doctor extra screens
       GoRoute(
         path: '/doc/patient/:patientId',
-        builder: (_, state) => DocPatientViewScreen(patientId: state.pathParameters['patientId']\!),
+        builder: (_, state) => DocPatientViewScreen(patientId: state.pathParameters['patientId']!),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

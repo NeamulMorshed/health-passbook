@@ -273,7 +273,7 @@ class _ConnectedCard extends StatelessWidget {
         child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
       ),
       const SizedBox(height: 14),
-      const Text('Patient connected\!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.secondary)),
+      const Text('Patient connected!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.secondary)),
       const SizedBox(height: 8),
       const Text('Redirecting to patient view…', style: TextStyle(fontSize: 13, color: AppColors.text3)),
     ]),
@@ -297,5 +297,5 @@ class _CountdownRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_CountdownRingPainter old) => old.progress \!= progress;
+  bool shouldRepaint(_CountdownRingPainter old) => old.progress != progress;
 }

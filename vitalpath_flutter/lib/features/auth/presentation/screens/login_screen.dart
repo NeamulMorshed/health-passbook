@@ -23,14 +23,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() { _phoneController.dispose(); super.dispose(); }
 
   Future<void> _sendOtp() async {
-    if (\!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() { _loading = true; _error = null; });
     HapticFeedback.mediumImpact();
 
     final authNotifier = ref.read(authStateProvider.notifier);
     await authNotifier.sendOtp(_phoneController.text.trim());
 
-    if (\!mounted) return;
+    if (!mounted) return;
     setState(() => _loading = false);
     final state = ref.read(authStateProvider);
     if (state.hasError) {
@@ -105,7 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                     ).animate().slideX(begin: -0.05, duration: 400.ms, curve: Curves.easeOut),
 
-                    if (_error \!= null) ...[
+                    if (_error != null) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -118,7 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             const Icon(Icons.error_rounded, color: AppColors.error, size: 18),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(_error\!, style: const TextStyle(fontSize: 13, color: AppColors.error))),
+                            Expanded(child: Text(_error!, style: const TextStyle(fontSize: 13, color: AppColors.error))),
                           ],
                         ),
                       ),

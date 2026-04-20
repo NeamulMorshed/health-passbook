@@ -72,16 +72,16 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   Future<void> _verify() async {
-    if (_otp.length \!= 6) return;
+    if (_otp.length != 6) return;
     setState(() { _loading = true; _error = null; });
     HapticFeedback.mediumImpact();
 
     final err = await ref.read(authStateProvider.notifier)
         .verifyOtp(phone: widget.phone, otp: _otp);
 
-    if (\!mounted) return;
+    if (!mounted) return;
     setState(() => _loading = false);
-    if (err \!= null) {
+    if (err != null) {
       HapticFeedback.vibrate();
       setState(() => _error = err);
       for (final c in _controllers) c.clear();
@@ -165,7 +165,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               )),
             ).animate().slideY(begin: 0.05, duration: 400.ms, curve: Curves.easeOut),
 
-            if (_error \!= null) ...[
+            if (_error != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -173,7 +173,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 child: Row(children: [
                   const Icon(Icons.error_rounded, color: AppColors.error, size: 18),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(_error\!, style: const TextStyle(fontSize: 13, color: AppColors.error))),
+                  Expanded(child: Text(_error!, style: const TextStyle(fontSize: 13, color: AppColors.error))),
                 ]),
               ),
             ],

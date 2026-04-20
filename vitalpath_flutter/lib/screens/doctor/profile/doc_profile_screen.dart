@@ -38,10 +38,10 @@ class DocProfileScreen extends ConsumerWidget {
                   docAsync.when(
                     data: (doc) => Column(children: [
                       const SizedBox(height: 4),
-                      if (doc?.specialty \!= null) Text(doc\!.specialty\!, style: const TextStyle(fontSize: 14, color: Colors.white70, fontFamily: 'Inter')),
-                      if (doc?.hospital \!= null) ...[
+                      if (doc?.specialty != null) Text(doc!.specialty!, style: const TextStyle(fontSize: 14, color: Colors.white70, fontFamily: 'Inter')),
+                      if (doc?.hospital != null) ...[
                         const SizedBox(height: 2),
-                        Text(doc\!.hospital\!, style: const TextStyle(fontSize: 12, color: Colors.white60, fontFamily: 'Inter')),
+                        Text(doc!.hospital!, style: const TextStyle(fontSize: 12, color: Colors.white60, fontFamily: 'Inter')),
                       ],
                       const SizedBox(height: 16),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [

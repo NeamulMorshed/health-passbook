@@ -27,7 +27,7 @@ class TodayMedications extends _$TodayMedications {
   @override
   Future<List<MedicationEntity>> build() async {
     final user = ref.watch(authStateProvider).valueOrNull;
-    if (user == null || \!user.isLoggedIn) return [];
+    if (user == null || !user.isLoggedIn) return [];
 
     final result = await ref
         .watch(medicationRepositoryProvider)
@@ -84,7 +84,7 @@ class MedicationLogState extends _$MedicationLogState {
 
   Future<void> undoLastLog() async {
     if (_lastUndoLog == null) return;
-    final log = _lastUndoLog\!;
+    final log = _lastUndoLog!;
     await ref.read(medicationRepositoryProvider).undoLastLog(log.id);
     final newState = Map<String, String>.from(state);
     newState.remove(log.medicationId);

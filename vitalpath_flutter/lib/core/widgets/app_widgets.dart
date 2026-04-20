@@ -73,10 +73,10 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.foreground, fontFamily: 'Inter')),
-        if (action \!= null)
+        if (action != null)
           TextButton(
             onPressed: onAction,
-            child: Text(action\!, style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter')),
+            child: Text(action!, style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter')),
           ),
       ],
     );
@@ -152,9 +152,9 @@ class LoadingOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CircularProgressIndicator(color: AppColors.primary),
-                    if (message \!= null) ...[
+                    if (message != null) ...[
                       const SizedBox(height: 14),
-                      Text(message\!, style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
+                      Text(message!, style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
                     ],
                   ],
                 ),
@@ -186,8 +186,8 @@ class AppAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: bgColor.withOpacity(0.15),
-        image: imageUrl \!= null
-            ? DecorationImage(image: NetworkImage(imageUrl\!), fit: BoxFit.cover)
+        image: imageUrl != null
+            ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
             : null,
       ),
       child: imageUrl == null
@@ -239,9 +239,9 @@ class EmptyState extends StatelessWidget {
             Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
             const SizedBox(height: 6),
             Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            if (actionLabel \!= null) ...[
+            if (actionLabel != null) ...[
               const SizedBox(height: 20),
-              ElevatedButton(onPressed: onAction, child: Text(actionLabel\!)),
+              ElevatedButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),

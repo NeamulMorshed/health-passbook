@@ -171,9 +171,9 @@ class _MedCard extends ConsumerWidget {
           Row(children: [
             _InfoChip(Icons.repeat_rounded, med.frequency),
             const SizedBox(width: 8),
-            if (med.prescribedBy \!= null) _InfoChip(Icons.person_rounded, 'Dr. ${med.prescribedBy}'),
+            if (med.prescribedBy != null) _InfoChip(Icons.person_rounded, 'Dr. ${med.prescribedBy}'),
           ]),
-          if (\!taken) ...[
+          if (!taken) ...[
             const SizedBox(height: 12),
             Row(children: [
               Expanded(
@@ -325,7 +325,7 @@ class _MealCard extends ConsumerWidget {
             StatusBadge.warning(meal.mealType),
           ]),
           const SizedBox(height: 4),
-          if (meal.calories \!= null)
+          if (meal.calories != null)
             Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
         ])),
         IconButton(
@@ -355,7 +355,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
   void dispose() { _nameCtrl.dispose(); _dosageCtrl.dispose(); super.dispose(); }
 
   void _save() async {
-    if (\!_formKey.currentState\!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
     await ref.read(medicineNotifierProvider.notifier).add(
       widget.uid, name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(), frequency: _freq,
     );
@@ -378,9 +378,9 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               const SizedBox(height: 20),
               const Text('Add Medicine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
               const SizedBox(height: 20),
-              TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => v\!.isEmpty ? 'Required' : null),
+              TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: 12),
-              TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v\!.isEmpty ? 'Required' : null),
+              TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _freq,
@@ -388,7 +388,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
                 items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
                     .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontFamily: 'Inter'))))
                     .toList(),
-                onChanged: (v) => setState(() => _freq = v\!),
+                onChanged: (v) => setState(() => _freq = v!),
               ),
               const SizedBox(height: 20),
               GradientButton(label: 'Add Medicine', onPressed: _save),
@@ -422,7 +422,7 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
   void dispose() { _descCtrl.dispose(); _calCtrl.dispose(); super.dispose(); }
 
   void _save() async {
-    if (\!_formKey.currentState\!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
     await ref.read(mealNotifierProvider.notifier).add(
       widget.uid,
       mealType: _type,
@@ -468,7 +468,7 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
                 );
               }).toList()),
               const SizedBox(height: 14),
-              TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => v\!.isEmpty ? 'Required' : null),
+              TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(child: TextFormField(controller: _calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories (kcal)'))),

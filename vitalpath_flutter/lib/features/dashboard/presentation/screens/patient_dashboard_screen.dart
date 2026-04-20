@@ -58,7 +58,7 @@ class PatientDashboardScreen extends ConsumerWidget {
                       border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
                     ),
                     child: Center(child: Text(
-                      (user?.name?.isNotEmpty == true ? user\!.name\![0] : 'U').toUpperCase(),
+                      (user?.name?.isNotEmpty == true ? user!.name![0] : 'U').toUpperCase(),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary),
                     )),
                   ),
@@ -210,7 +210,7 @@ class _RingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.progress \!= progress;
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
 
 class _HeroCardSkeleton extends StatelessWidget {
@@ -283,7 +283,7 @@ class _StepCard extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(steps.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?\!\d))'), (m) => '${m[1]},'),
+              Text(steps.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},'),
                 style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.text1)),
               const SizedBox(width: 6),
               Padding(

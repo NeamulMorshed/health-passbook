@@ -270,7 +270,7 @@ class _MedReminder extends ConsumerWidget {
               ],
             ),
           ),
-          if (\!taken)
+          if (!taken)
             GestureDetector(
               onTap: () => ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id),
               child: Container(

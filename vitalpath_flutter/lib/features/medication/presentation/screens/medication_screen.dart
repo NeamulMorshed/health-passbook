@@ -128,7 +128,7 @@ class _WeightInputCardState extends ConsumerState<_WeightInputCard> {
               isDense: true,
             ),
           ),
-          if (_warningMsg \!= null) ...[
+          if (_warningMsg != null) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
@@ -140,7 +140,7 @@ class _WeightInputCardState extends ConsumerState<_WeightInputCard> {
               child: Row(children: [
                 const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 16),
                 const SizedBox(width: 8),
-                Expanded(child: Text(_warningMsg\!,
+                Expanded(child: Text(_warningMsg!,
                   style: const TextStyle(fontSize: 12, color: Color(0xFF92400E), height: 1.5))),
               ]),
             ),

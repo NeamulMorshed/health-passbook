@@ -205,8 +205,8 @@ class _PendingApptCard extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(appt.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          if (appt.patientNote \!= null && appt.patientNote\!.isNotEmpty)
-            Text(appt.patientNote\!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          if (appt.patientNote != null && appt.patientNote!.isNotEmpty)
+            Text(appt.patientNote!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
         ])),
         StatusBadge.warning('Pending'),
       ]),

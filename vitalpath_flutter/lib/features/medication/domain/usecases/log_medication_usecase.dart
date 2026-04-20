@@ -19,7 +19,7 @@ class LogMedicationUseCase {
     bool forceLog = false,
   }) async {
     // Check last log time before attempting
-    if (\!forceLog) {
+    if (!forceLog) {
       final lastLogResult = await _repo.getLastLogTime(medicationId);
       final maybeFailure = lastLogResult.fold(
         (f) => null,  // ignore cache miss
@@ -35,7 +35,7 @@ class LogMedicationUseCase {
           return null;
         },
       );
-      if (maybeFailure \!= null) return Left(maybeFailure);
+      if (maybeFailure != null) return Left(maybeFailure);
     }
 
     return _repo.logDose(

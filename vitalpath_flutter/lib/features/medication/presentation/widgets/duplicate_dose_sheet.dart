@@ -79,7 +79,7 @@ class DuplicateDoseSheet extends StatelessWidget {
                   children: [
                     TextSpan(text: medication.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                     const TextSpan(text: ' was already logged '),
-                    TextSpan(text: '$minutesAgo min${minutesAgo \!= 1 ? 's' : ''} ago',
+                    TextSpan(text: '$minutesAgo min${minutesAgo != 1 ? 's' : ''} ago',
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                     const TextSpan(text: ' at '),
                     TextSpan(text: DateFormat('h:mm a').format(lastLoggedAt),

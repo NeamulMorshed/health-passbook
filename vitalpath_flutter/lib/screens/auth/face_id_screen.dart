@@ -21,7 +21,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
     setState(() => _checking = true);
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
-      if (\!canCheck) {
+      if (!canCheck) {
         _skip();
         return;
       }
@@ -39,7 +39,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
 
   void _navigateNext() async {
     final user = await ref.read(currentUserProvider.future);
-    if (\!mounted) return;
+    if (!mounted) return;
     if (user?.userType == UserType.doctor) {
       context.go('/doc/dashboard');
     } else if (user?.onboardingComplete == false) {

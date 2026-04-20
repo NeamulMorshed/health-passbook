@@ -37,7 +37,7 @@ class ActivityEntity extends Equatable {
     this.moodScore,
   });
 
-  double get stepProgress => stepGoal \!= null && stepGoal\! > 0 ? (steps / stepGoal\!).clamp(0, 1) : 0;
+  double get stepProgress => stepGoal != null && stepGoal! > 0 ? (steps / stepGoal!).clamp(0, 1) : 0;
 
   @override
   List<Object?> get props => [id, patientId, date];

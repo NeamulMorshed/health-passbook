@@ -29,7 +29,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   void _advance() async {
     await Future.delayed(const Duration(milliseconds: 1400));
-    if (\!mounted) return;
+    if (!mounted) return;
     if (_step < 2) {
       setState(() => _step++);
       _ctrl.reset();
@@ -37,7 +37,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       _advance();
     } else {
       await Future.delayed(const Duration(milliseconds: 800));
-      if (\!mounted) return;
+      if (!mounted) return;
       _checkAuthAndNavigate();
     }
   }
@@ -55,7 +55,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
           context.go('/user-select');
           return;
         }
-        if (\!appUser.onboardingComplete && appUser.userType == UserType.patient) {
+        if (!appUser.onboardingComplete && appUser.userType == UserType.patient) {
           context.go('/onboarding/permissions');
           return;
         }

@@ -33,7 +33,7 @@ class NotificationService {
     // Listen to foreground messages
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
-      if (notification \!= null) {
+      if (notification != null) {
         showLocalNotification(
           id: message.hashCode,
           title: notification.title ?? 'VitalPath',
@@ -82,7 +82,7 @@ class NotificationService {
     await _local.zonedSchedule(
       id,
       'Time to take $medicineName',
-      'Don\'t forget your dose\!',
+      'Don\'t forget your dose!',
       _tzDateTimeFrom(time),
       NotificationDetails(
         android: AndroidNotificationDetails(

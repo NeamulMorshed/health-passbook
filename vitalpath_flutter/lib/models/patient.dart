@@ -25,8 +25,8 @@ class PatientProfile {
     this.doctorId,
   });
 
-  double? get bmi => (weight \!= null && height \!= null && height\! > 0)
-      ? weight\! / ((height\! / 100) * (height\! / 100))
+  double? get bmi => (weight != null && height != null && height! > 0)
+      ? weight! / ((height! / 100) * (height! / 100))
       : null;
 
   factory PatientProfile.fromMap(Map<String, dynamic> map, String uid) {

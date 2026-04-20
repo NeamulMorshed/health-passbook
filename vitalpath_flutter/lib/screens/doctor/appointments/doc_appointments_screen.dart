@@ -115,7 +115,7 @@ class _DocApptCard extends ConsumerWidget {
           ])),
           _buildBadge(),
         ]),
-        if (appt.patientNote \!= null && appt.patientNote\!.isNotEmpty) ...[
+        if (appt.patientNote != null && appt.patientNote!.isNotEmpty) ...[
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
@@ -124,7 +124,7 @@ class _DocApptCard extends ConsumerWidget {
             child: Text('"${appt.patientNote}"', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, fontFamily: 'Inter', color: AppColors.foreground)),
           ),
         ],
-        if (appt.scheduledAt \!= null) ...[
+        if (appt.scheduledAt != null) ...[
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -132,7 +132,7 @@ class _DocApptCard extends ConsumerWidget {
             child: Row(children: [
               const Icon(Icons.schedule_rounded, size: 16, color: AppColors.doctorPrimary),
               const SizedBox(width: 8),
-              Text(DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt\!),
+              Text(DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.doctorPrimary, fontFamily: 'Inter')),
             ]),
           ),
@@ -233,7 +233,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
             GestureDetector(
               onTap: () async {
                 final date = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
-                if (date \!= null) setState(() => _selectedDate = date);
+                if (date != null) setState(() => _selectedDate = date);
               },
               child: Container(
                 padding: const EdgeInsets.all(14),
@@ -251,7 +251,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
             GestureDetector(
               onTap: () async {
                 final time = await showTimePicker(context: context, initialTime: _selectedTime);
-                if (time \!= null) setState(() => _selectedTime = time);
+                if (time != null) setState(() => _selectedTime = time);
               },
               child: Container(
                 padding: const EdgeInsets.all(14),

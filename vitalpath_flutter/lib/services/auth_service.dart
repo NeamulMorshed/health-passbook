@@ -52,8 +52,8 @@ class AuthService {
 
   Future<AppUser?> getUserProfile(String uid) async {
     final doc = await _db.collection(AppConstants.colUsers).doc(uid).get();
-    if (\!doc.exists) return null;
-    return AppUser.fromMap(doc.data()\!, uid);
+    if (!doc.exists) return null;
+    return AppUser.fromMap(doc.data()!, uid);
   }
 
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {

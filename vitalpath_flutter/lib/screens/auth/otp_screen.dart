@@ -58,8 +58,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   void _verify() async {
     final ok = await ref.read(otpProvider.notifier).verifyOtp(_otp);
-    if (\!mounted) return;
-    if (\!ok) {
+    if (!mounted) return;
+    if (!ok) {
       showAppSnack(context, 'Incorrect OTP. Please try again.', isError: true);
       for (final c in _ctrls) c.clear();
       _nodes[0].requestFocus();

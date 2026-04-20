@@ -51,8 +51,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     _positionSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 5),
     ).listen((pos) {
-      if (_lastPosition \!= null) {
-        final d = Geolocator.distanceBetween(_lastPosition\!.latitude, _lastPosition\!.longitude, pos.latitude, pos.longitude);
+      if (_lastPosition != null) {
+        final d = Geolocator.distanceBetween(_lastPosition!.latitude, _lastPosition!.longitude, pos.latitude, pos.longitude);
         setState(() { _distanceKm += d / 1000; _steps += (d / 0.75).round(); });
       }
       _lastPosition = pos;
@@ -65,7 +65,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     setState(() => _isWalking = false);
 
     final user = await ref.read(currentUserProvider.future);
-    if (user == null || \!mounted) return;
+    if (user == null || !mounted) return;
 
     await ref.read(activityNotifierProvider.notifier).save(
       user.uid,
@@ -204,7 +204,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                               style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
                             ),
                           ])),
-                          if (log.caloriesBurned \!= null)
+                          if (log.caloriesBurned != null)
                             Text('${log.caloriesBurned} kcal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.warning, fontFamily: 'Inter')),
                         ]),
                       )).toList(),

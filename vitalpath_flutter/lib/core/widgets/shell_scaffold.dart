@@ -132,13 +132,13 @@ class _VitalpathBottomNav extends StatelessWidget {
             children: [
               // Left items (before FAB if present)
               ...List.generate(
-                fabIcon \!= null ? (items.length / 2).ceil() : items.length,
+                fabIcon != null ? (items.length / 2).ceil() : items.length,
                 (i) => Expanded(child: _NavButton(item: items[i], isActive: currentIndex == i, onTap: () => onTap(i))),
               ),
-              if (fabIcon \!= null) ...[
+              if (fabIcon != null) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: _FabButton(icon: fabIcon\!, onTap: onFabTap\!),
+                  child: _FabButton(icon: fabIcon!, onTap: onFabTap!),
                 ),
                 ...List.generate(
                   (items.length / 2).floor(),

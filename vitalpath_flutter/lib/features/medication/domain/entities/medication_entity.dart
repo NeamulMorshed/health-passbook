@@ -41,7 +41,7 @@ class MedicationEntity extends Equatable {
 
   bool get needsRefill {
     if (remainingCount == null || totalCount == null) return false;
-    return remainingCount\! / totalCount\! <= 0.2;
+    return remainingCount! / totalCount! <= 0.2;
   }
 
   @override

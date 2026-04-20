@@ -102,12 +102,12 @@ class _ApptCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Dr. ${appt.doctorName}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              if (appt.doctorSpecialty \!= null)
-                Text(appt.doctorSpecialty\!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              if (appt.doctorSpecialty != null)
+                Text(appt.doctorSpecialty!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
             ])),
             badge,
           ]),
-          if (appt.scheduledAt \!= null) ...[
+          if (appt.scheduledAt != null) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -116,17 +116,17 @@ class _ApptCard extends StatelessWidget {
                 const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
-                  DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt\!),
+                  DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter'),
                 ),
               ]),
             ),
           ],
-          if (appt.patientNote \!= null && appt.patientNote\!.isNotEmpty) ...[
+          if (appt.patientNote != null && appt.patientNote!.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text('Your note: ${appt.patientNote}', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontStyle: FontStyle.italic, fontFamily: 'Inter')),
           ],
-          if (appt.notes \!= null && appt.notes\!.isNotEmpty) ...[
+          if (appt.notes != null && appt.notes!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text('Doctor note: ${appt.notes}', style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter')),
           ],

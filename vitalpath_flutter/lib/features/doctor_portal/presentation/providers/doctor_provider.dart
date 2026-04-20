@@ -20,7 +20,7 @@ class PatientRoster extends _$PatientRoster {
   @override
   Future<List<PatientSummaryEntity>> build() async {
     final user = ref.watch(authStateProvider).valueOrNull;
-    if (user == null || \!user.isDoctor) return _mockRoster();
+    if (user == null || !user.isDoctor) return _mockRoster();
 
     final result = await ref.watch(doctorRepositoryProvider).getPatientRoster(user.id);
     return result.fold((f) => throw Exception(f.message), (r) => r);

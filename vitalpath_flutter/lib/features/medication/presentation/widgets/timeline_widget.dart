@@ -58,12 +58,12 @@ class TimelineWidget extends ConsumerWidget {
     final result = await ref.read(medicationLogStateProvider.notifier)
         .logDose(medicationId: med.id, scheduledAt: scheduledAt);
 
-    if (\!ctx.mounted) return;
+    if (!ctx.mounted) return;
 
     if (result.isSuccess) {
       _showSnack(ctx, ref, '${med.name} logged ✓', showUndo: true);
     } else if (result.isDuplicate) {
-      _showDuplicateSheet(ctx, ref, med, result.lastLoggedAt\!, result.minutesAgo\!);
+      _showDuplicateSheet(ctx, ref, med, result.lastLoggedAt!, result.minutesAgo!);
     } else if (result.isError) {
       _showSnack(ctx, ref, result.error ?? 'Error', color: AppColors.error);
     }
@@ -157,8 +157,8 @@ class _TimelineGroup extends StatelessWidget {
       final rest = parts[1].split(' ');
       final m = int.parse(rest[0]);
       final pm = rest[1] == 'PM';
-      if (pm && h \!= 12) h += 12;
-      if (\!pm && h == 12) h = 0;
+      if (pm && h != 12) h += 12;
+      if (!pm && h == 12) h = 0;
       final diff = now.hour * 60 + now.minute - (h * 60 + m);
       return diff.abs() <= 30;
     } catch (_) { return false; }
@@ -292,7 +292,7 @@ class _TimelineItemState extends State<_TimelineItem> {
               ),
 
               // Log button
-              if (\!_isDone)
+              if (!_isDone)
                 GestureDetector(
                   onTapDown: (_) => setState(() => _pressed = true),
                   onTapUp: (_) { setState(() => _pressed = false); widget.onLog(widget.medication); },

@@ -65,10 +65,10 @@ class MedicationRepositoryImpl implements MedicationRepository {
         'force_log':     forceLog,
       });
 
-      if (resp.status \!= 200) {
+      if (resp.status != 200) {
         final body = resp.data as Map<String, dynamic>?;
         if (body?['code'] == 'DUPLICATE_DOSE') {
-          final lastTime = DateTime.parse(body\!['last_logged_at'] as String);
+          final lastTime = DateTime.parse(body!['last_logged_at'] as String);
           return Left(DuplicateDoseFailure(
             lastLoggedAt: lastTime,
             minutesAgo: DateTime.now().difference(lastTime).inMinutes,
@@ -105,7 +105,7 @@ class MedicationRepositoryImpl implements MedicationRepository {
         'dosage':          dosage,
         'frequency':       frequency,
         'scheduled_times': scheduledTimes.map((t) => t.toIso8601String()).toList(),
-        if (instructions \!= null) 'instructions': instructions,
+        if (instructions != null) 'instructions': instructions,
         'is_verified':   true,
         'is_active':     true,
         'created_at':    DateTime.now().toIso8601String(),

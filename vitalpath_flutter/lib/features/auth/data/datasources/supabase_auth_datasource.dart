@@ -36,7 +36,7 @@ class SupabaseAuthDataSource implements AuthRemoteDataSource {
       if (response.user == null) throw const AuthException(message: 'Verification failed');
 
       // Upsert profile in public.users table
-      final profile = await _upsertProfile(response.user\!);
+      final profile = await _upsertProfile(response.user!);
       return profile;
     } on AuthException {
       rethrow;
@@ -52,7 +52,7 @@ class SupabaseAuthDataSource implements AuthRemoteDataSource {
         .eq('id', user.id)
         .maybeSingle();
 
-    if (existing \!= null) return UserModel.fromJson(existing);
+    if (existing != null) return UserModel.fromJson(existing);
 
     final inserted = await _client.from('users').insert({
       'id':         user.id,

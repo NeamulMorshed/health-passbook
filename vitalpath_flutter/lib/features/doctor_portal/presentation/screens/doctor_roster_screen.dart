@@ -155,7 +155,7 @@ class _FilterChipState extends State<_FilterChip> {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () { HapticFeedback.lightImpact(); setState(() => _active = \!_active); },
+    onTap: () { HapticFeedback.lightImpact(); setState(() => _active = !_active); },
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.only(right: 8),

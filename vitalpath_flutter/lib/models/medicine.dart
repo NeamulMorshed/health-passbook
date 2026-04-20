@@ -65,7 +65,7 @@ class Medicine {
         'notes': notes,
         'isActive': isActive,
         'startDate': Timestamp.fromDate(startDate),
-        'endDate': endDate \!= null ? Timestamp.fromDate(endDate\!) : null,
+        'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
         'loggedDoses': loggedDoses.map((d) => Timestamp.fromDate(d)).toList(),
       };
 }

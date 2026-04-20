@@ -67,14 +67,14 @@ class ProfileScreen extends ConsumerWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       const Text('Health Information', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
                       const SizedBox(height: 16),
-                      if (patient.bmi \!= null)
-                        _InfoRow('BMI', '${patient.bmi\!.toStringAsFixed(1)} (${_bmiLabel(patient.bmi\!)})'),
+                      if (patient.bmi != null)
+                        _InfoRow('BMI', '${patient.bmi!.toStringAsFixed(1)} (${_bmiLabel(patient.bmi!)})'),
                       if (patient.conditions.isNotEmpty)
                         _InfoRow('Conditions', patient.conditions.join(', ')),
-                      if (patient.allergies \!= null)
-                        _InfoRow('Allergies', patient.allergies\!),
-                      if (patient.emergencyContact \!= null)
-                        _InfoRow('Emergency Contact', patient.emergencyContact\!),
+                      if (patient.allergies != null)
+                        _InfoRow('Allergies', patient.allergies!),
+                      if (patient.emergencyContact != null)
+                        _InfoRow('Emergency Contact', patient.emergencyContact!),
                     ]),
                   );
                 },

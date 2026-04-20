@@ -38,7 +38,7 @@ class ProfileScreen extends ConsumerWidget {
                             border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
                           ),
                           child: Center(child: Text(
-                            user?.name?.isNotEmpty == true ? user\!.name\![0].toUpperCase() : 'U',
+                            user?.name?.isNotEmpty == true ? user!.name![0].toUpperCase() : 'U',
                             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white),
                           )),
                         ),

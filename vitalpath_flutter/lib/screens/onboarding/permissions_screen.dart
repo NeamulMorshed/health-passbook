@@ -39,7 +39,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   void _allow() async {
     final perm = _perms[_step].permission;
-    if (perm \!= null) await perm.request();
+    if (perm != null) await perm.request();
     _next();
   }
 
