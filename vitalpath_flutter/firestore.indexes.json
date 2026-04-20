@@ -31,20 +31,7 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "startDate", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "meals",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "loggedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "activity_logs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "loggedAt", "order": "DESCENDING" }
-      ]
     }
-  ]
+  ],
+  "fieldOverrides": []
 }
