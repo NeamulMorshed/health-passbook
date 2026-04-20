@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<\!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key><string>en</string>
+	<key>CFBundleDisplayName</key><string>VitalPath</string>
+	<key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key><string>com.vitalpath.app</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleName</key><string>VitalPath</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleVersion</key><string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>UILaunchStoryboardName</key><string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key><string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array><string>UIInterfaceOrientationPortrait</string></array>
+	<\!-- HealthKit permissions -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>VitalPath reads steps, heart rate, and other vitals to show your health trends.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>VitalPath writes your medication logs and weight to Apple Health.</string>
+	<\!-- Camera for QR scanning -->
+	<key>NSCameraUsageDescription</key>
+	<string>VitalPath needs your camera to scan the doctor's QR sync code.</string>
+	<\!-- Location for timezone detection -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>VitalPath uses your location to detect timezone changes and adjust your medication schedule.</string>
+	<\!-- Deep link URL scheme -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array><string>vitalpath</string></array>
+		</dict>
+	</array>
+	<\!-- Associated Domains for universal links -->
+	<key>com.apple.developer.associated-domains</key>
+	<array><string>applinks:vitalpath.app</string></array>
+	<\!-- Background modes -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
+</dict>
+</plist>

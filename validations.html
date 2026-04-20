@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VitalPath — SRS §5 System Validations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --vp-primary:        #5C6FFF;
+  --vp-primary-dark:   #4A5CE0;
+  --vp-primary-mid:    #8A97FF;
+  --vp-primary-light:  #EEF0FF;
+  --vp-success:        #3DBE7A;
+  --vp-success-light:  #E6F7EF;
+  --vp-warning:        #FFB020;
+  --vp-warning-dark:   #E09A10;
+  --vp-warning-light:  #FFF4E0;
+  --vp-error:          #F03E3E;
+  --vp-error-dark:     #C82020;
+  --vp-error-light:    #FFEEEE;
+  --vp-info:           #2B91FF;
+  --vp-info-light:     #E3F0FF;
+  --vp-bg:             #F0F2F8;
+  --vp-surface:        #FFFFFF;
+  --vp-border:         #E8EAEF;
+  --vp-text-1:         #1A1D2E;
+  --vp-text-2:         #4A4E6B;
+  --vp-text-3:         #8A8FA8;
+  --vp-text-inv:       #FFFFFF;
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-2xl: 24px;
+  --r-full:9999px;
+  --t-instant:  80ms  cubic-bezier(0.4, 0, 0.2, 1);
+  --t-quick:    150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-standard: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-page:     320ms cubic-bezier(0.2, 0, 0, 1);
+  --sh-card: 0 2px 8px rgba(26,29,46,0.06), 0 0 1px rgba(26,29,46,0.08);
+  --sh-elevated: 0 4px 20px rgba(92,111,255,0.15), 0 1px 4px rgba(26,29,46,0.08);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #1A1D2E;
+  color: var(--vp-text-1);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 24px 80px;
+  gap: 0;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.page-header .eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--vp-primary-mid);
+  margin-bottom: 10px;
+}
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.page-header p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* ── SECTION ── */
+.section {
+  width: 100%;
+  max-width: 960px;
+  margin-bottom: 64px;
+}
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.section-label .srs-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.section-label h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.section-label .severity-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+}
+.severity-pill.critical { background: rgba(240,62,62,0.2); color: #FF6B6B; border: 1px solid rgba(240,62,62,0.3); }
+.severity-pill.warning  { background: rgba(255,176,32,0.2); color: #FFB020;  border: 1px solid rgba(255,176,32,0.3); }
+.severity-pill.soft     { background: rgba(92,111,255,0.2); color: #8A97FF;  border: 1px solid rgba(92,111,255,0.3); }
+
+/* ── DEMO GRID ── */
+.demo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.demo-grid.single { grid-template-columns: 1fr; }
+@media (max-width: 680px) { .demo-grid { grid-template-columns: 1fr; } }
+
+/* ── PHONE FRAME ── */
+.phone-frame {
+  width: 340px;
+  height: 680px;
+  background: #F0F2F8;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 2px #2A2D3E,
+    0 0 0 6px #1A1D2E,
+    0 32px 80px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.phone-notch {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100px; height: 26px;
+  background: #1A1D2E;
+  border-radius: 0 0 16px 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.phone-notch::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2A2D3E;
+}
+.phone-notch::after {
+  content: '';
+  width: 40px; height: 4px;
+  border-radius: 2px;
+  background: #2A2D3E;
+}
+
+/* ── SCREEN BASE ── */
+.screen {
+  width: 100%;
+  height: 100%;
+  background: var(--vp-bg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── MOCK STATUS BAR ── */
+.status-bar {
+  height: 44px;
+  padding: 10px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.status-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vp-text-1);
+}
+.status-icons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.status-icons svg {
+  color: var(--vp-text-1);
+}
+
+/* ── MOCK SCREEN CONTENT (blurred bg) ── */
+.mock-content {
+  flex: 1;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  filter: blur(0px);
+  transition: filter var(--t-standard);
+}
+.mock-content.blurred { filter: blur(3px); }
+
+.mock-hero {
+  height: 100px;
+  background: linear-gradient(135deg, #5C6FFF 0%, #4A5CE0 100%);
+  border-radius: var(--r-xl);
+  position: relative;
+  overflow: hidden;
+}
+.mock-hero::before {
+  content: '';
+  position: absolute;
+  right: -20px; top: -20px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+.mock-hero-text {
+  padding: 16px;
+  color: white;
+}
+.mock-hero-text .label { font-size: 10px; opacity: 0.7; font-weight: 500; }
+.mock-hero-text .value { font-size: 22px; font-weight: 800; margin-top: 2px; }
+.mock-hero-text .sub   { font-size: 10px; opacity: 0.7; margin-top: 2px; }
+
+.mock-row {
+  display: flex;
+  gap: 10px;
+}
+.mock-card {
+  flex: 1;
+  background: var(--vp-surface);
+  border-radius: var(--r-md);
+  height: 70px;
+  box-shadow: var(--sh-card);
+}
+.mock-card.tall { height: 140px; }
+.mock-card.wide { flex: 2; }
+
+.mock-tl-item {
+  background: var(--vp-surface);
+  border-radius: var(--r-md);
+  height: 52px;
+  box-shadow: var(--sh-card);
+  border-left: 3px solid transparent;
+}
+.mock-tl-item.ip { border-left-color: var(--vp-primary); }
+
+/* ── TRIGGER BUTTON ── */
+.trigger-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: var(--r-lg);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform var(--t-instant), opacity var(--t-instant);
+  letter-spacing: 0.2px;
+}
+.trigger-btn:active { transform: scale(0.97); opacity: 0.85; }
+.trigger-btn.danger  { background: var(--vp-error);   color: white; }
+.trigger-btn.warning { background: var(--vp-warning);  color: white; }
+.trigger-btn.info    { background: var(--vp-primary);  color: white; }
+.trigger-btn.soft    { background: var(--vp-primary-light); color: var(--vp-primary-dark); }
+
+.trigger-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.trigger-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 4px;
+}
+
+/* ── SPEC CARD ── */
+.spec-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r-lg);
+  padding: 20px;
+}
+.spec-card h3 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 14px;
+}
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  gap: 12px;
+}
+.spec-row:last-child { border-bottom: none; padding-bottom: 0; }
+.spec-key {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.spec-val {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+  text-align: right;
+}
+.spec-val.danger  { color: #FF6B6B; }
+.spec-val.warning { color: #FFB020; }
+.spec-val.info    { color: #8A97FF; }
+
+/* ══════════════════════════════════════════
+   COMPONENT 1 — DUPLICATE LOG MODAL
+   ══════════════════════════════════════════ */
+.dup-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-standard);
+}
+.dup-scrim.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.dup-sheet {
+  width: 100%;
+  background: var(--vp-surface);
+  border-radius: 24px 24px 0 0;
+  padding: 0 0 24px;
+  transform: translateY(100%);
+  transition: transform var(--t-page);
+  overflow: hidden;
+}
+.dup-scrim.open .dup-sheet {
+  transform: translateY(0);
+}
+
+.dup-danger-stripe {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, var(--vp-error), #FF6B6B, var(--vp-error));
+  background-size: 200% 100%;
+  animation: stripe-shimmer 2s linear infinite;
+}
+@keyframes stripe-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.dup-content {
+  padding: 20px 20px 0;
+}
+
+.dup-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.dup-icon-bg {
+  width: 52px; height: 52px;
+  border-radius: var(--r-lg);
+  background: var(--vp-error-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.dup-icon-bg::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 19px;
+  border: 2px solid var(--vp-error);
+  opacity: 0;
+  animation: dup-ring-pulse 2s ease-in-out infinite;
+}
+@keyframes dup-ring-pulse {
+  0%, 100% { inset: -3px; opacity: 0; }
+  50%       { inset: -7px; opacity: 0.3; }
+}
+.dup-icon-bg svg { color: var(--vp-error); }
+
+.dup-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  background: var(--vp-error-light);
+  border: 1px solid rgba(240,62,62,0.2);
+  color: var(--vp-error);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.dup-badge::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--vp-error);
+}
+
+.dup-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--vp-text-1);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.dup-subtitle {
+  font-size: 12px;
+  color: var(--vp-text-3);
+  font-weight: 500;
+}
+
+/* Info box */
+.dup-info-box {
+  margin: 16px 0;
+  background: var(--vp-error-light);
+  border: 1px solid rgba(240,62,62,0.15);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+.dup-info-box .drug-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vp-text-1);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.verified-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--vp-success);
+  flex-shrink: 0;
+}
+.dup-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 11px;
+  color: var(--vp-text-2);
+}
+.dup-detail-row span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.dup-detail-row svg { color: var(--vp-error); }
+
+/* Timeline */
+.dup-timeline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 0 0;
+}
+.tl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tl-dot.logged { background: var(--vp-error); }
+.tl-dot.now    { background: var(--vp-primary); }
+.tl-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--vp-error) 0%, var(--vp-primary) 100%);
+  border-radius: 1px;
+  position: relative;
+}
+.tl-line::after {
+  content: '14 min ago';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--vp-error);
+  white-space: nowrap;
+  background: var(--vp-surface);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(240,62,62,0.2);
+}
+.tl-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--vp-text-3);
+  white-space: nowrap;
+}
+
+/* Risk banner */
+.dup-risk-banner {
+  margin: 14px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(240,62,62,0.06), rgba(240,62,62,0.02));
+  border-radius: var(--r-md);
+  border: 1px solid rgba(240,62,62,0.12);
+}
+.dup-risk-banner svg { color: var(--vp-error); flex-shrink: 0; margin-top: 1px; }
+.dup-risk-banner p {
+  font-size: 12px;
+  color: var(--vp-text-2);
+  line-height: 1.5;
+}
+.dup-risk-banner strong { color: var(--vp-error); font-weight: 700; }
+
+/* Actions */
+.dup-actions {
+  padding: 16px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-full {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--t-instant), opacity var(--t-instant), box-shadow var(--t-quick);
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-full:active { transform: scale(0.97); opacity: 0.85; }
+.btn-cancel-safe {
+  background: var(--vp-success);
+  color: white;
+  box-shadow: 0 4px 16px rgba(61,190,122,0.3);
+}
+.btn-force {
+  background: transparent;
+  color: var(--vp-error);
+  border: 1.5px solid rgba(240,62,62,0.3);
+  font-size: 13px;
+}
+.btn-force:hover { background: var(--vp-error-light); }
+
+/* ══════════════════════════════════════════
+   COMPONENT 2 — TIMEZONE LEAP PROMPT
+   ══════════════════════════════════════════ */
+.tz-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 20, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-standard);
+}
+.tz-scrim.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tz-modal {
+  width: 100%;
+  background: var(--vp-surface);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+  transform: scale(0.92) translateY(12px);
+  transition: transform var(--t-page);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+}
+.tz-scrim.open .tz-modal {
+  transform: scale(1) translateY(0);
+}
+
+.tz-header-bar {
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, var(--vp-warning) 0%, #FFD060 50%, var(--vp-warning) 100%);
+}
+
+.tz-body {
+  padding: 20px;
+}
+
+.tz-icon-wrap {
+  width: 56px; height: 56px;
+  border-radius: var(--r-xl);
+  background: var(--vp-warning-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  position: relative;
+}
+.tz-icon-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 24px;
+  border: 2px solid rgba(255,176,32,0.25);
+  animation: tz-pulse 2.5s ease-in-out infinite;
+}
+@keyframes tz-pulse {
+  0%, 100% { inset: -4px; opacity: 1; }
+  50%       { inset: -9px; opacity: 0; }
+}
+
+.tz-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--vp-warning-dark);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tz-eyebrow::before {
+  content: '';
+  width: 14px; height: 2px;
+  background: var(--vp-warning);
+  border-radius: 1px;
+}
+
+.tz-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--vp-text-1);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+.tz-desc {
+  font-size: 12px;
+  color: var(--vp-text-2);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* Timezone comparison card */
+.tz-compare {
+  background: var(--vp-bg);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tz-from, .tz-to {
+  flex: 1;
+  text-align: center;
+}
+.tz-zone-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vp-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.tz-zone-time {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--vp-text-1);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+.tz-zone-label {
+  font-size: 10px;
+  color: var(--vp-text-3);
+  font-weight: 500;
+}
+.tz-from .tz-zone-time { opacity: 0.5; }
+.tz-from .tz-zone-name { opacity: 0.6; }
+
+.tz-arrow-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--vp-warning-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tz-arrow-circle svg { color: var(--vp-warning-dark); }
+
+/* Diff tag */
+.tz-diff-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  background: var(--vp-warning-light);
+  border: 1px solid rgba(255,176,32,0.25);
+  color: var(--vp-warning-dark);
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+/* Affected item */
+.tz-affected {
+  background: rgba(255,176,32,0.06);
+  border: 1px solid rgba(255,176,32,0.15);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 11px;
+  color: var(--vp-text-2);
+  line-height: 1.5;
+}
+.tz-affected strong {
+  color: var(--vp-text-1);
+  font-weight: 700;
+}
+
+.tz-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btn-tz-adjust {
+  background: var(--vp-warning);
+  color: white;
+  box-shadow: 0 4px 14px rgba(255,176,32,0.3);
+}
+.btn-tz-keep {
+  background: transparent;
+  color: var(--vp-text-2);
+  border: 1.5px solid var(--vp-border);
+  font-size: 13px;
+}
+.btn-tz-keep:hover { background: var(--vp-bg); }
+
+/* ══════════════════════════════════════════
+   COMPONENT 3 — SOFT VALIDATION TOAST
+   ══════════════════════════════════════════ */
+
+/* The mock input form that triggers it */
+.mock-form {
+  flex: 1;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vp-text-1);
+  padding-top: 8px;
+}
+
+.form-card {
+  background: var(--vp-surface);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--sh-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--vp-text-3);
+}
+.form-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--vp-border);
+  border-radius: var(--r-md);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vp-text-1);
+  background: var(--vp-bg);
+  outline: none;
+  transition: border-color var(--t-quick), box-shadow var(--t-quick);
+}
+.form-input:focus {
+  border-color: var(--vp-primary);
+  box-shadow: 0 0 0 3px var(--vp-primary-light);
+}
+.form-input.error-field {
+  border-color: var(--vp-warning);
+  box-shadow: 0 0 0 3px var(--vp-warning-light);
+  animation: field-shake 0.4s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  40%       { transform: translateX(4px); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(2px); }
+}
+.form-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vp-text-3);
+  padding: 10px 12px;
+  background: var(--vp-border);
+  border-radius: var(--r-md);
+  white-space: nowrap;
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--vp-text-3);
+  line-height: 1.4;
+}
+.form-hint.warn {
+  color: var(--vp-warning-dark);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+/* Second field row */
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: none;
+  background: var(--vp-primary);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--t-instant), opacity var(--t-instant);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(92,111,255,0.3);
+}
+.submit-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+/* ── TOAST SYSTEM ── */
+.toast-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 12px 20px;
+  z-index: 60;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Soft warning toast */
+.toast {
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform var(--t-page), opacity var(--t-standard);
+  pointer-events: all;
+}
+.toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+.toast.exiting {
+  transform: translateY(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toast-warning {
+  background: #FFFCF0;
+  border: 1.5px solid rgba(255,176,32,0.3);
+}
+.toast-warning-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, var(--vp-warning) 0%, #FFD060 50%, var(--vp-warning) 100%);
+  background-size: 200% 100%;
+  animation: stripe-shimmer 2s linear infinite;
+}
+.toast-inner {
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.toast-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--vp-warning-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.toast-icon-wrap svg { color: var(--vp-warning-dark); }
+.toast-body { flex: 1; min-width: 0; }
+.toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--vp-text-1);
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toast-srs-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255,176,32,0.15);
+  color: var(--vp-warning-dark);
+}
+.toast-msg {
+  font-size: 11px;
+  color: var(--vp-text-2);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.toast-msg strong { color: var(--vp-warning-dark); font-weight: 700; }
+.toast-actions {
+  display: flex;
+  gap: 8px;
+}
+.toast-btn {
+  padding: 6px 14px;
+  border-radius: var(--r-full);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--t-instant), opacity var(--t-instant);
+}
+.toast-btn:active { transform: scale(0.96); opacity: 0.8; }
+.toast-btn-fix {
+  background: var(--vp-warning);
+  color: white;
+}
+.toast-btn-confirm {
+  background: transparent;
+  color: var(--vp-text-3);
+  border: 1px solid var(--vp-border);
+  background: white;
+}
+.toast-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--vp-text-3);
+  transition: background var(--t-quick);
+}
+.toast-close:hover { background: rgba(0,0,0,0.1); }
+
+/* Progress bar inside toast */
+.toast-progress {
+  height: 3px;
+  background: rgba(255,176,32,0.15);
+  border-radius: 0 0 10px 10px;
+  overflow: hidden;
+}
+.toast-progress-fill {
+  height: 100%;
+  background: var(--vp-warning);
+  border-radius: inherit;
+  width: 100%;
+  transform-origin: left;
+  animation: toast-expire 6s linear forwards;
+}
+@keyframes toast-expire {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  height: 64px;
+  background: var(--vp-surface);
+  border-top: 1px solid var(--vp-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 12px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: transform var(--t-instant);
+}
+.nav-item:active { transform: scale(0.9); }
+.nav-item svg { color: var(--vp-text-3); }
+.nav-item.active svg { color: var(--vp-primary); }
+.nav-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--vp-text-3);
+}
+.nav-item.active .nav-label { color: var(--vp-primary); }
+.nav-fab {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vp-success), #35A868);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(61,190,122,0.4);
+  cursor: pointer;
+  transition: transform var(--t-instant), box-shadow var(--t-quick);
+}
+.nav-fab:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(61,190,122,0.3); }
+
+/* ── ANNOTATION PANEL ── */
+.annotation-panel {
+  max-width: 960px;
+  width: 100%;
+  margin-top: 64px;
+}
+.annotation-panel h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 8px;
+}
+.annotation-panel .sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 28px;
+}
+.annotation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 700px) { .annotation-grid { grid-template-columns: 1fr; } }
+.ann-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r-lg);
+  padding: 18px;
+}
+.ann-card .num {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.ann-card.c1 .num { color: rgba(240,62,62,0.6); }
+.ann-card.c2 .num { color: rgba(255,176,32,0.6); }
+.ann-card.c3 .num { color: rgba(92,111,255,0.6); }
+.ann-card .ann-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 10px;
+}
+.ann-card .ann-body {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.7;
+}
+.ann-card .ann-body strong {
+  color: rgba(255,255,255,0.65);
+  font-weight: 600;
+}
+
+/* ── TOP NAV ── */
+.top-nav {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.top-nav .nav-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--vp-text-1);
+  flex: 1;
+}
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--vp-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--sh-card);
+  transition: transform var(--t-instant);
+}
+.icon-btn:active { transform: scale(0.9); }
+.icon-btn svg { color: var(--vp-text-2); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE HEADER
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="eyebrow">SRS § 5 — System Validations</div>
+  <h1>Edge Case UI Components</h1>
+  <p>Critical warnings, temporal anomaly prompts, and soft-validation feedback — all following the VitalPath style guide while maintaining the highest signal clarity.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 1 — DUPLICATE LOG / OVERDOSE PREVENTION
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">
+    <span class="srs-tag">SRS § 5.2</span>
+    <h2>Duplicate Log — Overdose Prevention</h2>
+    <span class="severity-pill critical">CRITICAL</span>
+  </div>
+
+  <div class="demo-grid">
+    <!-- Phone -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="phone-frame" id="phone-dup">
+        <div class="phone-notch"></div>
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">8:14 AM</span>
+            <div class="status-icons">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+              <svg width="12" height="8" viewBox="0 0 24 12" fill="currentColor"><rect x="0" y="2" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2" y="4" width="12" height="4" rx="1" fill="currentColor"/><path d="M19 4v4a2 2 0 0 0 0-4z"/></svg>
+            </div>
+          </div>
+
+          <!-- blurred bg -->
+          <div class="mock-content blurred" id="dup-bg">
+            <div class="mock-hero">
+              <div class="mock-hero-text">
+                <div class="label">Health Score</div>
+                <div class="value">82</div>
+                <div class="sub">Good · Today</div>
+              </div>
+            </div>
+            <div class="mock-row">
+              <div class="mock-card"></div>
+              <div class="mock-card"></div>
+            </div>
+            <div class="mock-tl-item ip"></div>
+            <div class="mock-tl-item"></div>
+            <div class="mock-tl-item"></div>
+          </div>
+
+          <!-- DUPLICATE MODAL -->
+          <div class="dup-scrim" id="dup-scrim">
+            <div class="dup-sheet">
+              <div class="dup-danger-stripe"></div>
+              <div class="dup-content">
+                <div class="dup-icon-row">
+                  <div class="dup-icon-bg">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="dup-badge">Overdose Prevention Active</div>
+                    <div class="dup-title">Already Logged</div>
+                    <div class="dup-subtitle">SRS §5.2 · 15-min duplicate window</div>
+                  </div>
+                </div>
+
+                <div class="dup-info-box">
+                  <div class="drug-name">
+                    <span class="verified-dot"></span>
+                    Metformin 500mg
+                  </div>
+                  <div class="dup-detail-row">
+                    <span>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      8:00 AM dose
+                    </span>
+                    <span>500mg · Oral</span>
+                  </div>
+
+                  <div class="dup-timeline">
+                    <span class="tl-label">8:00 AM</span>
+                    <div class="tl-dot logged"></div>
+                    <div class="tl-line"></div>
+                    <div class="tl-dot now"></div>
+                    <span class="tl-label">Now</span>
+                  </div>
+                </div>
+
+                <div class="dup-risk-banner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <p>Logging again within <strong>14 minutes</strong> may constitute a double dose. Consult your prescriber before overriding. Risk level: <strong>High</strong>.</p>
+                </div>
+              </div>
+
+              <div class="dup-actions">
+                <button class="btn-full btn-cancel-safe" onclick="closeDup()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Cancel — I Already Took It
+                </button>
+                <button class="btn-full btn-force" onclick="forceLogDup()">
+                  Override and Log Again
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /screen -->
+        <div class="bottom-nav">
+          <div class="nav-item active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="nav-label">Home</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span class="nav-label">Activity</span>
+          </div>
+          <div class="nav-fab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="nav-label">Log</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Profile</span>
+          </div>
+        </div>
+      </div><!-- /phone -->
+
+      <!-- Trigger -->
+      <div class="trigger-area" style="width:340px;">
+        <div class="trigger-label">Demo Controls</div>
+        <button class="trigger-btn danger" onclick="openDup()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Tap "Log Again" on Medicine
+        </button>
+      </div>
+    </div>
+
+    <!-- Spec -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="spec-card">
+        <h3>Component Spec</h3>
+        <div class="spec-row">
+          <span class="spec-key">Trigger</span>
+          <span class="spec-val">Quick-Log within 15-min window</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Presentation</span>
+          <span class="spec-val">Bottom sheet · 72px backdrop blur</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Danger Stripe</span>
+          <span class="spec-val danger">Animated shimmer · #F03E3E</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Pulse Ring</span>
+          <span class="spec-val danger">Icon halo · 2s ease-in-out loop</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Timeline</span>
+          <span class="spec-val">Last log → Now gradient line</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Primary CTA</span>
+          <span class="spec-val" style="color:#3DBE7A;">Cancel (success green) — safe exit</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Override CTA</span>
+          <span class="spec-val danger">Ghost button · error red · low contrast</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Auto-dismiss</span>
+          <span class="spec-val">None — explicit action required</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Haptic (native)</span>
+          <span class="spec-val danger">HeavyImpact on open</span>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h3>Design Rationale</h3>
+        <div class="spec-row">
+          <span class="spec-key">Color hierarchy</span>
+          <span class="spec-val">Green = safe · Red = danger</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">CTA order</span>
+          <span class="spec-val">Safe action first (Fitts' Law)</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Override friction</span>
+          <span class="spec-val">Ghost style = low affordance → reduces accidental taps</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Timeline visual</span>
+          <span class="spec-val">Makes elapsed time visceral, not just text</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">No auto-close</span>
+          <span class="spec-val">Medical safety = user must decide</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2 — TIMEZONE LEAP PROMPT
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">
+    <span class="srs-tag">SRS § 5.4</span>
+    <h2>Timezone Leap Prompt</h2>
+    <span class="severity-pill warning">WARNING</span>
+  </div>
+
+  <div class="demo-grid">
+    <!-- Phone -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="phone-frame" id="phone-tz">
+        <div class="phone-notch"></div>
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">11:47 PM</span>
+            <div class="status-icons">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <svg width="12" height="8" viewBox="0 0 24 12" fill="currentColor"><rect x="0" y="2" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2" y="4" width="9" height="4" rx="1" fill="currentColor"/><path d="M19 4v4a2 2 0 0 0 0-4z"/></svg>
+            </div>
+          </div>
+
+          <div class="mock-content blurred">
+            <div class="mock-hero" style="background: linear-gradient(135deg,#2B91FF,#5C6FFF);">
+              <div class="mock-hero-text">
+                <div class="label">Flight Mode</div>
+                <div class="value">BKK</div>
+                <div class="sub">Bangkok · UTC+7</div>
+              </div>
+            </div>
+            <div class="mock-row">
+              <div class="mock-card tall"></div>
+              <div class="mock-card tall wide"></div>
+            </div>
+          </div>
+
+          <!-- TIMEZONE MODAL -->
+          <div class="tz-scrim" id="tz-scrim">
+            <div class="tz-modal" id="tz-modal">
+              <div class="tz-header-bar"></div>
+              <div class="tz-body">
+                <div class="tz-icon-wrap">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E09A10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </div>
+
+                <div class="tz-eyebrow">Timezone Change Detected</div>
+                <div class="tz-title">You've crossed a timezone boundary</div>
+                <div class="tz-desc">VitalPath detected a +5 hour shift. Your scheduled reminders may need to be adjusted to maintain your treatment regimen.</div>
+
+                <div class="tz-compare">
+                  <div class="tz-from">
+                    <div class="tz-zone-name">Previous</div>
+                    <div class="tz-zone-time">10:47 PM</div>
+                    <div class="tz-zone-label">UTC+6 · Dhaka</div>
+                  </div>
+                  <div class="tz-arrow-circle">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                  </div>
+                  <div class="tz-to">
+                    <div class="tz-zone-name">Current</div>
+                    <div class="tz-zone-time">11:47 PM</div>
+                    <div class="tz-zone-label">UTC+7 · Bangkok</div>
+                  </div>
+                </div>
+
+                <div class="tz-diff-tag">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Shift: +1 hr · Next dose: Metformin
+                </div>
+
+                <div class="tz-affected">
+                  <strong>3 upcoming reminders</strong> are affected. Earliest: <strong>Metformin 500mg</strong> rescheduled from <strong>8:00 AM (Dhaka)</strong> → needs confirmation for <strong>8:00 AM (Bangkok)</strong>.
+                </div>
+
+                <div class="tz-actions">
+                  <button class="btn-full btn-tz-adjust" onclick="closeTz('adjust')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Adjust to Bangkok Time
+                  </button>
+                  <button class="btn-full btn-tz-keep" onclick="closeTz('keep')">
+                    Keep Original Schedule
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /screen -->
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="nav-label">Home</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span class="nav-label">Activity</span>
+          </div>
+          <div class="nav-fab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="nav-item active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="nav-label">Log</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Profile</span>
+          </div>
+        </div>
+      </div><!-- /phone -->
+
+      <div class="trigger-area" style="width:340px;">
+        <div class="trigger-label">Demo Controls</div>
+        <button class="trigger-btn warning" onclick="openTz()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10"/></svg>
+          Simulate Timezone Change
+        </button>
+      </div>
+    </div>
+
+    <!-- Spec -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="spec-card">
+        <h3>Component Spec</h3>
+        <div class="spec-row">
+          <span class="spec-key">Trigger</span>
+          <span class="spec-val">Timezone offset change ≥ 1hr on app open</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Presentation</span>
+          <span class="spec-val">Center modal · scale-up entrance</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Severity stripe</span>
+          <span class="spec-val warning">Amber shimmer · #FFB020</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Pulse ring</span>
+          <span class="spec-val warning">Globe icon halo · 2.5s loop</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Timezone card</span>
+          <span class="spec-val">Side-by-side · faded old, vivid new</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Affected scope</span>
+          <span class="spec-val">Shows count + earliest affected drug</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Primary CTA</span>
+          <span class="spec-val warning">Amber — Adjust to new timezone</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Secondary CTA</span>
+          <span class="spec-val">Ghost · Keep original schedule</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Auto-dismiss</span>
+          <span class="spec-val">None — user must decide</span>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h3>Design Rationale</h3>
+        <div class="spec-row">
+          <span class="spec-key">Center vs. sheet</span>
+          <span class="spec-val">Center = interruption · forces attention before app use</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Amber not red</span>
+          <span class="spec-val">Warning — reversible · not an error</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Faded "from" time</span>
+          <span class="spec-val">Old TZ visually recedes to reinforce change</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Affected count</span>
+          <span class="spec-val">Scope awareness reduces cognitive load in decisions</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 3 — SOFT-VALIDATION TOAST (IMPROBABLE INPUT)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-label">
+    <span class="srs-tag">SRS § 5.6</span>
+    <h2>Soft-Validation Toast</h2>
+    <span class="severity-pill soft">SOFT WARNING</span>
+  </div>
+
+  <div class="demo-grid">
+    <!-- Phone -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="phone-frame" id="phone-toast">
+        <div class="phone-notch"></div>
+        <div class="screen">
+          <div class="status-bar">
+            <span class="status-time">9:32 AM</span>
+            <div class="status-icons">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="0" y="5" width="3" height="14" rx="1"/><rect x="5" y="9" width="3" height="10" rx="1"/><rect x="10" y="3" width="3" height="16" rx="1"/><rect x="15" y="7" width="3" height="12" rx="1"/><rect x="20" y="1" width="3" height="18" rx="1"/></svg>
+              <svg width="12" height="8" viewBox="0 0 24 12" fill="currentColor"><rect x="0" y="2" width="18" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2" y="4" width="16" height="4" rx="1" fill="currentColor"/><path d="M19 4v4a2 2 0 0 0 0-4z"/></svg>
+            </div>
+          </div>
+
+          <div class="top-nav">
+            <div class="icon-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <span class="nav-title" style="text-align:center;">Log Vitals</span>
+            <div class="icon-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+
+          <div class="mock-form" id="toast-form">
+            <div class="form-card">
+              <div class="form-field">
+                <div class="form-label">Body Weight</div>
+                <div class="form-input-row">
+                  <input class="form-input" id="weight-input" type="number" value="312" placeholder="0" oninput="clearWeightError()">
+                  <div class="form-unit">kg</div>
+                </div>
+                <div class="form-hint" id="weight-hint">Normal range: 30–200 kg</div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-field">
+                  <div class="form-label">Height</div>
+                  <div class="form-input-row">
+                    <input class="form-input" type="number" value="172" placeholder="0">
+                    <div class="form-unit">cm</div>
+                  </div>
+                </div>
+                <div class="form-field">
+                  <div class="form-label">BMI</div>
+                  <div class="form-input-row">
+                    <input class="form-input" type="number" value="105.5" placeholder="—" readonly style="opacity:0.6;">
+                    <div class="form-unit">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <div class="form-label">Blood Pressure</div>
+                <div class="form-input-row">
+                  <input class="form-input" type="number" value="118" style="text-align:center;">
+                  <span style="color:var(--vp-text-3); font-weight:700; font-size:16px;">/</span>
+                  <input class="form-input" type="number" value="76" style="text-align:center;">
+                  <div class="form-unit">mmHg</div>
+                </div>
+              </div>
+            </div>
+
+            <button class="submit-btn" onclick="submitVitals()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Save Vitals
+            </button>
+          </div>
+
+          <!-- TOAST CONTAINER -->
+          <div class="toast-container">
+            <div class="toast toast-warning" id="soft-toast">
+              <div class="toast-warning-stripe"></div>
+              <div class="toast-inner">
+                <div class="toast-icon-wrap">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <div class="toast-body">
+                  <div class="toast-title">
+                    Improbable Value
+                    <span class="toast-srs-badge">§ 5.6</span>
+                  </div>
+                  <div class="toast-msg">
+                    <strong>312 kg</strong> is outside the expected range (30–200 kg). Did you mean <strong>31.2 kg</strong> or <strong>68.8 lbs</strong>? Please confirm or correct.
+                  </div>
+                  <div class="toast-actions">
+                    <button class="toast-btn toast-btn-fix" onclick="fixWeight()">Fix Entry</button>
+                    <button class="toast-btn toast-btn-confirm" onclick="confirmWeight()">It's Correct</button>
+                  </div>
+                </div>
+                <button class="toast-close" onclick="dismissToast()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="toast-progress">
+                <div class="toast-progress-fill" id="toast-progress-bar"></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /screen -->
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span class="nav-label">Home</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span class="nav-label">Activity</span>
+          </div>
+          <div class="nav-fab">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="nav-item active">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="nav-label">Log</span>
+          </div>
+          <div class="nav-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="nav-label">Profile</span>
+          </div>
+        </div>
+      </div><!-- /phone -->
+
+      <div class="trigger-area" style="width:340px;">
+        <div class="trigger-label">Demo Controls</div>
+        <button class="trigger-btn soft" onclick="submitVitals()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit with 312 kg — Trigger Toast
+        </button>
+        <button class="trigger-btn info" onclick="resetToast()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Spec -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="spec-card">
+        <h3>Component Spec</h3>
+        <div class="spec-row">
+          <span class="spec-key">Trigger</span>
+          <span class="spec-val">Value outside clinical normal range on submit</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Presentation</span>
+          <span class="spec-val">Bottom toast · slides up · doesn't block form</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Field response</span>
+          <span class="spec-val warning">Amber border + shake animation on input</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Progress bar</span>
+          <span class="spec-val">6-second auto-dismiss countdown</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Smart suggestion</span>
+          <span class="spec-val info">"Did you mean 31.2 kg / 68.8 lbs?"</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Fix CTA</span>
+          <span class="spec-val warning">Amber · focuses the errant field</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Confirm CTA</span>
+          <span class="spec-val">Ghost · logs with a "user-confirmed" flag</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Auto-dismiss</span>
+          <span class="spec-val">6 seconds · shown by progress bar</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Severity tag</span>
+          <span class="spec-val info">SRS §5.6 badge visible on toast header</span>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h3>Validation Thresholds</h3>
+        <div class="spec-row">
+          <span class="spec-key">Weight</span>
+          <span class="spec-val">30–200 kg / 66–440 lbs</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Height</span>
+          <span class="spec-val">100–250 cm</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Blood pressure</span>
+          <span class="spec-val">Systolic 60–200 / Diastolic 40–120</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Blood glucose</span>
+          <span class="spec-val">2–30 mmol/L</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Temperature</span>
+          <span class="spec-val">34–42 °C</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Heart rate</span>
+          <span class="spec-val">30–220 bpm</span>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h3>Design Rationale</h3>
+        <div class="spec-row">
+          <span class="spec-key">Toast vs. modal</span>
+          <span class="spec-val">Non-blocking · soft validation, not an error</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Smart suggestion</span>
+          <span class="spec-val">Unit confusion (kg/lbs) is the most common cause</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">6-sec countdown</span>
+          <span class="spec-val">Enough to read + act; doesn't trap user</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Confirmed flag</span>
+          <span class="spec-val">Clinician sees "user-confirmed outlier" in portal</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Field shake</span>
+          <span class="spec-val">Kinetic feedback matches the cognitive dissonance of wrong input</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ANNOTATION PANEL
+     ═══════════════════════════════════════════════════════════ -->
+<div class="annotation-panel">
+  <h2>Severity Architecture</h2>
+  <p class="sub">Three-tier interrupt model — calibrated to clinical risk and user autonomy.</p>
+  <div class="annotation-grid">
+    <div class="ann-card c1">
+      <div class="num">01</div>
+      <div class="ann-title">Critical — Bottom Sheet Block</div>
+      <div class="ann-body">
+        Used for <strong>overdose-risk scenarios</strong>. Full screen scrim, animated danger stripe, pulsing icon halo. <strong>No auto-dismiss</strong>. Primary CTA is always the safe exit (green). Override CTA is ghost-styled to reduce affordance. Requires explicit user decision before proceeding.
+      </div>
+    </div>
+    <div class="ann-card c2">
+      <div class="num">02</div>
+      <div class="ann-title">Warning — Center Modal Interrupt</div>
+      <div class="ann-body">
+        Used for <strong>temporal / scheduling anomalies</strong>. Scale-up entrance forces attention before the user can interact with the app. Amber color signals reversibility. Side-by-side timezone card makes the change visceral. Both CTAs are valid — no "wrong" choice, just different trade-offs.
+      </div>
+    </div>
+    <div class="ann-card c3">
+      <div class="num">03</div>
+      <div class="ann-title">Soft — Non-blocking Toast</div>
+      <div class="ann-body">
+        Used for <strong>improbable but possible inputs</strong>. Slides up without covering the form. Smart unit-confusion suggestion pre-empts the most common error. 6-second countdown is visible (progress bar). Confirm path flags the entry as <strong>user-verified outlier</strong> for the clinician portal, preserving data integrity without blocking the user.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── LIVE CLOCKS ──────────────────────────────
+function updateValidationClocks() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes().toString().padStart(2,'0');
+  const h12 = ((h % 12) || 12);
+  const timeStr = h12 + ':' + m;
+  document.querySelectorAll('.status-time').forEach(el => el.textContent = timeStr);
+}
+updateValidationClocks();
+setInterval(updateValidationClocks, 30000);
+
+// ── PAGE LOAD — animate modals in with staggered delay ──
+document.addEventListener('DOMContentLoaded', () => {
+  // Phone 1: Duplicate modal slides up after 500ms
+  setTimeout(() => {
+    document.getElementById('dup-scrim').classList.add('open');
+    document.getElementById('dup-bg').classList.add('blurred');
+  }, 500);
+
+  // Phone 2: Timezone modal scales in after 700ms
+  setTimeout(() => {
+    document.getElementById('tz-scrim').classList.add('open');
+  }, 700);
+});
+
+// ── DUPLICATE LOG MODAL ─────────────────────
+function openDup() {
+  document.getElementById('dup-scrim').classList.add('open');
+  document.getElementById('dup-bg').classList.add('blurred');
+}
+function closeDup() {
+  const scrim = document.getElementById('dup-scrim');
+  scrim.classList.remove('open');
+  document.getElementById('dup-bg').classList.remove('blurred');
+}
+function forceLogDup() {
+  const sheet = document.querySelector('.dup-sheet');
+  sheet.style.transition = 'transform 120ms cubic-bezier(0.4,0,0.2,1)';
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => {
+    closeDup();
+    sheet.style.transform = '';
+    sheet.style.transition = '';
+    // Show a brief success snack
+    showSnack('Override logged. Consult your doctor.', '#F03E3E');
+  }, 140);
+}
+
+// ── TIMEZONE MODAL ───────────────────────────
+function openTz() {
+  document.getElementById('tz-scrim').classList.add('open');
+}
+function closeTz(action) {
+  const scrim = document.getElementById('tz-scrim');
+  const modal = document.getElementById('tz-modal');
+  modal.style.transition = 'transform 200ms cubic-bezier(0.4,0,0.2,1), opacity 200ms';
+  modal.style.transform = 'scale(0.94) translateY(8px)';
+  modal.style.opacity = '0';
+  setTimeout(() => {
+    scrim.classList.remove('open');
+    modal.style.transform = '';
+    modal.style.opacity = '';
+    modal.style.transition = '';
+    const msg = action === 'adjust'
+      ? 'Reminders adjusted to Bangkok time (UTC+7)'
+      : 'Original schedule kept (UTC+6)';
+    showSnack(msg, '#3DBE7A');
+  }, 220);
+}
+
+// ── SOFT TOAST ──────────────────────────────
+let toastTimer = null;
+
+function submitVitals() {
+  const val = parseFloat(document.getElementById('weight-input').value);
+  if (val < 30 || val > 200) {
+    // Shake the field
+    const input = document.getElementById('weight-input');
+    input.classList.add('error-field');
+    const hint = document.getElementById('weight-hint');
+    hint.className = 'form-hint warn';
+    hint.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Value outside normal range (30–200 kg)';
+    showSoftToast(val);
+  } else {
+    dismissToast();
+    showSnack('Vitals saved successfully', '#3DBE7A');
+  }
+}
+
+function showSoftToast(val) {
+  const toast = document.getElementById('soft-toast');
+  // Reset progress bar
+  const bar = document.getElementById('toast-progress-bar');
+  bar.style.animation = 'none';
+  void bar.offsetWidth; // force reflow
+  bar.style.animation = 'toast-expire 6s linear forwards';
+
+  toast.classList.remove('exiting');
+  toast.classList.add('visible');
+
+  // Update suggestion
+  const lbsVal = (val * 2.20462).toFixed(1);
+  const halfVal = (val / 10).toFixed(1);
+  toast.querySelector('.toast-msg').innerHTML =
+    `<strong>${val} kg</strong> is outside the expected range (30–200 kg). Did you mean <strong>${halfVal} kg</strong> or <strong>${lbsVal} lbs</strong>? Please confirm or correct.`;
+
+  // Auto dismiss
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => dismissToast(), 6000);
+}
+
+function dismissToast() {
+  clearTimeout(toastTimer);
+  const toast = document.getElementById('soft-toast');
+  toast.classList.remove('visible');
+  toast.classList.add('exiting');
+}
+
+function fixWeight() {
+  dismissToast();
+  const input = document.getElementById('weight-input');
+  input.focus();
+  input.select();
+  clearWeightError();
+}
+
+function confirmWeight() {
+  dismissToast();
+  clearWeightError();
+  showSnack('Logged as user-confirmed outlier', '#FFB020');
+}
+
+function clearWeightError() {
+  const input = document.getElementById('weight-input');
+  input.classList.remove('error-field');
+  const hint = document.getElementById('weight-hint');
+  hint.className = 'form-hint';
+  hint.innerHTML = 'Normal range: 30–200 kg';
+}
+
+function resetToast() {
+  dismissToast();
+  document.getElementById('weight-input').value = '312';
+  clearWeightError();
+}
+
+// ── GENERIC SNACKBAR ────────────────────────
+function showSnack(msg, color) {
+  const existing = document.querySelector('.snack-bar');
+  if (existing) existing.remove();
+
+  const snack = document.createElement('div');
+  snack.className = 'snack-bar';
+  snack.style.cssText = `
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:${color || '#1A1D2E'}; color:white; border-radius:12px;
+    padding:10px 18px; font-size:12px; font-weight:600; white-space:nowrap;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:9999;
+    opacity:0; transition:all 250ms cubic-bezier(0.4,0,0.2,1);
+    font-family:'Inter',sans-serif;
+  `;
+  snack.textContent = msg;
+  document.body.appendChild(snack);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      snack.style.opacity = '1';
+      snack.style.transform = 'translateX(-50%) translateY(0)';
+    });
+  });
+  setTimeout(() => {
+    snack.style.opacity = '0';
+    snack.style.transform = 'translateX(-50%) translateY(10px)';
+    setTimeout(() => snack.remove(), 300);
+  }, 2800);
+}
+</script>
+</body>
+</html>

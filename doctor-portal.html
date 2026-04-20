@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VitalPath — Doctor Provider Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* ─── RESET ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── DESIGN TOKENS (Style Guide v1.0) ─── */
+:root {
+  --vp-primary:       #5C6FFF;
+  --vp-primary-dark:  #4A5CE0;
+  --vp-primary-mid:   #8A97FF;
+  --vp-primary-light: #EEF0FF;
+  --vp-success:       #3DBE7A;
+  --vp-success-light: #E6F7EF;
+  --vp-warning:       #FFB020;
+  --vp-warning-light: #FFF4E0;
+  --vp-error:         #F03E3E;
+  --vp-error-light:   #FFEEEE;
+  --vp-info:          #2B91FF;
+  --vp-info-light:    #E3F0FF;
+  --vp-bg:            #F0F2F8;
+  --vp-surface:       #FFFFFF;
+  --vp-border:        #E8EAEF;
+  --vp-text-1:        #1A1D2E;
+  --vp-text-2:        #6B7280;
+  --vp-text-3:        #9CA3AF;
+
+  --r-sm:  10px;  --r-md: 14px;
+  --r-lg:  20px;  --r-xl: 28px;  --r-full: 9999px;
+
+  --s-sm:  0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --s-md:  0 4px 16px rgba(0,0,0,0.08);
+  --s-lg:  0 8px 32px rgba(0,0,0,0.12);
+  --s-fab: 0 4px 20px rgba(61,190,122,0.38);
+  --s-primary: 0 4px 16px rgba(92,111,255,0.32);
+
+  --t-instant:  80ms  cubic-bezier(0.4, 0, 0.2, 1);
+  --t-quick:    150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-standard: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-page:     320ms cubic-bezier(0.2, 0, 0, 1);
+
+  --font: 'Inter', -apple-system, sans-serif;
+}
+
+/* ─── PAGE ─── */
+body {
+  font-family: var(--font);
+  background: #CDD0DE;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 36px;
+  padding: 40px 24px 60px;
+}
+
+/* ─── PHONE SHELL ─── */
+.phone {
+  width: 393px;
+  height: 852px;
+  background: var(--vp-bg);
+  border-radius: 52px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow:
+    0 0 0 10px #1A1D2E,
+    0 0 0 12px #2C2F45,
+    0 52px 96px rgba(0,0,0,0.45),
+    0 16px 32px rgba(0,0,0,0.22);
+}
+
+/* ─── SCREENS ─── */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--vp-bg);
+  overflow: hidden;
+}
+.screen.active { display: flex; }
+
+/* ─── STATUS BAR ─── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px 0;
+  flex-shrink: 0;
+}
+.s-time { font-size: 15px; font-weight: 700; color: var(--vp-text-1); letter-spacing: -0.3px; }
+.s-icons { display: flex; align-items: center; gap: 5px; }
+.s-icons svg { width: 15px; height: 15px; }
+
+/* ─── SCROLL CONTENT ─── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ─── BOTTOM NAV ─── */
+.bot-nav {
+  background: var(--vp-surface);
+  border-top: 1px solid var(--vp-border);
+  display: flex;
+  align-items: center;
+  padding: 8px 12px 28px;
+  flex-shrink: 0;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.05);
+}
+.bnav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: transform var(--t-instant);
+}
+.bnav-btn:active { transform: scale(0.88); }
+.bnav-pip {
+  width: 44px; height: 32px;
+  border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+}
+.bnav-btn svg { width: 21px; height: 21px; fill: none; stroke: var(--vp-text-3); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bnav-btn.active .bnav-pip { background: var(--vp-primary-light); }
+.bnav-btn.active svg { stroke: var(--vp-primary); }
+.bnav-lbl { font-size: 10px; color: var(--vp-text-3); font-weight: 500; }
+.bnav-btn.active .bnav-lbl { color: var(--vp-primary); font-weight: 600; }
+
+/* ─── PAGE HEADER ─── */
+.page-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 10px;
+  flex-shrink: 0;
+}
+.back-btn {
+  width: 38px; height: 38px;
+  background: var(--vp-surface);
+  border-radius: var(--r-md);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--s-sm);
+  flex-shrink: 0;
+  transition: transform var(--t-instant);
+}
+.back-btn:active { transform: scale(0.90); }
+.back-btn svg { width: 19px; height: 19px; fill: none; stroke: var(--vp-text-1); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.page-title { font-size: 17px; font-weight: 700; color: var(--vp-text-1); }
+
+/* ─── CARD ─── */
+.card { background: var(--vp-surface); border-radius: var(--r-lg); box-shadow: var(--s-sm); }
+
+/* ─── TAGS ─── */
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: var(--r-full); font-size: 10px; font-weight: 700; }
+.tag-primary { background: var(--vp-primary-light); color: var(--vp-primary); }
+.tag-success { background: var(--vp-success-light); color: var(--vp-success); }
+.tag-warning { background: var(--vp-warning-light); color: #B45309; }
+.tag-error   { background: var(--vp-error-light);   color: var(--vp-error); }
+.tag-info    { background: var(--vp-info-light);     color: var(--vp-info); }
+.tag-neutral { background: #F3F4F6; color: var(--vp-text-2); }
+
+/* ─── ICON CONTAINER ─── */
+.ic { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ic svg { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic-36 { width: 36px; height: 36px; border-radius: 10px; }
+.ic-40 { width: 40px; height: 40px; border-radius: 12px; }
+.ic-44 { width: 44px; height: 44px; border-radius: 12px; }
+.ic-p  { background: var(--vp-primary-light); } .ic-p svg  { stroke: var(--vp-primary); }
+.ic-s  { background: var(--vp-success-light); } .ic-s svg  { stroke: var(--vp-success); }
+.ic-w  { background: var(--vp-warning-light); } .ic-w svg  { stroke: var(--vp-warning); }
+.ic-e  { background: var(--vp-error-light);   } .ic-e svg  { stroke: var(--vp-error); }
+.ic-i  { background: var(--vp-info-light);    } .ic-i svg  { stroke: var(--vp-info); }
+
+/* ─── BUTTONS ─── */
+.btn {
+  border: none; cursor: pointer;
+  font-family: var(--font); font-weight: 600;
+  border-radius: var(--r-full);
+  transition: transform var(--t-instant), opacity var(--t-instant), box-shadow var(--t-instant);
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--vp-primary); color: white; box-shadow: var(--s-primary); }
+.btn-tonal   { background: var(--vp-primary-light); color: var(--vp-primary); }
+.btn-success { background: var(--vp-success); color: white; box-shadow: var(--s-fab); }
+.btn-danger  { background: var(--vp-error-light); color: var(--vp-error); }
+.btn-ghost   { background: none; color: var(--vp-text-2); }
+.btn svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ─── INPUT ─── */
+.inp-wrap {
+  background: var(--vp-bg);
+  border: 1.5px solid var(--vp-border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 9px;
+  transition: border-color var(--t-instant);
+}
+.inp-wrap:focus-within { border-color: var(--vp-primary); background: white; }
+.inp-wrap input, .inp-wrap select {
+  border: none; outline: none; background: none;
+  font-family: var(--font); font-size: 14px; color: var(--vp-text-1);
+  flex: 1; width: 100%;
+}
+.inp-wrap select { cursor: pointer; }
+.inp-wrap svg { width: 16px; height: 16px; fill: none; stroke: var(--vp-text-3); stroke-width: 1.8; flex-shrink: 0; }
+.inp-label { font-size: 11px; font-weight: 700; color: var(--vp-text-2); margin-bottom: 5px; letter-spacing: 0.02em; }
+
+/* ─── PROGRESS BAR ─── */
+.prog-track { height: 6px; background: var(--vp-border); border-radius: var(--r-full); overflow: hidden; }
+.prog-fill  { height: 100%; border-radius: var(--r-full); transition: width var(--t-standard); }
+
+/* ─── SECTION HEADER ─── */
+.sec-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 20px; margin-bottom: 10px;
+}
+.sec-title { font-size: 15px; font-weight: 700; color: var(--vp-text-1); }
+
+/* ─── SCRIM + BOTTOM SHEET ─── */
+.scrim {
+  position: absolute; inset: 0;
+  background: rgba(26,29,46,0.52);
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  display: flex; align-items: flex-end;
+  transition: opacity var(--t-quick);
+}
+.scrim.open { opacity: 1; pointer-events: all; }
+.bsheet {
+  background: var(--vp-surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 12px 22px 36px;
+  width: 100%;
+  transform: translateY(100%);
+  transition: transform var(--t-page);
+  max-height: 88%;
+  overflow-y: auto;
+}
+.scrim.open .bsheet { transform: translateY(0); }
+.bsheet-handle { width: 40px; height: 4px; background: var(--vp-border); border-radius: var(--r-full); margin: 0 auto 20px; }
+
+/* ─── SNACKBAR ─── */
+.snack {
+  position: absolute;
+  bottom: 90px; left: 16px; right: 16px;
+  background: var(--vp-text-1);
+  color: white;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; gap: 9px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--s-lg);
+  z-index: 99;
+  opacity: 0; transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity var(--t-standard), transform var(--t-standard);
+}
+.snack.show { opacity: 1; transform: translateY(0); pointer-events: all; }
+.snack-action { color: var(--vp-primary-mid); font-weight: 700; font-size: 13px; background: none; border: none; cursor: pointer; margin-left: auto; }
+
+/* ─── ADHERENCE RING ─── */
+.ring-svg { transform: rotate(-90deg); }
+
+/* ─── ADHERENCE DOT GRID ─── */
+.adh-grid { display: flex; gap: 4px; }
+.adh-day { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.adh-day-label { font-size: 9px; color: var(--vp-text-3); font-weight: 600; }
+.adh-dot { width: 22px; height: 22px; border-radius: 6px; }
+.adh-dot.taken  { background: var(--vp-success-light); border: 1.5px solid var(--vp-success); }
+.adh-dot.missed { background: var(--vp-error-light);   border: 1.5px solid var(--vp-error); }
+.adh-dot.skip   { background: var(--vp-warning-light); border: 1.5px solid var(--vp-warning); }
+.adh-dot.empty  { background: var(--vp-border);        border: 1.5px solid transparent; }
+.adh-dot.today  { box-shadow: 0 0 0 2px var(--vp-primary-light), 0 0 0 3.5px var(--vp-primary); }
+
+/* ─── SYNC CODE BOXES ─── */
+.sync-code-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; width: 100%; }
+.sync-box {
+  height: 52px; min-width: 0;
+  background: var(--vp-bg);
+  border: 1.5px solid var(--vp-border);
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800;
+  color: var(--vp-text-1);
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  transition: all var(--t-quick);
+}
+.sync-box.filled {
+  background: var(--vp-primary-light);
+  border-color: var(--vp-primary);
+  color: var(--vp-primary);
+}
+
+/* ─── QR AREA ─── */
+.qr-wrap {
+  display: flex; align-items: center; justify-content: center;
+  background: white;
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--s-sm);
+  border: 1.5px solid var(--vp-border);
+}
+.qr-wrap canvas, .qr-wrap img { border-radius: 4px; }
+
+/* ─── COUNTDOWN ─── */
+.countdown-ring { transform: rotate(-90deg); }
+.cd-track { fill: none; stroke: var(--vp-border); stroke-width: 5; }
+.cd-fill  { fill: none; stroke: var(--vp-primary); stroke-width: 5; stroke-linecap: round; stroke-dasharray: 157; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+
+/* ─── PATIENT AVATAR ─── */
+.pat-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+
+/* ─── VERIFIED BADGE ─── */
+.verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--vp-success-light); color: var(--vp-success);
+  padding: 2px 8px; border-radius: var(--r-full);
+  font-size: 10px; font-weight: 700;
+}
+
+/* ─── PUSH BUTTON STATES ─── */
+@keyframes push-pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+.push-loading { animation: push-pulse 1s ease-in-out infinite; pointer-events: none; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.spin-icon { animation: spin 0.8s linear infinite; }
+
+/* ─── WAITING PULSE ─── */
+@keyframes waiting-pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.92); }
+}
+.waiting-dot { animation: waiting-pulse 1.8s ease-in-out infinite; }
+
+/* Shared section padding */
+.p20 { padding: 0 20px; }
+.mb16 { margin-bottom: 16px; }
+.mb12 { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ═════════════════════════════════════════════════════
+     PHONE
+═════════════════════════════════════════════════════ -->
+<div class="phone">
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 1: ACTIVE ROSTER
+  ═══════════════════════════════════════ -->
+  <div class="screen active" id="s-roster">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="s-time" id="doc-clock">9:41</span>
+      <div class="s-icons">
+        <svg viewBox="0 0 20 16" fill="var(--vp-text-1)" stroke="none"><rect x="0" y="10" width="3" height="6" rx="0.5"/><rect x="4" y="7" width="3" height="9" rx="0.5"/><rect x="8" y="4" width="3" height="12" rx="0.5"/><rect x="12" y="1" width="3" height="15" rx="0.5" opacity="0.35"/><rect x="16" y="1" width="3" height="15" rx="0.5" opacity="0.35"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-1)" stroke-width="2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="var(--vp-text-1)" stroke="none"/></svg>
+        <svg viewBox="0 0 28 14" fill="none" stroke="var(--vp-text-1)" stroke-width="1.5" stroke-linecap="round"><rect x="0.75" y="0.75" width="22.5" height="12.5" rx="2.5"/><rect x="3" y="3" width="15" height="8" rx="1.2" fill="var(--vp-text-1)" stroke="none"/><path d="M24 5v4" stroke-width="2"/></svg>
+      </div>
+    </div>
+
+    <div class="scroll">
+
+      <!-- ── PROVIDER HEADER ── -->
+      <div style="padding:14px 20px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#5C6FFF,#8A97FF);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;box-shadow:0 2px 10px rgba(92,111,255,0.35);flex-shrink:0">K</div>
+            <div>
+              <div style="font-size:13px;color:var(--vp-text-3);font-weight:500">Provider Portal</div>
+              <div style="font-size:18px;font-weight:800;color:var(--vp-text-1);letter-spacing:-0.4px">Dr. Rahman Karim</div>
+              <div style="font-size:11px;color:var(--vp-text-3)">Dhaka Medical Center · Internal Medicine</div>
+            </div>
+          </div>
+          <!-- Bell -->
+          <button style="position:relative;width:40px;height:40px;background:var(--vp-surface);border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--s-sm);transition:transform var(--t-instant);flex-shrink:0" onmousedown="this.style.transform='scale(0.90)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span style="position:absolute;top:9px;right:9px;width:7px;height:7px;background:var(--vp-error);border-radius:50%;border:2px solid var(--vp-bg)"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── QUICK METRICS ── -->
+      <div style="padding:0 20px;margin-bottom:18px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+
+          <div class="card" style="padding:14px 12px">
+            <div class="ic ic-36 ic-i" style="margin-bottom:8px">
+              <svg width="17" height="17" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div style="font-size:24px;font-weight:900;color:var(--vp-text-1);letter-spacing:-1px">8</div>
+            <div style="font-size:10px;color:var(--vp-text-3);margin-top:1px">Patients</div>
+          </div>
+
+          <div class="card" style="padding:14px 12px">
+            <div class="ic ic-36 ic-w" style="margin-bottom:8px">
+              <svg width="17" height="17" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div style="font-size:24px;font-weight:900;color:var(--vp-warning);letter-spacing:-1px">2</div>
+            <div style="font-size:10px;color:var(--vp-text-3);margin-top:1px">Need Review</div>
+          </div>
+
+          <div class="card" style="padding:14px 12px">
+            <div class="ic ic-36 ic-s" style="margin-bottom:8px">
+              <svg width="17" height="17" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div style="font-size:24px;font-weight:900;color:var(--vp-success);letter-spacing:-1px">94%</div>
+            <div style="font-size:10px;color:var(--vp-text-3);margin-top:1px">Avg Adherence</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── SEARCH + FILTER ── -->
+      <div style="padding:0 20px;margin-bottom:16px">
+        <div style="background:var(--vp-surface);border-radius:var(--r-full);padding:10px 16px;display:flex;align-items:center;gap:9px;box-shadow:var(--s-sm);margin-bottom:10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-size:14px;color:var(--vp-text-3)">Search patients...</span>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button onclick="filterRoster(this,'all')" class="filter-chip" style="padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;border:1.5px solid var(--vp-primary);background:var(--vp-primary);color:white;cursor:pointer;transition:all var(--t-instant)">All (8)</button>
+          <button onclick="filterRoster(this,'alert')" class="filter-chip" style="padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;border:1.5px solid var(--vp-border);background:white;color:var(--vp-text-2);cursor:pointer;transition:all var(--t-instant)">Alert (2)</button>
+          <button onclick="filterRoster(this,'pending')" class="filter-chip" style="padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;border:1.5px solid var(--vp-border);background:white;color:var(--vp-text-2);cursor:pointer;transition:all var(--t-instant)">Pending (1)</button>
+          <button onclick="filterRoster(this,'stable')" class="filter-chip" style="padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;border:1.5px solid var(--vp-border);background:white;color:var(--vp-text-2);cursor:pointer;transition:all var(--t-instant)">Stable (5)</button>
+        </div>
+      </div>
+
+      <!-- ── ACTIVE ROSTER ── -->
+      <div class="sec-hdr">
+        <span class="sec-title">Active Roster</span>
+        <button style="font-size:12px;color:var(--vp-primary);font-weight:600;background:none;border:none;cursor:pointer">+ Add Patient</button>
+      </div>
+
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;padding-bottom:24px">
+
+        <!-- Patient 1: Nahid Ahmed — Alert -->
+        <div class="card" style="padding:14px 16px;cursor:pointer;transition:transform var(--t-instant)" onclick="openPatient()" onmousedown="this.style.transform='scale(0.985)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pat-avatar" style="background:linear-gradient(135deg,#5C6FFF,#8A97FF)">N</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <div style="font-size:14px;font-weight:700;color:var(--vp-text-1)">Nahid Ahmed</div>
+                <span class="tag tag-error">Alert</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:6px">28y · Type 2 Diabetes, Hypertension</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="prog-track" style="flex:1">
+                  <div class="prog-fill" style="width:82%;background:var(--vp-success)"></div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--vp-success);white-space:nowrap">82%</span>
+              </div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:3px">Last activity: 2 hrs ago · 1 missed dose</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- Patient 2: Fatema Khatun — Alert -->
+        <div class="card" style="padding:14px 16px;cursor:pointer;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.985)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pat-avatar" style="background:linear-gradient(135deg,#E040A0,#FF6EC7)">F</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <div style="font-size:14px;font-weight:700;color:var(--vp-text-1)">Fatema Khatun</div>
+                <span class="tag tag-error">Alert</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:6px">54y · Hypertension, Heart Disease</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="prog-track" style="flex:1">
+                  <div class="prog-fill" style="width:58%;background:var(--vp-error)"></div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--vp-error);white-space:nowrap">58%</span>
+              </div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:3px">Last activity: 1 day ago · 3 missed doses</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- Patient 3: Karim Uddin — Pending -->
+        <div class="card" style="padding:14px 16px;cursor:pointer;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.985)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pat-avatar" style="background:linear-gradient(135deg,#FFB020,#FFD166)">K</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <div style="font-size:14px;font-weight:700;color:var(--vp-text-1)">Karim Uddin</div>
+                <span class="tag tag-warning">Pending</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:6px">41y · Diabetes, Thyroid</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="prog-track" style="flex:1">
+                  <div class="prog-fill" style="width:0%;background:var(--vp-text-3)"></div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--vp-text-3);white-space:nowrap">New</span>
+              </div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:3px">Onboarding in progress · Code sent</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- Patient 4: Rina Akter — Stable -->
+        <div class="card" style="padding:14px 16px;cursor:pointer;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.985)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pat-avatar" style="background:linear-gradient(135deg,#3DBE7A,#5BE89A)">R</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <div style="font-size:14px;font-weight:700;color:var(--vp-text-1)">Rina Akter</div>
+                <span class="tag tag-success">Stable</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:6px">36y · Asthma</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="prog-track" style="flex:1">
+                  <div class="prog-fill" style="width:96%;background:var(--vp-success)"></div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--vp-success);white-space:nowrap">96%</span>
+              </div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:3px">Last activity: 30 min ago · On track</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- Patient 5: Arif Hossain — Stable -->
+        <div class="card" style="padding:14px 16px;cursor:pointer;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.985)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="pat-avatar" style="background:linear-gradient(135deg,#2B91FF,#6BBFFF)">A</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                <div style="font-size:14px;font-weight:700;color:var(--vp-text-1)">Arif Hossain</div>
+                <span class="tag tag-success">Stable</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:6px">62y · Hypertension, Cholesterol</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="prog-track" style="flex:1">
+                  <div class="prog-fill" style="width:88%;background:var(--vp-success)"></div>
+                </div>
+                <span style="font-size:11px;font-weight:700;color:var(--vp-success);white-space:nowrap">88%</span>
+              </div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:3px">Last activity: 4 hrs ago · On track</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-3)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /scroll -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bot-nav">
+      <button class="bnav-btn active">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <span class="bnav-lbl">Roster</span>
+      </button>
+      <button class="bnav-btn" onclick="goTo('s-sync')">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        </div>
+        <span class="bnav-lbl">Sync</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <span class="bnav-lbl">Reports</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <span class="bnav-lbl">Profile</span>
+      </button>
+    </div>
+  </div><!-- /s-roster -->
+
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 2: SYNC CODE GENERATOR
+       SRS §3.2 — 6-digit code + QR Code
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-sync">
+    <div class="status-bar">
+      <span class="s-time">9:41</span>
+      <div class="s-icons">
+        <svg viewBox="0 0 20 16" fill="var(--vp-text-1)" stroke="none"><rect x="0" y="10" width="3" height="6" rx="0.5"/><rect x="4" y="7" width="3" height="9" rx="0.5"/><rect x="8" y="4" width="3" height="12" rx="0.5"/><rect x="12" y="1" width="3" height="15" rx="0.5" opacity="0.35"/></svg>
+        <svg viewBox="0 0 28 14" fill="none" stroke="var(--vp-text-1)" stroke-width="1.5" stroke-linecap="round"><rect x="0.75" y="0.75" width="22.5" height="12.5" rx="2.5"/><rect x="3" y="3" width="15" height="8" rx="1.2" fill="var(--vp-text-1)" stroke="none"/><path d="M24 5v4" stroke-width="2"/></svg>
+      </div>
+    </div>
+
+    <div class="page-hdr">
+      <button class="back-btn" onclick="goTo('s-roster')">
+        <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <div style="flex:1">
+        <div class="page-title">New Patient Sync</div>
+        <div style="font-size:11px;color:var(--vp-text-3)">Share code or QR with your patient</div>
+      </div>
+    </div>
+
+    <div class="scroll" style="padding:0 20px">
+
+      <!-- Code display card -->
+      <div class="card" style="padding:22px 20px;margin-bottom:14px">
+
+        <!-- Top: label + countdown -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--vp-text-3);text-transform:uppercase;letter-spacing:0.08em">6-Digit Sync Code</div>
+            <div style="font-size:11px;color:var(--vp-text-3);margin-top:2px">Auto-expires in:</div>
+          </div>
+          <!-- Countdown ring -->
+          <div style="position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center">
+            <svg width="52" height="52" viewBox="0 0 52 52" class="countdown-ring">
+              <circle class="cd-track" cx="26" cy="26" r="22"/>
+              <circle class="cd-fill" id="cd-circle" cx="26" cy="26" r="22" stroke-dashoffset="0"/>
+            </svg>
+            <span id="cd-label" style="position:absolute;font-size:13px;font-weight:800;color:var(--vp-primary)">10:00</span>
+          </div>
+        </div>
+
+        <!-- 6-digit code boxes -->
+        <div class="sync-code-row" id="sync-boxes" style="margin-bottom:16px">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Copy + Refresh row -->
+        <div style="display:flex;gap:8px">
+          <button onclick="copyCode()" class="btn btn-tonal" style="flex:1;padding:11px;font-size:13px">
+            <svg width="14" height="14" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Code
+          </button>
+          <button onclick="regenerateCode()" class="btn" style="flex:1;padding:11px;font-size:13px;background:var(--vp-bg);color:var(--vp-text-2);border:1.5px solid var(--vp-border)">
+            <svg width="14" height="14" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Regenerate
+          </button>
+        </div>
+
+      </div>
+
+      <!-- QR Code card -->
+      <div class="card" style="padding:20px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--vp-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;text-align:center">Or Scan QR Code</div>
+        <div class="qr-wrap" style="margin-bottom:12px">
+          <div id="qr-canvas"></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:var(--vp-text-3)">Patient scans this with VitalPath app camera</div>
+      </div>
+
+      <!-- Status indicator -->
+      <div class="card" id="sync-status-card" style="padding:16px 18px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:12px" id="sync-waiting">
+          <div style="width:38px;height:38px;background:var(--vp-primary-light);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <div class="waiting-dot" style="width:12px;height:12px;background:var(--vp-primary);border-radius:50%"></div>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--vp-text-1)">Waiting for patient to connect</div>
+            <div style="font-size:11px;color:var(--vp-text-3)">Share the code or QR with your patient</div>
+          </div>
+        </div>
+        <div style="display:none;align-items:center;gap:12px" id="sync-connected">
+          <div style="width:38px;height:38px;background:var(--vp-success-light);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--vp-success)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--vp-success)">Patient connected!</div>
+            <div style="font-size:11px;color:var(--vp-text-3)">Karim Uddin · appearing in your roster now</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo simulate button -->
+      <button onclick="simulateConnect()" id="sim-btn" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-bottom:24px">
+        Simulate Patient Scan (Demo)
+      </button>
+
+    </div><!-- /scroll -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bot-nav">
+      <button class="bnav-btn" onclick="goTo('s-roster')">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <span class="bnav-lbl">Roster</span>
+      </button>
+      <button class="bnav-btn active">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        </div>
+        <span class="bnav-lbl">Sync</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <span class="bnav-lbl">Reports</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <span class="bnav-lbl">Profile</span>
+      </button>
+    </div>
+
+    <!-- Snackbar for copy -->
+    <div class="snack" id="snack-sync">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3DBE7A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Code copied to clipboard</span>
+    </div>
+  </div><!-- /s-sync -->
+
+
+  <!-- ═══════════════════════════════════════
+       SCREEN 3: PATIENT PROFILE + PROTOCOL
+       SRS §3.2 — Protocol Management
+  ═══════════════════════════════════════ -->
+  <div class="screen" id="s-patient">
+    <div class="status-bar">
+      <span class="s-time">9:41</span>
+      <div class="s-icons">
+        <svg viewBox="0 0 20 16" fill="var(--vp-text-1)" stroke="none"><rect x="0" y="10" width="3" height="6" rx="0.5"/><rect x="4" y="7" width="3" height="9" rx="0.5"/><rect x="8" y="4" width="3" height="12" rx="0.5"/><rect x="12" y="1" width="3" height="15" rx="0.5" opacity="0.35"/></svg>
+        <svg viewBox="0 0 28 14" fill="none" stroke="var(--vp-text-1)" stroke-width="1.5" stroke-linecap="round"><rect x="0.75" y="0.75" width="22.5" height="12.5" rx="2.5"/><rect x="3" y="3" width="15" height="8" rx="1.2" fill="var(--vp-text-1)" stroke="none"/><path d="M24 5v4" stroke-width="2"/></svg>
+      </div>
+    </div>
+
+    <div class="page-hdr" style="padding-bottom:8px">
+      <button class="back-btn" onclick="goTo('s-roster')">
+        <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <div style="flex:1">
+        <div class="page-title">Nahid Ahmed</div>
+        <div style="font-size:11px;color:var(--vp-text-3)">Patient Profile · Protocol Management</div>
+      </div>
+      <button style="width:36px;height:36px;background:var(--vp-surface);border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--s-sm)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--vp-text-2)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+      </button>
+    </div>
+
+    <div class="scroll">
+
+      <!-- ── PATIENT HERO ── -->
+      <div style="padding:0 20px;margin-bottom:16px">
+        <div style="background:linear-gradient(135deg,#1A1D2E 0%,#2C2F45 100%);border-radius:var(--r-xl);padding:20px 22px;position:relative;overflow:hidden">
+          <!-- Deco -->
+          <div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,0.04);border-radius:50%"></div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#5C6FFF,#8A97FF);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white">N</div>
+              <div>
+                <div style="font-size:16px;font-weight:800;color:white;margin-bottom:2px">Nahid Ahmed</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.55)">28y · Male · Blood: B+</div>
+                <div style="display:flex;gap:5px;margin-top:5px">
+                  <span style="background:rgba(240,62,62,0.2);color:#FF7E7E;padding:2px 8px;border-radius:var(--r-full);font-size:9px;font-weight:700">Type 2 Diabetes</span>
+                  <span style="background:rgba(92,111,255,0.2);color:#8A97FF;padding:2px 8px;border-radius:var(--r-full);font-size:9px;font-weight:700">Hypertension</span>
+                </div>
+              </div>
+            </div>
+            <!-- Adherence ring -->
+            <div style="position:relative;width:60px;height:60px;display:flex;align-items:center;justify-content:center">
+              <svg width="60" height="60" viewBox="0 0 60 60" class="ring-svg">
+                <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="7"/>
+                <circle id="adh-ring" cx="30" cy="30" r="24" fill="none" stroke="#3DBE7A" stroke-width="7"
+                  stroke-linecap="round" stroke-dasharray="150.8"
+                  stroke-dashoffset="150.8"
+                  style="transition:stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)"/>
+              </svg>
+              <div style="position:absolute;text-align:center">
+                <div style="font-size:14px;font-weight:900;color:white;line-height:1" id="adh-pct">82%</div>
+                <div style="font-size:8px;color:rgba(255,255,255,0.5)">Adherence</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick stats row -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">
+            <div style="text-align:center;border-right:1px solid rgba(255,255,255,0.08)">
+              <div style="font-size:16px;font-weight:800;color:white">4/5</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.45)">This week</div>
+            </div>
+            <div style="text-align:center;border-right:1px solid rgba(255,255,255,0.08)">
+              <div style="font-size:16px;font-weight:800;color:#FFB020">1</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.45)">Missed doses</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:16px;font-weight:800;color:white">3</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.45)">Active meds</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 7-DAY ADHERENCE GRID ── -->
+      <div style="padding:0 20px;margin-bottom:16px">
+        <div class="card" style="padding:16px 18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:700;color:var(--vp-text-1)">7-Day Adherence</div>
+            <button style="font-size:11px;color:var(--vp-primary);font-weight:600;background:none;border:none;cursor:pointer">Full Report →</button>
+          </div>
+
+          <!-- Day columns -->
+          <div class="adh-grid">
+            <div class="adh-day">
+              <div class="adh-day-label">Mon</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Tue</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot missed"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Wed</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot skip"></div>
+              <div class="adh-dot taken"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Thu</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Fri</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot missed"></div>
+              <div class="adh-dot taken"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Sat</div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+              <div class="adh-dot taken"></div>
+            </div>
+            <div class="adh-day">
+              <div class="adh-day-label">Sun</div>
+              <div class="adh-dot today taken" title="Today"></div>
+              <div class="adh-dot empty"></div>
+              <div class="adh-dot empty"></div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div style="display:flex;gap:12px;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:8px;height:8px;background:var(--vp-success-light);border:1.5px solid var(--vp-success);border-radius:2px"></div>
+              <span style="font-size:10px;color:var(--vp-text-3)">Taken</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:8px;height:8px;background:var(--vp-error-light);border:1.5px solid var(--vp-error);border-radius:2px"></div>
+              <span style="font-size:10px;color:var(--vp-text-3)">Missed</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:8px;height:8px;background:var(--vp-warning-light);border:1.5px solid var(--vp-warning);border-radius:2px"></div>
+              <span style="font-size:10px;color:var(--vp-text-3)">Skipped</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CURRENT PRESCRIPTIONS (Verified) ── -->
+      <div class="sec-hdr">
+        <span class="sec-title">Current Prescriptions</span>
+        <button class="btn btn-primary" style="padding:7px 14px;font-size:12px" onclick="openRxSheet()">
+          <svg width="13" height="13" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Rx
+        </button>
+      </div>
+
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;margin-bottom:16px" id="rx-list">
+
+        <!-- Rx 1: Metformin — Verified -->
+        <div class="card" style="padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="ic ic-40 ic-p">
+              <svg width="19" height="19" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">
+                <div style="font-size:13px;font-weight:700;color:var(--vp-text-1)">Metformin 500mg</div>
+                <span class="verified-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Verified
+                </span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3)">BID · Before meals · 90 days</div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:2px">Started 14 Jan 2026 · Ends 14 Apr 2026</div>
+            </div>
+            <button onclick="confirmDeleteVerified(this)" style="width:30px;height:30px;background:var(--vp-error-light);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.90)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--vp-error)" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rx 2: Amlodipine — Verified -->
+        <div class="card" style="padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="ic ic-40 ic-i">
+              <svg width="19" height="19" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">
+                <div style="font-size:13px;font-weight:700;color:var(--vp-text-1)">Amlodipine 5mg</div>
+                <span class="verified-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Verified
+                </span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3)">OD · After breakfast · 60 days</div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:2px">Started 20 Jan 2026 · Ends 20 Mar 2026</div>
+            </div>
+            <button onclick="confirmDeleteVerified(this)" style="width:30px;height:30px;background:var(--vp-error-light);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform var(--t-instant)" onmousedown="this.style.transform='scale(0.90)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--vp-error)" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rx 3: Newly pushed (hidden by default, shown after push) -->
+        <div class="card" style="padding:14px 16px;display:none;border:1.5px solid var(--vp-success)" id="new-rx-card">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="ic ic-40 ic-s">
+              <svg width="19" height="19" viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">
+                <div style="font-size:13px;font-weight:700;color:var(--vp-text-1)" id="new-rx-name">–</div>
+                <span class="verified-badge">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Verified
+                </span>
+                <span class="tag tag-success" style="font-size:9px">Just pushed</span>
+              </div>
+              <div style="font-size:11px;color:var(--vp-text-3)" id="new-rx-meta">–</div>
+              <div style="font-size:10px;color:var(--vp-text-3);margin-top:2px" id="new-rx-dates">–</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /rx-list -->
+
+      <!-- Appointment section -->
+      <div class="sec-hdr" style="margin-bottom:10px">
+        <span class="sec-title">Next Appointment</span>
+        <button style="font-size:11px;color:var(--vp-primary);font-weight:600;background:none;border:none;cursor:pointer">Reschedule</button>
+      </div>
+      <div style="padding:0 20px;margin-bottom:24px">
+        <div class="card" style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div class="ic ic-40 ic-p">
+            <svg width="19" height="19" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:var(--vp-text-1)">Follow-up Consultation</div>
+            <div style="font-size:11px;color:var(--vp-text-3)">Mon, 20 Apr 2026 · 10:30 AM · Room 204</div>
+          </div>
+          <button style="width:30px;height:30px;background:var(--vp-success-light);border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--vp-success)" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6A16 16 0 0 0 16 16.69l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /scroll -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bot-nav">
+      <button class="bnav-btn active" onclick="goTo('s-roster')">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <span class="bnav-lbl">Roster</span>
+      </button>
+      <button class="bnav-btn" onclick="goTo('s-sync')">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        </div>
+        <span class="bnav-lbl">Sync</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <span class="bnav-lbl">Reports</span>
+      </button>
+      <button class="bnav-btn">
+        <div class="bnav-pip">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <span class="bnav-lbl">Profile</span>
+      </button>
+    </div>
+
+    <!-- ── BOTTOM SHEET: ADD PRESCRIPTION  (SRS §3.2) ── -->
+    <div class="scrim" id="rx-scrim" onclick="closeRxSheet()">
+      <div class="bsheet" onclick="event.stopPropagation()">
+        <div class="bsheet-handle"></div>
+
+        <!-- FORM STATE -->
+        <div id="rx-form-view">
+          <div style="font-size:18px;font-weight:800;color:var(--vp-text-1);margin-bottom:4px">Add Prescription</div>
+          <div style="font-size:13px;color:var(--vp-text-3);margin-bottom:20px">For: Nahid Ahmed · Will be pushed to patient's app</div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+
+            <div>
+              <div class="inp-label">Drug Name</div>
+              <div class="inp-wrap">
+                <svg viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>
+                <input id="rx-name" type="text" placeholder="e.g. Atorvastatin 20mg">
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div class="inp-label">Dosage</div>
+                <div class="inp-wrap">
+                  <input id="rx-dosage" type="text" placeholder="e.g. 20mg">
+                </div>
+              </div>
+              <div>
+                <div class="inp-label">Unit</div>
+                <div class="inp-wrap">
+                  <select id="rx-unit">
+                    <option>mg</option>
+                    <option>ml</option>
+                    <option>pills</option>
+                    <option>mcg</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div class="inp-label">Frequency</div>
+                <div class="inp-wrap">
+                  <select id="rx-freq">
+                    <option value="OD">OD (Once daily)</option>
+                    <option value="BID">BID (Twice daily)</option>
+                    <option value="TID">TID (Three times)</option>
+                    <option value="PRN">PRN (As needed)</option>
+                    <option value="Weekly">Weekly</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <div class="inp-label">Time of Day</div>
+                <div class="inp-wrap">
+                  <select id="rx-time">
+                    <option>Before Breakfast</option>
+                    <option>After Breakfast</option>
+                    <option>Before Lunch</option>
+                    <option>After Lunch</option>
+                    <option>Before Dinner</option>
+                    <option>After Dinner</option>
+                    <option>Bedtime</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <div class="inp-label">Start Date</div>
+                <div class="inp-wrap">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <input id="rx-start" type="date" style="font-size:13px">
+                </div>
+              </div>
+              <div>
+                <div class="inp-label">Duration (days)</div>
+                <div class="inp-wrap">
+                  <input id="rx-duration" type="number" placeholder="e.g. 30" min="1" max="365">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="inp-label">Doctor's Note (optional)</div>
+              <div class="inp-wrap" style="align-items:flex-start;padding:10px 14px">
+                <textarea id="rx-note" placeholder="Instructions for the patient..." style="border:none;outline:none;background:none;font-family:var(--font);font-size:13px;color:var(--vp-text-1);resize:none;width:100%;min-height:56px;line-height:1.5"></textarea>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- PUSH TO PATIENT BUTTON — SRS §3.2 -->
+          <button class="btn btn-success" id="push-btn" onclick="pushPrescription()" style="width:100%;padding:16px;font-size:15px;margin-top:20px;border-radius:var(--r-full)">
+            <svg width="18" height="18" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Push to Patient
+          </button>
+        </div>
+
+        <!-- SUCCESS STATE -->
+        <div id="rx-success-view" style="display:none;text-align:center;padding:12px 0">
+          <div style="width:64px;height:64px;background:var(--vp-success-light);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--vp-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div style="font-size:20px;font-weight:800;color:var(--vp-text-1);margin-bottom:6px">Prescription Pushed</div>
+          <div style="font-size:14px;color:var(--vp-text-2);line-height:1.6;margin-bottom:6px">
+            <strong id="pushed-name">–</strong> has been sent to Nahid's app.<br>
+            Patient's schedule has been updated.
+          </div>
+          <div style="font-size:11px;color:var(--vp-text-3);margin-bottom:24px" id="pushed-time">Delivered at –</div>
+
+          <!-- SRS §3.2 confirmation detail -->
+          <div style="background:var(--vp-success-light);border-radius:var(--r-md);padding:12px 14px;text-align:left;margin-bottom:20px">
+            <div style="font-size:12px;font-weight:700;color:var(--vp-success);margin-bottom:4px">Delivery Confirmation</div>
+            <div style="font-size:11px;color:var(--vp-text-2);line-height:1.6" id="pushed-detail">–</div>
+          </div>
+
+          <button class="btn btn-tonal" onclick="closeRxSheet()" style="width:100%;padding:14px;font-size:15px">Done</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── BOTTOM SHEET: DELETE VERIFIED GUARD (SRS §4.4) ── -->
+    <div class="scrim" id="del-scrim" onclick="closeDelScrim()">
+      <div class="bsheet" onclick="event.stopPropagation()" style="max-height:auto">
+        <div class="bsheet-handle"></div>
+        <div style="width:52px;height:52px;background:var(--vp-error-light);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--vp-error)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--vp-text-1);margin-bottom:8px">Delete Verified Prescription?</div>
+        <div style="font-size:14px;color:var(--vp-text-2);line-height:1.65;margin-bottom:8px">
+          This prescription was <strong>verified by you</strong> and is active in the patient's treatment plan.<br><br>
+          Deleting it will immediately remove it from the patient's app and adherence tracking.
+        </div>
+        <div style="background:var(--vp-warning-light);border-radius:var(--r-md);padding:10px 12px;margin-bottom:20px;font-size:12px;color:#92400E;line-height:1.5">
+          ⚠ This action cannot be undone. The patient will be notified of the change.
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-tonal" onclick="closeDelScrim()" style="flex:1;padding:14px;font-size:14px">Keep Prescription</button>
+          <button class="btn btn-danger" onclick="executeDelete()" style="flex:1;padding:14px;font-size:14px">Delete Anyway</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient snackbar -->
+    <div class="snack" id="snack-patient">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3DBE7A" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="snack-patient-msg">Done</span>
+    </div>
+
+  </div><!-- /s-patient -->
+
+</div><!-- /phone -->
+
+
+<!-- ═════════════════════════════════════════════════════
+     ANNOTATION PANEL
+═════════════════════════════════════════════════════ -->
+<div style="width:236px;padding-top:8px">
+  <div style="font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#9CA3AF;margin-bottom:14px">Provider Portal Features</div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+
+    <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid #5C6FFF">
+      <div style="font-size:11px;font-weight:700;color:#1A1D2E;margin-bottom:3px">Active Roster <span style="background:#EEF0FF;color:#5C6FFF;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:9px">SRS §3.2</span></div>
+      <div style="font-size:10px;color:#9CA3AF;line-height:1.6">8 patients · filter by Alert / Pending / Stable · adherence bar per patient · tap to open profile</div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid #3DBE7A">
+      <div style="font-size:11px;font-weight:700;color:#1A1D2E;margin-bottom:3px">6-Digit Sync + QR <span style="background:#EEF0FF;color:#5C6FFF;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:9px">SRS §3.2</span></div>
+      <div style="font-size:10px;color:#9CA3AF;line-height:1.6">Live generated 6-digit code · QR via qrcode.js · 10-min countdown timer · Copy Code · Simulate Patient Scan demo</div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid #FFB020">
+      <div style="font-size:11px;font-weight:700;color:#1A1D2E;margin-bottom:3px">Push Prescription <span style="background:#EEF0FF;color:#5C6FFF;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:9px">SRS §3.2</span></div>
+      <div style="font-size:10px;color:#9CA3AF;line-height:1.6">Add Rx form → loading state → success confirmation "Patient's app has been updated" → Verified badge appears in list</div>
+    </div>
+
+    <div style="background:white;border-radius:12px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid #F03E3E">
+      <div style="font-size:11px;font-weight:700;color:#1A1D2E;margin-bottom:3px">Delete Guard <span style="background:#EEF0FF;color:#5C6FFF;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:9px">SRS §4.4</span></div>
+      <div style="font-size:10px;color:#9CA3AF;line-height:1.6">Tap trash on any Verified Rx → double-confirmation bottom sheet. Cannot proceed without a 2nd deliberate action.</div>
+    </div>
+
+  </div>
+
+  <div style="font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#9CA3AF;margin-bottom:10px">Try It</div>
+  <div style="font-size:11px;color:#6B7280;line-height:1.9">
+    → Tap patient <strong style="color:#5C6FFF">Nahid Ahmed</strong><br>
+    → Tap <strong style="color:#3DBE7A">+ Add Rx</strong> → fill form → Push<br>
+    → Tap trash on any Rx → guard sheet<br>
+    → Bottom nav <strong style="color:#5C6FFF">Sync</strong> → code + QR<br>
+    → Tap <strong style="color:#5C6FFF">Simulate Patient Scan</strong>
+  </div>
+
+</div>
+
+
+<!-- ═════════════════════════════════════════════════════
+     JAVASCRIPT
+═════════════════════════════════════════════════════ -->
+<script>
+/* ─── SCREEN ROUTING ─── */
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+
+  /* Init sync screen lazily */
+  if (id === 's-sync' && !window.syncInitialized) initSync();
+  /* Init patient adherence ring */
+  if (id === 's-patient') initPatient();
+}
+
+function openPatient() { goTo('s-patient'); }
+
+/* ─── ROSTER FILTER ─── */
+function filterRoster(btn, filter) {
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.style.background = 'white';
+    c.style.color = '#6B7280';
+    c.style.borderColor = '#E8EAEF';
+  });
+  btn.style.background = '#5C6FFF';
+  btn.style.color = 'white';
+  btn.style.borderColor = '#5C6FFF';
+}
+
+/* ─── PATIENT INIT ─── */
+function initPatient() {
+  /* Animate adherence ring — 82% of circumference (150.8) */
+  setTimeout(() => {
+    const ring = document.getElementById('adh-ring');
+    if (ring) ring.style.strokeDashoffset = (150.8 * (1 - 0.82)).toFixed(1);
+  }, 200);
+}
+
+/* ═══════════════════════════════════════
+   SYNC CODE GENERATOR  — SRS §3.2
+═══════════════════════════════════════ */
+let syncCode = '';
+let cdSeconds = 600; /* 10 minutes */
+let cdInterval = null;
+let qrInstance = null;
+window.syncInitialized = false;
+
+function initSync() {
+  window.syncInitialized = true;
+  generateCode();
+  startCountdown();
+}
+
+function generateCode() {
+  /* 6-digit random code */
+  syncCode = String(Math.floor(100000 + Math.random() * 900000));
+  renderCodeBoxes(syncCode);
+  renderQR(syncCode);
+}
+
+function renderCodeBoxes(code) {
+  const row = document.getElementById('sync-boxes');
+  if (!row) return;
+  row.innerHTML = '';
+  code.split('').forEach(digit => {
+    const box = document.createElement('div');
+    box.className = 'sync-box filled';
+    box.textContent = digit;
+    row.appendChild(box);
+  });
+}
+
+function renderQR(code) {
+  const el = document.getElementById('qr-canvas');
+  if (!el) return;
+  el.innerHTML = '';
+  try {
+    qrInstance = new QRCode(el, {
+      text: 'VITALPATH-SYNC-' + code,
+      width: 160,
+      height: 160,
+      colorDark: '#1A1D2E',
+      colorLight: '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch (e) {
+    /* QRCode library not loaded — show placeholder */
+    el.innerHTML = '<div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;background:#F0F2F8;border-radius:8px;font-size:12px;color:#9CA3AF">QR: ' + code + '</div>';
+  }
+}
+
+function startCountdown() {
+  cdSeconds = 600;
+  clearInterval(cdInterval);
+  cdInterval = setInterval(() => {
+    cdSeconds--;
+    if (cdSeconds <= 0) {
+      clearInterval(cdInterval);
+      regenerateCode();
+      return;
+    }
+    updateCountdownUI();
+  }, 1000);
+  updateCountdownUI();
+}
+
+function updateCountdownUI() {
+  const m = Math.floor(cdSeconds / 60);
+  const s = cdSeconds % 60;
+  const label = document.getElementById('cd-label');
+  const circle = document.getElementById('cd-circle');
+  if (label) label.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+
+  /* Ring: 157 = circumference of r=25. Drain from full to 0. */
+  const pct = cdSeconds / 600;
+  if (circle) {
+    circle.style.strokeDashoffset = (157 * (1 - pct)).toFixed(1);
+    /* Warning color in last 2 minutes */
+    circle.style.stroke = cdSeconds < 120 ? '#F03E3E' : '#5C6FFF';
+    if (label) label.style.color = cdSeconds < 120 ? '#F03E3E' : '#5C6FFF';
+  }
+}
+
+function regenerateCode() {
+  generateCode();
+  startCountdown();
+  /* Reset connected state */
+  document.getElementById('sync-waiting').style.display = 'flex';
+  document.getElementById('sync-connected').style.display = 'none';
+  document.getElementById('sim-btn').style.display = '';
+}
+
+function copyCode() {
+  if (navigator.clipboard && syncCode) {
+    navigator.clipboard.writeText(syncCode).catch(() => {});
+  }
+  /* Show snackbar */
+  const sb = document.getElementById('snack-sync');
+  sb.classList.add('show');
+  setTimeout(() => sb.classList.remove('show'), 3000);
+}
+
+function simulateConnect() {
+  /* Animate boxes sequentially scanning */
+  const boxes = document.querySelectorAll('#sync-boxes .sync-box');
+  boxes.forEach((b, i) => {
+    setTimeout(() => {
+      b.style.background = '#E6F7EF';
+      b.style.borderColor = '#3DBE7A';
+      b.style.color = '#3DBE7A';
+    }, i * 80);
+  });
+
+  setTimeout(() => {
+    document.getElementById('sync-waiting').style.display = 'none';
+    document.getElementById('sync-connected').style.display = 'flex';
+    document.getElementById('sim-btn').style.display = 'none';
+    clearInterval(cdInterval);
+    document.getElementById('cd-label').textContent = 'Linked';
+    document.getElementById('cd-label').style.color = '#3DBE7A';
+    const circle = document.getElementById('cd-circle');
+    if (circle) { circle.style.stroke = '#3DBE7A'; circle.style.strokeDashoffset = '0'; }
+  }, boxes.length * 80 + 300);
+}
+
+/* ═══════════════════════════════════════
+   PRESCRIPTION MANAGEMENT  — SRS §3.2
+═══════════════════════════════════════ */
+function openRxSheet() {
+  /* Reset to form view */
+  document.getElementById('rx-form-view').style.display = 'block';
+  document.getElementById('rx-success-view').style.display = 'none';
+
+  /* Set today's date */
+  const today = new Date().toISOString().split('T')[0];
+  const startEl = document.getElementById('rx-start');
+  if (startEl) startEl.value = today;
+
+  const scrim = document.getElementById('rx-scrim');
+  scrim.style.display = 'flex';
+  requestAnimationFrame(() => scrim.classList.add('open'));
+}
+
+function closeRxSheet() {
+  const scrim = document.getElementById('rx-scrim');
+  scrim.classList.remove('open');
+  setTimeout(() => { scrim.style.display = 'none'; }, 320);
+}
+
+function pushPrescription() {
+  const name     = document.getElementById('rx-name').value.trim() || 'New Medication';
+  const dosage   = document.getElementById('rx-dosage').value.trim();
+  const unit     = document.getElementById('rx-unit').value;
+  const freq     = document.getElementById('rx-freq').value;
+  const time     = document.getElementById('rx-time').value;
+  const duration = document.getElementById('rx-duration').value || '30';
+  const start    = document.getElementById('rx-start').value;
+
+  /* Build display strings */
+  const doseStr = dosage ? dosage + ' ' + unit : unit;
+  const fullName = name + (dosage ? ' ' + doseStr : '');
+
+  /* Loading state on button */
+  const btn = document.getElementById('push-btn');
+  btn.classList.add('push-loading');
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Pushing...';
+  btn.disabled = true;
+
+  /* Simulate network delay (SRS §3.2 "doctor sees confirmation") */
+  setTimeout(() => {
+    btn.classList.remove('push-loading');
+    btn.disabled = false;
+
+    /* Show success view */
+    document.getElementById('rx-form-view').style.display = 'none';
+    document.getElementById('rx-success-view').style.display = 'block';
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    document.getElementById('pushed-name').textContent = fullName;
+    document.getElementById('pushed-time').textContent = 'Delivered at ' + timeStr + ', ' + dateStr;
+    document.getElementById('pushed-detail').innerHTML =
+      '<strong>' + fullName + '</strong> · ' + freq + ' · ' + time + '<br>' +
+      'Duration: ' + duration + ' days starting ' + (start || dateStr) + '<br>' +
+      'Marked as <strong>Verified</strong> in patient\'s app ✓';
+
+    /* Add the new Rx card to the list */
+    const card = document.getElementById('new-rx-card');
+    document.getElementById('new-rx-name').textContent = fullName;
+    document.getElementById('new-rx-meta').textContent = freq + ' · ' + time + ' · ' + duration + ' days';
+    document.getElementById('new-rx-dates').textContent = 'Started ' + (start || dateStr);
+    card.style.display = 'flex';
+
+    /* Reset push button for next use */
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Push to Patient';
+
+  }, 1600);
+}
+
+/* ═══════════════════════════════════════
+   DELETE VERIFIED GUARD  — SRS §4.4
+═══════════════════════════════════════ */
+/* Track which prescription card to delete */
+let _pendingDeleteCard = null;
+
+function confirmDeleteVerified(btn) {
+  /* Walk up DOM: button → flex row → card */
+  _pendingDeleteCard = btn ? btn.closest('.card') : null;
+  const scrim = document.getElementById('del-scrim');
+  scrim.style.display = 'flex';
+  requestAnimationFrame(() => scrim.classList.add('open'));
+}
+
+function closeDelScrim() {
+  const scrim = document.getElementById('del-scrim');
+  scrim.classList.remove('open');
+  setTimeout(() => {
+    scrim.style.display = 'none';
+    _pendingDeleteCard = null;
+  }, 320);
+}
+
+function executeDelete() {
+  if (_pendingDeleteCard) {
+    /* Animate out — shrink + fade, then remove */
+    _pendingDeleteCard.style.transition = 'all 280ms cubic-bezier(0.4,0,0.2,1)';
+    _pendingDeleteCard.style.opacity   = '0';
+    _pendingDeleteCard.style.transform = 'scaleY(0.6) translateX(-8px)';
+    _pendingDeleteCard.style.maxHeight = _pendingDeleteCard.offsetHeight + 'px';
+    setTimeout(() => {
+      _pendingDeleteCard.style.maxHeight = '0';
+      _pendingDeleteCard.style.padding   = '0';
+      _pendingDeleteCard.style.margin    = '0';
+      _pendingDeleteCard.style.overflow  = 'hidden';
+    }, 80);
+    setTimeout(() => {
+      if (_pendingDeleteCard && _pendingDeleteCard.parentNode) {
+        _pendingDeleteCard.parentNode.removeChild(_pendingDeleteCard);
+      }
+      _pendingDeleteCard = null;
+    }, 340);
+  }
+  closeDelScrim();
+  /* Show confirmation snack */
+  showPortalSnack('Prescription deleted · Patient notified', '#F03E3E');
+}
+
+function showPortalSnack(msg, color) {
+  const existing = document.querySelector('.portal-snack');
+  if (existing) existing.remove();
+  const snack = document.createElement('div');
+  snack.className = 'portal-snack';
+  snack.style.cssText = [
+    'position:absolute', 'bottom:76px', 'left:16px', 'right:16px',
+    'background:' + (color || '#1A1D2E'), 'color:white',
+    'border-radius:12px', 'padding:12px 16px',
+    'font-size:12px', 'font-weight:600', 'font-family:inherit',
+    'box-shadow:0 8px 24px rgba(0,0,0,0.25)',
+    'opacity:0', 'transform:translateY(8px)',
+    'transition:all 250ms cubic-bezier(0.4,0,0.2,1)', 'z-index:200'
+  ].join(';');
+  snack.textContent = msg;
+  document.querySelector('.phone').appendChild(snack);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    snack.style.opacity = '1';
+    snack.style.transform = 'translateY(0)';
+  }));
+  setTimeout(() => {
+    snack.style.opacity = '0';
+    snack.style.transform = 'translateY(8px)';
+    setTimeout(() => snack.remove(), 300);
+  }, 3000);
+}
+
+/* ─── INIT on load ─── */
+window.addEventListener('load', () => {
+  /* Scrim display init */
+  ['rx-scrim','del-scrim'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  /* Set default date on Rx form */
+  const startEl = document.getElementById('rx-start');
+  if (startEl) startEl.value = new Date().toISOString().split('T')[0];
+  /* Live clock on doctor portal status bar */
+  const clockEl = document.getElementById('doc-clock');
+  function updateDocClock() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes().toString().padStart(2,'0');
+    const h12 = ((h % 12) || 12);
+    if (clockEl) clockEl.textContent = h12 + ':' + m;
+  }
+  updateDocClock();
+  setInterval(updateDocClock, 30000);
+});
+</script>
+
+</body>
+</html>
