@@ -6,7 +6,6 @@ import '../models/app_user.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/user_select/user_select_screen.dart';
 import '../screens/auth/login_screen.dart';
-import '../screens/auth/otp_screen.dart';
 import '../screens/auth/face_id_screen.dart';
 import '../screens/onboarding/permissions_screen.dart';
 import '../screens/onboarding/health_profile_screen.dart';
@@ -52,13 +51,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         redirect: (_, __) => '/auth/login',
         routes: [
           GoRoute(path: 'login', builder: (_, __) => const LoginScreen()),
-          GoRoute(
-            path: 'otp',
-            builder: (_, state) {
-              final extra = state.extra as Map<String, dynamic>? ?? {};
-              return OtpScreen(phone: extra['phone'] ?? '', userType: extra['userType'] ?? 'patient');
-            },
-          ),
           GoRoute(path: 'faceid', builder: (_, __) => const FaceIdScreen()),
         ],
       ),

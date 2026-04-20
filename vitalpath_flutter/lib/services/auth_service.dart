@@ -13,32 +13,6 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // ─── Phone OTP ────────────────────────────────────────────────────────────
-
-  Future<void> sendOtp({
-    required String phone,
-    required void Function(PhoneAuthCredential) onAutoVerified,
-    required void Function(String, int?) onCodeSent,
-    required void Function(FirebaseAuthException) onError,
-  }) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phone,
-      verificationCompleted: onAutoVerified,
-      verificationFailed: onError,
-      codeSent: onCodeSent,
-      codeAutoRetrievalTimeout: (_) {},
-      timeout: const Duration(seconds: 60),
-    );
-  }
-
-  Future<UserCredential> verifyOtp(String verificationId, String otp) async {
-    final credential = PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: otp,
-    );
-    return _auth.signInWithCredential(credential);
-  }
-
   // ─── Google Sign-In ───────────────────────────────────────────────────────
 
   Future<UserCredential?> signInWithGoogle() async {
