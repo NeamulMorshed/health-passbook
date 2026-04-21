@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
+
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
@@ -16,31 +20,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
 
   Future<void> _signInWithGoogle() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final result = await ref.read(authServiceProvider).signInWithGoogle();
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-      // result is null when: (a) user cancelled, or (b) Pigeon workaround
-      // where Firebase Auth already set the current user before the exception.
-      final uid = result?.user?.uid ??
-          ref.read(authServiceProvider).currentUser?.uid;
+    final result = await ref.read(authRepositoryProvider).signInWithGoogle();
+    if (!mounted) return;
 
-      if (uid == null || !mounted) {
-        setState(() => _loading = false);
-        return;
-      }
+    switch (result) {
+      case AuthSuccess(:final user):
+        _navigateForUser(user);
 
-      final appUser = await ref.read(authServiceProvider).getUserProfile(uid);
-      if (!mounted) return;
-      if (appUser == null) {
+      case AuthNewUser():
+        // No Firestore profile yet — user must choose patient / doctor role.
         context.go('/user-select');
-      } else if (appUser.userType.name == 'doctor') {
-        context.go('/doc/dashboard');
-      } else {
-        context.go('/home');
-      }
-    } catch (e) {
-      setState(() { _loading = false; _error = 'Sign-in failed: ${e.toString()}'; });
+
+      case AuthCancelled():
+        setState(() => _loading = false);
+
+      case AuthFailure(:final message):
+        setState(() {
+          _loading = false;
+          _error = message;
+        });
+    }
+  }
+
+  void _navigateForUser(AppUser user) {
+    if (user.userType == UserType.doctor) {
+      context.go('/doc/dashboard');
+    } else if (!user.onboardingComplete) {
+      context.go('/onboarding/permissions');
+    } else {
+      context.go('/home');
     }
   }
 
@@ -51,7 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _loading,
-          message: 'Signing in...',
+          message: 'Signing in…',
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
@@ -59,18 +72,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 60),
 
-                // Icon
+                // ── Brand icon ─────────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    // withValues(alpha:) replaces deprecated withOpacity()
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 32),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: AppColors.primary,
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 28),
 
-                // Title
+                // ── Heading ────────────────────────────────────────────────
                 const Text(
                   'Welcome to\nVitalPath',
                   style: TextStyle(
@@ -94,23 +112,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const Spacer(),
 
-                // Error message
+                // ── Error banner ───────────────────────────────────────────
                 if (_error != null) ...[
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.08),
+                      color: Colors.red.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withOpacity(0.25)),
+                      border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_rounded, color: Colors.red, size: 18),
+                        const Icon(Icons.error_rounded,
+                            color: Colors.red, size: 18),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(fontSize: 13, color: Colors.red, fontFamily: 'Inter'),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.red,
+                              fontFamily: 'Inter',
+                            ),
                           ),
                         ),
                       ],
@@ -119,27 +144,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 16),
                 ],
 
-                // Google Sign-In button
+                // ── Google Sign-In button ──────────────────────────────────
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton(
                     onPressed: _loading ? null : _signInWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.border, width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      side: const BorderSide(
+                          color: AppColors.border, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                       backgroundColor: AppColors.muted,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.network(
-                          'https://www.google.com/favicon.ico',
-                          width: 20,
-                          height: 20,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.g_mobiledata_rounded, size: 26, color: AppColors.foreground),
-                        ),
+                        // Inline Google 'G' glyph — no network request.
+                        _GoogleGlyph(),
                         const SizedBox(width: 12),
                         const Text(
                           'Continue with Google',
@@ -158,11 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
-                    'By continuing, you agree to our\nTerms of Service & Privacy Policy',
+                    'By continuing you agree to our\nTerms of Service & Privacy Policy',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.mutedForeground.withOpacity(0.7),
+                      color: AppColors.mutedForeground.withValues(alpha: 0.7),
                       fontFamily: 'Inter',
                       height: 1.6,
                     ),
@@ -176,4 +198,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+/// Renders the multicolour Google 'G' logo inline using a CustomPainter.
+/// No network request, no broken-image fallback.
+class _GoogleGlyph extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _GoogleGlyphPainter()),
+    );
+  }
+}
+
+class _GoogleGlyphPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width / 2;
+    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = r * 0.38;
+
+    // Blue arc (right half)
+    paint.color = const Color(0xFF4285F4);
+    canvas.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.72),
+        -0.45, 2.45, false, paint);
+
+    // Red arc (upper-left)
+    paint.color = const Color(0xFFEA4335);
+    canvas.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.72),
+        -2.0, 1.55, false, paint);
+
+    // Yellow arc (lower-left)
+    paint.color = const Color(0xFFFBBC05);
+    canvas.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.72),
+        2.55, 0.9, false, paint);
+
+    // Green arc (bottom)
+    paint.color = const Color(0xFF34A853);
+    canvas.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.72),
+        1.75, 0.82, false, paint);
+
+    // Horizontal bar of the 'G'
+    paint
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(
+      Rect.fromLTWH(cx * 0.9, cy - r * 0.13, r, r * 0.27),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
