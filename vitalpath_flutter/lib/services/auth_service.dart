@@ -18,14 +18,22 @@ class AuthService {
   // ─── Google Sign-In ───────────────────────────────────────────────────────
 
   Future<UserCredential?> signInWithGoogle() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) return null;
-    final gAuth = await account.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: gAuth.accessToken,
-      idToken: gAuth.idToken,
-    );
-    return _auth.signInWithCredential(credential);
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) return null;
+      final gAuth = await account.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: gAuth.accessToken,
+        idToken: gAuth.idToken,
+      );
+      return _auth.signInWithCredential(credential);
+    } catch (e) {
+      // google_sign_in_android Pigeon type-cast bug: the sign-in succeeds
+      // in Firebase Auth before the exception is thrown. If we already have
+      // a current user, treat it as a successful sign-in.
+      if (_auth.currentUser != null) return null;
+      rethrow;
+    }
   }
 
   // ─── User Profile ─────────────────────────────────────────────────────────

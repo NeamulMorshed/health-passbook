@@ -11,63 +11,99 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _fadeAnim;
   late Animation<double> _scaleAnim;
   int _step = 0;
+  bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _scaleAnim = Tween<double>(begin: 0.8, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeAnim = Tween<double>(begin: 0, end: 1)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
     _ctrl.forward();
-    _advance();
+    _start();
   }
 
-  void _advance() async {
+  Future<void> _start() async {
+    // Brief delay to let Firebase Auth resolve
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+
+    final authState = ref.read(firebaseAuthStateProvider);
+
+    // If already signed in, skip onboarding animation and route quickly
+    if (authState.asData?.value != null) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) _navigate();
+      return;
+    }
+
+    // First-time / logged-out: show full 3-step onboarding animation
+    _runOnboardingAnimation();
+  }
+
+  void _runOnboardingAnimation() async {
     await Future.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
     if (_step < 2) {
       setState(() => _step++);
       _ctrl.reset();
       _ctrl.forward();
-      _advance();
+      _runOnboardingAnimation();
     } else {
       await Future.delayed(const Duration(milliseconds: 800));
-      if (!mounted) return;
-      _checkAuthAndNavigate();
+      if (mounted) _navigate();
     }
   }
 
-  void _checkAuthAndNavigate() {
-    final authState = ref.read(firebaseAuthStateProvider);
-    authState.when(
-      data: (user) async {
-        if (user == null) {
-          context.go('/user-select');
-          return;
+  Future<void> _navigate() async {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+
+    // Wait for auth state if still loading
+    final authStream = ref.read(firebaseAuthStateProvider);
+    final user = await authStream.when(
+      data: (u) async => u,
+      loading: () async {
+        // Poll briefly for auth to resolve (max 2s)
+        for (int i = 0; i < 10; i++) {
+          await Future.delayed(const Duration(milliseconds: 200));
+          final current = ref.read(firebaseAuthStateProvider);
+          if (current.asData != null) return current.asData!.value;
         }
-        final appUser = await ref.read(authServiceProvider).getUserProfile(user.uid);
-        if (appUser == null) {
-          context.go('/user-select');
-          return;
-        }
-        if (!appUser.onboardingComplete && appUser.userType == UserType.patient) {
-          context.go('/onboarding/permissions');
-          return;
-        }
-        if (appUser.userType == UserType.doctor) {
-          context.go('/doc/dashboard');
-        } else {
-          context.go('/home');
-        }
+        return null;
       },
-      loading: () => context.go('/user-select'),
-      error: (_, __) => context.go('/user-select'),
+      error: (_, __) async => null,
     );
+
+    if (!mounted) return;
+
+    if (user == null) {
+      context.go('/user-select');
+      return;
+    }
+
+    final appUser =
+        await ref.read(authServiceProvider).getUserProfile(user.uid);
+    if (!mounted) return;
+
+    if (appUser == null) {
+      context.go('/user-select');
+      return;
+    }
+    if (!appUser.onboardingComplete && appUser.userType == UserType.patient) {
+      context.go('/onboarding/permissions');
+      return;
+    }
+    context.go(appUser.userType == UserType.doctor ? '/doc/dashboard' : '/home');
   }
 
   @override
@@ -121,22 +157,37 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                   child: Icon(data.icon, size: 52, color: data.color),
                 ),
                 const SizedBox(height: 28),
-                Text(data.title, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
+                Text(data.title,
+                    style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Inter',
+                        color: AppColors.foreground)),
                 const SizedBox(height: 10),
-                Text(data.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.5)),
+                Text(data.subtitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.mutedForeground,
+                        fontFamily: 'Inter',
+                        height: 1.5)),
                 const SizedBox(height: 60),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(3, (i) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: i == _step ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: i == _step ? data.color : data.color.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  )),
+                  children: List.generate(
+                      3,
+                      (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: i == _step ? 24 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: i == _step
+                                  ? data.color
+                                  : data.color.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          )),
                 ),
               ],
             ),
@@ -152,5 +203,9 @@ class _SplashData {
   final Color color;
   final String title;
   final String subtitle;
-  const _SplashData({required this.icon, required this.color, required this.title, required this.subtitle});
+  const _SplashData(
+      {required this.icon,
+      required this.color,
+      required this.title,
+      required this.subtitle});
 }

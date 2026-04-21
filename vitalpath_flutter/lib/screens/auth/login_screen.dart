@@ -19,15 +19,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final result = await ref.read(authServiceProvider).signInWithGoogle();
-      if (result == null || !mounted) {
+
+      // result is null when: (a) user cancelled, or (b) Pigeon workaround
+      // where Firebase Auth already set the current user before the exception.
+      final uid = result?.user?.uid ??
+          ref.read(authServiceProvider).currentUser?.uid;
+
+      if (uid == null || !mounted) {
         setState(() => _loading = false);
         return;
       }
-      final user = await ref.read(authServiceProvider).getUserProfile(result.user!.uid);
+
+      final appUser = await ref.read(authServiceProvider).getUserProfile(uid);
       if (!mounted) return;
-      if (user == null) {
+      if (appUser == null) {
         context.go('/user-select');
-      } else if (user.userType.name == 'doctor') {
+      } else if (appUser.userType.name == 'doctor') {
         context.go('/doc/dashboard');
       } else {
         context.go('/home');
