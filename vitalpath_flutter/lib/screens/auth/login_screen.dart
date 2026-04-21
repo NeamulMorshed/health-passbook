@@ -33,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         context.go('/home');
       }
     } catch (e) {
-      setState(() { _loading = false; _error = 'Sign-in failed. Please try again.'; });
+      setState(() { _loading = false; _error = 'Sign-in failed: ${e.toString()}'; });
     }
   }
 
