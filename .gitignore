@@ -8,6 +8,10 @@
 .vscode/
 *.iml
 
+# Gradle
+.gradle/
+**/.gradle/
+
 # Flutter/Dart
 .dart_tool/
 .flutter-plugins
