@@ -14,16 +14,11 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
-    // Initialize timezones
     tz.initializeTimeZones();
 
-    // Request FCM permission
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
-
-    // FCM background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Local notifications setup
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -34,12 +29,10 @@ class NotificationService {
       const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
 
-    // Create Android notification channels
     await _createChannel(AppConstants.notifChannelMedicine, 'Medicine Reminders', 'Reminders to take your medicine');
     await _createChannel(AppConstants.notifChannelAppointment, 'Appointment Reminders', 'Appointment updates and reminders');
     await _createChannel(AppConstants.notifChannelGeneral, 'General', 'General app notifications');
 
-    // Listen to foreground FCM messages
     FirebaseMessaging.onMessage.listen((message) {
       final notification = message.notification;
       if (notification != null) {
@@ -54,11 +47,7 @@ class NotificationService {
   }
 
   Future<void> _createChannel(String id, String name, String desc) async {
-    final channel = AndroidNotificationChannel(
-      id, name,
-      description: desc,
-      importance: Importance.high,
-    );
+    final channel = AndroidNotificationChannel(id, name, description: desc, importance: Importance.high);
     await _local
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
@@ -75,78 +64,50 @@ class NotificationService {
     String channel = AppConstants.notifChannelGeneral,
   }) async {
     await _local.show(
-      id,
-      title,
-      body,
+      id, title, body,
       NotificationDetails(
-        android: AndroidNotificationDetails(
-          channel, channel,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
+        android: AndroidNotificationDetails(channel, channel, importance: Importance.high, priority: Priority.high),
         iOS: const DarwinNotificationDetails(),
       ),
     );
   }
 
-  // ── Daily repeating reminder (medicine) ───────────────────────────────────
+  // ── Unified scheduled reminder ────────────────────────────────────────────
+  // repeat: 'daily' | 'weekly' | 'once'
 
-  Future<void> scheduleDailyReminder({
+  Future<void> scheduleReminder({
     required int id,
     required String title,
     required String body,
     required int hour,
     required int minute,
+    required String repeat,
     String channel = AppConstants.notifChannelMedicine,
   }) async {
+    final DateTimeComponents? components = switch (repeat) {
+      'daily'  => DateTimeComponents.time,
+      'weekly' => DateTimeComponents.dayOfWeekAndTime,
+      _        => null, // 'once'
+    };
     await _local.zonedSchedule(
-      id,
-      title,
-      body,
+      id, title, body,
       _nextInstanceOfTime(hour, minute),
       NotificationDetails(
-        android: AndroidNotificationDetails(
-          channel, channel,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
+        android: AndroidNotificationDetails(channel, channel, importance: Importance.high, priority: Priority.high),
         iOS: const DarwinNotificationDetails(),
       ),
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: components,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 
-  // ── One-time reminder (meal) ──────────────────────────────────────────────
+  // Legacy wrappers kept for any callers that haven't migrated
+  Future<void> scheduleDailyReminder({required int id, required String title, required String body, required int hour, required int minute, String channel = AppConstants.notifChannelMedicine}) =>
+      scheduleReminder(id: id, title: title, body: body, hour: hour, minute: minute, repeat: 'daily', channel: channel);
 
-  Future<void> scheduleOnceReminder({
-    required int id,
-    required String title,
-    required String body,
-    required int hour,
-    required int minute,
-    String channel = AppConstants.notifChannelGeneral,
-  }) async {
-    await _local.zonedSchedule(
-      id,
-      title,
-      body,
-      _nextInstanceOfTime(hour, minute),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channel, channel,
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: const DarwinNotificationDetails(),
-      ),
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-  }
+  Future<void> scheduleOnceReminder({required int id, required String title, required String body, required int hour, required int minute, String channel = AppConstants.notifChannelGeneral}) =>
+      scheduleReminder(id: id, title: title, body: body, hour: hour, minute: minute, repeat: 'once', channel: channel);
 
   // ── Cancel helpers ────────────────────────────────────────────────────────
 
@@ -159,7 +120,7 @@ class NotificationService {
   Future<void> cancelNotification(int id) => _local.cancel(id);
   Future<void> cancelAllNotifications() => _local.cancelAll();
 
-  // ── Stable ID helpers (deterministic, survives restarts) ─────────────────
+  // ── Stable ID helpers ─────────────────────────────────────────────────────
 
   static int medicineNotifId(String medicineId, int timeIndex) =>
       (medicineId.hashCode.abs() % 1000000) * 10 + timeIndex;

@@ -6,6 +6,7 @@ import '../models/prescription.dart';
 import '../models/patient.dart';
 import '../models/doctor.dart';
 import '../models/activity_log.dart';
+import '../models/app_notification.dart';
 import '../core/constants/app_constants.dart';
 
 class FirestoreService {
@@ -86,6 +87,15 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateMedicine(String patientId, String medicineId, Map<String, dynamic> data) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update(data);
+  }
+
   Future<void> deleteMedicine(String patientId, String medicineId) async {
     await _db
         .collection(AppConstants.colPatients)
@@ -121,6 +131,15 @@ class FirestoreService {
         .set(meal.toMap());
   }
 
+  Future<void> updateMeal(String patientId, String mealId, Map<String, dynamic> data) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMeals)
+        .doc(mealId)
+        .update(data);
+  }
+
   Future<void> deleteMeal(String patientId, String mealId) async {
     await _db
         .collection(AppConstants.colPatients)
@@ -128,6 +147,51 @@ class FirestoreService {
         .collection(AppConstants.colMeals)
         .doc(mealId)
         .delete();
+  }
+
+  // ─── Notifications ────────────────────────────────────────────────────────
+
+  Stream<List<AppNotification>> watchNotifications(String patientId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colNotifications)
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((s) => s.docs.map((d) => AppNotification.fromMap(d.data(), d.id)).toList());
+  }
+
+  Future<void> addNotification(String patientId, AppNotification notif) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colNotifications)
+        .doc(notif.id)
+        .set(notif.toMap());
+  }
+
+  Future<void> markNotificationRead(String patientId, String notifId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colNotifications)
+        .doc(notifId)
+        .update({'isRead': true});
+  }
+
+  Future<void> markAllNotificationsRead(String patientId) async {
+    final snap = await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colNotifications)
+        .where('isRead', isEqualTo: false)
+        .get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
   }
 
   // ─── Activity Logs ────────────────────────────────────────────────────────

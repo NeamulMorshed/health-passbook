@@ -40,6 +40,8 @@ class _HomeContent extends ConsumerWidget {
     final medsAsync = ref.watch(medicinesProvider(user.uid));
     final mealsAsync = ref.watch(todayMealsProvider(user.uid));
     final activityAsync = ref.watch(activityLogsProvider(user.uid));
+    final notifsAsync = ref.watch(notificationsProvider(user.uid));
+    final unreadCount = notifsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
 
     final greeting = _greeting();
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
@@ -74,17 +76,29 @@ class _HomeContent extends ConsumerWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => context.push('/my-doctors'),
+                        onTap: () => context.push('/notifications'),
                         child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            AppAvatar(name: user.name, size: 44),
-                            Positioned(
-                              bottom: 0, right: 0,
-                              child: Container(
-                                width: 14, height: 14,
-                                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle, border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2))),
-                              ),
+                            Container(
+                              width: 44, height: 44,
+                              decoration: BoxDecoration(color: AppColors.muted, shape: BoxShape.circle),
+                              child: const Icon(Icons.notifications_outlined, color: AppColors.foreground, size: 22),
                             ),
+                            if (unreadCount > 0)
+                              Positioned(
+                                top: 0, right: 0,
+                                child: Container(
+                                  width: 18, height: 18,
+                                  decoration: const BoxDecoration(color: AppColors.destructive, shape: BoxShape.circle),
+                                  child: Center(
+                                    child: Text(
+                                      unreadCount > 9 ? '9+' : '$unreadCount',
+                                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
