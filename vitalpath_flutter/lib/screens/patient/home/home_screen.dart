@@ -19,7 +19,12 @@ class HomeScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       data: (user) {
-        if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) { if (context.mounted) context.go('/user-select'); },
+          );
+          return const Scaffold(body: SizedBox.shrink());
+        }
         return _HomeContent(user: user);
       },
     );
@@ -225,7 +230,7 @@ class _QuickAction extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 6),
@@ -257,7 +262,7 @@ class _MedReminder extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: (taken ? AppColors.success : AppColors.primary).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: (taken ? AppColors.success : AppColors.primary).withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
             child: Icon(Icons.medication_rounded, color: taken ? AppColors.success : AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),

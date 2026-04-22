@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
@@ -21,7 +22,12 @@ class DocAppointmentsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (user) {
-          if (user == null) return const Center(child: CircularProgressIndicator());
+          if (user == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const Center(child: SizedBox.shrink());
+          }
           final apptsAsync = ref.watch(doctorAppointmentsProvider(user.uid));
 
           return apptsAsync.when(
@@ -128,7 +134,7 @@ class _DocApptCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.doctorPrimary.withOpacity(0.06), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: AppColors.doctorPrimary.withValues(alpha:0.06), borderRadius: BorderRadius.circular(8)),
             child: Row(children: [
               const Icon(Icons.schedule_rounded, size: 16, color: AppColors.doctorPrimary),
               const SizedBox(width: 8),

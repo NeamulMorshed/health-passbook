@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/theme/app_theme.dart';
@@ -21,7 +22,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   int _steps = 0;
   Position? _lastPosition;
   StreamSubscription<Position>? _positionSub;
-  int _manualSteps = 0;
   final _stepsCtrl = TextEditingController();
 
   @override
@@ -107,7 +107,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (user) {
-          if (user == null) return const Center(child: CircularProgressIndicator());
+          if (user == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const Center(child: SizedBox.shrink());
+          }
           final activityAsync = ref.watch(activityLogsProvider(user.uid));
 
           return SingleChildScrollView(
@@ -125,7 +130,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           : [AppColors.primary, AppColors.primaryDark],
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: (_isWalking ? AppColors.success : AppColors.primary).withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 6))],
+                    boxShadow: [BoxShadow(color: (_isWalking ? AppColors.success : AppColors.primary).withValues(alpha:0.3), blurRadius: 16, offset: const Offset(0, 6))],
                   ),
                   child: Column(
                     children: [
@@ -134,7 +139,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       Text(_formatTime(_seconds), style: const TextStyle(color: Colors.white, fontSize: 56, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
                       const SizedBox(height: 16),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                        _WalkStat('${_distanceKm.toStringAsFixed(2)}', 'km'),
+                        _WalkStat(_distanceKm.toStringAsFixed(2), 'km'),
                         _WalkStat('$_steps', 'steps'),
                         _WalkStat('${(_distanceKm * 60).round()}', 'kcal'),
                       ]),
@@ -143,7 +148,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         onTap: _toggleWalk,
                         child: Container(
                           width: 80, height: 80,
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.2), shape: BoxShape.circle),
                           child: Icon(_isWalking ? Icons.stop_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 40),
                         ),
                       ),
@@ -191,7 +196,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                         child: Row(children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: AppColors.success.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
                             child: Icon(log.type == 'walk' ? Icons.directions_walk_rounded : Icons.stairs_rounded, color: AppColors.success, size: 20),
                           ),
                           const SizedBox(width: 12),

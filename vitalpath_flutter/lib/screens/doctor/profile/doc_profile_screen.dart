@@ -17,7 +17,12 @@ class DocProfileScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
       data: (user) {
-        if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) { if (context.mounted) context.go('/user-select'); },
+          );
+          return const Scaffold(body: SizedBox.shrink());
+        }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
 
         return Scaffold(
@@ -47,7 +52,7 @@ class DocProfileScreen extends ConsumerWidget {
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
                         _HeaderStat('${doc?.patientIds.length ?? 0}', 'Patients'),
                         Container(width: 1, height: 28, color: Colors.white24),
-                        _HeaderStat('${doc?.rating.toStringAsFixed(1) ?? '0.0'}', 'Rating'),
+                        _HeaderStat(doc?.rating.toStringAsFixed(1) ?? '0.0', 'Rating'),
                         Container(width: 1, height: 28, color: Colors.white24),
                         _HeaderStat('${doc?.reviewCount ?? 0}', 'Reviews'),
                       ]),
@@ -225,7 +230,7 @@ class _MenuItem extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
     leading: Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
       child: Icon(icon, color: color, size: 20),
     ),
     title: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter')),

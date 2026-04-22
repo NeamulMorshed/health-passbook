@@ -64,7 +64,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
               Container(
                 width: 120,
                 height: 120,
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.1), shape: BoxShape.circle),
                 child: const Icon(Icons.face_retouching_natural_rounded, size: 64, color: AppColors.primary),
               ),
               const SizedBox(height: 32),

@@ -78,7 +78,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               Container(
                 width: 100,
                 height: 100,
-                decoration: BoxDecoration(color: data.color.withOpacity(0.12), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: data.color.withValues(alpha:0.12), shape: BoxShape.circle),
                 child: Icon(data.icon, size: 50, color: data.color),
               ),
               const SizedBox(height: 36),
@@ -86,7 +86,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               const SizedBox(height: 12),
               Text(data.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.5)),
               const Spacer(),
-              GradientButton(label: 'Allow ${data.title}', colors: [data.color, data.color.withOpacity(0.8)], onPressed: _allow),
+              GradientButton(label: 'Allow ${data.title}', colors: [data.color, data.color.withValues(alpha:0.8)], onPressed: _allow),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _next,

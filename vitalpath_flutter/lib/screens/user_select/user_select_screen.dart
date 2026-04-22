@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_widgets.dart';
+import '../../models/app_user.dart';
+import '../../core/auth/auth_repository.dart';
+import '../../providers/auth_provider.dart';
 
-class UserSelectScreen extends StatelessWidget {
+class UserSelectScreen extends ConsumerStatefulWidget {
   const UserSelectScreen({super.key});
+
+  @override
+  ConsumerState<UserSelectScreen> createState() => _UserSelectScreenState();
+}
+
+class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
+  bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
+        child: LoadingOverlay(
+          isLoading: _loading,
+          message: 'Preparing your account...',
+          child: Padding(
+            padding: const EdgeInsets.all(28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -19,7 +34,7 @@ class UserSelectScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 32),
@@ -34,7 +49,7 @@ class UserSelectScreen extends StatelessWidget {
                 color: AppColors.primary,
                 title: 'I\'m a Patient',
                 subtitle: 'Track medicines, meals, activity\nand connect with your doctor',
-                onTap: () => context.go('/auth/login', extra: {'userType': 'patient'}),
+                onTap: () => _handleRoleSelected('patient'),
               ),
               const SizedBox(height: 16),
               _RoleCard(
@@ -42,7 +57,7 @@ class UserSelectScreen extends StatelessWidget {
                 color: AppColors.doctorPrimary,
                 title: 'I\'m a Doctor',
                 subtitle: 'Manage patients, appointments\nand write prescriptions',
-                onTap: () => context.go('/auth/login', extra: {'userType': 'doctor'}),
+                onTap: () => _handleRoleSelected('doctor'),
               ),
               const Spacer(),
               Center(
@@ -55,9 +70,48 @@ class UserSelectScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ));
+  }
+
+  void _handleRoleSelected(String userType) async {
+    if (_loading) return;
+    
+    final authRepo = ref.read(authRepositoryProvider);
+    final uid = authRepo.currentUid;
+    
+    if (uid != null) {
+      // User is already signed into Firebase Auth (e.g. they came here from login)
+      // but they don't have a Firestore profile yet. Create it now!
+      setState(() => _loading = true);
+      
+      try {
+        final result = await authRepo.getUserState(uid);
+        if (result is AuthNewUser) {
+          final newUser = AppUser(
+            uid: uid,
+            name: result.displayName ?? 'New User',
+            phone: '', 
+            userType: userType == 'doctor' ? UserType.doctor : UserType.patient,
+            createdAt: DateTime.now(),
+          );
+          await authRepo.createProfile(newUser);
+          if (!mounted) return;
+          if (userType == 'doctor') {
+            context.go('/doc/dashboard');
+          } else {
+            context.go('/onboarding/permissions');
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _loading = false);
+      }
+    } else {
+      // User is completely unauthenticated.
+      context.go('/auth/login', extra: {'userType': userType});
+    }
   }
 }
+
 
 class _RoleCard extends StatelessWidget {
   final IconData icon;
@@ -77,15 +131,15 @@ class _RoleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.25), width: 1.5),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+          border: Border.all(color: color.withValues(alpha:0.25), width: 1.5),
+          boxShadow: [BoxShadow(color: color.withValues(alpha:0.06), blurRadius: 16, offset: const Offset(0, 4))],
         ),
         child: Row(
           children: [
             Container(
               width: 56,
               height: 56,
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 18),

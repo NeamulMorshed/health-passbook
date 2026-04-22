@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
@@ -22,7 +23,12 @@ class MyDoctorsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (user) {
-          if (user == null) return const Center(child: CircularProgressIndicator());
+          if (user == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const Center(child: SizedBox.shrink());
+          }
 
           final rxAsync = ref.watch(patientPrescriptionsProvider(user.uid));
           final searchAsync = ref.watch(doctorSearchProvider(''));
@@ -274,7 +280,7 @@ class _PrescriptionCard extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppColors.success.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
             child: const Icon(Icons.receipt_long_rounded, color: AppColors.success, size: 20)),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

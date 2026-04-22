@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/constants/app_constants.dart';
@@ -47,7 +46,7 @@ class DocPatientViewScreen extends ConsumerWidget {
                     Container(width: 1, height: 30, color: AppColors.border),
                     _Stat(patient.bloodType ?? '--', 'Blood'),
                     Container(width: 1, height: 30, color: AppColors.border),
-                    _Stat('${patient.bmi?.toStringAsFixed(1) ?? '--'}', 'BMI'),
+                    _Stat(patient.bmi?.toStringAsFixed(1) ?? '--', 'BMI'),
                   ]),
                 ]),
               ),
@@ -268,7 +267,7 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: _meds[i].frequency,
+                      initialValue: _meds[i].frequency,
                       decoration: const InputDecoration(labelText: 'Frequency', filled: false),
                       items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded]
                           .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))))

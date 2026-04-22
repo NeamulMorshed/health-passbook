@@ -63,9 +63,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: notifier,
 
     redirect: (context, state) {
-      // Always read the latest value — never close over a stale snapshot.
-      final isAuthenticated =
-          ref.read(firebaseAuthStateProvider).asData?.value != null;
+      final authState = ref.read(firebaseAuthStateProvider);
+      
+      // If we are still loading the auth state, don't redirect yet.
+      // This prevents bouncing users back to login while the stream is initializing.
+      if (authState.isLoading) return null;
+
+      final isAuthenticated = authState.asData?.value != null;
       final loc = state.matchedLocation;
 
       // Splash and role-selection are always reachable.
@@ -88,7 +92,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth',
         redirect: (_, __) => '/auth/login',
         routes: [
-          GoRoute(path: 'login', builder: (_, __) => const LoginScreen()),
+          GoRoute(
+            path: 'login',
+            builder: (_, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return LoginScreen(userType: extra?['userType'] as String?);
+            },
+          ),
           GoRoute(path: 'faceid', builder: (_, __) => const FaceIdScreen()),
         ],
       ),

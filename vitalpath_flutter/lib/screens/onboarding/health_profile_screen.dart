@@ -6,7 +6,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/firestore_service.dart';
 
 class HealthProfileScreen extends ConsumerStatefulWidget {
   const HealthProfileScreen({super.key});
@@ -86,7 +85,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.06), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.06), borderRadius: BorderRadius.circular(12)),
                 child: const Row(
                   children: [
                     Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
@@ -119,7 +118,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   _buildLabel('Blood Type'),
                   DropdownButtonFormField<String>(
-                    value: _selectedBlood,
+                    initialValue: _selectedBlood,
                     hint: const Text('Select', style: TextStyle(fontFamily: 'Inter')),
                     decoration: const InputDecoration(),
                     items: AppConstants.bloodTypes.map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontFamily: 'Inter')))).toList(),
@@ -159,7 +158,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                     label: Text(c),
                     selected: selected,
                     onSelected: (v) => setState(() => v ? _selectedConditions.add(c) : _selectedConditions.remove(c)),
-                    selectedColor: AppColors.primary.withOpacity(0.15),
+                    selectedColor: AppColors.primary.withValues(alpha:0.15),
                     checkmarkColor: AppColors.primary,
                     labelStyle: TextStyle(fontFamily: 'Inter', color: selected ? AppColors.primary : AppColors.foreground, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
                   );

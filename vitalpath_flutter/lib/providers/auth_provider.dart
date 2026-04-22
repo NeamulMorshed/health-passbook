@@ -24,17 +24,20 @@ final firebaseAuthStateProvider = StreamProvider<User?>(
 );
 
 // ── Resolved AppUser for the current session ──────────────────────────────
-// FutureProvider<AppUser?> — screens watch this with .when(data:loading:error:)
+// StreamProvider<AppUser?> stays in loading until the Firebase auth stream
+// emits the first value, preventing the perpetual-spinner bug where a
+// FutureProvider would immediately return null (uid still null during stream
+// startup) and screens would spin forever on the null-data branch.
 
-final currentUserProvider = FutureProvider<AppUser?>((ref) async {
-  final uid = ref.watch(authUidProvider).asData?.value;
-  if (uid == null) return null;
-
-  final result = await ref.read(authRepositoryProvider).getUserState(uid);
-  return switch (result) {
-    AuthSuccess(:final user) => user,
-    _ => null,
-  };
+final currentUserProvider = StreamProvider<AppUser?>((ref) {
+  return ref.watch(authRepositoryProvider).uidStream.asyncMap((uid) async {
+    if (uid == null) return null;
+    final result = await ref.read(authRepositoryProvider).getUserState(uid);
+    return switch (result) {
+      AuthSuccess(:final user) => user,
+      _ => null,
+    };
+  });
 });
 
 // ── Legacy service providers (used by existing screens — do not remove) ───

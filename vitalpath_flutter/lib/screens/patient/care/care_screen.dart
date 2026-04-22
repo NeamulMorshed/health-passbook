@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
@@ -7,7 +8,6 @@ import '../../../providers/patient_provider.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
 import '../../../core/constants/app_constants.dart';
-import 'package:uuid/uuid.dart';
 
 class CareScreen extends ConsumerStatefulWidget {
   const CareScreen({super.key});
@@ -39,7 +39,12 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
       data: (user) {
-        if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) { if (context.mounted) context.go('/user-select'); },
+          );
+          return const Scaffold(body: SizedBox.shrink());
+        }
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
@@ -146,7 +151,7 @@ class _MedCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: taken ? AppColors.success.withOpacity(0.3) : AppColors.border),
+        border: Border.all(color: taken ? AppColors.success.withValues(alpha:0.3) : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,7 +159,7 @@ class _MedCard extends ConsumerWidget {
           Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
               child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 22),
             ),
             const SizedBox(width: 12),
@@ -259,9 +264,9 @@ class _FoodTab extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NutrientStat('Calories', '$totalCal', 'kcal', AppColors.warning),
-                  _NutrientStat('Protein', '${meals.fold(0.0, (s, m) => s + (m.protein ?? 0)).toStringAsFixed(0)}', 'g', AppColors.primary),
-                  _NutrientStat('Carbs', '${meals.fold(0.0, (s, m) => s + (m.carbs ?? 0)).toStringAsFixed(0)}', 'g', AppColors.success),
-                  _NutrientStat('Fat', '${meals.fold(0.0, (s, m) => s + (m.fat ?? 0)).toStringAsFixed(0)}', 'g', AppColors.destructive),
+                  _NutrientStat('Protein', meals.fold(0.0, (s, m) => s + (m.protein ?? 0)).toStringAsFixed(0), 'g', AppColors.primary),
+                  _NutrientStat('Carbs', meals.fold(0.0, (s, m) => s + (m.carbs ?? 0)).toStringAsFixed(0), 'g', AppColors.success),
+                  _NutrientStat('Fat', meals.fold(0.0, (s, m) => s + (m.fat ?? 0)).toStringAsFixed(0), 'g', AppColors.destructive),
                 ],
               ),
             ),
@@ -315,7 +320,7 @@ class _MealCard extends ConsumerWidget {
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(color: AppColors.warning.withValues(alpha:0.1), borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: AppColors.warning, size: 22),
         ),
         const SizedBox(width: 12),
@@ -383,7 +388,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
               TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v!.isEmpty ? 'Required' : null),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _freq,
+                initialValue: _freq,
                 decoration: const InputDecoration(labelText: 'Frequency'),
                 items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
                     .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontFamily: 'Inter'))))

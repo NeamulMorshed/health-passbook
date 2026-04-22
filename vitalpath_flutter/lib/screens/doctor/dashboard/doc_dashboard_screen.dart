@@ -19,7 +19,12 @@ class DocDashboardScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
       data: (user) {
-        if (user == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) { if (context.mounted) context.go('/user-select'); },
+          );
+          return const Scaffold(body: SizedBox.shrink());
+        }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
         final apptsAsync = ref.watch(doctorAppointmentsProvider(user.uid));
 
@@ -66,7 +71,6 @@ class DocDashboardScreen extends ConsumerWidget {
                       data: (appts) {
                         final pending = appts.where((a) => a.isPending).length;
                         final confirmed = appts.where((a) => a.isConfirmed).length;
-                        final total = appts.length;
 
                         return docAsync.when(
                           data: (doc) {
@@ -153,7 +157,7 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.2))),
+      decoration: BoxDecoration(color: color.withValues(alpha:0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha:0.2))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, color: color, size: 20),
         const SizedBox(height: 8),

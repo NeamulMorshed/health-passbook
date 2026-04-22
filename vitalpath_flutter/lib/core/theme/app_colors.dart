@@ -79,6 +79,6 @@ class AppColors {
     BoxShadow(color: cardShadow, blurRadius: 4, offset: const Offset(0, 1)),
   ];
   static List<BoxShadow> get primaryButtonShadow => [
-    BoxShadow(color: primary.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 4)),
+    BoxShadow(color: primary.withValues(alpha:0.35), blurRadius: 14, offset: const Offset(0, 4)),
   ];
 }

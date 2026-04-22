@@ -24,7 +24,12 @@ class DocPatientsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (user) {
-          if (user == null) return const Center(child: CircularProgressIndicator());
+          if (user == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const Center(child: SizedBox.shrink());
+          }
           final docAsync = ref.watch(doctorProfileProvider(user.uid));
 
           return docAsync.when(

@@ -38,7 +38,6 @@ class AppTheme {
         brightness: Brightness.light,
         primary: AppColors.primary,
         surface: AppColors.surface,
-        background: AppColors.background,
         error: AppColors.destructive,
       ),
       scaffoldBackgroundColor: AppColors.background,
@@ -116,7 +115,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.muted,
-        selectedColor: AppColors.primary.withOpacity(0.1),
+        selectedColor: AppColors.primary.withValues(alpha:0.1),
         labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
       ),

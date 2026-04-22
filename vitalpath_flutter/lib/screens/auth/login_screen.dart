@@ -9,7 +9,8 @@ import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final String? userType;
+  const LoginScreen({super.key, this.userType});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -32,9 +33,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       case AuthSuccess(:final user):
         _navigateForUser(user);
 
-      case AuthNewUser():
-        // No Firestore profile yet — user must choose patient / doctor role.
-        context.go('/user-select');
+      case AuthNewUser(:final uid, email: _, :final displayName):
+        if (widget.userType != null) {
+          final newUser = AppUser(
+            uid: uid,
+            name: displayName ?? 'New User',
+            phone: '', 
+            userType: widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
+            createdAt: DateTime.now(),
+          );
+          await ref.read(authRepositoryProvider).createProfile(newUser);
+          if (!mounted) return;
+          _navigateForUser(newUser);
+        } else {
+          // No Firestore profile yet and no explicit type — User must choose role.
+          context.go('/user-select');
+        }
 
       case AuthCancelled():
         setState(() => _loading = false);
