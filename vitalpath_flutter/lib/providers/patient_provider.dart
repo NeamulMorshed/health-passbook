@@ -6,7 +6,9 @@ import '../models/appointment.dart';
 import '../models/prescription.dart';
 import '../models/patient.dart';
 import '../models/activity_log.dart';
+import '../core/constants/app_constants.dart';
 import '../services/firestore_service.dart';
+import '../services/notification_service.dart';
 import 'auth_provider.dart';
 
 const _uuid = Uuid();
@@ -44,26 +46,44 @@ final patientPrescriptionsProvider = StreamProvider.family<List<Prescription>, S
 // ─── Medicine Notifier ────────────────────────────────────────────────────────
 class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   final FirestoreService _db;
-  MedicineNotifier(this._db) : super(const AsyncValue.data(null));
+  final NotificationService _notif;
+  MedicineNotifier(this._db, this._notif) : super(const AsyncValue.data(null));
 
   Future<void> add(String patientId, {
     required String name,
     required String dosage,
     required String frequency,
     String? notes,
+    List<String> reminderTimes = const [],
   }) async {
     state = const AsyncValue.loading();
     try {
+      final medId = _uuid.v4();
       final med = Medicine(
-        id: _uuid.v4(),
+        id: medId,
         patientId: patientId,
         name: name,
         dosage: dosage,
         frequency: frequency,
         notes: notes,
         startDate: DateTime.now(),
+        reminderTimes: reminderTimes,
       );
       await _db.addMedicine(patientId, med);
+      for (int i = 0; i < reminderTimes.length; i++) {
+        final parts = reminderTimes[i].split(':');
+        if (parts.length == 2) {
+          final hour = int.tryParse(parts[0]) ?? 8;
+          final minute = int.tryParse(parts[1]) ?? 0;
+          await _notif.scheduleDailyReminder(
+            id: NotificationService.medicineNotifId(medId, i),
+            title: 'Time to take $name',
+            body: 'Your $dosage dose is due now.',
+            hour: hour,
+            minute: minute,
+          );
+        }
+      }
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -75,18 +95,23 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> delete(String patientId, String medicineId) async {
+    await _notif.cancelMedicineReminders(medicineId);
     await _db.deleteMedicine(patientId, medicineId);
   }
 }
 
 final medicineNotifierProvider = StateNotifierProvider<MedicineNotifier, AsyncValue<void>>((ref) {
-  return MedicineNotifier(ref.watch(firestoreServiceProvider));
+  return MedicineNotifier(
+    ref.watch(firestoreServiceProvider),
+    ref.watch(notificationServiceProvider),
+  );
 });
 
 // ─── Meal Notifier ────────────────────────────────────────────────────────────
 class MealNotifier extends StateNotifier<AsyncValue<void>> {
   final FirestoreService _db;
-  MealNotifier(this._db) : super(const AsyncValue.data(null));
+  final NotificationService _notif;
+  MealNotifier(this._db, this._notif) : super(const AsyncValue.data(null));
 
   Future<void> add(String patientId, {
     required String mealType,
@@ -95,11 +120,13 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
     double? protein,
     double? carbs,
     double? fat,
+    String? reminderTime, // "HH:mm"
   }) async {
     state = const AsyncValue.loading();
     try {
+      final mealId = _uuid.v4();
       final meal = MealLog(
-        id: _uuid.v4(),
+        id: mealId,
         patientId: patientId,
         mealType: mealType,
         description: description,
@@ -108,8 +135,24 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
         carbs: carbs,
         fat: fat,
         loggedAt: DateTime.now(),
+        reminderTime: reminderTime,
       );
       await _db.addMeal(patientId, meal);
+      if (reminderTime != null) {
+        final parts = reminderTime.split(':');
+        if (parts.length == 2) {
+          final hour = int.tryParse(parts[0]) ?? 12;
+          final minute = int.tryParse(parts[1]) ?? 0;
+          await _notif.scheduleOnceReminder(
+            id: NotificationService.mealNotifId(mealId),
+            title: 'Time for $mealType!',
+            body: 'Reminder to have your $mealType.',
+            hour: hour,
+            minute: minute,
+            channel: AppConstants.notifChannelGeneral,
+          );
+        }
+      }
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -117,12 +160,16 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> delete(String patientId, String mealId) async {
+    await _notif.cancelNotification(NotificationService.mealNotifId(mealId));
     await _db.deleteMeal(patientId, mealId);
   }
 }
 
 final mealNotifierProvider = StateNotifierProvider<MealNotifier, AsyncValue<void>>((ref) {
-  return MealNotifier(ref.watch(firestoreServiceProvider));
+  return MealNotifier(
+    ref.watch(firestoreServiceProvider),
+    ref.watch(notificationServiceProvider),
+  );
 });
 
 // ─── Appointment Notifier ─────────────────────────────────────────────────────

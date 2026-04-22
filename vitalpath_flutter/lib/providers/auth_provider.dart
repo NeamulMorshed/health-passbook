@@ -6,6 +6,7 @@ import '../core/auth/firebase_auth_repository.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/notification_service.dart';
 
 // ── New repository layer (used by login_screen, splash_screen) ────────────
 
@@ -50,4 +51,8 @@ final authServiceProvider = Provider<AuthService>(
 
 final firestoreServiceProvider = Provider<FirestoreService>(
   (_) => FirestoreService(),
+);
+
+final notificationServiceProvider = Provider<NotificationService>(
+  (_) => NotificationService(),
 );

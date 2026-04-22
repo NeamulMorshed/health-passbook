@@ -11,6 +11,7 @@ class MealLog {
   final double? fat;     // grams
   final DateTime loggedAt;
   final String? photoUrl;
+  final String? reminderTime; // "HH:mm" e.g. "07:30", null if no reminder
 
   const MealLog({
     required this.id,
@@ -23,6 +24,7 @@ class MealLog {
     this.fat,
     required this.loggedAt,
     this.photoUrl,
+    this.reminderTime,
   });
 
   factory MealLog.fromMap(Map<String, dynamic> map, String id) {
@@ -37,6 +39,7 @@ class MealLog {
       fat: (map['fat'] as num?)?.toDouble(),
       loggedAt: (map['loggedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       photoUrl: map['photoUrl'],
+      reminderTime: map['reminderTime'],
     );
   }
 
@@ -50,5 +53,6 @@ class MealLog {
         'fat': fat,
         'loggedAt': Timestamp.fromDate(loggedAt),
         'photoUrl': photoUrl,
+        'reminderTime': reminderTime,
       };
 }

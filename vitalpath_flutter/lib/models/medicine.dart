@@ -12,7 +12,8 @@ class Medicine {
   final bool isActive;
   final DateTime startDate;
   final DateTime? endDate;
-  final List<DateTime> loggedDoses; // timestamps of taken doses
+  final List<DateTime> loggedDoses;
+  final List<String> reminderTimes; // "HH:mm" strings e.g. ["08:00", "20:00"]
 
   const Medicine({
     required this.id,
@@ -27,6 +28,7 @@ class Medicine {
     required this.startDate,
     this.endDate,
     this.loggedDoses = const [],
+    this.reminderTimes = const [],
   });
 
   bool get takenToday {
@@ -52,6 +54,10 @@ class Medicine {
               ?.map((t) => (t as Timestamp).toDate())
               .toList() ??
           [],
+      reminderTimes: (map['reminderTimes'] as List<dynamic>?)
+              ?.map((t) => t.toString())
+              .toList() ??
+          [],
     );
   }
 
@@ -67,5 +73,6 @@ class Medicine {
         'startDate': Timestamp.fromDate(startDate),
         'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
         'loggedDoses': loggedDoses.map((d) => Timestamp.fromDate(d)).toList(),
+        'reminderTimes': reminderTimes,
       };
 }

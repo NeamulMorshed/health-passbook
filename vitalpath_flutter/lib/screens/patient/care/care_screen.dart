@@ -173,10 +173,11 @@ class _MedCard extends ConsumerWidget {
             else StatusBadge.warning('Pending'),
           ]),
           const SizedBox(height: 12),
-          Row(children: [
+          Wrap(spacing: 8, runSpacing: 6, children: [
             _InfoChip(Icons.repeat_rounded, med.frequency),
-            const SizedBox(width: 8),
             if (med.prescribedBy != null) _InfoChip(Icons.person_rounded, 'Dr. ${med.prescribedBy}'),
+            if (med.reminderTimes.isNotEmpty)
+              _InfoChip(Icons.alarm_rounded, med.reminderTimes.join(' · ')),
           ]),
           if (!taken) ...[
             const SizedBox(height: 12),
@@ -354,51 +355,138 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
   final _nameCtrl = TextEditingController();
   final _dosageCtrl = TextEditingController();
   String _freq = AppConstants.freqOnce;
+  late List<TimeOfDay> _reminderTimes;
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _reminderTimes = _defaultTimesFor(AppConstants.freqOnce);
+  }
 
   @override
   void dispose() { _nameCtrl.dispose(); _dosageCtrl.dispose(); super.dispose(); }
 
+  int _reminderCountFor(String freq) => switch (freq) {
+    AppConstants.freqOnce   => 1,
+    AppConstants.freqTwice  => 2,
+    AppConstants.freqThrice => 3,
+    AppConstants.freqWeekly => 1,
+    _                       => 0,
+  };
+
+  List<TimeOfDay> _defaultTimesFor(String freq) => switch (freq) {
+    AppConstants.freqTwice  => [const TimeOfDay(hour: 8, minute: 0), const TimeOfDay(hour: 20, minute: 0)],
+    AppConstants.freqThrice => [const TimeOfDay(hour: 8, minute: 0), const TimeOfDay(hour: 14, minute: 0), const TimeOfDay(hour: 20, minute: 0)],
+    _                       => [const TimeOfDay(hour: 8, minute: 0)],
+  };
+
+  void _onFreqChanged(String freq) {
+    setState(() {
+      _freq = freq;
+      final count = _reminderCountFor(freq);
+      final defaults = _defaultTimesFor(freq);
+      _reminderTimes = List.generate(count, (i) => i < _reminderTimes.length ? _reminderTimes[i] : defaults[i]);
+    });
+  }
+
+  Future<void> _pickTime(int index) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _reminderTimes[index],
+    );
+    if (picked != null) setState(() => _reminderTimes[index] = picked);
+  }
+
+  List<String> get _reminderTimeStrings => _reminderTimes
+      .map((t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}')
+      .toList();
+
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(medicineNotifierProvider.notifier).add(
-      widget.uid, name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(), frequency: _freq,
+      widget.uid,
+      name: _nameCtrl.text.trim(),
+      dosage: _dosageCtrl.text.trim(),
+      frequency: _freq,
+      reminderTimes: _reminderTimeStrings,
     );
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final count = _reminderCountFor(_freq);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 20),
-              const Text('Add Medicine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              const SizedBox(height: 20),
-              TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => v!.isEmpty ? 'Required' : null),
-              const SizedBox(height: 12),
-              TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v!.isEmpty ? 'Required' : null),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _freq,
-                decoration: const InputDecoration(labelText: 'Frequency'),
-                items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
-                    .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontFamily: 'Inter'))))
-                    .toList(),
-                onChanged: (v) => setState(() => _freq = v!),
-              ),
-              const SizedBox(height: 20),
-              GradientButton(label: 'Add Medicine', onPressed: _save),
-              const SizedBox(height: 8),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Add Medicine', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                const SizedBox(height: 20),
+                TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                const SizedBox(height: 12),
+                TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _freq,
+                  decoration: const InputDecoration(labelText: 'Frequency'),
+                  items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontFamily: 'Inter'))))
+                      .toList(),
+                  onChanged: (v) => _onFreqChanged(v!),
+                ),
+                if (count > 0) ...[
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    const Icon(Icons.alarm_rounded, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text('Reminder${count > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
+                  ]),
+                  const SizedBox(height: 8),
+                  ...List.generate(count, (i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      onTap: () => _pickTime(i),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(width: 10),
+                          Text(
+                            count > 1 ? 'Dose ${i + 1}' : 'Reminder time',
+                            style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _reminderTimes[i].format(context),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter'),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                        ]),
+                      ),
+                    ),
+                  )),
+                ],
+                const SizedBox(height: 20),
+                GradientButton(label: 'Add Medicine', onPressed: _save),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
@@ -421,10 +509,20 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
   final _carbsCtrl = TextEditingController();
   final _fatCtrl = TextEditingController();
   String _type = AppConstants.mealBreakfast;
+  bool _setReminder = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 7, minute: 30);
   final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() { _descCtrl.dispose(); _calCtrl.dispose(); super.dispose(); }
+
+  Future<void> _pickReminderTime() async {
+    final picked = await showTimePicker(context: context, initialTime: _reminderTime);
+    if (picked != null) setState(() => _reminderTime = picked);
+  }
+
+  String get _reminderTimeString =>
+      '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}';
 
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -436,6 +534,7 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
       protein: double.tryParse(_proteinCtrl.text),
       carbs: double.tryParse(_carbsCtrl.text),
       fat: double.tryParse(_fatCtrl.text),
+      reminderTime: _setReminder ? _reminderTimeString : null,
     );
     if (mounted) Navigator.pop(context);
   }
@@ -448,48 +547,96 @@ class _AddMealSheetState extends ConsumerState<_AddMealSheet> {
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
-              const SizedBox(height: 20),
-              const Text('Log Meal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              const SizedBox(height: 16),
-              // Meal type selector
-              Row(children: [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner, AppConstants.mealSnack].map((t) {
-                final sel = _type == t;
-                return GestureDetector(
-                  onTap: () => setState(() => _type = t),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: sel ? AppColors.primary : AppColors.muted,
-                      borderRadius: BorderRadius.circular(8),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 20),
+                const Text('Log Meal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                const SizedBox(height: 16),
+                // Meal type selector
+                Row(children: [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner, AppConstants.mealSnack].map((t) {
+                  final sel = _type == t;
+                  return GestureDetector(
+                    onTap: () => setState(() => _type = t),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: sel ? AppColors.primary : AppColors.muted,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground, fontFamily: 'Inter')),
                     ),
-                    child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground, fontFamily: 'Inter')),
+                  );
+                }).toList()),
+                const SizedBox(height: 14),
+                TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: TextFormField(controller: _calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories (kcal)'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextFormField(controller: _proteinCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Protein (g)'))),
+                ]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: TextFormField(controller: _carbsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Carbs (g)'))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextFormField(controller: _fatCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fat (g)'))),
+                ]),
+                const SizedBox(height: 16),
+                // Reminder toggle
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.muted,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
                   ),
-                );
-              }).toList()),
-              const SizedBox(height: 14),
-              TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => v!.isEmpty ? 'Required' : null),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: TextFormField(controller: _calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories (kcal)'))),
-                const SizedBox(width: 10),
-                Expanded(child: TextFormField(controller: _proteinCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Protein (g)'))),
-              ]),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: TextFormField(controller: _carbsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Carbs (g)'))),
-                const SizedBox(width: 10),
-                Expanded(child: TextFormField(controller: _fatCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fat (g)'))),
-              ]),
-              const SizedBox(height: 20),
-              GradientButton(label: 'Log Meal', onPressed: _save),
-              const SizedBox(height: 8),
-            ],
+                  child: Row(children: [
+                    const Icon(Icons.alarm_rounded, size: 18, color: AppColors.mutedForeground),
+                    const SizedBox(width: 10),
+                    const Expanded(child: Text('Set meal reminder', style: TextStyle(fontSize: 13, fontFamily: 'Inter'))),
+                    Switch(
+                      value: _setReminder,
+                      onChanged: (v) => setState(() => _setReminder = v),
+                      activeThumbColor: AppColors.primary,
+                    ),
+                  ]),
+                ),
+                if (_setReminder) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _pickReminderTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
+                        const SizedBox(width: 10),
+                        const Text('Remind me at', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                        const Spacer(),
+                        Text(
+                          _reminderTime.format(context),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter'),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                      ]),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                GradientButton(label: 'Log Meal', onPressed: _save),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
