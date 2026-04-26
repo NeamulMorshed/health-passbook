@@ -41,7 +41,9 @@ class _HomeContent extends ConsumerWidget {
     final mealsAsync = ref.watch(todayMealsProvider(user.uid));
     final activityAsync = ref.watch(activityLogsProvider(user.uid));
     final notifsAsync = ref.watch(notificationsProvider(user.uid));
+    final apptsAsync = ref.watch(patientAppointmentsProvider(user.uid));
     final unreadCount = notifsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
+    final pendingAppts = apptsAsync.asData?.value.where((a) => a.isPending).length ?? 0;
 
     final greeting = _greeting();
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
@@ -158,7 +160,7 @@ class _HomeContent extends ConsumerWidget {
                               loading: () => const StatCard(label: 'Steps', value: '--', unit: 'today', icon: Icons.directions_walk_rounded, color: AppColors.success),
                               error: (_, __) => const StatCard(label: 'Steps', value: '--', unit: 'today', icon: Icons.directions_walk_rounded, color: AppColors.success),
                             ),
-                            StatCard(label: 'Appointments', value: '0', unit: 'pending', icon: Icons.calendar_today_rounded, color: AppColors.doctorPrimary, onTap: () => context.push('/appointments')),
+                            StatCard(label: 'Appointments', value: '$pendingAppts', unit: 'pending', icon: Icons.calendar_today_rounded, color: AppColors.doctorPrimary, onTap: () => context.push('/appointments')),
                           ],
                         );
                       },
