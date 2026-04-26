@@ -51,6 +51,14 @@ class FirestoreService {
     );
   }
 
+  Stream<List<DoctorProfile>> watchMyDoctors(String patientId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .where('patientIds', arrayContains: patientId)
+        .snapshots()
+        .map((s) => s.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList());
+  }
+
   Future<List<DoctorProfile>> searchDoctors({String? specialty, String? name}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {

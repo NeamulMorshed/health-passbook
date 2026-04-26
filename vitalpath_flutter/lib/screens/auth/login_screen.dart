@@ -67,7 +67,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else if (!user.onboardingComplete) {
       context.go('/onboarding/permissions');
     } else {
-      context.go('/home');
+      // Returning patients go through biometric auth before home.
+      // FaceIdScreen handles the /home redirect after success or skip.
+      context.go('/auth/faceid');
     }
   }
 

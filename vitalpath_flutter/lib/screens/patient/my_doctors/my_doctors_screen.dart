@@ -30,11 +30,12 @@ class MyDoctorsScreen extends ConsumerWidget {
             return const Center(child: SizedBox.shrink());
           }
 
-          final rxAsync = ref.watch(patientPrescriptionsProvider(user.uid));
+          final myDoctorsAsync = ref.watch(myDoctorsProvider(user.uid));
           final searchAsync = ref.watch(doctorSearchProvider(''));
+          final rxAsync = ref.watch(patientPrescriptionsProvider(user.uid));
 
           return DefaultTabController(
-            length: 2,
+            length: 3,
             child: Column(
               children: [
                 Container(
@@ -45,6 +46,7 @@ class MyDoctorsScreen extends ConsumerWidget {
                     indicatorColor: AppColors.primary,
                     tabs: [
                       Tab(text: 'My Doctors'),
+                      Tab(text: 'Find Doctors'),
                       Tab(text: 'Prescriptions'),
                     ],
                   ),
@@ -52,7 +54,8 @@ class MyDoctorsScreen extends ConsumerWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _DoctorsTab(searchAsync: searchAsync, uid: user.uid),
+                      _MyDoctorsTab(myDoctorsAsync: myDoctorsAsync, uid: user.uid),
+                      _FindDoctorsTab(searchAsync: searchAsync, uid: user.uid),
                       _PrescriptionsTab(rxAsync: rxAsync),
                     ],
                   ),
@@ -66,10 +69,39 @@ class MyDoctorsScreen extends ConsumerWidget {
   }
 }
 
-class _DoctorsTab extends ConsumerWidget {
+class _MyDoctorsTab extends ConsumerWidget {
+  final AsyncValue<List<DoctorProfile>> myDoctorsAsync;
+  final String uid;
+  const _MyDoctorsTab({required this.myDoctorsAsync, required this.uid});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return myDoctorsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+      data: (doctors) {
+        if (doctors.isEmpty) {
+          return const EmptyState(
+            icon: Icons.people_outline_rounded,
+            title: 'No Doctors Yet',
+            subtitle: 'Use Find Doctors to search and book your first appointment.',
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: doctors.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) => _DoctorCard(doctor: doctors[i], patientId: uid),
+        );
+      },
+    );
+  }
+}
+
+class _FindDoctorsTab extends ConsumerWidget {
   final AsyncValue<List<DoctorProfile>> searchAsync;
   final String uid;
-  const _DoctorsTab({required this.searchAsync, required this.uid});
+  const _FindDoctorsTab({required this.searchAsync, required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,10 +110,10 @@ class _DoctorsTab extends ConsumerWidget {
       error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
       data: (doctors) {
         if (doctors.isEmpty) {
-          return EmptyState(
+          return const EmptyState(
             icon: Icons.person_search_rounded,
             title: 'No Doctors Found',
-            subtitle: 'Book an appointment to connect with a doctor.',
+            subtitle: 'Doctors will appear here once they join VitalPath.',
           );
         }
         return ListView.separated(

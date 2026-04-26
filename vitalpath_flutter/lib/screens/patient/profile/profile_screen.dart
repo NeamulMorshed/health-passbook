@@ -27,7 +27,17 @@ class ProfileScreen extends ConsumerWidget {
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('My Profile'), automaticallyImplyLeading: false),
+          appBar: AppBar(
+            title: const Text('My Profile'),
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_rounded),
+                tooltip: 'Edit Profile',
+                onPressed: () => context.push('/edit-profile'),
+              ),
+            ],
+          ),
           body: ListView(
             children: [
               // Header
@@ -95,9 +105,9 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(children: [
                   _MenuItem(icon: Icons.people_rounded, label: 'My Doctors', color: AppColors.doctorPrimary, onTap: () => context.push('/my-doctors')),
                   _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.push('/appointments')),
-                  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () {}),
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () {}),
-                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () {}),
+                  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/my-doctors')),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notifications')),
+                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
                 ]),
               ),
 
