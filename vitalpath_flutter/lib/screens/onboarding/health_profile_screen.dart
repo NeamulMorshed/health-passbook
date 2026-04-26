@@ -52,7 +52,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
     setState(() => _saving = true);
     try {
-      final uid = ref.read(authServiceProvider).currentUser?.uid;
+      final uid = ref.read(authRepositoryProvider).currentUid;
       if (uid == null) return;
       await ref.read(firestoreServiceProvider).updatePatientProfile(uid, {
         'name': _nameCtrl.text.trim(),
@@ -62,8 +62,8 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
         'bloodType': _selectedBlood,
         'conditions': _selectedConditions,
       });
-      await ref.read(authServiceProvider).updateUserProfile(uid, {'name': _nameCtrl.text.trim()});
-      await ref.read(authServiceProvider).markOnboardingComplete(uid);
+      await ref.read(firestoreServiceProvider).updateUserProfile(uid, {'name': _nameCtrl.text.trim()});
+      await ref.read(authRepositoryProvider).markOnboardingComplete(uid);
       if (mounted) context.go('/home');
     } finally {
       if (mounted) setState(() => _saving = false);

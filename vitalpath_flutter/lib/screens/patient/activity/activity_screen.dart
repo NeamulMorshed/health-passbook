@@ -105,7 +105,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       appBar: AppBar(title: const Text('Activity'), automaticallyImplyLeading: false),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -216,7 +216,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text('$e'),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),

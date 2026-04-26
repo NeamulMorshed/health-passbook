@@ -37,7 +37,7 @@ class DoctorAppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> confirm(String apptId, DateTime scheduledAt, {String? notes}) async {
     state = const AsyncValue.loading();
     try {
-      await _db.updateAppointmentStatus(apptId, 'confirmed', scheduledAt: scheduledAt, notes: notes);
+      await _db.updateAppointmentStatus(apptId, AppointmentStatus.confirmed, scheduledAt: scheduledAt, notes: notes);
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -45,11 +45,11 @@ class DoctorAppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> complete(String apptId) async {
-    await _db.updateAppointmentStatus(apptId, 'completed');
+    await _db.updateAppointmentStatus(apptId, AppointmentStatus.completed);
   }
 
   Future<void> cancel(String apptId) async {
-    await _db.updateAppointmentStatus(apptId, 'cancelled');
+    await _db.updateAppointmentStatus(apptId, AppointmentStatus.cancelled);
   }
 }
 

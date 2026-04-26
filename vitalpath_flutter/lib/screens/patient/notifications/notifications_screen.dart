@@ -17,7 +17,7 @@ class NotificationsScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -43,7 +43,7 @@ class NotificationsScreen extends ConsumerWidget {
           ),
           body: notifsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('$e')),
+            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
             data: (notifs) {
               if (notifs.isEmpty) {
                 return const EmptyState(
@@ -75,17 +75,17 @@ class _NotifCard extends StatelessWidget {
   const _NotifCard({required this.notif, required this.onTap});
 
   IconData get _icon => switch (notif.type) {
-    'medicine_reminder' => Icons.medication_rounded,
-    'meal_reminder'     => Icons.restaurant_rounded,
-    'appointment'       => Icons.calendar_month_rounded,
-    _                   => Icons.notifications_rounded,
+    NotificationType.medicineReminder => Icons.medication_rounded,
+    NotificationType.mealReminder     => Icons.restaurant_rounded,
+    NotificationType.appointment      => Icons.calendar_month_rounded,
+    NotificationType.general          => Icons.notifications_rounded,
   };
 
   Color get _color => switch (notif.type) {
-    'medicine_reminder' => AppColors.primary,
-    'meal_reminder'     => AppColors.warning,
-    'appointment'       => AppColors.doctorPrimary,
-    _                   => AppColors.mutedForeground,
+    NotificationType.medicineReminder => AppColors.primary,
+    NotificationType.mealReminder     => AppColors.warning,
+    NotificationType.appointment      => AppColors.doctorPrimary,
+    NotificationType.general          => AppColors.mutedForeground,
   };
 
   @override

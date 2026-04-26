@@ -21,7 +21,7 @@ class MyDoctorsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('My Doctors')),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -75,7 +75,7 @@ class _DoctorsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return searchAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('$e')),
+      error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
       data: (doctors) {
         if (doctors.isEmpty) {
           return EmptyState(
@@ -253,7 +253,7 @@ class _PrescriptionsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return rxAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('$e')),
+      error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
       data: (prescriptions) {
         if (prescriptions.isEmpty) {
           return const EmptyState(icon: Icons.receipt_long_outlined, title: 'No Prescriptions', subtitle: 'Prescriptions from your doctors will appear here.');

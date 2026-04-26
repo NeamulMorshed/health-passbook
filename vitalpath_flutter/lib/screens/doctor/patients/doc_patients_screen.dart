@@ -22,7 +22,7 @@ class DocPatientsScreen extends ConsumerWidget {
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -34,7 +34,7 @@ class DocPatientsScreen extends ConsumerWidget {
 
           return docAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('$e')),
+            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
             data: (doc) {
               if (doc == null) return const EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: 'Doctor profile not found.');
               if (doc.patientIds.isEmpty) {
@@ -48,7 +48,7 @@ class DocPatientsScreen extends ConsumerWidget {
               final patientsAsync = ref.watch(doctorPatientsProvider(doc.patientIds));
               return patientsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('$e')),
+                error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
                 data: (patients) => ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: patients.length,

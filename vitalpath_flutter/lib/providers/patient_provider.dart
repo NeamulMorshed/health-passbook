@@ -133,7 +133,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         id: _uuid.v4(),
         title: 'Medicine reminder set',
         body: '$name — $dosage at ${reminderTimes[i]} ($repeatLabel)',
-        type: 'medicine_reminder',
+        type: NotificationType.medicineReminder,
         createdAt: DateTime.now(),
         scheduledFor: _todayAt(hour, minute),
       ));
@@ -249,7 +249,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
       id: _uuid.v4(),
       title: 'Meal reminder set',
       body: '$mealType at $reminderTime ($repeatLabel)',
-      type: 'meal_reminder',
+      type: NotificationType.mealReminder,
       createdAt: DateTime.now(),
       scheduledFor: _todayAt(hour, minute),
     ));
@@ -303,7 +303,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
         doctorId: doctorId,
         doctorName: doctorName,
         doctorSpecialty: doctorSpecialty,
-        status: 'pending',
+        status: AppointmentStatus.pending,
         patientNote: note,
         createdAt: DateTime.now(),
       );

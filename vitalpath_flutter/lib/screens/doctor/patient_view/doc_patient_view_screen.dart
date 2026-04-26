@@ -24,7 +24,7 @@ class DocPatientViewScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Patient Details')),
       body: patientAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (patient) {
           if (patient == null) return const EmptyState(icon: Icons.error_outline, title: 'Not Found', subtitle: 'Patient data not available.');
 

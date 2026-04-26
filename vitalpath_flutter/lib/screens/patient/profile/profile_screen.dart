@@ -15,7 +15,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -138,7 +138,7 @@ class ProfileScreen extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              await ref.read(authServiceProvider).signOut();
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/user-select');
             },
             child: const Text('Sign Out'),

@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../core/auth/auth_repository.dart';
 import '../core/auth/firebase_auth_repository.dart';
 import '../models/app_user.dart';
-import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 
@@ -40,14 +39,6 @@ final currentUserProvider = StreamProvider<AppUser?>((ref) {
     };
   });
 });
-
-// ── Legacy service providers (used by existing screens — do not remove) ───
-// Screens that call authServiceProvider.currentUser / getUserProfile / etc.
-// continue to work unchanged through these providers.
-
-final authServiceProvider = Provider<AuthService>(
-  (_) => AuthService(),
-);
 
 final firestoreServiceProvider = Provider<FirestoreService>(
   (_) => FirestoreService(),
