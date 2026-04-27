@@ -38,11 +38,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           final newUser = AppUser(
             uid: uid,
             name: displayName ?? 'New User',
-            phone: '', 
+            phone: '',
             userType: widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
             createdAt: DateTime.now(),
           );
-          await ref.read(authRepositoryProvider).createProfile(newUser);
+          try {
+            await ref.read(authRepositoryProvider).createProfile(newUser);
+          } catch (e) {
+            if (mounted) setState(() { _loading = false; _error = 'Failed to create profile. Please try again.'; });
+            return;
+          }
           if (!mounted) return;
           _navigateForUser(newUser);
         } else {

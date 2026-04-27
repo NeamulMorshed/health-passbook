@@ -25,7 +25,7 @@ import '../screens/doctor/profile/doc_profile_screen.dart';
 import '../screens/patient/notifications/notifications_screen.dart';
 import '../screens/patient/profile/edit_profile_screen.dart';
 import '../screens/patient/profile/privacy_screen.dart';
-import '../screens/patient/gamification/gamification_screen.dart';
+// import '../screens/patient/gamification/gamification_screen.dart';
 import '../screens/patient/insights/insights_screen.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
@@ -143,9 +143,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/privacy-security',
           builder: (_, __) => const PrivacySecurityScreen()),
-      GoRoute(
-          path: '/gamification',
-          builder: (_, __) => const GamificationScreen()),
+      // GoRoute(
+      //     path: '/gamification',
+      //     builder: (_, __) => const GamificationScreen()),
       GoRoute(
           path: '/insights',
           builder: (_, __) => const InsightsScreen()),

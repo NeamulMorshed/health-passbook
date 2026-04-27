@@ -7,7 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../providers/gamification_provider.dart';
+// import '../../../providers/gamification_provider.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -76,8 +76,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       steps: _steps,
       caloriesBurned: (_distanceKm * 60).round(),
     );
-    final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: _steps, type: 'walk');
-    if (mounted) showAppSnack(context, 'Walk saved  ${hp > 0 ? '+$hp HP' : ''} - ${_distanceKm.toStringAsFixed(2)}km in ${_formatTime(_seconds)}');
+    // final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: _steps, type: 'walk');
+    if (mounted) showAppSnack(context, 'Walk saved - ${_distanceKm.toStringAsFixed(2)}km in ${_formatTime(_seconds)}');
   }
 
   String _formatTime(int s) {
@@ -92,10 +92,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final user = await ref.read(currentUserProvider.future);
     if (user == null) return;
     await ref.read(activityNotifierProvider.notifier).save(user.uid, type: 'steps', durationSeconds: 0, steps: count);
-    final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: count, type: 'steps');
+    // final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: count, type: 'steps');
     if (mounted) {
       _stepsCtrl.clear();
-      showAppSnack(context, '$count steps added${hp > 0 ? '  +$hp HP' : ''}');
+      showAppSnack(context, '$count steps added');
     }
   }
 
