@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../providers/gamification_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -24,6 +25,7 @@ class ProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final patientAsync = ref.watch(patientProfileProvider(user.uid));
+        final gamAsync = ref.watch(gamificationProvider(user.uid));
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -50,6 +52,27 @@ class ProfileScreen extends ConsumerWidget {
                   Text(user.name.isNotEmpty ? user.name : 'Patient', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
                   const SizedBox(height: 4),
                   Text(user.phone, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  const SizedBox(height: 8),
+                  gamAsync.when(
+                    data: (g) => GestureDetector(
+                      onTap: () => context.push('/gamification'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 5),
+                          Text('Lv ${g.level} • ${g.hp} HP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+                        ]),
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 16),
                   patientAsync.when(
                     data: (patient) {
@@ -106,6 +129,8 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuItem(icon: Icons.people_rounded, label: 'My Doctors', color: AppColors.doctorPrimary, onTap: () => context.push('/my-doctors')),
                   _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.push('/appointments')),
                   _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/my-doctors')),
+                  _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
+                  _MenuItem(icon: Icons.auto_awesome_rounded, label: 'AI Health Insights', color: const Color(0xFF0EA5E9), onTap: () => context.push('/insights')),
                   _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notifications')),
                   _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
                 ]),

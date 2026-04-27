@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../models/app_user.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -42,8 +43,11 @@ class _HomeContent extends ConsumerWidget {
     final activityAsync = ref.watch(activityLogsProvider(user.uid));
     final notifsAsync = ref.watch(notificationsProvider(user.uid));
     final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
+    final gamAsync = ref.watch(gamificationProvider(user.uid));
     final unreadCount = notifsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
     final pendingAppts = apptsAsync.asData?.value.where((a) => a.isPending).length ?? 0;
+    final gamProfile = gamAsync.asData?.value;
+    final bestStreak = [gamProfile?.medStreak ?? 0, gamProfile?.mealStreak ?? 0, gamProfile?.activityStreak ?? 0].reduce((a, b) => a > b ? a : b);
 
     final greeting = _greeting();
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
@@ -77,6 +81,25 @@ class _HomeContent extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      // Streak badge
+                      if (bestStreak > 0)
+                        GestureDetector(
+                          onTap: () => context.push('/gamification'),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              const Text('🔥', style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 4),
+                              Text('$bestStreak', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning, fontFamily: 'Inter')),
+                            ]),
+                          ),
+                        ),
                       GestureDetector(
                         onTap: () => context.push('/notifications'),
                         child: Stack(
@@ -211,6 +234,63 @@ class _HomeContent extends ConsumerWidget {
                             Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
                           ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Gamification level shortcut
+                    GestureDetector(
+                      onTap: () => context.push('/gamification'),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.military_tech_rounded, color: AppColors.primary, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(
+                              gamProfile != null ? 'Level ${gamProfile.level} • ${gamProfile.levelTitle}' : 'Health Rewards',
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                            ),
+                            Text(
+                              gamProfile != null ? '${gamProfile.hp} HP • ${gamProfile.hpToNextLevel} to next level' : 'Earn HP by logging health data',
+                              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                            ),
+                          ])),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // AI Insights shortcut
+                    GestureDetector(
+                      onTap: () => context.push('/insights'),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [const Color(0xFF0EA5E9).withValues(alpha: 0.85), const Color(0xFF6366F1).withValues(alpha: 0.85)],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 26),
+                          SizedBox(width: 14),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text('AI Health Insights', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                            Text('Get personalised suggestions from Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
+                          ])),
+                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+                        ]),
                       ),
                     ),
                     const SizedBox(height: 20),

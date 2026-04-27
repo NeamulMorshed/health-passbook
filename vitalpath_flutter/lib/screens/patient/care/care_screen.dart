@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
 import '../../../core/constants/app_constants.dart';
@@ -195,7 +196,11 @@ class _MedCard extends ConsumerWidget {
           if (!taken) ...[
             const SizedBox(height: 12),
             ElevatedButton.icon(
-              onPressed: () => ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id),
+              onPressed: () async {
+                await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                final hp = await ref.read(gamificationServiceProvider).awardMedicineDose(uid);
+                if (hp > 0 && context.mounted) showAppSnack(context, '+$hp HP  Medicine taken!');
+              },
               icon: const Icon(Icons.check_rounded, size: 16),
               label: const Text('Mark as Taken'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
@@ -634,6 +639,8 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
         fat: double.tryParse(_fatCtrl.text),
         reminderTime: reminderTime, reminderRepeat: repeat,
       );
+      final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
+      if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
     }
     if (mounted) Navigator.pop(context);
   }

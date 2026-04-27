@@ -109,5 +109,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && isDoctor() &&
         request.resource.data.doctorId == request.auth.uid;
     }
+
+    // ── gamification ─────────────────────────────────────────────────────────────
+
+    match /gamification/{uid} {
+      allow read, write: if isSignedIn() && isOwner(uid);
+    }
   }
 }
