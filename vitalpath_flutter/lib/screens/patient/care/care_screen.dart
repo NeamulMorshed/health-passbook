@@ -144,38 +144,69 @@ class _MedCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final taken = med.takenToday;
+    final slots = med.todaySlots;
+    final fullyTaken = med.fullyTakenToday;
+    final hasDue = med.hasDueSlot;
+    final hasMissed = med.hasMissedSlot;
+    final asNeeded = med.hasNoScheduledTimes;
+
+    // Header badge
+    final StatusBadge badge;
+    if (fullyTaken) {
+      badge = StatusBadge.success('All Taken');
+    } else if (hasMissed && !hasDue) {
+      badge = StatusBadge.danger('Missed');
+    } else if (hasDue) {
+      badge = StatusBadge.warning('Due Now');
+    } else if (asNeeded && !med.fullyTakenToday) {
+      badge = StatusBadge.warning('Pending');
+    } else {
+      badge = StatusBadge.info('Upcoming');
+    }
+
+    // Border colour driven by urgency
+    final borderColor = fullyTaken
+        ? AppColors.success.withValues(alpha: 0.3)
+        : hasMissed
+            ? AppColors.warning.withValues(alpha: 0.4)
+            : AppColors.border;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: taken ? AppColors.success.withValues(alpha: 0.3) : AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title row
           Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8)),
               child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(med.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                Text(med.dosage, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                Text(med.name,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                Text(med.dosage,
+                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
               ]),
             ),
-            if (taken) StatusBadge.success('Taken') else StatusBadge.warning('Pending'),
+            badge,
             const SizedBox(width: 4),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
               onSelected: (v) {
                 if (v == 'edit') {
-                  final shell = context.findAncestorStateOfType<_CareScreenState>();
-                  shell?._showMedicineSheet(context, uid, existing: med);
+                  context.findAncestorStateOfType<_CareScreenState>()
+                      ?._showMedicineSheet(context, uid, existing: med);
                 } else {
                   _confirmDelete(context, ref);
                 }
@@ -186,14 +217,39 @@ class _MedCard extends ConsumerWidget {
               ],
             ),
           ]),
+
           const SizedBox(height: 10),
+
+          // Info chips
           Wrap(spacing: 8, runSpacing: 6, children: [
             _InfoChip(Icons.repeat_rounded, med.frequency),
-            if (med.prescribedBy != null) _InfoChip(Icons.person_rounded, 'Dr. ${med.prescribedBy}'),
-            if (med.reminderTimes.isNotEmpty)
-              _InfoChip(Icons.alarm_rounded, '${med.reminderTimes.join(' · ')} (${med.reminderRepeat})'),
+            if (med.prescribedBy != null)
+              _InfoChip(Icons.person_rounded, 'Dr. ${med.prescribedBy}'),
           ]),
-          if (!taken) ...[
+
+          // ── Slot chips (scheduled medicines) ──────────────────────────────
+          if (slots.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: slots.map((slot) => _SlotChip(
+                slot: slot,
+                onTake: (slot.isDue || slot.isMissed) && !slot.isTaken
+                    ? () async {
+                        await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                        final hp = await ref.read(gamificationServiceProvider).awardMedicineDose(uid);
+                        if (hp > 0 && context.mounted) {
+                          showAppSnack(context, '+$hp HP  ${slot.isMissed ? 'Late dose logged!' : 'Medicine taken!'}');
+                        }
+                      }
+                    : null,
+              )).toList(),
+            ),
+          ],
+
+          // ── Single button for "as needed" medicines ───────────────────────
+          if (asNeeded && !fullyTaken) ...[
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () async {
@@ -216,7 +272,8 @@ class _MedCard extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Remove ${med.name} from your medicines?', style: const TextStyle(fontFamily: 'Inter')),
+        content: Text('Remove ${med.name} from your medicines?',
+            style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
@@ -230,6 +287,60 @@ class _MedCard extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+// ── Slot Chip ─────────────────────────────────────────────────────────────────
+
+class _SlotChip extends StatelessWidget {
+  final DoseSlot slot;
+  final VoidCallback? onTake;
+  const _SlotChip({required this.slot, this.onTake});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg;
+    final Color fg;
+    final IconData icon;
+    final String label;
+
+    if (slot.isTaken) {
+      bg = AppColors.success.withValues(alpha: 0.1);
+      fg = AppColors.success;
+      icon = Icons.check_circle_rounded;
+      label = slot.shortTime;
+    } else if (slot.isMissed) {
+      bg = AppColors.warning.withValues(alpha: 0.1);
+      fg = AppColors.warning;
+      icon = Icons.warning_amber_rounded;
+      label = 'Missed · ${slot.shortTime}';
+    } else if (slot.isDue) {
+      bg = AppColors.primary;
+      fg = Colors.white;
+      icon = Icons.medication_rounded;
+      label = 'Take · ${slot.shortTime}';
+    } else {
+      bg = AppColors.muted;
+      fg = AppColors.mutedForeground;
+      icon = Icons.schedule_rounded;
+      label = slot.shortTime;
+    }
+
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: fg),
+        const SizedBox(width: 5),
+        Text(label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg, fontFamily: 'Inter')),
+      ]),
+    );
+
+    if (onTake != null) {
+      return GestureDetector(onTap: onTake, child: chip);
+    }
+    return chip;
   }
 }
 

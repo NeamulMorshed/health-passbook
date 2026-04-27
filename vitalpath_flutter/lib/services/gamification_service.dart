@@ -14,22 +14,25 @@ class GamificationService {
     });
   }
 
+  // Called once per slot taken. Always awards +10 HP.
+  // Streak and weekly counter only advance on the first dose of each calendar day.
   Future<int> awardMedicineDose(String uid) async {
     final profile = await _getOrCreate(uid);
     final now = DateTime.now();
 
-    if (_isToday(profile.lastMedDate)) return 0;
-
     const hpGain = 10;
-    final newStreak = _isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1;
+    final isFirstToday = !_isToday(profile.lastMedDate);
     final weekReset = _resetWeekIfNeeded(profile, now);
-    final newWeeklyMed = weekReset.weeklyMedDays + 1;
 
     var updated = weekReset.copyWith(
-      hp: profile.hp + hpGain,
-      medStreak: newStreak,
-      lastMedDate: now,
-      weeklyMedDays: newWeeklyMed,
+      hp: weekReset.hp + hpGain,
+      medStreak: isFirstToday
+          ? (_isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1)
+          : weekReset.medStreak,
+      lastMedDate: isFirstToday ? now : weekReset.lastMedDate,
+      weeklyMedDays: isFirstToday
+          ? weekReset.weeklyMedDays + 1
+          : weekReset.weeklyMedDays,
     );
 
     updated = _applyBadges(updated, 'med');
