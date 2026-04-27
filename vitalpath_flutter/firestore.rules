@@ -23,12 +23,13 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'patient';
     }
 
+    // Cheap exists() instead of get() + array-contains — one read instead of two.
+    // Works with the connections subcollection (no write-hotspot on doctor doc).
     function doctorHasPatient(patientId) {
-      return patientId in get(/databases/$(database)/documents/doctors/$(request.auth.uid)).data.patientIds;
+      return exists(/databases/$(database)/documents/doctors/$(request.auth.uid)/connections/$(patientId));
     }
 
     // ── users ────────────────────────────────────────────────────────────────
-    // Each user can only read and write their own document.
 
     match /users/{uid} {
       allow read:  if isSignedIn() && isOwner(uid);
@@ -36,8 +37,6 @@ service cloud.firestore {
     }
 
     // ── patients ─────────────────────────────────────────────────────────────
-    // Patients own their profile and all subcollections.
-    // Doctors can read a patient's profile if the patient is in their patientIds list.
 
     match /patients/{patientId} {
       allow read:  if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)));
@@ -60,24 +59,30 @@ service cloud.firestore {
       match /notifications/{notifId} {
         allow read, write: if isSignedIn() && isOwner(patientId);
       }
+
+      // Patient → Doctor connections (fan-out write during booking)
+      match /connections/{doctorId} {
+        allow read:   if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
+        allow create: if isSignedIn() && isOwner(patientId);
+        allow delete: if isSignedIn() && isOwner(patientId);
+      }
     }
 
     // ── doctors ──────────────────────────────────────────────────────────────
-    // Doctors own their profile.
-    // Patients can read doctor profiles (for search and booking).
-    // The patientIds array can also be updated when a patient books an appointment.
 
     match /doctors/{doctorId} {
-      allow read: if isSignedIn();
+      allow read:  if isSignedIn();
       allow write: if isSignedIn() && isOwner(doctorId);
-      allow update: if isSignedIn() && isPatient() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['patientIds']);
+
+      // Doctor → Patient connections (fan-out write during booking; no array contention)
+      match /connections/{patientId} {
+        allow read:   if isSignedIn() && (isOwner(doctorId) || isOwner(patientId));
+        allow create: if isSignedIn() && isOwner(patientId);
+        allow delete: if isSignedIn() && (isOwner(doctorId) || isOwner(patientId));
+      }
     }
 
     // ── appointments ─────────────────────────────────────────────────────────
-    // Both parties can read their own appointments.
-    // Patients create appointments.
-    // Doctors update status, scheduledAt, and notes only.
 
     match /appointments/{apptId} {
       allow read: if isSignedIn() && (
@@ -94,7 +99,6 @@ service cloud.firestore {
     }
 
     // ── prescriptions ─────────────────────────────────────────────────────────
-    // Both parties can read. Only the issuing doctor can write.
 
     match /prescriptions/{rxId} {
       allow read: if isSignedIn() && (

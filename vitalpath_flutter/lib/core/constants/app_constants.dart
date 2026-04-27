@@ -9,6 +9,7 @@ class AppConstants {
   static const colMeals = 'meals';
   static const colActivityLogs = 'activity_logs';
   static const colNotifications = 'notifications';
+  static const colConnections = 'connections';
 
   // User types
   static const typePatient = 'patient';

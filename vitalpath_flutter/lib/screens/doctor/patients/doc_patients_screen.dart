@@ -30,31 +30,24 @@ class DocPatientsScreen extends ConsumerWidget {
             );
             return const Center(child: SizedBox.shrink());
           }
-          final docAsync = ref.watch(doctorProfileProvider(user.uid));
+          final patientsAsync = ref.watch(doctorPatientsStreamProvider(user.uid));
 
-          return docAsync.when(
+          return patientsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
-            data: (doc) {
-              if (doc == null) return const EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: 'Doctor profile not found.');
-              if (doc.patientIds.isEmpty) {
+            data: (patients) {
+              if (patients.isEmpty) {
                 return const EmptyState(
                   icon: Icons.people_outline_rounded,
                   title: 'No Patients Yet',
                   subtitle: 'Patients will appear here once they book an appointment with you.',
                 );
               }
-
-              final patientsAsync = ref.watch(doctorPatientsProvider(doc.patientIds));
-              return patientsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
-                data: (patients) => ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: patients.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _PatientCard(patient: patients[i]),
-                ),
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: patients.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, i) => _PatientCard(patient: patients[i]),
               );
             },
           );

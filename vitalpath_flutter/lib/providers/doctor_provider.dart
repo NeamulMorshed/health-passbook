@@ -19,19 +19,24 @@ final doctorAppointmentsProvider = StreamProvider.family<List<Appointment>, Stri
   return ref.watch(firestoreServiceProvider).watchDoctorAppointments(doctorId);
 });
 
-// ─── My Doctors (patient's connected doctors) ────────────────────────────────
+// ─── My Doctors (patient's connected doctors via subcollection) ───────────────
 final myDoctorsProvider = StreamProvider.family<List<DoctorProfile>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchMyDoctors(patientId);
+});
+
+// ─── Doctor's Patient List (stream via connections subcollection) ─────────────
+final doctorPatientsStreamProvider = StreamProvider.family<List<PatientProfile>, String>((ref, doctorId) {
+  return ref.watch(firestoreServiceProvider).watchDoctorPatients(doctorId);
+});
+
+// ─── Doctor's Patient Count (live badge on dashboard) ────────────────────────
+final doctorPatientCountProvider = StreamProvider.family<int, String>((ref, doctorId) {
+  return ref.watch(firestoreServiceProvider).watchDoctorPatientCount(doctorId);
 });
 
 // ─── Search Doctors (for patients) ───────────────────────────────────────────
 final doctorSearchProvider = FutureProvider.family<List<DoctorProfile>, String>((ref, specialty) async {
   return ref.watch(firestoreServiceProvider).searchDoctors(specialty: specialty.isEmpty ? null : specialty);
-});
-
-// ─── Doctor's Patient List ────────────────────────────────────────────────────
-final doctorPatientsProvider = FutureProvider.family<List<PatientProfile>, List<String>>((ref, ids) async {
-  return ref.watch(firestoreServiceProvider).getDoctorPatients(ids);
 });
 
 // ─── Doctor Appointment Notifier ─────────────────────────────────────────────

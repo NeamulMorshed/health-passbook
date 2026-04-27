@@ -8,6 +8,10 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/appointment.dart';
 
+// Tracks how many appointments to load. Incrementing triggers a new query.
+final _apptLimitProvider = StateProvider.autoDispose<int>((ref) => 20);
+const _pageSize = 20;
+
 class AppointmentsScreen extends ConsumerWidget {
   const AppointmentsScreen({super.key});
 
@@ -28,7 +32,9 @@ class AppointmentsScreen extends ConsumerWidget {
             );
             return const Center(child: SizedBox.shrink());
           }
-          final apptsAsync = ref.watch(patientAppointmentsProvider(user.uid));
+
+          final limit = ref.watch(_apptLimitProvider);
+          final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: limit)));
 
           return apptsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -41,9 +47,11 @@ class AppointmentsScreen extends ConsumerWidget {
                   subtitle: 'Book an appointment with a doctor from the My Doctors page.',
                 );
               }
-              final pending = appts.where((a) => a.isPending).toList();
+
+              final pending   = appts.where((a) => a.isPending).toList();
               final confirmed = appts.where((a) => a.isConfirmed).toList();
-              final past = appts.where((a) => a.isCompleted || a.isCancelled).toList();
+              final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
+              final hasMore   = appts.length == limit;
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -64,7 +72,24 @@ class AppointmentsScreen extends ConsumerWidget {
                     const SectionHeader(title: 'Past'),
                     const SizedBox(height: 10),
                     ...past.map((a) => _ApptCard(appt: a)),
+                    const SizedBox(height: 12),
                   ],
+                  if (hasMore)
+                    TextButton.icon(
+                      onPressed: () => ref.read(_apptLimitProvider.notifier).state += _pageSize,
+                      icon: const Icon(Icons.expand_more_rounded),
+                      label: const Text('Load more', style: TextStyle(fontFamily: 'Inter')),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Showing all ${appts.length} appointment${appts.length == 1 ? '' : 's'}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
                 ],
               );
             },

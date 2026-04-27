@@ -34,9 +34,13 @@ final activityLogsProvider = StreamProvider.family<List<ActivityLog>, String>((r
   return ref.watch(firestoreServiceProvider).watchRecentActivity(patientId);
 });
 
-// ─── Patient Appointments Stream ──────────────────────────────────────────────
-final patientAppointmentsProvider = StreamProvider.family<List<Appointment>, String>((ref, patientId) {
-  return ref.watch(firestoreServiceProvider).watchPatientAppointments(patientId);
+// ─── Patient Appointments Stream (paginated) ─────────────────────────────────
+// Use a record key so the limit is part of the cache key — incrementing the
+// limit in the UI transparently re-subscribes with a larger Firestore query.
+typedef ApptsKey = ({String patientId, int limit});
+
+final patientAppointmentsProvider = StreamProvider.family<List<Appointment>, ApptsKey>((ref, key) {
+  return ref.watch(firestoreServiceProvider).watchPatientAppointments(key.patientId, limit: key.limit);
 });
 
 // ─── Patient Prescriptions Stream ────────────────────────────────────────────

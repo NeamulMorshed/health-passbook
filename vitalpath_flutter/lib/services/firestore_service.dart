@@ -51,30 +51,76 @@ class FirestoreService {
     );
   }
 
-  Stream<List<DoctorProfile>> watchMyDoctors(String patientId) {
-    return _db
-        .collection(AppConstants.colDoctors)
-        .where('patientIds', arrayContains: patientId)
-        .snapshots()
-        .map((s) => s.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList());
+  // ── Private batch-fetch helpers ────────────────────────────────────────────
+  // Firestore whereIn supports max 30 items; chunking handles any list size.
+
+  Future<List<DoctorProfile>> _fetchDoctorsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final results = <DoctorProfile>[];
+    for (var i = 0; i < ids.length; i += 30) {
+      final chunk = ids.sublist(i, (i + 30).clamp(0, ids.length));
+      final snap = await _db
+          .collection(AppConstants.colDoctors)
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      results.addAll(snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)));
+    }
+    return results;
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? name}) async {
+  Future<List<PatientProfile>> _fetchPatientsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final results = <PatientProfile>[];
+    for (var i = 0; i < ids.length; i += 30) {
+      final chunk = ids.sublist(i, (i + 30).clamp(0, ids.length));
+      final snap = await _db
+          .collection(AppConstants.colPatients)
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      results.addAll(snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)));
+    }
+    return results;
+  }
+
+  // ── Connections (patient ↔ doctor many-to-many) ────────────────────────────
+  // Fan-out write on both sides so neither the patient doc nor the doctor doc
+  // acts as a write hotspot.  Each connection is its own document → Firestore
+  // can handle unlimited concurrent bookings without contention.
+
+  Stream<List<DoctorProfile>> watchMyDoctors(String patientId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .asyncMap((snap) => _fetchDoctorsByIds(snap.docs.map((d) => d.id).toList()));
+  }
+
+  Stream<List<PatientProfile>> watchDoctorPatients(String doctorId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .asyncMap((snap) => _fetchPatientsByIds(snap.docs.map((d) => d.id).toList()));
+  }
+
+  Stream<int> watchDoctorPatientCount(String doctorId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
+  Future<List<DoctorProfile>> searchDoctors({String? specialty}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
     }
     final snap = await query.limit(50).get();
     return snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
-  }
-
-  Future<List<PatientProfile>> getDoctorPatients(List<String> patientIds) async {
-    if (patientIds.isEmpty) return [];
-    final snap = await _db
-        .collection(AppConstants.colPatients)
-        .where(FieldPath.documentId, whereIn: patientIds.take(10).toList())
-        .get();
-    return snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)).toList();
   }
 
   // ─── Medicines ────────────────────────────────────────────────────────────
@@ -249,11 +295,12 @@ class FirestoreService {
 
   // ─── Appointments ─────────────────────────────────────────────────────────
 
-  Stream<List<Appointment>> watchPatientAppointments(String patientId) {
+  Stream<List<Appointment>> watchPatientAppointments(String patientId, {int limit = 20}) {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
         .orderBy('createdAt', descending: true)
+        .limit(limit)
         .snapshots()
         .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
   }
@@ -263,20 +310,34 @@ class FirestoreService {
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
         .orderBy('createdAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
   }
 
   Future<void> bookAppointment(Appointment appt) async {
     final batch = _db.batch();
+
+    // The appointment document
     batch.set(
       _db.collection(AppConstants.colAppointments).doc(appt.id),
       appt.toMap(),
     );
-    batch.update(
-      _db.collection(AppConstants.colDoctors).doc(appt.doctorId),
-      {'patientIds': FieldValue.arrayUnion([appt.patientId])},
+
+    // Fan-out: patient→doctor connection (avoids doctor doc write contention)
+    batch.set(
+      _db.collection(AppConstants.colPatients).doc(appt.patientId)
+          .collection(AppConstants.colConnections).doc(appt.doctorId),
+      {'connectedAt': FieldValue.serverTimestamp()},
     );
+
+    // Fan-out: doctor→patient connection (enables doctor's patient list stream)
+    batch.set(
+      _db.collection(AppConstants.colDoctors).doc(appt.doctorId)
+          .collection(AppConstants.colConnections).doc(appt.patientId),
+      {'connectedAt': FieldValue.serverTimestamp()},
+    );
+
     await batch.commit();
   }
 

@@ -41,7 +41,7 @@ class _HomeContent extends ConsumerWidget {
     final mealsAsync = ref.watch(todayMealsProvider(user.uid));
     final activityAsync = ref.watch(activityLogsProvider(user.uid));
     final notifsAsync = ref.watch(notificationsProvider(user.uid));
-    final apptsAsync = ref.watch(patientAppointmentsProvider(user.uid));
+    final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
     final unreadCount = notifsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
     final pendingAppts = apptsAsync.asData?.value.where((a) => a.isPending).length ?? 0;
 

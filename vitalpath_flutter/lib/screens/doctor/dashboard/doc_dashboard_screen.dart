@@ -27,6 +27,7 @@ class DocDashboardScreen extends ConsumerWidget {
         }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
         final apptsAsync = ref.watch(doctorAppointmentsProvider(user.uid));
+        final patientCountAsync = ref.watch(doctorPatientCountProvider(user.uid));
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -72,20 +73,14 @@ class DocDashboardScreen extends ConsumerWidget {
                         final pending = appts.where((a) => a.isPending).length;
                         final confirmed = appts.where((a) => a.isConfirmed).length;
 
-                        return docAsync.when(
-                          data: (doc) {
-                            final patientCount = doc?.patientIds.length ?? 0;
-                            return Row(children: [
-                              Expanded(child: _StatTile('$patientCount', 'Patients', Icons.people_rounded, AppColors.primary)),
-                              const SizedBox(width: 10),
-                              Expanded(child: _StatTile('$pending', 'Pending', Icons.pending_actions_rounded, AppColors.warning)),
-                              const SizedBox(width: 10),
-                              Expanded(child: _StatTile('$confirmed', 'Confirmed', Icons.check_circle_rounded, AppColors.success)),
-                            ]);
-                          },
-                          loading: () => const SizedBox(),
-                          error: (_, __) => const SizedBox(),
-                        );
+                        final patientCount = patientCountAsync.asData?.value ?? 0;
+                        return Row(children: [
+                          Expanded(child: _StatTile('$patientCount', 'Patients', Icons.people_rounded, AppColors.primary)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatTile('$pending', 'Pending', Icons.pending_actions_rounded, AppColors.warning)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatTile('$confirmed', 'Confirmed', Icons.check_circle_rounded, AppColors.success)),
+                        ]);
                       },
                       loading: () => const Center(child: CircularProgressIndicator()),
                       error: (_, __) => const SizedBox(),
