@@ -47,7 +47,8 @@ class DocPatientsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 itemCount: patients.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) => _PatientCard(patient: patients[i]),
+                itemBuilder: (_, i) =>
+                    _PatientCard(patient: patients[i], doctorId: user.uid),
               );
             },
           );
@@ -57,12 +58,13 @@ class DocPatientsScreen extends ConsumerWidget {
   }
 }
 
-class _PatientCard extends StatelessWidget {
+class _PatientCard extends ConsumerWidget {
   final PatientProfile patient;
-  const _PatientCard({required this.patient});
+  final String doctorId;
+  const _PatientCard({required this.patient, required this.doctorId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () => context.push('/doc/patient/${patient.uid}'),
       child: Container(
@@ -75,19 +77,67 @@ class _PatientCard extends StatelessWidget {
         child: Row(children: [
           AppAvatar(name: patient.name, size: 48),
           const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(patient.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            const SizedBox(height: 4),
-            Row(children: [
-              if (patient.age != null) _InfoChip('${patient.age} yrs'),
-              if (patient.age != null) const SizedBox(width: 6),
-              if (patient.bloodType != null) _InfoChip(patient.bloodType!),
-              if (patient.bloodType != null) const SizedBox(width: 6),
-              if (patient.conditions.isNotEmpty) _InfoChip(patient.conditions.first),
-            ]),
-          ])),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(patient.name,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Inter')),
+                const SizedBox(height: 4),
+                Row(children: [
+                  if (patient.age != null) _InfoChip('${patient.age} yrs'),
+                  if (patient.age != null) const SizedBox(width: 6),
+                  if (patient.bloodType != null)
+                    _InfoChip(patient.bloodType!),
+                  if (patient.bloodType != null) const SizedBox(width: 6),
+                  if (patient.conditions.isNotEmpty)
+                    _InfoChip(patient.conditions.first),
+                ]),
+              ])),
+          IconButton(
+            tooltip: 'Remove patient',
+            icon: const Icon(Icons.person_remove_rounded,
+                size: 18, color: AppColors.destructive),
+            onPressed: () => _confirmRemove(context, ref),
+          ),
+          const Icon(Icons.arrow_forward_ios_rounded,
+              size: 14, color: AppColors.mutedForeground),
         ]),
+      ),
+    );
+  }
+
+  void _confirmRemove(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remove Patient',
+            style: TextStyle(fontFamily: 'Inter')),
+        content: Text('Remove ${patient.name} from your patients list?',
+            style: const TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.destructive),
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref
+                  .read(connectionNotifierProvider.notifier)
+                  .remove(patient.uid, doctorId);
+              if (context.mounted) {
+                showAppSnack(
+                    context, '${patient.name} removed from your list.');
+              }
+            },
+            child: const Text('Remove'),
+          ),
+        ],
       ),
     );
   }

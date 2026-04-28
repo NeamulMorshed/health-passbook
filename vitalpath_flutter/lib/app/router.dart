@@ -22,6 +22,7 @@ import '../screens/doctor/patients/doc_patients_screen.dart';
 import '../screens/doctor/appointments/doc_appointments_screen.dart';
 import '../screens/doctor/patient_view/doc_patient_view_screen.dart';
 import '../screens/doctor/profile/doc_profile_screen.dart';
+import '../screens/doctor/onboarding/doc_profile_setup_screen.dart';
 import '../screens/patient/notifications/notifications_screen.dart';
 import '../screens/patient/profile/edit_profile_screen.dart';
 import '../screens/patient/profile/privacy_screen.dart';
@@ -108,13 +109,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Onboarding
+      // Patient onboarding
       GoRoute(
           path: '/onboarding/permissions',
           builder: (_, __) => const PermissionsScreen()),
       GoRoute(
           path: '/onboarding/health-profile',
           builder: (_, __) => const HealthProfileScreen()),
+
+      // Doctor onboarding
+      GoRoute(
+          path: '/doc/onboarding/profile',
+          builder: (_, __) => const DocProfileSetupScreen()),
 
       // Patient shell
       ShellRoute(

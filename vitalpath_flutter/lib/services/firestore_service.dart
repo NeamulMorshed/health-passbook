@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../models/medicine.dart';
 import '../models/meal.dart';
 import '../models/appointment.dart';
@@ -8,6 +9,8 @@ import '../models/doctor.dart';
 import '../models/activity_log.dart';
 import '../models/app_notification.dart';
 import '../core/constants/app_constants.dart';
+
+const _uuid = Uuid();
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -114,13 +117,48 @@ class FirestoreService {
         .map((s) => s.docs.length);
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty}) async {
+  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
     }
     final snap = await query.limit(50).get();
-    return snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
+    var results = snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
+    if (nameQuery != null && nameQuery.isNotEmpty) {
+      final lower = nameQuery.toLowerCase();
+      results = results
+          .where((d) =>
+              d.name.toLowerCase().contains(lower) ||
+              (d.specialty?.toLowerCase().contains(lower) ?? false) ||
+              (d.hospital?.toLowerCase().contains(lower) ?? false))
+          .toList();
+    }
+    return results;
+  }
+
+  Future<bool> isConnected(String doctorId, String patientId) async {
+    final doc = await _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId)
+        .get();
+    return doc.exists;
+  }
+
+  Future<void> removeConnection(String patientId, String doctorId) async {
+    final batch = _db.batch();
+    batch.delete(_db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colConnections)
+        .doc(doctorId));
+    batch.delete(_db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId));
+    await batch.commit();
   }
 
   // ─── Medicines ────────────────────────────────────────────────────────────
@@ -315,27 +353,53 @@ class FirestoreService {
         .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
   }
 
+  // Booking only creates the appointment — connection is established on confirmation.
   Future<void> bookAppointment(Appointment appt) async {
+    await _db.collection(AppConstants.colAppointments).doc(appt.id).set(appt.toMap());
+  }
+
+  // Confirm appointment: update status, fan-out connection, notify patient.
+  Future<void> confirmAppointment({
+    required String apptId,
+    required String patientId,
+    required String doctorId,
+    required String doctorName,
+    required DateTime scheduledAt,
+    String? notes,
+  }) async {
     final batch = _db.batch();
 
-    // The appointment document
-    batch.set(
-      _db.collection(AppConstants.colAppointments).doc(appt.id),
-      appt.toMap(),
-    );
+    batch.update(_db.collection(AppConstants.colAppointments).doc(apptId), {
+      'status': AppointmentStatus.confirmed.value,
+      'scheduledAt': Timestamp.fromDate(scheduledAt),
+      if (notes != null) 'notes': notes,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
 
-    // Fan-out: patient→doctor connection (avoids doctor doc write contention)
+    // Bidirectional connection — created only after doctor accepts.
     batch.set(
-      _db.collection(AppConstants.colPatients).doc(appt.patientId)
-          .collection(AppConstants.colConnections).doc(appt.doctorId),
+      _db.collection(AppConstants.colPatients).doc(patientId)
+          .collection(AppConstants.colConnections).doc(doctorId),
+      {'connectedAt': FieldValue.serverTimestamp()},
+    );
+    batch.set(
+      _db.collection(AppConstants.colDoctors).doc(doctorId)
+          .collection(AppConstants.colConnections).doc(patientId),
       {'connectedAt': FieldValue.serverTimestamp()},
     );
 
-    // Fan-out: doctor→patient connection (enables doctor's patient list stream)
+    // In-app notification for the patient.
     batch.set(
-      _db.collection(AppConstants.colDoctors).doc(appt.doctorId)
-          .collection(AppConstants.colConnections).doc(appt.patientId),
-      {'connectedAt': FieldValue.serverTimestamp()},
+      _db.collection(AppConstants.colPatients).doc(patientId)
+          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      {
+        'title': 'Appointment Confirmed',
+        'body': 'Dr. $doctorName confirmed your appointment for ${_fmtDt(scheduledAt)}.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+        'scheduledFor': Timestamp.fromDate(scheduledAt),
+      },
     );
 
     await batch.commit();
@@ -354,6 +418,35 @@ class FirestoreService {
     if (scheduledAt != null) data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
+
+    // On cancel: remove connection if no pending/confirmed appointments remain.
+    if (status == AppointmentStatus.cancelled) {
+      final doc = await _db.collection(AppConstants.colAppointments).doc(apptId).get();
+      if (doc.exists) {
+        final appt = Appointment.fromMap(doc.data()!, apptId);
+        await _cleanupConnectionIfInactive(appt.patientId, appt.doctorId);
+      }
+    }
+  }
+
+  Future<void> _cleanupConnectionIfInactive(String patientId, String doctorId) async {
+    final remaining = await _db
+        .collection(AppConstants.colAppointments)
+        .where('patientId', isEqualTo: patientId)
+        .where('doctorId', isEqualTo: doctorId)
+        .where('status', whereIn: ['pending', 'confirmed'])
+        .get();
+    if (remaining.docs.isEmpty) {
+      await removeConnection(patientId, doctorId);
+    }
+  }
+
+  String _fmtDt(DateTime dt) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $h:$m $period';
   }
 
   // ─── Prescriptions ────────────────────────────────────────────────────────

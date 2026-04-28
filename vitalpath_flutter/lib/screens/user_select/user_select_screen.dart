@@ -88,10 +88,14 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
         final result = await authRepo.getUserState(uid);
         if (!mounted) return;
         if (result is AuthSuccess) {
-          // Existing profile — navigate to the appropriate dashboard.
+          // Existing profile — navigate to the appropriate destination.
           final user = result.user;
           if (user.userType == UserType.doctor) {
-            context.go('/doc/dashboard');
+            if (!user.onboardingComplete) {
+              context.go('/doc/onboarding/profile');
+            } else {
+              context.go('/doc/dashboard');
+            }
           } else if (!user.onboardingComplete) {
             context.go('/onboarding/permissions');
           } else {
@@ -108,7 +112,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
           await authRepo.createProfile(newUser);
           if (!mounted) return;
           if (userType == 'doctor') {
-            context.go('/doc/dashboard');
+            context.go('/doc/onboarding/profile');
           } else {
             context.go('/onboarding/permissions');
           }

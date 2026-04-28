@@ -213,7 +213,16 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
 
   void _confirm() async {
     final dt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
-    await ref.read(doctorAppointmentNotifierProvider.notifier).confirm(widget.appt.id, dt, notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim());
+    final user = await ref.read(currentUserProvider.future);
+    if (user == null) return;
+    await ref.read(doctorAppointmentNotifierProvider.notifier).confirm(
+      widget.appt.id,
+      dt,
+      patientId: widget.appt.patientId,
+      doctorId: user.uid,
+      doctorName: user.name,
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+    );
     if (mounted) {
       Navigator.pop(context);
       showAppSnack(context, 'Appointment confirmed for ${widget.appt.patientName}');

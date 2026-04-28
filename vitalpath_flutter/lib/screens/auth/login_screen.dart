@@ -68,12 +68,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _navigateForUser(AppUser user) {
     if (user.userType == UserType.doctor) {
-      context.go('/doc/dashboard');
+      if (!user.onboardingComplete) {
+        context.go('/doc/onboarding/profile');
+      } else {
+        context.go('/doc/dashboard');
+      }
     } else if (!user.onboardingComplete) {
       context.go('/onboarding/permissions');
     } else {
       // Returning patients go through biometric auth before home.
-      // FaceIdScreen handles the /home redirect after success or skip.
       context.go('/auth/faceid');
     }
   }

@@ -6,6 +6,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../../models/prescription.dart';
 
 class DocPatientViewScreen extends ConsumerWidget {
@@ -22,7 +23,67 @@ class DocPatientViewScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Patient Details')),
-      body: patientAsync.when(
+      body: userAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+        data: (doctor) {
+          if (doctor == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const SizedBox.shrink();
+          }
+          final connectionAsync = ref.watch(
+            connectionCheckProvider((doctorId: doctor.uid, patientId: patientId)),
+          );
+          return connectionAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+            data: (isConnected) {
+              if (!isConnected) {
+                return const EmptyState(
+                  icon: Icons.lock_outline_rounded,
+                  title: 'Access Denied',
+                  subtitle: 'You do not have an active connection with this patient.',
+                );
+              }
+              return _PatientDetailBody(
+                patientAsync: patientAsync,
+                medsAsync: medsAsync,
+                rxAsync: rxAsync,
+                doctorId: doctor.uid,
+                doctorName: doctor.name,
+                patientId: patientId,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+}
+
+class _PatientDetailBody extends ConsumerWidget {
+  final AsyncValue patientAsync;
+  final AsyncValue medsAsync;
+  final AsyncValue rxAsync;
+  final String doctorId;
+  final String doctorName;
+  final String patientId;
+
+  const _PatientDetailBody({
+    required this.patientAsync,
+    required this.medsAsync,
+    required this.rxAsync,
+    required this.doctorId,
+    required this.doctorName,
+    required this.patientId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return patientAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (patient) {
@@ -138,27 +199,19 @@ class DocPatientViewScreen extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Write prescription button
-              userAsync.when(
-                data: (user) {
-                  if (user == null) return const SizedBox();
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GradientButton(
-                      label: 'Write Prescription',
-                      colors: [AppColors.doctorPrimary, const Color(0xFF5B21B6)],
-                      onPressed: () => _showPrescribeSheet(context, patientId, user.uid, user.name),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GradientButton(
+                  label: 'Write Prescription',
+                  colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                  onPressed: () => _showPrescribeSheet(context, patientId, doctorId, doctorName),
+                ),
               ),
               const SizedBox(height: 24),
             ],
           );
         },
-      ),
-    );
+      );
   }
 
   void _showPrescribeSheet(BuildContext context, String patientId, String doctorId, String doctorName) {

@@ -9,7 +9,6 @@ class DoctorProfile {
   final String? photoUrl;
   final double rating;
   final int reviewCount;
-  final List<String> patientIds;
   final bool isVerified;
 
   const DoctorProfile({
@@ -22,7 +21,6 @@ class DoctorProfile {
     this.photoUrl,
     this.rating = 0.0,
     this.reviewCount = 0,
-    this.patientIds = const [],
     this.isVerified = false,
   });
 
@@ -37,7 +35,6 @@ class DoctorProfile {
       photoUrl: map['photoUrl'],
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount: map['reviewCount'] ?? 0,
-      patientIds: List<String>.from(map['patientIds'] ?? []),
       isVerified: map['isVerified'] ?? false,
     );
   }
@@ -51,7 +48,6 @@ class DoctorProfile {
         'photoUrl': photoUrl,
         'rating': rating,
         'reviewCount': reviewCount,
-        'patientIds': patientIds,
         'isVerified': isVerified,
       };
 }

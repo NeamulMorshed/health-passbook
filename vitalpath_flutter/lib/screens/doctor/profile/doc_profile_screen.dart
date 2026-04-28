@@ -24,6 +24,7 @@ class DocProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
+        final patientCount = ref.watch(doctorPatientCountProvider(user.uid)).maybeWhen(data: (c) => c, orElse: () => 0);
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -50,7 +51,7 @@ class DocProfileScreen extends ConsumerWidget {
                       ],
                       const SizedBox(height: 16),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        _HeaderStat('${doc?.patientIds.length ?? 0}', 'Patients'),
+                        _HeaderStat('$patientCount', 'Patients'),
                         Container(width: 1, height: 28, color: Colors.white24),
                         _HeaderStat(doc?.rating.toStringAsFixed(1) ?? '0.0', 'Rating'),
                         Container(width: 1, height: 28, color: Colors.white24),

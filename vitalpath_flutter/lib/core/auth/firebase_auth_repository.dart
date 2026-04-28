@@ -124,7 +124,6 @@ class FirebaseAuthRepository implements AuthRepository {
           'name': user.name,
           'phone': user.phone,
           'photoUrl': user.photoUrl,
-          'patientIds': <String>[],
           'isVerified': false,
           'rating': 0.0,
           'reviewCount': 0,
