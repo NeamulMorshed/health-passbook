@@ -106,6 +106,24 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
   }
 }
 
+void _showMedDetailSheet(BuildContext context, Medicine med, String uid) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => _MedDetailSheet(med: med, uid: uid),
+  );
+}
+
+void _showMealDetailSheet(BuildContext context, MealLog meal, String uid) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => _MealDetailSheet(meal: meal, uid: uid),
+  );
+}
+
 // ─── Medicine Tab ──────────────────────────────────────────────────────────────
 class _MedicineTab extends ConsumerWidget {
   final String uid;
@@ -130,7 +148,11 @@ class _MedicineTab extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           itemCount: meds.length,
           separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (_, i) => _MedCard(med: meds[i], uid: uid),
+          itemBuilder: (_, i) => _MedCard(
+            med: meds[i],
+            uid: uid,
+            onTap: () => _showMedDetailSheet(context, meds[i], uid),
+          ),
         );
       },
     );
@@ -140,7 +162,8 @@ class _MedicineTab extends ConsumerWidget {
 class _MedCard extends ConsumerWidget {
   final Medicine med;
   final String uid;
-  const _MedCard({required this.med, required this.uid});
+  final VoidCallback? onTap;
+  const _MedCard({required this.med, required this.uid, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -171,10 +194,15 @@ class _MedCard extends ConsumerWidget {
             ? AppColors.warning.withValues(alpha: 0.4)
             : AppColors.border;
 
-    return Container(
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor),
       ),
@@ -263,6 +291,8 @@ class _MedCard extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+        ),
       ),
     );
   }
@@ -397,7 +427,11 @@ class _FoodTab extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: meals.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _MealCard(meal: meals[i], uid: uid),
+                  itemBuilder: (_, i) => _MealCard(
+                    meal: meals[i],
+                    uid: uid,
+                    onTap: () => _showMealDetailSheet(context, meals[i], uid),
+                  ),
                 ),
               ),
           ],
@@ -422,7 +456,8 @@ class _NutrientStat extends StatelessWidget {
 class _MealCard extends ConsumerWidget {
   final MealLog meal;
   final String uid;
-  const _MealCard({required this.meal, required this.uid});
+  final VoidCallback? onTap;
+  const _MealCard({required this.meal, required this.uid, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -433,50 +468,390 @@ class _MealCard extends ConsumerWidget {
       'Snack': Icons.cookie_rounded,
     };
     final icon = mealIcons[meal.mealType] ?? Icons.restaurant_rounded;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: AppColors.warning, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(meal.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              if (meal.calories != null)
-                Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ])),
-            StatusBadge.warning(meal.mealType),
-            const SizedBox(width: 4),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
-              onSelected: (v) {
-                if (v == 'edit') {
-                  final shell = context.findAncestorStateOfType<_CareScreenState>();
-                  shell?._showMealSheet(context, uid, existing: meal);
-                } else {
-                  ref.read(mealNotifierProvider.notifier).delete(uid, meal.id);
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
-                PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Delete', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                  child: Icon(icon, color: AppColors.warning, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(meal.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                  if (meal.calories != null)
+                    Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                ])),
+                StatusBadge.warning(meal.mealType),
+                const SizedBox(width: 4),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
+                  onSelected: (v) {
+                    if (v == 'edit') {
+                      final shell = context.findAncestorStateOfType<_CareScreenState>();
+                      shell?._showMealSheet(context, uid, existing: meal);
+                    } else {
+                      ref.read(mealNotifierProvider.notifier).delete(uid, meal.id);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
+                    PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Delete', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
+                  ],
+                ),
+              ]),
+              if (meal.reminderTime != null) ...[
+                const SizedBox(height: 8),
+                _InfoChip(Icons.alarm_rounded, '${meal.reminderTime} (${meal.reminderRepeat})'),
               ],
-            ),
-          ]),
-          if (meal.reminderTime != null) ...[
-            const SizedBox(height: 8),
-            _InfoChip(Icons.alarm_rounded, '${meal.reminderTime} (${meal.reminderRepeat})'),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+// ─── Medicine Detail Sheet ────────────────────────────────────────────────────
+
+class _MedDetailSheet extends ConsumerWidget {
+  final Medicine med;
+  final String uid;
+  const _MedDetailSheet({required this.med, required this.uid});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final slots = med.todaySlots;
+    final fullyTaken = med.fullyTakenToday;
+    final hasDue = med.hasDueSlot;
+    final hasMissed = med.hasMissedSlot;
+
+    final StatusBadge badge;
+    if (fullyTaken) {
+      badge = StatusBadge.success('All Taken');
+    } else if (hasMissed && !hasDue) {
+      badge = StatusBadge.danger('Missed');
+    } else if (hasDue) {
+      badge = StatusBadge.warning('Due Now');
+    } else if (med.hasNoScheduledTimes && !fullyTaken) {
+      badge = StatusBadge.warning('Pending');
+    } else {
+      badge = StatusBadge.info('Upcoming');
+    }
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      builder: (_, controller) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Header
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(med.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                Text(med.dosage, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              ])),
+              badge,
+            ]),
+
+            const SizedBox(height: 24),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 20),
+
+            // Details grid
+            _DetailRow(icon: Icons.repeat_rounded, label: 'Frequency', value: med.frequency),
+            if (med.prescribedBy != null)
+              _DetailRow(icon: Icons.person_rounded, label: 'Prescribed by', value: 'Dr. ${med.prescribedBy}'),
+            _DetailRow(
+              icon: Icons.calendar_today_rounded,
+              label: 'Start date',
+              value: '${med.startDate.day}/${med.startDate.month}/${med.startDate.year}',
+            ),
+            if (med.endDate != null)
+              _DetailRow(
+                icon: Icons.event_rounded,
+                label: 'End date',
+                value: '${med.endDate!.day}/${med.endDate!.month}/${med.endDate!.year}',
+              ),
+            if (med.reminderRepeat.isNotEmpty)
+              _DetailRow(icon: Icons.autorenew_rounded, label: 'Repeat', value: med.reminderRepeat == 'daily' ? 'Every day' : 'Weekly'),
+            if (med.notes != null && med.notes!.isNotEmpty)
+              _DetailRow(icon: Icons.notes_rounded, label: 'Notes', value: med.notes!),
+
+            // Today's doses
+            if (slots.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              const Text("Today's Doses", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              const SizedBox(height: 10),
+              ...slots.map((slot) {
+                final Color bg;
+                final Color fg;
+                final IconData icon;
+                final String label;
+                if (slot.isTaken) {
+                  bg = AppColors.success.withValues(alpha: 0.08); fg = AppColors.success;
+                  icon = Icons.check_circle_rounded; label = 'Taken';
+                } else if (slot.isMissed) {
+                  bg = AppColors.warning.withValues(alpha: 0.08); fg = AppColors.warning;
+                  icon = Icons.warning_amber_rounded; label = 'Missed';
+                } else if (slot.isDue) {
+                  bg = AppColors.primary.withValues(alpha: 0.08); fg = AppColors.primary;
+                  icon = Icons.alarm_rounded; label = 'Due now';
+                } else {
+                  bg = AppColors.muted; fg = AppColors.mutedForeground;
+                  icon = Icons.schedule_rounded; label = 'Upcoming';
+                }
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+                  child: Row(children: [
+                    Icon(icon, size: 16, color: fg),
+                    const SizedBox(width: 10),
+                    Text(slot.displayTime, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg, fontFamily: 'Inter')),
+                    const Spacer(),
+                    Text(label, style: TextStyle(fontSize: 12, color: fg, fontFamily: 'Inter')),
+                  ]),
+                );
+              }),
+            ],
+
+            // Dose history summary
+            const SizedBox(height: 20),
+            _DetailRow(
+              icon: Icons.history_rounded,
+              label: 'Total doses logged',
+              value: '${med.loggedDoses.length} dose${med.loggedDoses.length == 1 ? '' : 's'}',
+            ),
+
+            const SizedBox(height: 28),
+
+            // Action buttons
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.findAncestorStateOfType<_CareScreenState>()
+                        ?._showMedicineSheet(context, uid, existing: med);
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Edit', style: TextStyle(fontFamily: 'Inter')),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                ),
+              ),
+              if (med.hasDueSlot || (med.hasNoScheduledTimes && !fullyTaken)) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.check_rounded, size: 16),
+                    label: const Text('Mark as Taken', style: TextStyle(fontFamily: 'Inter')),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
+                  ),
+                ),
+              ],
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Meal Detail Sheet ────────────────────────────────────────────────────────
+
+class _MealDetailSheet extends StatelessWidget {
+  final MealLog meal;
+  final String uid;
+  const _MealDetailSheet({required this.meal, required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    final mealIcons = {
+      'Breakfast': Icons.wb_sunny_rounded,
+      'Lunch': Icons.light_mode_rounded,
+      'Dinner': Icons.nights_stay_rounded,
+      'Snack': Icons.cookie_rounded,
+    };
+    final icon = mealIcons[meal.mealType] ?? Icons.restaurant_rounded;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.55,
+      minChildSize: 0.4,
+      maxChildSize: 0.85,
+      builder: (_, controller) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Header
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppColors.warning, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(meal.description, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                Text('Logged as ${meal.mealType}', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              ])),
+              StatusBadge.warning(meal.mealType),
+            ]),
+
+            const SizedBox(height: 24),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 20),
+
+            // Nutrition breakdown
+            const Text('Nutrition', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            const SizedBox(height: 12),
+            Row(children: [
+              _NutritionTile('Calories', meal.calories != null ? '${meal.calories}' : '--', 'kcal', AppColors.warning),
+              const SizedBox(width: 10),
+              _NutritionTile('Protein', meal.protein != null ? meal.protein!.toStringAsFixed(1) : '--', 'g', AppColors.primary),
+              const SizedBox(width: 10),
+              _NutritionTile('Carbs', meal.carbs != null ? meal.carbs!.toStringAsFixed(1) : '--', 'g', AppColors.success),
+              const SizedBox(width: 10),
+              _NutritionTile('Fat', meal.fat != null ? meal.fat!.toStringAsFixed(1) : '--', 'g', AppColors.destructive),
+            ]),
+
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 16),
+
+            // Other details
+            _DetailRow(
+              icon: Icons.access_time_rounded,
+              label: 'Logged at',
+              value: '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}  •  ${meal.loggedAt.day}/${meal.loggedAt.month}/${meal.loggedAt.year}',
+            ),
+            if (meal.reminderTime != null)
+              _DetailRow(icon: Icons.alarm_rounded, label: 'Reminder', value: '${meal.reminderTime} (${meal.reminderRepeat})'),
+
+            const SizedBox(height: 28),
+
+            // Edit action
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                context.findAncestorStateOfType<_CareScreenState>()
+                    ?._showMealSheet(context, uid, existing: meal);
+              },
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text('Edit Meal', style: TextStyle(fontFamily: 'Inter')),
+              style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Shared detail row widget used by both detail sheets
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, size: 16, color: AppColors.mutedForeground),
+      const SizedBox(width: 10),
+      SizedBox(
+        width: 110,
+        child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+      ),
+      Expanded(
+        child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+      ),
+    ]),
+  );
+}
+
+// Nutrition tile for meal detail
+class _NutritionTile extends StatelessWidget {
+  final String label, value, unit;
+  final Color color;
+  const _NutritionTile(this.label, this.value, this.unit, this.color);
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(children: [
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
+        Text(unit, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7), fontFamily: 'Inter')),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+      ]),
+    ),
+  );
 }
 
 // ─── Medicine Sheet (Add + Edit) ───────────────────────────────────────────────
