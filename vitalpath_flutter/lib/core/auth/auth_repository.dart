@@ -68,4 +68,7 @@ abstract interface class AuthRepository {
 
   /// Signs out of Firebase and Google Sign-In and clears local prefs.
   Future<void> signOut();
+
+  /// Permanently deletes the Firebase Auth account and the Firestore user doc.
+  Future<void> deleteAccount();
 }

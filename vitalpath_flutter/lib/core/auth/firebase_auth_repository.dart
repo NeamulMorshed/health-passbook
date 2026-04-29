@@ -164,6 +164,27 @@ class FirebaseAuthRepository implements AuthRepository {
     await prefs.remove(AppConstants.prefUserType);
   }
 
+  @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+
+    // Delete Firestore docs first while auth is still valid.
+    await Future.wait([
+      _db.collection(AppConstants.colUsers).doc(uid).delete(),
+      _db.collection(AppConstants.colPatients).doc(uid).delete(),
+    ]);
+
+    // Delete the Firebase Auth account.
+    await user.delete();
+
+    // Clear local state.
+    await _googleSignIn.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────────
 
   String _codeToMessage(String code) => switch (code) {

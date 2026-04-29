@@ -113,20 +113,20 @@ class _PatientCard extends ConsumerWidget {
   void _confirmRemove(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Remove Patient',
             style: TextStyle(fontFamily: 'Inter')),
         content: Text('Remove ${patient.name} from your patients list?',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.destructive),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref
                   .read(connectionNotifierProvider.notifier)
                   .remove(patient.uid, doctorId);

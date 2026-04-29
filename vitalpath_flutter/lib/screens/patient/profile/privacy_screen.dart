@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../providers/auth_provider.dart';
 
 const _kBiometricPref = 'biometric_enabled';
 
@@ -51,16 +53,23 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
   void _showDeleteDialog() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete Account', style: TextStyle(fontFamily: 'Inter')),
-        content: const Text('This will permanently delete your account and all data. This cannot be undone.', style: TextStyle(fontFamily: 'Inter')),
+        content: const Text('This will permanently delete your account and all health data. This cannot be undone.', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              Navigator.pop(context);
-              showAppSnack(context, 'Please contact support to delete your account.');
+              Navigator.pop(dialogCtx);
+              try {
+                await ref.read(authRepositoryProvider).deleteAccount();
+                if (context.mounted) context.go('/user-select');
+              } catch (e) {
+                if (context.mounted) {
+                  showAppSnack(context, 'Could not delete account. Please sign out and sign back in, then try again.');
+                }
+              }
             },
             child: const Text('Delete'),
           ),

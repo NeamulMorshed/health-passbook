@@ -304,15 +304,15 @@ class _MedCard extends ConsumerWidget {
   void _confirmDelete(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
         content: Text('Remove ${med.name} from your medicines?',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -105,9 +106,9 @@ class DocProfileScreen extends ConsumerWidget {
               Container(
                 color: AppColors.surface,
                 child: Column(children: [
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () {}),
-                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () {}),
-                  _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.primary, onTap: () {}),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
+                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
+                  _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.primary, onTap: () => _showHelp(context)),
                 ]),
               ),
 
@@ -176,17 +177,39 @@ class DocProfileScreen extends ConsumerWidget {
     );
   }
 
+  void _showHelp(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Help & Support', style: TextStyle(fontFamily: 'Inter')),
+        content: const Text('For assistance, contact us at support@vitalpath.health', style: TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Close')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              final uri = Uri.parse('mailto:support@vitalpath.health?subject=Doctor%20Support%20Request');
+              if (await canLaunchUrl(uri)) launchUrl(uri);
+            },
+            child: const Text('Send Email'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _signOut(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out', style: TextStyle(fontFamily: 'Inter')),
         content: const Text('Are you sure you want to sign out?', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
+              Navigator.pop(dialogCtx);
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/user-select');
             },
