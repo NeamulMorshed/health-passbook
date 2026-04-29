@@ -317,6 +317,25 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
       state = AsyncValue.error(e, s);
     }
   }
+
+  Future<void> cancel(
+    String apptId, {
+    required String patientId,
+    required String doctorId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.updateAppointmentStatus(
+        apptId,
+        AppointmentStatus.cancelled,
+        patientId: patientId,
+        doctorId: doctorId,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
 }
 
 final appointmentNotifierProvider = StateNotifierProvider<AppointmentNotifier, AsyncValue<void>>((ref) {

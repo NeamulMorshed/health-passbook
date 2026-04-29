@@ -226,16 +226,22 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
                 return const EmptyState(
                   icon: Icons.person_search_rounded,
                   title: 'No Doctors Found',
-                  subtitle:
-                      'Try a different name or specialty.',
+                  subtitle: 'Try a different name or specialty.',
                 );
               }
+              final connectedIds = ref.watch(myDoctorsProvider(widget.uid)).maybeWhen(
+                data: (docs) => docs.map((d) => d.uid).toSet(),
+                orElse: () => <String>{},
+              );
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 itemCount: doctors.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) =>
-                    _DoctorCard(doctor: doctors[i], patientId: widget.uid, isConnected: false),
+                itemBuilder: (_, i) => _DoctorCard(
+                  doctor: doctors[i],
+                  patientId: widget.uid,
+                  isConnected: connectedIds.contains(doctors[i].uid),
+                ),
               );
             },
           ),

@@ -42,9 +42,9 @@ class DocAppointmentsScreen extends ConsumerWidget {
                 );
               }
 
-              final pending = appts.where((a) => a.isPending).toList();
+              final pending   = appts.where((a) => a.isPending).toList();
               final confirmed = appts.where((a) => a.isConfirmed).toList();
-              final past = appts.where((a) => a.isCompleted || a.isCancelled).toList();
+              final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
 
               return DefaultTabController(
                 length: 3,
@@ -64,9 +64,9 @@ class DocAppointmentsScreen extends ConsumerWidget {
                   ),
                   Expanded(
                     child: TabBarView(children: [
-                      _ApptList(appts: pending, isDoctor: true),
-                      _ApptList(appts: confirmed, isDoctor: true),
-                      _ApptList(appts: past, isDoctor: true),
+                      _ApptList(appts: pending),
+                      _ApptList(appts: confirmed),
+                      _ApptList(appts: past),
                     ]),
                   ),
                 ]),
@@ -81,8 +81,7 @@ class DocAppointmentsScreen extends ConsumerWidget {
 
 class _ApptList extends StatelessWidget {
   final List<Appointment> appts;
-  final bool isDoctor;
-  const _ApptList({required this.appts, this.isDoctor = false});
+  const _ApptList({required this.appts});
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +133,7 @@ class _DocApptCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.doctorPrimary.withValues(alpha:0.06), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: AppColors.doctorPrimary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
             child: Row(children: [
               const Icon(Icons.schedule_rounded, size: 16, color: AppColors.doctorPrimary),
               const SizedBox(width: 8),
@@ -156,7 +155,7 @@ class _DocApptCard extends ConsumerWidget {
             ),
             const SizedBox(width: 10),
             OutlinedButton(
-              onPressed: () => ref.read(doctorAppointmentNotifierProvider.notifier).cancel(appt.id),
+              onPressed: () => _confirmCancel(context, ref),
               style: OutlinedButton.styleFrom(minimumSize: const Size(42, 42), foregroundColor: AppColors.destructive, side: const BorderSide(color: AppColors.destructive)),
               child: const Icon(Icons.close_rounded, size: 18),
             ),
@@ -167,7 +166,7 @@ class _DocApptCard extends ConsumerWidget {
           Row(children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id),
+                onPressed: () => _confirmComplete(context, ref),
                 icon: const Icon(Icons.check_circle_rounded, size: 16),
                 label: const Text('Mark Completed'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, minimumSize: const Size(0, 42)),
@@ -180,7 +179,7 @@ class _DocApptCard extends ConsumerWidget {
   }
 
   Widget _buildBadge() {
-    if (appt.isPending) return StatusBadge.warning('Pending');
+    if (appt.isPending)   return StatusBadge.warning('Pending');
     if (appt.isConfirmed) return StatusBadge.success('Confirmed');
     if (appt.isCompleted) return StatusBadge.info('Completed');
     return StatusBadge.danger('Cancelled');
@@ -192,6 +191,52 @@ class _DocApptCard extends ConsumerWidget {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _ConfirmApptSheet(appt: appt),
+    );
+  }
+
+  void _confirmCancel(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cancel Appointment', style: TextStyle(fontFamily: 'Inter')),
+        content: Text('Cancel ${appt.patientName}\'s appointment request?', style: const TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
+                appt.id,
+                patientId: appt.patientId,
+                doctorId: appt.doctorId,
+              );
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmComplete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Mark Completed', style: TextStyle(fontFamily: 'Inter')),
+        content: Text('Mark ${appt.patientName}\'s appointment as completed?', style: const TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Not yet')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              Navigator.pop(context);
+              ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
+            },
+            child: const Text('Mark Completed'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -207,14 +252,21 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
   final _notesCtrl = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() { _notesCtrl.dispose(); super.dispose(); }
 
   void _confirm() async {
-    final dt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, _selectedTime.hour, _selectedTime.minute);
+    final dt = DateTime(
+      _selectedDate.year, _selectedDate.month, _selectedDate.day,
+      _selectedTime.hour, _selectedTime.minute,
+    );
     final user = await ref.read(currentUserProvider.future);
     if (user == null) return;
+
+    setState(() => _isLoading = true);
+
     await ref.read(doctorAppointmentNotifierProvider.notifier).confirm(
       widget.appt.id,
       dt,
@@ -223,10 +275,18 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
       doctorName: user.name,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
-    if (mounted) {
-      Navigator.pop(context);
-      showAppSnack(context, 'Appointment confirmed for ${widget.appt.patientName}');
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    final state = ref.read(doctorAppointmentNotifierProvider);
+    if (state is AsyncError) {
+      showAppSnack(context, 'Failed to confirm. Check your connection and try again.');
+      return;
     }
+
+    Navigator.pop(context);
+    showAppSnack(context, 'Appointment confirmed for ${widget.appt.patientName}');
   }
 
   @override
@@ -283,7 +343,13 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
             TextField(controller: _notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Doctor Notes (optional)', hintText: 'Instructions for the patient...')),
             const SizedBox(height: 20),
 
-            GradientButton(label: 'Confirm Appointment', colors: [AppColors.success, const Color(0xFF15803D)], onPressed: _confirm),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : GradientButton(
+                    label: 'Confirm Appointment',
+                    colors: [AppColors.success, const Color(0xFF15803D)],
+                    onPressed: _confirm,
+                  ),
             const SizedBox(height: 8),
           ],
         ),

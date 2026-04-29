@@ -33,7 +33,7 @@ class AppointmentsScreen extends ConsumerWidget {
             return const Center(child: SizedBox.shrink());
           }
 
-          final limit = ref.watch(_apptLimitProvider);
+          final limit      = ref.watch(_apptLimitProvider);
           final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: limit)));
 
           return apptsAsync.when(
@@ -100,12 +100,12 @@ class AppointmentsScreen extends ConsumerWidget {
   }
 }
 
-class _ApptCard extends StatelessWidget {
+class _ApptCard extends ConsumerWidget {
   final Appointment appt;
   const _ApptCard({required this.appt});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     StatusBadge badge;
     if (appt.isPending) {
       badge = StatusBadge.warning('Pending');
@@ -142,7 +142,7 @@ class _ApptCard extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.06), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
               child: Row(children: [
                 const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
@@ -161,6 +161,47 @@ class _ApptCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text('Doctor note: ${appt.notes}', style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter')),
           ],
+          if (appt.isPending) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _confirmCancel(context, ref),
+              icon: const Icon(Icons.cancel_outlined, size: 16),
+              label: const Text('Cancel Request'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+                foregroundColor: AppColors.destructive,
+                side: const BorderSide(color: AppColors.destructive),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _confirmCancel(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cancel Request', style: TextStyle(fontFamily: 'Inter')),
+        content: const Text('Are you sure you want to cancel this appointment request?', style: TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref.read(appointmentNotifierProvider.notifier).cancel(
+                appt.id,
+                patientId: appt.patientId,
+                doctorId: appt.doctorId,
+              );
+              if (context.mounted) {
+                showAppSnack(context, 'Appointment request cancelled.');
+              }
+            },
+            child: const Text('Cancel Request'),
+          ),
         ],
       ),
     );

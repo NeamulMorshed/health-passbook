@@ -146,6 +146,16 @@ class FirestoreService {
     return doc.exists;
   }
 
+  Stream<bool> watchConnection(String doctorId, String patientId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId)
+        .snapshots()
+        .map((doc) => doc.exists);
+  }
+
   Future<void> removeConnection(String patientId, String doctorId) async {
     final batch = _db.batch();
     batch.delete(_db
@@ -410,6 +420,8 @@ class FirestoreService {
     AppointmentStatus status, {
     DateTime? scheduledAt,
     String? notes,
+    String? patientId,
+    String? doctorId,
   }) async {
     final data = <String, dynamic>{
       'status': status.value,
@@ -419,13 +431,9 @@ class FirestoreService {
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
 
-    // On cancel: remove connection if no pending/confirmed appointments remain.
-    if (status == AppointmentStatus.cancelled) {
-      final doc = await _db.collection(AppConstants.colAppointments).doc(apptId).get();
-      if (doc.exists) {
-        final appt = Appointment.fromMap(doc.data()!, apptId);
-        await _cleanupConnectionIfInactive(appt.patientId, appt.doctorId);
-      }
+    if (status == AppointmentStatus.cancelled &&
+        patientId != null && doctorId != null) {
+      await _cleanupConnectionIfInactive(patientId, doctorId);
     }
   }
 

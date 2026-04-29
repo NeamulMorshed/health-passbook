@@ -47,8 +47,8 @@ final doctorSearchProvider = FutureProvider.family<List<DoctorProfile>, DoctorSe
 // ─── Connection check (for patient view route guard) ─────────────────────────
 typedef ConnectionKey = ({String doctorId, String patientId});
 
-final connectionCheckProvider = FutureProvider.family<bool, ConnectionKey>((ref, key) async {
-  return ref.watch(firestoreServiceProvider).isConnected(key.doctorId, key.patientId);
+final connectionCheckProvider = StreamProvider.family<bool, ConnectionKey>((ref, key) {
+  return ref.watch(firestoreServiceProvider).watchConnection(key.doctorId, key.patientId);
 });
 
 // ─── Connection removal notifier ─────────────────────────────────────────────
@@ -105,8 +105,17 @@ class DoctorAppointmentNotifier extends StateNotifier<AsyncValue<void>> {
     await _db.updateAppointmentStatus(apptId, AppointmentStatus.completed);
   }
 
-  Future<void> cancel(String apptId) async {
-    await _db.updateAppointmentStatus(apptId, AppointmentStatus.cancelled);
+  Future<void> cancel(
+    String apptId, {
+    required String patientId,
+    required String doctorId,
+  }) async {
+    await _db.updateAppointmentStatus(
+      apptId,
+      AppointmentStatus.cancelled,
+      patientId: patientId,
+      doctorId: doctorId,
+    );
   }
 }
 

@@ -23,8 +23,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'patient';
     }
 
-    // Cheap exists() instead of get() + array-contains — one read instead of two.
-    // Works with the connections subcollection (no write-hotspot on doctor doc).
     function doctorHasPatient(patientId) {
       return exists(/databases/$(database)/documents/doctors/$(request.auth.uid)/connections/$(patientId));
     }
@@ -56,15 +54,19 @@ service cloud.firestore {
         allow read, write: if isSignedIn() && isOwner(patientId);
       }
 
+      // Notifications: patient owns them, but any authenticated user (doctor) can create.
       match /notifications/{notifId} {
-        allow read, write: if isSignedIn() && isOwner(patientId);
+        allow read:   if isSignedIn() && isOwner(patientId);
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && isOwner(patientId);
+        allow delete: if isSignedIn() && isOwner(patientId);
       }
 
-      // Patient → Doctor connections (fan-out write during booking)
+      // Patient ↔ Doctor connections — doctor creates both sides during confirmation batch.
       match /connections/{doctorId} {
         allow read:   if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
-        allow create: if isSignedIn() && isOwner(patientId);
-        allow delete: if isSignedIn() && isOwner(patientId);
+        allow create: if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
+        allow delete: if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
       }
     }
 
@@ -74,10 +76,10 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isSignedIn() && isOwner(doctorId);
 
-      // Doctor → Patient connections (fan-out write during booking; no array contention)
+      // Doctor ↔ Patient connections — doctor creates both sides during confirmation batch.
       match /connections/{patientId} {
         allow read:   if isSignedIn() && (isOwner(doctorId) || isOwner(patientId));
-        allow create: if isSignedIn() && isOwner(patientId);
+        allow create: if isSignedIn() && (isOwner(doctorId) || isOwner(patientId));
         allow delete: if isSignedIn() && (isOwner(doctorId) || isOwner(patientId));
       }
     }
@@ -93,9 +95,18 @@ service cloud.firestore {
       allow create: if isSignedIn() && isPatient() &&
         request.resource.data.patientId == request.auth.uid;
 
-      allow update: if isSignedIn() && resource.data.doctorId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'scheduledAt', 'notes', 'updatedAt']);
+      allow update: if isSignedIn() && (
+        // Doctor can confirm, complete, cancel — may change status/scheduledAt/notes/updatedAt.
+        (resource.data.doctorId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'scheduledAt', 'notes', 'updatedAt'])) ||
+        // Patient can cancel only their own pending appointments.
+        (resource.data.patientId == request.auth.uid &&
+         resource.data.status == 'pending' &&
+         request.resource.data.status == 'cancelled' &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['status', 'updatedAt']))
+      );
     }
 
     // ── prescriptions ─────────────────────────────────────────────────────────
@@ -110,7 +121,7 @@ service cloud.firestore {
         request.resource.data.doctorId == request.auth.uid;
     }
 
-    // ── gamification ─────────────────────────────────────────────────────────────
+    // ── gamification ──────────────────────────────────────────────────────────
 
     match /gamification/{uid} {
       allow read, write: if isSignedIn() && isOwner(uid);
