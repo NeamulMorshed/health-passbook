@@ -182,15 +182,15 @@ class _ApptCard extends ConsumerWidget {
   void _confirmCancel(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Cancel Request', style: TextStyle(fontFamily: 'Inter')),
         content: const Text('Are you sure you want to cancel this appointment request?', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref.read(appointmentNotifierProvider.notifier).cancel(
                 appt.id,
                 patientId: appt.patientId,

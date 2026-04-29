@@ -245,16 +245,16 @@ class _DocApptCard extends ConsumerWidget {
   void _confirmCancel(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Cancel Appointment', style: TextStyle(fontFamily: 'Inter')),
         content: Text('Cancel ${appt.patientName}\'s appointment request?',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
                 appt.id,
                 patientId: appt.patientId,
@@ -276,16 +276,16 @@ class _DocApptCard extends ConsumerWidget {
   void _confirmComplete(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Mark Completed', style: TextStyle(fontFamily: 'Inter')),
         content: Text('Mark ${appt.patientName}\'s appointment as completed?',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Not yet')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Not yet')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
               if (!context.mounted) return;
               final state = ref.read(doctorAppointmentNotifierProvider);
