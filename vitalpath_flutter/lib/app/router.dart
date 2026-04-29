@@ -24,6 +24,7 @@ import '../screens/doctor/patient_view/doc_patient_view_screen.dart';
 import '../screens/doctor/profile/doc_profile_screen.dart';
 import '../screens/doctor/onboarding/doc_profile_setup_screen.dart';
 import '../screens/patient/notifications/notifications_screen.dart';
+import '../screens/patient/notifications/notification_settings_screen.dart';
 import '../screens/patient/profile/edit_profile_screen.dart';
 import '../screens/patient/profile/privacy_screen.dart';
 // import '../screens/patient/gamification/gamification_screen.dart';
@@ -143,6 +144,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
+      GoRoute(
+          path: '/notification-settings',
+          builder: (_, __) => const NotificationSettingsScreen()),
       GoRoute(
           path: '/edit-profile',
           builder: (_, __) => const EditProfileScreen()),

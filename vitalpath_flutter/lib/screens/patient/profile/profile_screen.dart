@@ -131,7 +131,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/my-doctors')),
                   // _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
                   _MenuItem(icon: Icons.auto_awesome_rounded, label: 'AI Health Insights', color: const Color(0xFF0EA5E9), onTap: () => context.push('/insights')),
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notifications')),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
                   _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
                 ]),
               ),
@@ -165,14 +165,15 @@ class ProfileScreen extends ConsumerWidget {
   void _signOut(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out', style: TextStyle(fontFamily: 'Inter')),
         content: const Text('Are you sure you want to sign out?', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
+              Navigator.pop(dialogCtx);
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/user-select');
             },
