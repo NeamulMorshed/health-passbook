@@ -299,14 +299,11 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     final meds = medsAsync.asData?.value ?? [];
     final meals = mealsAsync.asData?.value ?? [];
 
-    // Medicines with a currently-due slot that is not yet taken.
-    // "As needed" (no reminderTimes) appear if not taken at all today.
     final dueMeds = meds.where((m) {
       if (!m.isActive) return false;
       return m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot;
     }).toList();
 
-    // Medicines where every due slot passed without a dose — shown separately.
     final missedMeds = meds.where((m) {
       if (!m.isActive) return false;
       return m.hasMissedSlot && !m.hasDueSlot;
@@ -316,128 +313,105 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     final totalPending = dueMeds.length + (suggestedMeal != null ? 1 : 0);
 
     if (medsAsync.isLoading || mealsAsync.isLoading) {
-      return Container(
-        height: 80,
-        decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border)),
-        child: const Center(child: CircularProgressIndicator()),
-      );
+      return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator()));
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+    final header = Row(children: [
+      const Icon(Icons.checklist_rounded, size: 18, color: AppColors.foreground),
+      const SizedBox(width: 8),
+      const Expanded(
+        child: Text("Today's Tasks",
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-            child: Row(children: [
-              const Icon(Icons.checklist_rounded, size: 18, color: AppColors.foreground),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text("Today's Tasks",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              ),
-              if (totalPending > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Text('$totalPending left',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.check_rounded, size: 12, color: AppColors.success),
-                    SizedBox(width: 4),
-                    Text('All done',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.success, fontFamily: 'Inter')),
-                  ]),
-                ),
-            ]),
+      if (totalPending > 0)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20)),
+          child: Text('$totalPending left',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+        )
+      else
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20)),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.check_rounded, size: 12, color: AppColors.success),
+            SizedBox(width: 4),
+            Text('All done',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.success, fontFamily: 'Inter')),
+          ]),
+        ),
+    ]);
+
+    if (totalPending == 0 && missedMeds.isEmpty) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        header,
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
           ),
+          child: const Column(children: [
+            Icon(Icons.celebration_rounded, size: 32, color: AppColors.success),
+            SizedBox(height: 8),
+            Text("You're all caught up!",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            SizedBox(height: 2),
+            Text('Great job keeping up with your health today.',
+                style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          ]),
+        ),
+      ]);
+    }
 
-          // All-done celebration
-          if (totalPending == 0 && missedMeds.isEmpty) ...[
-            Divider(height: 1, color: AppColors.border),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Column(children: [
-                Icon(Icons.celebration_rounded, size: 32, color: AppColors.success),
-                SizedBox(height: 8),
-                Text("You're all caught up!",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                SizedBox(height: 2),
-                Text('Great job keeping up with your health today.',
-                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      header,
+      const SizedBox(height: 12),
+
+      // Due medicines
+      ...dueMeds.take(3).map((m) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _TaskMedCard(medicine: m, uid: widget.uid),
+      )),
+      if (dueMeds.length > 3)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GestureDetector(
+            onTap: () => context.go('/care'),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Center(
+                child: Text('+${dueMeds.length - 3} more — see all in Care',
+                    style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+              ),
             ),
-          ] else ...[
-            // Due medicines
-            if (dueMeds.isNotEmpty) ...[
-              Divider(height: 1, color: AppColors.border),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
-                child: Row(children: [
-                  const Icon(Icons.medication_rounded, size: 13, color: AppColors.mutedForeground),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${dueMeds.length} medicine${dueMeds.length == 1 ? '' : 's'} due now',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.mutedForeground, fontFamily: 'Inter'),
-                  ),
-                ]),
-              ),
-              ...dueMeds.take(3).map((m) => _MedTaskRow(medicine: m, uid: widget.uid)),
-              if (dueMeds.length > 3)
-                InkWell(
-                  onTap: () => context.go('/care'),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-                    child: Text('+${dueMeds.length - 3} more — see all',
-                        style: const TextStyle(fontSize: 12, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
-                  ),
-                ),
-            ],
+          ),
+        ),
 
-            // Missed medicines (secondary, muted)
-            if (missedMeds.isNotEmpty) ...[
-              Divider(height: 1, color: AppColors.border),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
-                child: Row(children: [
-                  Icon(Icons.warning_amber_rounded, size: 13, color: AppColors.warning),
-                  const SizedBox(width: 6),
-                  Text('${missedMeds.length} missed — log late dose',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.warning, fontFamily: 'Inter')),
-                ]),
-              ),
-              ...missedMeds.take(2).map((m) => _MedTaskRow(medicine: m, uid: widget.uid, isMissed: true)),
-            ],
+      // Missed medicines
+      ...missedMeds.take(2).map((m) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _TaskMedCard(medicine: m, uid: widget.uid, isMissed: true),
+      )),
 
-            // Meal task
-            if (suggestedMeal != null) ...[
-              Divider(height: 1, color: AppColors.border),
-              _MealTaskRow(mealType: suggestedMeal, onTap: () => context.go('/care')),
-            ],
-          ],
-
-          const SizedBox(height: 4),
-        ],
-      ),
-    );
+      // Meal
+      if (suggestedMeal != null)
+        _TaskMealCard(mealType: suggestedMeal, onTap: () => context.go('/care')),
+    ]);
   }
 
   String? _suggestMeal(List<MealLog> logged) {
@@ -450,15 +424,15 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
   }
 }
 
-class _MedTaskRow extends ConsumerWidget {
+// ── Task Med Card (Care page style) ───────────────────────────────────────────
+class _TaskMedCard extends ConsumerWidget {
   final Medicine medicine;
   final String uid;
   final bool isMissed;
-  const _MedTaskRow({required this.medicine, required this.uid, this.isMissed = false});
+  const _TaskMedCard({required this.medicine, required this.uid, this.isMissed = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Pick the relevant slot for the subtitle label
     final slot = isMissed
         ? medicine.todaySlots.where((s) => s.isMissed).firstOrNull
         : medicine.nextPendingSlot;
@@ -466,102 +440,136 @@ class _MedTaskRow extends ConsumerWidget {
     final String subtitle;
     if (slot != null) {
       subtitle = isMissed
-          ? 'Missed · ${slot.displayTime} — tap to log late dose'
+          ? 'Missed · ${slot.displayTime}'
           : '${medicine.dosage} · Due at ${slot.displayTime}';
     } else {
       subtitle = '${medicine.dosage} · ${medicine.frequency}';
     }
 
-    // Show remaining slots count when there are multiple
     final totalSlots = medicine.todaySlots.length;
     final takenSlots = medicine.todaySlots.where((s) => s.isTaken).length;
-    final showProgress = totalSlots > 1;
 
-    final iconColor = isMissed ? AppColors.warning : AppColors.primary;
-    final btnColor  = isMissed ? AppColors.warning : AppColors.primary;
+    final iconColor  = isMissed ? AppColors.warning : AppColors.primary;
+    final btnColor   = isMissed ? AppColors.warning : AppColors.primary;
+    final borderColor = isMissed
+        ? AppColors.warning.withValues(alpha: 0.35)
+        : AppColors.border;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
-      child: Row(children: [
-        Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10)),
-          child: Icon(Icons.medication_rounded, color: iconColor, size: 18),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(
-                child: Text(medicine.name,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              ),
-              if (showProgress)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
-                  child: Text('$takenSlots/$totalSlots doses',
-                      style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                ),
-            ]),
-            Text(subtitle,
-                style: TextStyle(fontSize: 11, color: isMissed ? AppColors.warning : AppColors.mutedForeground, fontFamily: 'Inter')),
-          ]),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () async {
-            await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
-            // final hp = await ref.read(gamificationServiceProvider).awardMedicineDose(uid);
-            // if (hp > 0 && context.mounted) {
-            //   showAppSnack(context, '+$hp HP  ${isMissed ? 'Late dose logged!' : 'Medicine taken!'}');
-            // }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(9)),
-            child: Text(isMissed ? 'Log' : 'Take',
-                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.medication_rounded, color: iconColor, size: 22),
           ),
-        ),
-      ]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                  child: Text(medicine.name,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                ),
+                if (totalSlots > 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
+                    child: Text('$takenSlots/$totalSlots',
+                        style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  ),
+              ]),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: isMissed ? AppColors.warning : AppColors.mutedForeground,
+                      fontFamily: 'Inter')),
+            ]),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () async {
+              await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(10)),
+              child: Text(isMissed ? 'Log' : 'Take',
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }
 
-class _MealTaskRow extends StatelessWidget {
+// ── Task Meal Card (Care page style) ──────────────────────────────────────────
+class _TaskMealCard extends StatelessWidget {
   final String mealType;
   final VoidCallback onTap;
-  const _MealTaskRow({required this.mealType, required this.onTap});
+  const _TaskMealCard({required this.mealType, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(children: [
-        Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.restaurant_rounded, color: AppColors.success, size: 18),
+    const mealIcons = {
+      'Breakfast': Icons.wb_sunny_rounded,
+      'Lunch': Icons.light_mode_rounded,
+      'Dinner': Icons.nights_stay_rounded,
+      'Snack': Icons.cookie_rounded,
+    };
+    final icon = mealIcons[mealType] ?? Icons.restaurant_rounded;
+
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Log your $mealType', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          const Text("Haven't logged this meal yet", style: TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        ])),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(9)),
-            child: const Text('Log Meal', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: AppColors.success, size: 22),
           ),
-        ),
-      ]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Log your $mealType',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              const Text("Haven't logged this meal yet",
+                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            ]),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
+              child: const Text('Log Meal',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }
