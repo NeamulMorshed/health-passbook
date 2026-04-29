@@ -294,107 +294,135 @@ class _DoctorCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: () => _showProfileSheet(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            AppAvatar(
-                name: doctor.name,
-                imageUrl: doctor.photoUrl,
-                size: 50,
-                backgroundColor: AppColors.doctorPrimary),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                          child: Text('Dr. ${doctor.name}',
-                              style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter'))),
-                      if (doctor.isVerified)
-                        const Icon(Icons.verified_rounded,
-                            color: AppColors.primary, size: 18),
-                    ]),
-                    if (doctor.specialty != null)
-                      Text(doctor.specialty!,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.doctorPrimary,
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w500)),
-                    if (doctor.hospital != null)
-                      Text(doctor.hospital!,
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.mutedForeground,
-                              fontFamily: 'Inter')),
-                  ]),
-            ),
-            Column(children: [
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(children: [
-                const Icon(Icons.star_rounded,
-                    color: AppColors.warning, size: 16),
-                const SizedBox(width: 2),
-                Text(doctor.rating.toStringAsFixed(1),
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
-              ]),
-              Text('${doctor.reviewCount} reviews',
-                  style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
-            ]),
-          ]),
-          const SizedBox(height: 14),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showBookSheet(context, ref, doctor),
-                icon: const Icon(Icons.calendar_today_rounded, size: 16),
-                label: const Text('Book Appointment'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 40),
-                  foregroundColor: AppColors.doctorPrimary,
-                  side: const BorderSide(color: AppColors.doctorPrimary),
+                AppAvatar(
+                    name: doctor.name,
+                    imageUrl: doctor.photoUrl,
+                    size: 50,
+                    backgroundColor: AppColors.doctorPrimary),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(
+                              child: Text('Dr. ${doctor.name}',
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Inter'))),
+                          if (doctor.isVerified)
+                            const Icon(Icons.verified_rounded,
+                                color: AppColors.primary, size: 18),
+                        ]),
+                        if (doctor.specialty != null)
+                          Text(doctor.specialty!,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.doctorPrimary,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w500)),
+                        if (doctor.hospital != null)
+                          Text(doctor.hospital!,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.mutedForeground,
+                                  fontFamily: 'Inter')),
+                      ]),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            // Phone call button (replaces non-functional Message button)
-            OutlinedButton.icon(
-              onPressed: doctor.phone != null && doctor.phone!.isNotEmpty
-                  ? () => _callDoctor(doctor.phone!)
-                  : null,
-              icon: const Icon(Icons.phone_rounded, size: 16),
-              label: const Text('Call'),
-              style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
-            ),
-            if (isConnected) ...[
-              const SizedBox(width: 6),
-              IconButton(
-                tooltip: 'Remove doctor',
-                icon: const Icon(Icons.person_remove_rounded,
-                    size: 18, color: AppColors.destructive),
-                onPressed: () => _confirmRemove(context, ref),
-              ),
+                Column(children: [
+                  Row(children: [
+                    const Icon(Icons.star_rounded,
+                        color: AppColors.warning, size: 16),
+                    const SizedBox(width: 2),
+                    Text(doctor.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Inter')),
+                  ]),
+                  Text('${doctor.reviewCount} reviews',
+                      style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.mutedForeground,
+                          fontFamily: 'Inter')),
+                ]),
+              ]),
+              const SizedBox(height: 14),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showBookSheet(context, doctor),
+                    icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                    label: const Text('Book Appointment'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      foregroundColor: AppColors.doctorPrimary,
+                      side: const BorderSide(color: AppColors.doctorPrimary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: doctor.phone != null && doctor.phone!.isNotEmpty
+                      ? () => _callDoctor(doctor.phone!)
+                      : null,
+                  icon: const Icon(Icons.phone_rounded, size: 16),
+                  label: const Text('Call'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
+                ),
+                if (isConnected) ...[
+                  const SizedBox(width: 6),
+                  IconButton(
+                    tooltip: 'Remove doctor',
+                    icon: const Icon(Icons.person_remove_rounded,
+                        size: 18, color: AppColors.destructive),
+                    onPressed: () => _confirmRemove(context, ref),
+                  ),
+                ],
+              ]),
             ],
-          ]),
-        ],
+          ),
+        ),
       ),
+    );
+  }
+
+  void _showProfileSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _DoctorProfileSheet(
+          doctor: doctor, patientId: patientId, isConnected: isConnected),
+    );
+  }
+
+  void _showBookSheet(BuildContext context, DoctorProfile doctor) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) =>
+          _BookAppointmentSheet(doctor: doctor, patientId: patientId),
     );
   }
 
@@ -406,7 +434,7 @@ class _DoctorCard extends ConsumerWidget {
   void _confirmRemove(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Remove Doctor',
             style: TextStyle(fontFamily: 'Inter')),
         content: Text(
@@ -414,13 +442,13 @@ class _DoctorCard extends ConsumerWidget {
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.destructive),
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               await ref
                   .read(connectionNotifierProvider.notifier)
                   .remove(patientId, doctor.uid);
@@ -435,18 +463,202 @@ class _DoctorCard extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _showBookSheet(
-      BuildContext context, WidgetRef ref, DoctorProfile doctor) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) =>
-          _BookAppointmentSheet(doctor: doctor, patientId: patientId),
+// ─── Doctor Profile Sheet ──────────────────────────────────────────────────────
+class _DoctorProfileSheet extends StatelessWidget {
+  final DoctorProfile doctor;
+  final String patientId;
+  final bool isConnected;
+  const _DoctorProfileSheet(
+      {required this.doctor,
+      required this.patientId,
+      required this.isConnected});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.65,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      builder: (_, controller) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 24),
+
+            // Avatar + name header
+            Center(
+              child: Column(children: [
+                AppAvatar(
+                    name: doctor.name,
+                    imageUrl: doctor.photoUrl,
+                    size: 72,
+                    backgroundColor: AppColors.doctorPrimary),
+                const SizedBox(height: 14),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Dr. ${doctor.name}',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Inter')),
+                  if (doctor.isVerified) ...[
+                    const SizedBox(width: 6),
+                    const Icon(Icons.verified_rounded,
+                        color: AppColors.primary, size: 20),
+                  ],
+                ]),
+                if (doctor.specialty != null) ...[
+                  const SizedBox(height: 4),
+                  Text(doctor.specialty!,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.doctorPrimary,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Inter')),
+                ],
+                if (doctor.hospital != null) ...[
+                  const SizedBox(height: 2),
+                  Text(doctor.hospital!,
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.mutedForeground,
+                          fontFamily: 'Inter')),
+                ],
+                const SizedBox(height: 12),
+                // Rating pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: AppColors.warningLight,
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.star_rounded,
+                        color: AppColors.warning, size: 16),
+                    const SizedBox(width: 4),
+                    Text(doctor.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.warning,
+                            fontFamily: 'Inter')),
+                    const SizedBox(width: 4),
+                    Text('(${doctor.reviewCount} reviews)',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedForeground,
+                            fontFamily: 'Inter')),
+                  ]),
+                ),
+              ]),
+            ),
+
+            const SizedBox(height: 24),
+            const Divider(height: 1, color: AppColors.border),
+            const SizedBox(height: 20),
+
+            // Details
+            if (doctor.hospital != null)
+              _ProfileRow(Icons.local_hospital_rounded, 'Hospital', doctor.hospital!),
+            if (doctor.specialty != null)
+              _ProfileRow(Icons.medical_information_rounded, 'Specialty', doctor.specialty!),
+            if (doctor.phone != null && doctor.phone!.isNotEmpty)
+              _ProfileRow(Icons.phone_rounded, 'Phone', doctor.phone!),
+            if (doctor.licenseNo != null && doctor.licenseNo!.isNotEmpty)
+              _ProfileRow(Icons.badge_rounded, 'License', doctor.licenseNo!),
+            if (isConnected)
+              _ProfileRow(Icons.check_circle_rounded, 'Status', 'Connected — your doctor',
+                  valueColor: AppColors.success),
+
+            const SizedBox(height: 24),
+
+            // Action buttons
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20))),
+                  builder: (_) =>
+                      _BookAppointmentSheet(doctor: doctor, patientId: patientId),
+                );
+              },
+              icon: const Icon(Icons.calendar_today_rounded, size: 16),
+              label: const Text('Book Appointment',
+                  style: TextStyle(fontFamily: 'Inter')),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 46),
+                foregroundColor: AppColors.doctorPrimary,
+                side: const BorderSide(color: AppColors.doctorPrimary),
+              ),
+            ),
+            if (doctor.phone != null && doctor.phone!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final uri = Uri.parse('tel:${doctor.phone}');
+                  if (await canLaunchUrl(uri)) await launchUrl(uri);
+                },
+                icon: const Icon(Icons.phone_rounded, size: 16),
+                label: const Text('Call Doctor',
+                    style: TextStyle(fontFamily: 'Inter')),
+                style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 46)),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
+}
+
+class _ProfileRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+  const _ProfileRow(this.icon, this.label, this.value, {this.valueColor});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 16, color: AppColors.mutedForeground),
+          const SizedBox(width: 10),
+          SizedBox(
+              width: 90,
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'))),
+          Expanded(
+              child: Text(value,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Inter',
+                      color: valueColor ?? AppColors.foreground))),
+        ]),
+      );
 }
 
 // ─── Book Appointment Sheet ────────────────────────────────────────────────────
