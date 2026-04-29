@@ -12,6 +12,7 @@ import '../../../models/app_user.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
 import '../../../core/constants/app_constants.dart';
+import '../care/care_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -309,8 +310,8 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
       return m.hasMissedSlot && !m.hasDueSlot;
     }).toList();
 
-    final suggestedMeal = _suggestMeal(meals);
-    final totalPending = dueMeds.length + (suggestedMeal != null ? 1 : 0);
+    final upcomingMeals = _upcomingMeals(meals);
+    final totalPending = dueMeds.length + upcomingMeals.length;
 
     if (medsAsync.isLoading || mealsAsync.isLoading) {
       return const SizedBox(height: 60, child: Center(child: CircularProgressIndicator()));
@@ -408,19 +409,26 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         child: _TaskMedCard(medicine: m, uid: widget.uid, isMissed: true),
       )),
 
-      // Meal
-      if (suggestedMeal != null)
-        _TaskMealCard(mealType: suggestedMeal, onTap: () => context.go('/care')),
+      // Upcoming meals
+      ...upcomingMeals.map((mealType) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _TaskMealCard(
+          mealType: mealType,
+          uid: widget.uid,
+          onTap: () => showLogMealSheet(context, widget.uid, initialType: mealType),
+        ),
+      )),
     ]);
   }
 
-  String? _suggestMeal(List<MealLog> logged) {
+  List<String> _upcomingMeals(List<MealLog> logged) {
     final loggedTypes = logged.map((m) => m.mealType).toSet();
     final h = DateTime.now().hour;
-    if (h < 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) return AppConstants.mealBreakfast;
-    if (h < 15 && !loggedTypes.contains(AppConstants.mealLunch)) return AppConstants.mealLunch;
-    if (h < 21 && !loggedTypes.contains(AppConstants.mealDinner)) return AppConstants.mealDinner;
-    return null;
+    return [
+      if (h < 14 && !loggedTypes.contains(AppConstants.mealBreakfast)) AppConstants.mealBreakfast,
+      if (h < 18 && !loggedTypes.contains(AppConstants.mealLunch)) AppConstants.mealLunch,
+      if (h < 23 && !loggedTypes.contains(AppConstants.mealDinner)) AppConstants.mealDinner,
+    ];
   }
 }
 
@@ -518,8 +526,9 @@ class _TaskMedCard extends ConsumerWidget {
 // ── Task Meal Card (Care page style) ──────────────────────────────────────────
 class _TaskMealCard extends StatelessWidget {
   final String mealType;
+  final String uid;
   final VoidCallback onTap;
-  const _TaskMealCard({required this.mealType, required this.onTap});
+  const _TaskMealCard({required this.mealType, required this.uid, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -531,44 +540,55 @@ class _TaskMealCard extends StatelessWidget {
     };
     final icon = mealIcons[mealType] ?? Icons.restaurant_rounded;
 
+    const defaultTimes = {
+      'Breakfast': '7:30 AM',
+      'Lunch': '12:30 PM',
+      'Dinner': '7:00 PM',
+    };
+    final timeHint = defaultTimes[mealType];
+
     return Material(
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: AppColors.success, size: 22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Log your $mealType',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              const Text("Haven't logged this meal yet",
-                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ]),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
-              child: const Text('Log Meal',
-                  style: TextStyle(
-                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: AppColors.success, size: 22),
             ),
-          ),
-        ]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Log your $mealType',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                Text(timeHint != null ? 'Usual time · $timeHint' : "Haven't logged this meal yet",
+                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
+                child: const Text('Log Meal',
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }

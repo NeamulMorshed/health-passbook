@@ -97,13 +97,17 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
   }
 
   void _showMealSheet(BuildContext context, String uid, {MealLog? existing}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _MealSheet(uid: uid, existing: existing),
-    );
+    showLogMealSheet(context, uid, existing: existing);
   }
+}
+
+void showLogMealSheet(BuildContext context, String uid, {MealLog? existing, String? initialType}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => _MealSheet(uid: uid, existing: existing, initialType: initialType),
+  );
 }
 
 void _showMedDetailSheet(BuildContext context, Medicine med, String uid) {
@@ -1049,7 +1053,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
 class _MealSheet extends ConsumerStatefulWidget {
   final String uid;
   final MealLog? existing;
-  const _MealSheet({required this.uid, this.existing});
+  final String? initialType;
+  const _MealSheet({required this.uid, this.existing, this.initialType});
   @override
   ConsumerState<_MealSheet> createState() => _MealSheetState();
 }
@@ -1077,7 +1082,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
     _proteinCtrl = TextEditingController(text: meal?.protein?.toString() ?? '');
     _carbsCtrl   = TextEditingController(text: meal?.carbs?.toString() ?? '');
     _fatCtrl     = TextEditingController(text: meal?.fat?.toString() ?? '');
-    _type = meal?.mealType ?? AppConstants.mealBreakfast;
+    _type = meal?.mealType ?? widget.initialType ?? AppConstants.mealBreakfast;
     _reminderRepeat = meal?.reminderRepeat ?? 'once';
     if (meal?.reminderTime != null) {
       final parts = meal!.reminderTime!.split(':');
