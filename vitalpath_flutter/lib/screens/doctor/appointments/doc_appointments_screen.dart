@@ -253,13 +253,18 @@ class _DocApptCard extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Keep')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
+              await ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
                 appt.id,
                 patientId: appt.patientId,
                 doctorId: appt.doctorId,
               );
+              if (!context.mounted) return;
+              final state = ref.read(doctorAppointmentNotifierProvider);
+              if (state is AsyncError) {
+                showAppSnack(context, 'Failed to cancel. Check your connection and try again.');
+              }
             },
             child: const Text('Cancel'),
           ),
@@ -279,9 +284,14 @@ class _DocApptCard extends ConsumerWidget {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Not yet')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
+              await ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
+              if (!context.mounted) return;
+              final state = ref.read(doctorAppointmentNotifierProvider);
+              if (state is AsyncError) {
+                showAppSnack(context, 'Failed to mark completed. Check your connection and try again.');
+              }
             },
             child: const Text('Mark Completed'),
           ),

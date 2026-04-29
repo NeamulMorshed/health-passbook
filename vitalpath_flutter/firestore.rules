@@ -114,7 +114,8 @@ service cloud.firestore {
     match /prescriptions/{rxId} {
       allow read: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
-        resource.data.doctorId  == request.auth.uid
+        resource.data.doctorId  == request.auth.uid ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId))
       );
 
       allow create: if isSignedIn() && isDoctor() &&

@@ -15,9 +15,6 @@ class DocPatientViewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patientAsync = ref.watch(patientProfileProvider(patientId));
-    final medsAsync = ref.watch(medicinesProvider(patientId));
-    final rxAsync = ref.watch(patientPrescriptionsProvider(patientId));
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -48,9 +45,6 @@ class DocPatientViewScreen extends ConsumerWidget {
                 );
               }
               return _PatientDetailBody(
-                patientAsync: patientAsync,
-                medsAsync: medsAsync,
-                rxAsync: rxAsync,
                 doctorId: doctor.uid,
                 doctorName: doctor.name,
                 patientId: patientId,
@@ -65,17 +59,11 @@ class DocPatientViewScreen extends ConsumerWidget {
 }
 
 class _PatientDetailBody extends ConsumerWidget {
-  final AsyncValue patientAsync;
-  final AsyncValue medsAsync;
-  final AsyncValue rxAsync;
   final String doctorId;
   final String doctorName;
   final String patientId;
 
   const _PatientDetailBody({
-    required this.patientAsync,
-    required this.medsAsync,
-    required this.rxAsync,
     required this.doctorId,
     required this.doctorName,
     required this.patientId,
@@ -83,6 +71,10 @@ class _PatientDetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final patientAsync = ref.watch(patientProfileProvider(patientId));
+    final medsAsync    = ref.watch(medicinesProvider(patientId));
+    final rxAsync      = ref.watch(patientPrescriptionsProvider(patientId));
+
     return patientAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
