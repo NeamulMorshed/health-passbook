@@ -140,10 +140,6 @@ class _HomeContent extends ConsumerWidget {
                 padding: const EdgeInsets.all(20),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // Upcoming Tasks
-                    _UpcomingTasksCard(uid: user.uid),
-                    const SizedBox(height: 28),
-
                     // Health Stats
                     const SectionHeader(title: 'Today\'s Overview'),
                     const SizedBox(height: 12),
@@ -186,6 +182,10 @@ class _HomeContent extends ConsumerWidget {
                       loading: () => const Center(child: CircularProgressIndicator()),
                       error: (_, __) => const SizedBox(),
                     ),
+                    const SizedBox(height: 28),
+
+                    // Upcoming Tasks
+                    _UpcomingTasksCard(uid: user.uid),
                     const SizedBox(height: 28),
 
 
