@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -176,7 +177,7 @@ class _HomeContent extends ConsumerWidget {
                               loading: () => const StatCard(label: 'Steps', value: '--', unit: 'today', icon: Icons.directions_walk_rounded, color: AppColors.success),
                               error: (_, __) => const StatCard(label: 'Steps', value: '--', unit: 'today', icon: Icons.directions_walk_rounded, color: AppColors.success),
                             ),
-                            StatCard(label: 'Appointments', value: '$pendingAppts', unit: 'pending', icon: Icons.calendar_today_rounded, color: AppColors.doctorPrimary, onTap: () => context.push('/appointments')),
+                            StatCard(label: 'Appointments', value: '$pendingAppts', unit: 'pending', icon: Icons.calendar_today_rounded, color: AppColors.doctorPrimary, onTap: () => context.go('/appointments')),
                           ],
                         );
                       },
@@ -523,12 +524,36 @@ class _TaskMedCard extends ConsumerWidget {
   }
 }
 
-// ── Task Meal Card (Care page style) ──────────────────────────────────────────
-class _TaskMealCard extends StatelessWidget {
+// ── Task Meal Card — reads preferred time from SharedPreferences ───────────────
+class _TaskMealCard extends StatefulWidget {
   final String mealType;
   final String uid;
   final VoidCallback onTap;
   const _TaskMealCard({required this.mealType, required this.uid, required this.onTap});
+  @override
+  State<_TaskMealCard> createState() => _TaskMealCardState();
+}
+
+class _TaskMealCardState extends State<_TaskMealCard> {
+  static const _defaults = {
+    'Breakfast': '7:30 AM',
+    'Lunch': '12:30 PM',
+    'Dinner': '7:00 PM',
+  };
+  String? _timeHint;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTime();
+  }
+
+  Future<void> _loadTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'meal_time_${widget.mealType.toLowerCase()}';
+    final saved = prefs.getString(key);
+    if (mounted) setState(() => _timeHint = saved ?? _defaults[widget.mealType]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -538,20 +563,13 @@ class _TaskMealCard extends StatelessWidget {
       'Dinner': Icons.nights_stay_rounded,
       'Snack': Icons.cookie_rounded,
     };
-    final icon = mealIcons[mealType] ?? Icons.restaurant_rounded;
-
-    const defaultTimes = {
-      'Breakfast': '7:30 AM',
-      'Lunch': '12:30 PM',
-      'Dinner': '7:00 PM',
-    };
-    final timeHint = defaultTimes[mealType];
+    final icon = mealIcons[widget.mealType] ?? Icons.restaurant_rounded;
 
     return Material(
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -570,15 +588,17 @@ class _TaskMealCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Log your $mealType',
+                Text('Log your ${widget.mealType}',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                Text(timeHint != null ? 'Usual time · $timeHint' : "Haven't logged this meal yet",
-                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                Text(
+                  _timeHint != null ? 'Usual time · $_timeHint' : "Haven't logged this meal yet",
+                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                ),
               ]),
             ),
             const SizedBox(width: 10),
             GestureDetector(
-              onTap: onTap,
+              onTap: widget.onTap,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),

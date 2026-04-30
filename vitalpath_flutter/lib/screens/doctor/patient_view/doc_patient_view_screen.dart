@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/constants/app_constants.dart';
@@ -7,7 +8,10 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import 'package:go_router/go_router.dart';
+import '../../../models/medicine.dart';
 import '../../../models/prescription.dart';
+
+const _uuid = Uuid();
 
 class DocPatientViewScreen extends ConsumerWidget {
   final String patientId;
@@ -264,9 +268,28 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
 
+    // Mirror each prescribed medicine into the patient's medicines collection
+    // so they appear in the patient's Care screen automatically.
+    final fs = ref.read(firestoreServiceProvider);
+    for (final m in medicines) {
+      final med = Medicine(
+        id: _uuid.v4(),
+        patientId: widget.patientId,
+        name: m.name,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        notes: m.instructions,
+        startDate: DateTime.now(),
+        reminderTimes: const [],
+        reminderRepeat: 'daily',
+        prescribedBy: widget.doctorName,
+      );
+      await fs.addMedicine(widget.patientId, med);
+    }
+
     if (mounted) {
       Navigator.pop(context);
-      showAppSnack(context, 'Prescription saved with ${medicines.length} medicines');
+      showAppSnack(context, 'Prescription saved · ${medicines.length} medicine${medicines.length == 1 ? '' : 's'} added to patient\'s Care screen');
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 // import '../../../providers/gamification_provider.dart';
@@ -19,13 +20,14 @@ class ActivityScreen extends ConsumerStatefulWidget {
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   bool _isWalking = false;
+  bool _isPaused = false;
   Timer? _timer;
   int _seconds = 0;
   double _distanceKm = 0;
 
   // Pedometer-based step tracking
   int _steps = 0;
-  int? _stepBaseline; // cumulative steps at walk start
+  int? _stepBaseline;
   bool _pedometerAvailable = false;
   StreamSubscription<StepCount>? _stepSub;
 
@@ -50,6 +52,20 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     } else {
       await _startWalk();
     }
+  }
+
+  void _pauseWalk() {
+    _timer?.cancel();
+    _stepSub?.pause();
+    _positionSub?.pause();
+    setState(() => _isPaused = true);
+  }
+
+  void _resumeWalk() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _seconds++));
+    _stepSub?.resume();
+    _positionSub?.resume();
+    setState(() => _isPaused = false);
   }
 
   Future<void> _startWalk() async {
@@ -128,8 +144,11 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   Future<void> _stopWalk() async {
     _timer?.cancel();
+    _stepSub?.resume(); // resume before cancel so pause-cancel works correctly
+    _positionSub?.resume();
     await _positionSub?.cancel();
     await _stepSub?.cancel();
+    setState(() => _isPaused = false);
 
     // If pedometer had no data, fall back to stride-length estimate from GPS
     final finalSteps =
@@ -173,8 +192,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       : (_distanceKm * 60).round();
 
   void _addManualSteps() async {
-    final count = int.tryParse(_stepsCtrl.text);
-    if (count == null || count <= 0) return;
+    final text = _stepsCtrl.text.trim();
+    final count = int.tryParse(text);
+    if (count == null || count <= 0) {
+      showAppSnack(context, 'Please enter a valid step count.', isError: true);
+      return;
+    }
+    if (count > 100000) {
+      showAppSnack(context, 'That seems too high. Please enter a realistic step count.', isError: true);
+      return;
+    }
     final user = await ref.read(currentUserProvider.future);
     if (user == null) return;
     await ref.read(activityNotifierProvider.notifier).save(
@@ -184,10 +211,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           steps: count,
           caloriesBurned: (count * 0.04).round(),
         );
-    // final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: count, type: 'steps');
     if (mounted) {
       _stepsCtrl.clear();
-      showAppSnack(context, '$count steps added');
+      showAppSnack(context, '$count steps added successfully.');
     }
   }
 
@@ -198,7 +224,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-          title: const Text('Activity'), automaticallyImplyLeading: false),
+          title: const Text('Activity'),
+          automaticallyImplyLeading: false,
+          actions: const [NotifBell()]),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(
@@ -288,25 +316,52 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             _WalkStat('$_displayKcal', 'kcal'),
                           ]),
                       const SizedBox(height: 24),
-                      GestureDetector(
-                        onTap: _toggleWalk,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle),
-                          child: Icon(
-                              _isWalking
-                                  ? Icons.stop_rounded
-                                  : Icons.play_arrow_rounded,
-                              color: Colors.white,
-                              size: 40),
+                      if (_isWalking)
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          GestureDetector(
+                            onTap: _isPaused ? _resumeWalk : _pauseWalk,
+                            child: Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle),
+                              child: Icon(
+                                  _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                                  color: Colors.white,
+                                  size: 34),
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          GestureDetector(
+                            onTap: _toggleWalk,
+                            child: Container(
+                              width: 68,
+                              height: 68,
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.stop_rounded, color: Colors.white, size: 34),
+                            ),
+                          ),
+                        ])
+                      else
+                        GestureDetector(
+                          onTap: _toggleWalk,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle),
+                            child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 12),
                       Text(
-                          _isWalking ? 'Tap to Stop' : 'Tap to Start Walk',
+                          _isWalking
+                              ? (_isPaused ? 'Paused — tap to resume or stop' : 'Tap pause or stop')
+                              : 'Tap to Start Walk',
                           style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 13,

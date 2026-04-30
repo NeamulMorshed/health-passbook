@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 // import '../../../providers/gamification_provider.dart';
@@ -51,6 +52,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           appBar: AppBar(
             title: const Text('Care'),
             automaticallyImplyLeading: false,
+            actions: const [NotifBell()],
             bottom: TabBar(
               controller: _tabCtrl,
               labelColor: AppColors.primary,
@@ -99,6 +101,36 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
   void _showMealSheet(BuildContext context, String uid, {MealLog? existing}) {
     showLogMealSheet(context, uid, existing: existing);
   }
+}
+
+void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String mealId) {
+  showDialog(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      title: const Text('Delete Meal', style: TextStyle(fontFamily: 'Inter')),
+      content: const Text('Remove this meal log from today?', style: TextStyle(fontFamily: 'Inter')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(dialogCtx);
+            ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+}
+
+void showMedicineSheet(BuildContext context, String uid, {Medicine? existing}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) => _MedicineSheet(uid: uid, existing: existing),
+  );
 }
 
 void showLogMealSheet(BuildContext context, String uid, {MealLog? existing, String? initialType}) {
@@ -237,8 +269,7 @@ class _MedCard extends ConsumerWidget {
               icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
               onSelected: (v) {
                 if (v == 'edit') {
-                  context.findAncestorStateOfType<_CareScreenState>()
-                      ?._showMedicineSheet(context, uid, existing: med);
+                  showMedicineSheet(context, uid, existing: med);
                 } else {
                   _confirmDelete(context, ref);
                 }
@@ -502,10 +533,9 @@ class _MealCard extends ConsumerWidget {
                   icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
                   onSelected: (v) {
                     if (v == 'edit') {
-                      final shell = context.findAncestorStateOfType<_CareScreenState>();
-                      shell?._showMealSheet(context, uid, existing: meal);
+                      showLogMealSheet(context, uid, existing: meal);
                     } else {
-                      ref.read(mealNotifierProvider.notifier).delete(uid, meal.id);
+                      _confirmDeleteMeal(context, ref, uid, meal.id);
                     }
                   },
                   itemBuilder: (_) => const [
@@ -672,8 +702,7 @@ class _MedDetailSheet extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
-                    context.findAncestorStateOfType<_CareScreenState>()
-                        ?._showMedicineSheet(context, uid, existing: med);
+                    showMedicineSheet(context, uid, existing: med);
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit', style: TextStyle(fontFamily: 'Inter')),
@@ -796,8 +825,7 @@ class _MealDetailSheet extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.pop(context);
-                context.findAncestorStateOfType<_CareScreenState>()
-                    ?._showMealSheet(context, uid, existing: meal);
+                showLogMealSheet(context, uid, existing: meal);
               },
               icon: const Icon(Icons.edit_outlined, size: 16),
               label: const Text('Edit Meal', style: TextStyle(fontFamily: 'Inter')),

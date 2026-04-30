@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/appointment.dart';
@@ -21,7 +22,11 @@ class AppointmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('My Appointments')),
+      appBar: AppBar(
+        title: const Text('My Appointments'),
+        automaticallyImplyLeading: false,
+        actions: const [NotifBell()],
+      ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
@@ -167,6 +172,20 @@ class _ApptCard extends ConsumerWidget {
               onPressed: () => _confirmCancel(context, ref),
               icon: const Icon(Icons.cancel_outlined, size: 16),
               label: const Text('Cancel Request'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+                foregroundColor: AppColors.destructive,
+                side: const BorderSide(color: AppColors.destructive),
+              ),
+            ),
+          ],
+          if (appt.isConfirmed && appt.scheduledAt != null &&
+              appt.scheduledAt!.difference(DateTime.now()).inHours > 24) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _confirmCancel(context, ref),
+              icon: const Icon(Icons.cancel_outlined, size: 16),
+              label: const Text('Cancel Appointment'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 40),
                 foregroundColor: AppColors.destructive,

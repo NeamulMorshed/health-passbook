@@ -96,9 +96,9 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      _ApptList(appts: pending),
-                      _ApptList(appts: confirmed),
-                      _ApptList(appts: past),
+                      _ApptList(appts: pending, emptyTitle: 'No pending requests', emptySubtitle: 'New appointment requests from patients will appear here.'),
+                      _ApptList(appts: confirmed, emptyTitle: 'No upcoming appointments', emptySubtitle: 'Confirmed appointments will show here.'),
+                      _ApptList(appts: past, emptyTitle: 'No past appointments', emptySubtitle: 'Completed and cancelled appointments will appear here.'),
                     ],
                   ),
                 ),
@@ -113,15 +113,17 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
 
 class _ApptList extends StatelessWidget {
   final List<Appointment> appts;
-  const _ApptList({required this.appts});
+  final String emptyTitle;
+  final String emptySubtitle;
+  const _ApptList({required this.appts, required this.emptyTitle, required this.emptySubtitle});
 
   @override
   Widget build(BuildContext context) {
     if (appts.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
           icon: Icons.event_available_rounded,
-          title: 'None',
-          subtitle: 'No appointments in this category.');
+          title: emptyTitle,
+          subtitle: emptySubtitle);
     }
     return ListView.separated(
       padding: const EdgeInsets.all(16),

@@ -157,7 +157,15 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                   return FilterChip(
                     label: Text(c),
                     selected: selected,
-                    onSelected: (v) => setState(() => v ? _selectedConditions.add(c) : _selectedConditions.remove(c)),
+                    onSelected: (v) => setState(() {
+                      if (c == 'None') {
+                        _selectedConditions.clear();
+                        if (v) _selectedConditions.add('None');
+                      } else {
+                        _selectedConditions.remove('None');
+                        if (v) _selectedConditions.add(c) else _selectedConditions.remove(c);
+                      }
+                    }),
                     selectedColor: AppColors.primary.withValues(alpha:0.15),
                     checkmarkColor: AppColors.primary,
                     labelStyle: TextStyle(fontFamily: 'Inter', color: selected ? AppColors.primary : AppColors.foreground, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),

@@ -29,6 +29,7 @@ import '../screens/patient/profile/edit_profile_screen.dart';
 import '../screens/patient/profile/privacy_screen.dart';
 // import '../screens/patient/gamification/gamification_screen.dart';
 import '../screens/patient/insights/insights_screen.dart';
+import '../screens/patient/prescriptions/prescriptions_screen.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
 // A thin ChangeNotifier whose only job is to ping GoRouter when auth state
@@ -132,15 +133,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/activity', builder: (_, __) => const ActivityScreen()),
           GoRoute(
+              path: '/appointments',
+              builder: (_, __) => const AppointmentsScreen()),
+          GoRoute(
               path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
 
       GoRoute(
           path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
-      GoRoute(
-          path: '/appointments',
-          builder: (_, __) => const AppointmentsScreen()),
       GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
@@ -159,6 +160,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/insights',
           builder: (_, __) => const InsightsScreen()),
+      GoRoute(
+          path: '/prescriptions',
+          builder: (_, __) => const PrescriptionsScreen()),
 
       // Doctor shell
       ShellRoute(
