@@ -132,9 +132,10 @@ class DocProfileScreen extends ConsumerWidget {
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref, String uid) {
-    final specialtyCtrl = TextEditingController();
-    final hospitalCtrl = TextEditingController();
-    final licenseCtrl = TextEditingController();
+    final doc = ref.read(doctorProfileProvider(uid)).asData?.value;
+    final specialtyCtrl = TextEditingController(text: doc?.specialty ?? '');
+    final hospitalCtrl = TextEditingController(text: doc?.hospital ?? '');
+    final licenseCtrl = TextEditingController(text: doc?.licenseNo ?? '');
 
     showModalBottomSheet(
       context: context,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
@@ -84,7 +85,7 @@ class _MyDoctorsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return myDoctorsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _ShimmerDoctorList(),
       error: (_, __) => const EmptyState(
           icon: Icons.error_outline_rounded,
           title: 'Something went wrong',
@@ -216,7 +217,7 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
         // ── Results ─────────────────────────────────────────────────
         Expanded(
           child: searchAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const _ShimmerDoctorList(),
             error: (_, __) => const EmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'Something went wrong',
@@ -675,6 +676,14 @@ class _BookAppointmentSheet extends ConsumerStatefulWidget {
 class _BookAppointmentSheetState
     extends ConsumerState<_BookAppointmentSheet> {
   final _noteCtrl = TextEditingController();
+  String? _preferredTime;
+
+  static const _timeSlots = [
+    'Morning (8–12)',
+    'Afternoon (12–5)',
+    'Evening (5–8)',
+    'Flexible',
+  ];
 
   @override
   void dispose() {
@@ -685,15 +694,17 @@ class _BookAppointmentSheetState
   void _book() async {
     final user = await ref.read(currentUserProvider.future);
     if (user == null) return;
+    final noteText = [
+      if (_noteCtrl.text.trim().isNotEmpty) _noteCtrl.text.trim(),
+      if (_preferredTime != null) 'Preferred time: $_preferredTime',
+    ].join('\n');
     await ref.read(appointmentNotifierProvider.notifier).book(
           patientId: user.uid,
           patientName: user.name,
           doctorId: widget.doctor.uid,
           doctorName: widget.doctor.name,
           doctorSpecialty: widget.doctor.specialty,
-          note: _noteCtrl.text.trim().isEmpty
-              ? null
-              : _noteCtrl.text.trim(),
+          note: noteText.isEmpty ? null : noteText,
         );
     if (mounted) {
       Navigator.pop(context);
@@ -742,7 +753,36 @@ class _BookAppointmentSheetState
                   labelText: 'Reason for visit (optional)',
                   hintText: 'Describe your symptoms or concern...'),
             ),
+            const SizedBox(height: 16),
+            const Text('Preferred time',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
             const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _timeSlots.map((slot) {
+                final selected = _preferredTime == slot;
+                return GestureDetector(
+                  onTap: () => setState(() => _preferredTime = selected ? null : slot),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.doctorPrimary : AppColors.muted,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: selected ? AppColors.doctorPrimary : AppColors.border),
+                    ),
+                    child: Text(slot,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Inter',
+                            color: selected ? Colors.white : AppColors.foreground)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -844,7 +884,7 @@ class _PrescriptionCard extends StatelessWidget {
                         color: AppColors.mutedForeground,
                         fontFamily: 'Inter')),
               ])),
-          StatusBadge.success('${rx.medicines.length} meds'),
+          StatusBadge.info('${rx.medicines.length} meds'),
         ]),
         if (rx.diagnosis != null) ...[
           const SizedBox(height: 10),
@@ -883,6 +923,30 @@ class _PrescriptionCard extends StatelessWidget {
                   fontFamily: 'Inter')),
         ],
       ]),
+    );
+  }
+}
+
+class _ShimmerDoctorList extends StatelessWidget {
+  const _ShimmerDoctorList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.muted,
+      highlightColor: AppColors.surface,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: 4,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, __) => Container(
+          height: 130,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 }

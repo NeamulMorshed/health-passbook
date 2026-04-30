@@ -163,7 +163,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                         if (v) _selectedConditions.add('None');
                       } else {
                         _selectedConditions.remove('None');
-                        if (v) _selectedConditions.add(c) else _selectedConditions.remove(c);
+                        if (v) { _selectedConditions.add(c); } else { _selectedConditions.remove(c); }
                       }
                     }),
                     selectedColor: AppColors.primary.withValues(alpha:0.15),

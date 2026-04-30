@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -170,7 +171,7 @@ class _MedicineTab extends ConsumerWidget {
     final medsAsync = ref.watch(medicinesProvider(uid));
 
     return medsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _ShimmerCardList(height: 90),
       error: (e, _) => EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
       data: (meds) {
         if (meds.isEmpty) {
@@ -435,7 +436,7 @@ class _FoodTab extends ConsumerWidget {
     final mealsAsync = ref.watch(todayMealsProvider(uid));
 
     return mealsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const _ShimmerCardList(height: 74),
       error: (e, _) => EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
       data: (meals) {
         final totalCal = meals.fold(0, (s, m) => s + (m.calories ?? 0));
@@ -1266,6 +1267,31 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                 const SizedBox(height: 8),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShimmerCardList extends StatelessWidget {
+  final double height;
+  const _ShimmerCardList({this.height = 80});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.muted,
+      highlightColor: AppColors.surface,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (_, __) => Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),

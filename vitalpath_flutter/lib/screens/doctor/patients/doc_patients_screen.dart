@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -33,7 +34,7 @@ class DocPatientsScreen extends ConsumerWidget {
           final patientsAsync = ref.watch(doctorPatientsStreamProvider(user.uid));
 
           return patientsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const _ShimmerPatientList(),
             error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
             data: (patients) {
               if (patients.isEmpty) {
@@ -152,4 +153,28 @@ class _InfoChip extends StatelessWidget {
     decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
     child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
   );
+}
+
+class _ShimmerPatientList extends StatelessWidget {
+  const _ShimmerPatientList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: AppColors.muted,
+      highlightColor: AppColors.surface,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (_, __) => Container(
+          height: 76,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
 }
