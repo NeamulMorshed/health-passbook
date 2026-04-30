@@ -17,19 +17,28 @@
       ]
     },
     {
+      "collectionGroup": "appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientId", "order": "ASCENDING" },
+        { "fieldPath": "doctorId",  "order": "ASCENDING" },
+        { "fieldPath": "status",    "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "prescriptions",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "patientId", "order": "ASCENDING" },
-        { "fieldPath": "issuedAt", "order": "DESCENDING" }
+        { "fieldPath": "issuedAt",  "order": "DESCENDING" }
       ]
     },
     {
       "collectionGroup": "medicines",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "isActive", "order": "ASCENDING" },
-        { "fieldPath": "startDate", "order": "DESCENDING" }
+        { "fieldPath": "isActive",   "order": "ASCENDING" },
+        { "fieldPath": "startDate",  "order": "DESCENDING" }
       ]
     }
   ],

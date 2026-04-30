@@ -34,5 +34,8 @@ google-services.json
 GoogleService-Info.plist
 firebase_options.dart
 
+# AI config (contains API key — never commit)
+**/lib/core/config/ai_config.dart
+
 # Logs
 *.log

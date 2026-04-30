@@ -22,7 +22,14 @@ import '../screens/doctor/patients/doc_patients_screen.dart';
 import '../screens/doctor/appointments/doc_appointments_screen.dart';
 import '../screens/doctor/patient_view/doc_patient_view_screen.dart';
 import '../screens/doctor/profile/doc_profile_screen.dart';
+import '../screens/doctor/onboarding/doc_profile_setup_screen.dart';
 import '../screens/patient/notifications/notifications_screen.dart';
+import '../screens/patient/notifications/notification_settings_screen.dart';
+import '../screens/patient/profile/edit_profile_screen.dart';
+import '../screens/patient/profile/privacy_screen.dart';
+// import '../screens/patient/gamification/gamification_screen.dart';
+import '../screens/patient/insights/insights_screen.dart';
+import '../screens/patient/prescriptions/prescriptions_screen.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
 // A thin ChangeNotifier whose only job is to ping GoRouter when auth state
@@ -104,13 +111,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // Onboarding
+      // Patient onboarding
       GoRoute(
           path: '/onboarding/permissions',
           builder: (_, __) => const PermissionsScreen()),
       GoRoute(
           path: '/onboarding/health-profile',
           builder: (_, __) => const HealthProfileScreen()),
+
+      // Doctor onboarding
+      GoRoute(
+          path: '/doc/onboarding/profile',
+          builder: (_, __) => const DocProfileSetupScreen()),
 
       // Patient shell
       ShellRoute(
@@ -121,6 +133,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/activity', builder: (_, __) => const ActivityScreen()),
           GoRoute(
+              path: '/appointments',
+              builder: (_, __) => const AppointmentsScreen()),
+          GoRoute(
               path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
@@ -128,11 +143,26 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
       GoRoute(
-          path: '/appointments',
-          builder: (_, __) => const AppointmentsScreen()),
-      GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
+      GoRoute(
+          path: '/notification-settings',
+          builder: (_, __) => const NotificationSettingsScreen()),
+      GoRoute(
+          path: '/edit-profile',
+          builder: (_, __) => const EditProfileScreen()),
+      GoRoute(
+          path: '/privacy-security',
+          builder: (_, __) => const PrivacySecurityScreen()),
+      // GoRoute(
+      //     path: '/gamification',
+      //     builder: (_, __) => const GamificationScreen()),
+      GoRoute(
+          path: '/insights',
+          builder: (_, __) => const InsightsScreen()),
+      GoRoute(
+          path: '/prescriptions',
+          builder: (_, __) => const PrescriptionsScreen()),
 
       // Doctor shell
       ShellRoute(

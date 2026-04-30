@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../models/medicine.dart';
 import '../../../models/prescription.dart';
+
+const _uuid = Uuid();
 
 class DocPatientViewScreen extends ConsumerWidget {
   final String patientId;
@@ -14,17 +19,76 @@ class DocPatientViewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patientAsync = ref.watch(patientProfileProvider(patientId));
-    final medsAsync = ref.watch(medicinesProvider(patientId));
-    final rxAsync = ref.watch(patientPrescriptionsProvider(patientId));
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Patient Details')),
-      body: patientAsync.when(
+      body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+        data: (doctor) {
+          if (doctor == null) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (context.mounted) context.go('/user-select'); },
+            );
+            return const SizedBox.shrink();
+          }
+          final connectionAsync = ref.watch(
+            connectionCheckProvider((doctorId: doctor.uid, patientId: patientId)),
+          );
+          return connectionAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+            data: (isConnected) {
+              if (!isConnected) {
+                return const EmptyState(
+                  icon: Icons.lock_outline_rounded,
+                  title: 'Access Denied',
+                  subtitle: 'You do not have an active connection with this patient.',
+                );
+              }
+              return _PatientDetailBody(
+                doctorId: doctor.uid,
+                doctorName: doctor.name,
+                patientId: patientId,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+}
+
+class _PatientDetailBody extends ConsumerStatefulWidget {
+  final String doctorId;
+  final String doctorName;
+  final String patientId;
+
+  const _PatientDetailBody({
+    required this.doctorId,
+    required this.doctorName,
+    required this.patientId,
+  });
+
+  @override
+  ConsumerState<_PatientDetailBody> createState() => _PatientDetailBodyState();
+}
+
+class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody> {
+  bool _showAllRx = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final patientAsync = ref.watch(patientProfileProvider(widget.patientId));
+    final medsAsync    = ref.watch(medicinesProvider(widget.patientId));
+    final rxAsync      = ref.watch(patientPrescriptionsProvider(widget.patientId));
+
+    return patientAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (patient) {
           if (patient == null) return const EmptyState(icon: Icons.error_outline, title: 'Not Found', subtitle: 'Patient data not available.');
 
@@ -113,21 +177,34 @@ class DocPatientViewScreen extends ConsumerWidget {
                   rxAsync.when(
                     data: (rxList) {
                       if (rxList.isEmpty) return const Text('No prescriptions yet.', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'));
-                      return Column(children: rxList.take(5).map((rx) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(10)),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [
-                            Text('Dr. ${rx.doctorName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                            const Spacer(),
-                            Text('${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                      const pageSize = 5;
+                      final visible = _showAllRx ? rxList : rxList.take(pageSize).toList();
+                      return Column(children: [
+                        ...visible.map((rx) => Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(10)),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              Text('Dr. ${rx.doctorName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                              const Spacer(),
+                              Text('${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                            ]),
+                            if (rx.diagnosis != null) Text(rx.diagnosis!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                            const SizedBox(height: 6),
+                            ...rx.medicines.map((m) => Text('  - ${m.name} ${m.dosage} (${m.frequency})', style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
                           ]),
-                          if (rx.diagnosis != null) Text(rx.diagnosis!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                          const SizedBox(height: 6),
-                          ...rx.medicines.map((m) => Text('  - ${m.name} ${m.dosage} (${m.frequency})', style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
-                        ]),
-                      )).toList());
+                        )),
+                        if (rxList.length > pageSize)
+                          TextButton.icon(
+                            onPressed: () => setState(() => _showAllRx = !_showAllRx),
+                            icon: Icon(_showAllRx ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                            label: Text(
+                              _showAllRx ? 'Show less' : 'Show all ${rxList.length} prescriptions',
+                              style: const TextStyle(fontFamily: 'Inter'),
+                            ),
+                          ),
+                      ]);
                     },
                     loading: () => const CircularProgressIndicator(),
                     error: (_, __) => const SizedBox(),
@@ -138,27 +215,19 @@ class DocPatientViewScreen extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // Write prescription button
-              userAsync.when(
-                data: (user) {
-                  if (user == null) return const SizedBox();
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GradientButton(
-                      label: 'Write Prescription',
-                      colors: [AppColors.doctorPrimary, const Color(0xFF5B21B6)],
-                      onPressed: () => _showPrescribeSheet(context, patientId, user.uid, user.name),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GradientButton(
+                  label: 'Write Prescription',
+                  colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                  onPressed: () => _showPrescribeSheet(context, widget.patientId, widget.doctorId, widget.doctorName),
+                ),
               ),
               const SizedBox(height: 24),
             ],
           );
         },
-      ),
-    );
+      );
   }
 
   void _showPrescribeSheet(BuildContext context, String patientId, String doctorId, String doctorName) {
@@ -219,9 +288,28 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
     );
 
+    // Mirror each prescribed medicine into the patient's medicines collection
+    // so they appear in the patient's Care screen automatically.
+    final fs = ref.read(firestoreServiceProvider);
+    for (final m in medicines) {
+      final med = Medicine(
+        id: _uuid.v4(),
+        patientId: widget.patientId,
+        name: m.name,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        notes: m.instructions,
+        startDate: DateTime.now(),
+        reminderTimes: const [],
+        reminderRepeat: 'daily',
+        prescribedBy: widget.doctorName,
+      );
+      await fs.addMedicine(widget.patientId, med);
+    }
+
     if (mounted) {
       Navigator.pop(context);
-      showAppSnack(context, 'Prescription saved with ${medicines.length} medicines');
+      showAppSnack(context, 'Prescription saved · ${medicines.length} medicine${medicines.length == 1 ? '' : 's'} added to patient\'s Care screen');
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -15,7 +16,7 @@ class DocProfileScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -24,6 +25,7 @@ class DocProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
+        final patientCount = ref.watch(doctorPatientCountProvider(user.uid)).maybeWhen(data: (c) => c, orElse: () => 0);
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -50,7 +52,7 @@ class DocProfileScreen extends ConsumerWidget {
                       ],
                       const SizedBox(height: 16),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        _HeaderStat('${doc?.patientIds.length ?? 0}', 'Patients'),
+                        _HeaderStat('$patientCount', 'Patients'),
                         Container(width: 1, height: 28, color: Colors.white24),
                         _HeaderStat(doc?.rating.toStringAsFixed(1) ?? '0.0', 'Rating'),
                         Container(width: 1, height: 28, color: Colors.white24),
@@ -104,9 +106,9 @@ class DocProfileScreen extends ConsumerWidget {
               Container(
                 color: AppColors.surface,
                 child: Column(children: [
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () {}),
-                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () {}),
-                  _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.primary, onTap: () {}),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
+                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
+                  _MenuItem(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.primary, onTap: () => _showHelp(context)),
                 ]),
               ),
 
@@ -130,9 +132,10 @@ class DocProfileScreen extends ConsumerWidget {
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref, String uid) {
-    final specialtyCtrl = TextEditingController();
-    final hospitalCtrl = TextEditingController();
-    final licenseCtrl = TextEditingController();
+    final doc = ref.read(doctorProfileProvider(uid)).asData?.value;
+    final specialtyCtrl = TextEditingController(text: doc?.specialty ?? '');
+    final hospitalCtrl = TextEditingController(text: doc?.hospital ?? '');
+    final licenseCtrl = TextEditingController(text: doc?.licenseNo ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -175,18 +178,40 @@ class DocProfileScreen extends ConsumerWidget {
     );
   }
 
+  void _showHelp(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Help & Support', style: TextStyle(fontFamily: 'Inter')),
+        content: const Text('For assistance, contact us at support@vitalpath.health', style: TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Close')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              final uri = Uri.parse('mailto:support@vitalpath.health?subject=Doctor%20Support%20Request');
+              if (await canLaunchUrl(uri)) launchUrl(uri);
+            },
+            child: const Text('Send Email'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _signOut(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out', style: TextStyle(fontFamily: 'Inter')),
         content: const Text('Are you sure you want to sign out?', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              await ref.read(authServiceProvider).signOut();
+              Navigator.pop(dialogCtx);
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/user-select');
             },
             child: const Text('Sign Out'),

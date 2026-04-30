@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,6 +65,22 @@ class FirebaseAuthRepository implements AuthRepository {
       return getUserState(uid);
     } on FirebaseAuthException catch (e) {
       return AuthFailure(_codeToMessage(e.code), cause: e);
+    } on PlatformException catch (e) {
+      if (e.code == 'sign_in_failed') {
+        final detail = e.message ?? '';
+        if (detail.contains('ApiException: 7')) {
+          return const AuthFailure(
+            'Network error. Check your internet connection and try again.',
+          );
+        }
+        if (detail.contains('ApiException: 10')) {
+          return const AuthFailure(
+            'Google Sign-In is not configured for this device. '
+            'The app\'s SHA-1 fingerprint may not be registered in Firebase Console.',
+          );
+        }
+      }
+      return AuthFailure('Sign-in failed: ${e.message}', cause: e);
     } catch (e) {
       return AuthFailure('Sign-in failed. Please try again.', cause: e);
     }
@@ -107,7 +124,6 @@ class FirebaseAuthRepository implements AuthRepository {
           'name': user.name,
           'phone': user.phone,
           'photoUrl': user.photoUrl,
-          'patientIds': <String>[],
           'isVerified': false,
           'rating': 0.0,
           'reviewCount': 0,
@@ -146,6 +162,27 @@ class FirebaseAuthRepository implements AuthRepository {
     ]);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConstants.prefUserType);
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
+
+    // Delete Firestore docs first while auth is still valid.
+    await Future.wait([
+      _db.collection(AppConstants.colUsers).doc(uid).delete(),
+      _db.collection(AppConstants.colPatients).doc(uid).delete(),
+    ]);
+
+    // Delete the Firebase Auth account.
+    await user.delete();
+
+    // Clear local state.
+    await _googleSignIn.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

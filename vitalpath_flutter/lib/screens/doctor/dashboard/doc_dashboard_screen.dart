@@ -17,7 +17,7 @@ class DocDashboardScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -27,6 +27,7 @@ class DocDashboardScreen extends ConsumerWidget {
         }
         final docAsync = ref.watch(doctorProfileProvider(user.uid));
         final apptsAsync = ref.watch(doctorAppointmentsProvider(user.uid));
+        final patientCountAsync = ref.watch(doctorPatientCountProvider(user.uid));
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -72,20 +73,14 @@ class DocDashboardScreen extends ConsumerWidget {
                         final pending = appts.where((a) => a.isPending).length;
                         final confirmed = appts.where((a) => a.isConfirmed).length;
 
-                        return docAsync.when(
-                          data: (doc) {
-                            final patientCount = doc?.patientIds.length ?? 0;
-                            return Row(children: [
-                              Expanded(child: _StatTile('$patientCount', 'Patients', Icons.people_rounded, AppColors.primary)),
-                              const SizedBox(width: 10),
-                              Expanded(child: _StatTile('$pending', 'Pending', Icons.pending_actions_rounded, AppColors.warning)),
-                              const SizedBox(width: 10),
-                              Expanded(child: _StatTile('$confirmed', 'Confirmed', Icons.check_circle_rounded, AppColors.success)),
-                            ]);
-                          },
-                          loading: () => const SizedBox(),
-                          error: (_, __) => const SizedBox(),
-                        );
+                        final patientCount = patientCountAsync.asData?.value ?? 0;
+                        return Row(children: [
+                          Expanded(child: _StatTile('$patientCount', 'Patients', Icons.people_rounded, AppColors.primary)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatTile('$pending', 'Pending', Icons.pending_actions_rounded, AppColors.warning)),
+                          const SizedBox(width: 10),
+                          Expanded(child: _StatTile('$confirmed', 'Confirmed', Icons.check_circle_rounded, AppColors.success)),
+                        ]);
                       },
                       loading: () => const Center(child: CircularProgressIndicator()),
                       error: (_, __) => const SizedBox(),
@@ -98,7 +93,7 @@ class DocDashboardScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       _ActionTile(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.doctorPrimary, onTap: () => context.go('/doc/appointments')),
                       const SizedBox(width: 12),
-                      _ActionTile(icon: Icons.edit_note_rounded, label: 'Prescribe', color: AppColors.success, onTap: () => context.go('/doc/patients')),
+                      _ActionTile(icon: Icons.edit_note_rounded, label: 'Prescribe', color: AppColors.success, onTap: () => context.go('/doc/patients', extra: {'mode': 'prescribe'})),
                     ]),
                     const SizedBox(height: 28),
 
@@ -200,20 +195,25 @@ class _PendingApptCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.warningLight)),
-      child: Row(children: [
-        AppAvatar(name: appt.patientName, size: 40),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(appt.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          if (appt.patientNote != null && appt.patientNote!.isNotEmpty)
-            Text(appt.patientNote!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        ])),
-        StatusBadge.warning('Pending'),
-      ]),
+    return GestureDetector(
+      onTap: () => context.go('/doc/appointments'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.warningLight)),
+        child: Row(children: [
+          AppAvatar(name: appt.patientName, size: 40),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(appt.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            if (appt.patientNote != null && appt.patientNote!.isNotEmpty)
+              Text(appt.patientNote!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          ])),
+          StatusBadge.warning('Pending'),
+          const SizedBox(width: 4),
+          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.mutedForeground),
+        ]),
+      ),
     );
   }
 }

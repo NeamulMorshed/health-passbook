@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import '../models/medicine.dart';
 import '../models/meal.dart';
 import '../models/appointment.dart';
@@ -9,8 +10,19 @@ import '../models/activity_log.dart';
 import '../models/app_notification.dart';
 import '../core/constants/app_constants.dart';
 
+const _uuid = Uuid();
+
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // ─── Users ────────────────────────────────────────────────────────────────
+
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
+    await _db.collection(AppConstants.colUsers).doc(uid).update({
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   // ─── Patient ──────────────────────────────────────────────────────────────
 
@@ -21,7 +33,10 @@ class FirestoreService {
   }
 
   Future<void> updatePatientProfile(String uid, Map<String, dynamic> data) async {
-    await _db.collection(AppConstants.colPatients).doc(uid).set(data, SetOptions(merge: true));
+    await _db.collection(AppConstants.colPatients).doc(uid).set(
+      {...data, 'updatedAt': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
   }
 
   // ─── Doctor ───────────────────────────────────────────────────────────────
@@ -33,25 +48,127 @@ class FirestoreService {
   }
 
   Future<void> updateDoctorProfile(String uid, Map<String, dynamic> data) async {
-    await _db.collection(AppConstants.colDoctors).doc(uid).set(data, SetOptions(merge: true));
+    await _db.collection(AppConstants.colDoctors).doc(uid).set(
+      {...data, 'updatedAt': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? name}) async {
+  // ── Private batch-fetch helpers ────────────────────────────────────────────
+  // Firestore whereIn supports max 30 items; chunking handles any list size.
+
+  Future<List<DoctorProfile>> _fetchDoctorsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final results = <DoctorProfile>[];
+    for (var i = 0; i < ids.length; i += 30) {
+      final chunk = ids.sublist(i, (i + 30).clamp(0, ids.length));
+      final snap = await _db
+          .collection(AppConstants.colDoctors)
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      results.addAll(snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)));
+    }
+    return results;
+  }
+
+  Future<List<PatientProfile>> _fetchPatientsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final results = <PatientProfile>[];
+    for (var i = 0; i < ids.length; i += 30) {
+      final chunk = ids.sublist(i, (i + 30).clamp(0, ids.length));
+      final snap = await _db
+          .collection(AppConstants.colPatients)
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      results.addAll(snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)));
+    }
+    return results;
+  }
+
+  // ── Connections (patient ↔ doctor many-to-many) ────────────────────────────
+  // Fan-out write on both sides so neither the patient doc nor the doctor doc
+  // acts as a write hotspot.  Each connection is its own document → Firestore
+  // can handle unlimited concurrent bookings without contention.
+
+  Stream<List<DoctorProfile>> watchMyDoctors(String patientId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .asyncMap((snap) => _fetchDoctorsByIds(snap.docs.map((d) => d.id).toList()));
+  }
+
+  Stream<List<PatientProfile>> watchDoctorPatients(String doctorId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .asyncMap((snap) => _fetchPatientsByIds(snap.docs.map((d) => d.id).toList()));
+  }
+
+  Stream<int> watchDoctorPatientCount(String doctorId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
+  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
     }
     final snap = await query.limit(50).get();
-    return snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
+    var results = snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
+    if (nameQuery != null && nameQuery.isNotEmpty) {
+      final lower = nameQuery.toLowerCase();
+      results = results
+          .where((d) =>
+              d.name.toLowerCase().contains(lower) ||
+              (d.specialty?.toLowerCase().contains(lower) ?? false) ||
+              (d.hospital?.toLowerCase().contains(lower) ?? false))
+          .toList();
+    }
+    return results;
   }
 
-  Future<List<PatientProfile>> getDoctorPatients(List<String> patientIds) async {
-    if (patientIds.isEmpty) return [];
-    final snap = await _db
-        .collection(AppConstants.colPatients)
-        .where(FieldPath.documentId, whereIn: patientIds.take(10).toList())
+  Future<bool> isConnected(String doctorId, String patientId) async {
+    final doc = await _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId)
         .get();
-    return snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)).toList();
+    return doc.exists;
+  }
+
+  Stream<bool> watchConnection(String doctorId, String patientId) {
+    return _db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId)
+        .snapshots()
+        .map((doc) => doc.exists);
+  }
+
+  Future<void> removeConnection(String patientId, String doctorId) async {
+    final batch = _db.batch();
+    batch.delete(_db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colConnections)
+        .doc(doctorId));
+    batch.delete(_db
+        .collection(AppConstants.colDoctors)
+        .doc(doctorId)
+        .collection(AppConstants.colConnections)
+        .doc(patientId));
+    await batch.commit();
   }
 
   // ─── Medicines ────────────────────────────────────────────────────────────
@@ -84,16 +201,18 @@ class FirestoreService {
         .doc(medicineId)
         .update({
       'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  Future<void> updateMedicine(String patientId, String medicineId, Map<String, dynamic> data) async {
+  Future<void> updateMedicine(
+      String patientId, String medicineId, Map<String, dynamic> data) async {
     await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
-        .update(data);
+        .update({...data, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
   Future<void> deleteMedicine(String patientId, String medicineId) async {
@@ -102,7 +221,10 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
-        .update({'isActive': false});
+        .update({
+      'isActive': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   // ─── Meals ────────────────────────────────────────────────────────────────
@@ -131,13 +253,14 @@ class FirestoreService {
         .set(meal.toMap());
   }
 
-  Future<void> updateMeal(String patientId, String mealId, Map<String, dynamic> data) async {
+  Future<void> updateMeal(
+      String patientId, String mealId, Map<String, dynamic> data) async {
     await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colMeals)
         .doc(mealId)
-        .update(data);
+        .update({...data, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
   Future<void> deleteMeal(String patientId, String mealId) async {
@@ -220,11 +343,12 @@ class FirestoreService {
 
   // ─── Appointments ─────────────────────────────────────────────────────────
 
-  Stream<List<Appointment>> watchPatientAppointments(String patientId) {
+  Stream<List<Appointment>> watchPatientAppointments(String patientId, {int limit = 20}) {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
         .orderBy('createdAt', descending: true)
+        .limit(limit)
         .snapshots()
         .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
   }
@@ -234,23 +358,103 @@ class FirestoreService {
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
         .orderBy('createdAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
   }
 
+  // Booking only creates the appointment — connection is established on confirmation.
   Future<void> bookAppointment(Appointment appt) async {
     await _db.collection(AppConstants.colAppointments).doc(appt.id).set(appt.toMap());
-    // Add patient to doctor's list
-    await _db.collection(AppConstants.colDoctors).doc(appt.doctorId).update({
-      'patientIds': FieldValue.arrayUnion([appt.patientId]),
-    });
   }
 
-  Future<void> updateAppointmentStatus(String apptId, String status, {DateTime? scheduledAt, String? notes}) async {
-    final data = <String, dynamic>{'status': status};
+  // Confirm appointment: update status, fan-out connection, notify patient.
+  Future<void> confirmAppointment({
+    required String apptId,
+    required String patientId,
+    required String doctorId,
+    required String doctorName,
+    required DateTime scheduledAt,
+    String? notes,
+  }) async {
+    final batch = _db.batch();
+
+    batch.update(_db.collection(AppConstants.colAppointments).doc(apptId), {
+      'status': AppointmentStatus.confirmed.value,
+      'scheduledAt': Timestamp.fromDate(scheduledAt),
+      if (notes != null) 'notes': notes,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Bidirectional connection — created only after doctor accepts.
+    batch.set(
+      _db.collection(AppConstants.colPatients).doc(patientId)
+          .collection(AppConstants.colConnections).doc(doctorId),
+      {'connectedAt': FieldValue.serverTimestamp()},
+    );
+    batch.set(
+      _db.collection(AppConstants.colDoctors).doc(doctorId)
+          .collection(AppConstants.colConnections).doc(patientId),
+      {'connectedAt': FieldValue.serverTimestamp()},
+    );
+
+    // In-app notification for the patient.
+    batch.set(
+      _db.collection(AppConstants.colPatients).doc(patientId)
+          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      {
+        'title': 'Appointment Confirmed',
+        'body': 'Dr. $doctorName confirmed your appointment for ${_fmtDt(scheduledAt)}.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+        'scheduledFor': Timestamp.fromDate(scheduledAt),
+      },
+    );
+
+    await batch.commit();
+  }
+
+  Future<void> updateAppointmentStatus(
+    String apptId,
+    AppointmentStatus status, {
+    DateTime? scheduledAt,
+    String? notes,
+    String? patientId,
+    String? doctorId,
+  }) async {
+    final data = <String, dynamic>{
+      'status': status.value,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
     if (scheduledAt != null) data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
+
+    if (status == AppointmentStatus.cancelled &&
+        patientId != null && doctorId != null) {
+      await _cleanupConnectionIfInactive(patientId, doctorId);
+    }
+  }
+
+  Future<void> _cleanupConnectionIfInactive(String patientId, String doctorId) async {
+    final remaining = await _db
+        .collection(AppConstants.colAppointments)
+        .where('patientId', isEqualTo: patientId)
+        .where('doctorId', isEqualTo: doctorId)
+        .where('status', whereIn: ['pending', 'confirmed'])
+        .get();
+    if (remaining.docs.isEmpty) {
+      await removeConnection(patientId, doctorId);
+    }
+  }
+
+  String _fmtDt(DateTime dt) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} at $h:$m $period';
   }
 
   // ─── Prescriptions ────────────────────────────────────────────────────────
@@ -264,26 +468,38 @@ class FirestoreService {
         .map((s) => s.docs.map((d) => Prescription.fromMap(d.data(), d.id)).toList());
   }
 
+  /// Writes the prescription and all derived medicine entries in a single
+  /// atomic batch so a partial failure can never leave data inconsistent.
   Future<void> addPrescription(Prescription rx) async {
-    await _db.collection(AppConstants.colPrescriptions).doc(rx.id).set(rx.toMap());
-    // Also add medicines to patient's medicine list
+    final batch = _db.batch();
+
+    batch.set(
+      _db.collection(AppConstants.colPrescriptions).doc(rx.id),
+      rx.toMap(),
+    );
+
     for (final med in rx.medicines) {
-      final medDoc = _db
+      final medRef = _db
           .collection(AppConstants.colPatients)
           .doc(rx.patientId)
           .collection(AppConstants.colMedicines)
           .doc();
-      await medDoc.set(Medicine(
-        id: medDoc.id,
-        patientId: rx.patientId,
-        name: med.name,
-        dosage: med.dosage,
-        frequency: med.frequency,
-        prescribedBy: rx.doctorName,
-        doctorId: rx.doctorId,
-        notes: med.instructions,
-        startDate: rx.issuedAt,
-      ).toMap());
+      batch.set(
+        medRef,
+        Medicine(
+          id:           medRef.id,
+          patientId:    rx.patientId,
+          name:         med.name,
+          dosage:       med.dosage,
+          frequency:    med.frequency,
+          prescribedBy: rx.doctorName,
+          doctorId:     rx.doctorId,
+          notes:        med.instructions,
+          startDate:    rx.issuedAt,
+        ).toMap(),
+      );
     }
+
+    await batch.commit();
   }
 }

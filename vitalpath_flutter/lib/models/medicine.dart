@@ -1,5 +1,48 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ── Dose Slot ─────────────────────────────────────────────────────────────────
+// Represents one scheduled dose window for a medicine within a single day.
+// Windows are derived purely from reminderTimes — no schema change needed.
+
+class DoseSlot {
+  final int index;
+  final int hour;
+  final int minute;
+  final DateTime windowStart; // grace period opens 30 min before scheduled time
+  final DateTime windowEnd;   // closes when the next slot's window starts
+  final bool isTaken;         // a logged dose falls inside this window
+  final bool isDue;           // current time >= windowStart
+  final bool isMissed;        // window has closed and dose was not logged
+
+  const DoseSlot({
+    required this.index,
+    required this.hour,
+    required this.minute,
+    required this.windowStart,
+    required this.windowEnd,
+    required this.isTaken,
+    required this.isDue,
+    required this.isMissed,
+  });
+
+  // "8:00 AM" / "2:00 PM"
+  String get displayTime {
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    final m = minute.toString().padLeft(2, '0');
+    return minute == 0 ? '$h $period' : '$h:$m $period';
+  }
+
+  // Short label for chips: "8 AM" / "2 PM"
+  String get shortTime {
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return minute == 0 ? '$h $period' : '$h:${minute.toString().padLeft(2, '0')} $period';
+  }
+}
+
+// ── Medicine ──────────────────────────────────────────────────────────────────
+
 class Medicine {
   final String id;
   final String patientId;
@@ -13,7 +56,7 @@ class Medicine {
   final DateTime startDate;
   final DateTime? endDate;
   final List<DateTime> loggedDoses;
-  final List<String> reminderTimes; // "HH:mm" strings e.g. ["08:00", "20:00"]
+  final List<String> reminderTimes; // "HH:mm" e.g. ["08:00", "20:00"]
   final String reminderRepeat;      // 'daily' | 'weekly'
 
   const Medicine({
@@ -33,11 +76,99 @@ class Medicine {
     this.reminderRepeat = 'daily',
   });
 
-  bool get takenToday {
+  // ── Slot computation ────────────────────────────────────────────────────────
+
+  static const _gracePeriod = Duration(minutes: 30);
+
+  static (int, int) _parseHM(String t) {
+    final p = t.split(':');
+    return (int.parse(p[0]), int.parse(p[1]));
+  }
+
+  /// All dose slots for today, sorted by scheduled time.
+  List<DoseSlot> get todaySlots {
+    if (reminderTimes.isEmpty) return [];
+
+    final now = DateTime.now();
+    final base = DateTime(now.year, now.month, now.day);
+
+    // Build sorted scheduled DateTimes for today
+    final scheduled = reminderTimes.map((t) {
+      final (h, m) = _parseHM(t);
+      return DateTime(base.year, base.month, base.day, h, m);
+    }).toList()
+      ..sort();
+
+    // Today's logged doses only
+    final todayDoses = loggedDoses.where((d) =>
+        d.year == base.year && d.month == base.month && d.day == base.day).toList();
+
+    return List.generate(scheduled.length, (i) {
+      final slotTime = scheduled[i];
+
+      // Window opens 30 min early, but never before midnight
+      final rawStart = slotTime.subtract(_gracePeriod);
+      final windowStart = rawStart.isBefore(base) ? base : rawStart;
+
+      // Window closes when the next slot's window starts, or end of day
+      final windowEnd = i + 1 < scheduled.length
+          ? scheduled[i + 1].subtract(_gracePeriod)
+          : DateTime(base.year, base.month, base.day, 23, 59, 59);
+
+      final isTaken = todayDoses.any(
+          (d) => !d.isBefore(windowStart) && d.isBefore(windowEnd));
+      final isDue = !now.isBefore(windowStart);
+      final isMissed = isDue && now.isAfter(windowEnd) && !isTaken;
+
+      return DoseSlot(
+        index: i,
+        hour: slotTime.hour,
+        minute: slotTime.minute,
+        windowStart: windowStart,
+        windowEnd: windowEnd,
+        isTaken: isTaken,
+        isDue: isDue,
+        isMissed: isMissed,
+      );
+    });
+  }
+
+  /// The next slot that is due (window open) but not yet taken.
+  /// Returns null when all due slots are taken or no slot has opened yet.
+  DoseSlot? get nextPendingSlot =>
+      todaySlots.where((s) => s.isDue && !s.isTaken && !s.isMissed).firstOrNull;
+
+  /// The next slot whose window has not opened yet.
+  DoseSlot? get nextUpcomingSlot =>
+      todaySlots.where((s) => !s.isDue).firstOrNull;
+
+  /// True only when every slot for today has a logged dose.
+  bool get fullyTakenToday {
+    if (reminderTimes.isEmpty) return _anyDoseToday;
+    return todaySlots.every((s) => s.isTaken);
+  }
+
+  /// Whether any due slot still needs a dose.
+  bool get hasDueSlot {
+    if (reminderTimes.isEmpty) return !_anyDoseToday;
+    return todaySlots.any((s) => s.isDue && !s.isTaken && !s.isMissed);
+  }
+
+  /// Whether any slot's window has closed without a dose.
+  bool get hasMissedSlot => todaySlots.any((s) => s.isMissed);
+
+  bool get hasNoScheduledTimes => reminderTimes.isEmpty;
+
+  bool get _anyDoseToday {
     final today = DateTime.now();
     return loggedDoses.any((d) =>
         d.year == today.year && d.month == today.month && d.day == today.day);
   }
+
+  // Kept for backwards compatibility — true when all today's slots are done.
+  bool get takenToday => fullyTakenToday;
+
+  // ── Serialisation ───────────────────────────────────────────────────────────
 
   factory Medicine.fromMap(Map<String, dynamic> map, String id) {
     return Medicine(

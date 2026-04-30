@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
+// import '../../../providers/gamification_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -15,7 +17,7 @@ class ProfileScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -24,10 +26,22 @@ class ProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final patientAsync = ref.watch(patientProfileProvider(user.uid));
+        // final gamAsync = ref.watch(gamificationProvider(user.uid));
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(title: const Text('My Profile'), automaticallyImplyLeading: false),
+          appBar: AppBar(
+            title: const Text('My Profile'),
+            automaticallyImplyLeading: false,
+            actions: [
+              const NotifBell(),
+              IconButton(
+                icon: const Icon(Icons.edit_rounded),
+                tooltip: 'Edit Profile',
+                onPressed: () => context.push('/edit-profile'),
+              ),
+            ],
+          ),
           body: ListView(
             children: [
               // Header
@@ -40,6 +54,27 @@ class ProfileScreen extends ConsumerWidget {
                   Text(user.name.isNotEmpty ? user.name : 'Patient', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
                   const SizedBox(height: 4),
                   Text(user.phone, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  const SizedBox(height: 8),
+                  // gamAsync.when(
+                  //   data: (g) => GestureDetector(
+                  //     onTap: () => context.push('/gamification'),
+                  //     child: Container(
+                  //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  //       decoration: BoxDecoration(
+                  //         color: AppColors.primary.withValues(alpha: 0.1),
+                  //         borderRadius: BorderRadius.circular(20),
+                  //         border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                  //       ),
+                  //       child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  //         const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
+                  //         const SizedBox(width: 5),
+                  //         Text('Lv ${g.level} • ${g.hp} HP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+                  //       ]),
+                  //     ),
+                  //   ),
+                  //   loading: () => const SizedBox.shrink(),
+                  //   error: (_, __) => const SizedBox.shrink(),
+                  // ),
                   const SizedBox(height: 16),
                   patientAsync.when(
                     data: (patient) {
@@ -94,10 +129,12 @@ class ProfileScreen extends ConsumerWidget {
                 color: AppColors.surface,
                 child: Column(children: [
                   _MenuItem(icon: Icons.people_rounded, label: 'My Doctors', color: AppColors.doctorPrimary, onTap: () => context.push('/my-doctors')),
-                  _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.push('/appointments')),
-                  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () {}),
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () {}),
-                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () {}),
+                  _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.go('/appointments')),
+                  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/prescriptions')),
+                  // _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
+                  _MenuItem(icon: Icons.auto_awesome_rounded, label: 'AI Health Insights', color: const Color(0xFF0EA5E9), onTap: () => context.push('/insights')),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
+                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
                 ]),
               ),
 
@@ -122,7 +159,7 @@ class ProfileScreen extends ConsumerWidget {
 
   String _bmiLabel(double bmi) {
     if (bmi < 18.5) return 'Underweight';
-    if (bmi < 25) return 'Normal';
+    if (bmi < 25) return 'Healthy weight';
     if (bmi < 30) return 'Overweight';
     return 'Obese';
   }
@@ -130,15 +167,16 @@ class ProfileScreen extends ConsumerWidget {
   void _signOut(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out', style: TextStyle(fontFamily: 'Inter')),
         content: const Text('Are you sure you want to sign out?', style: TextStyle(fontFamily: 'Inter')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
-              await ref.read(authServiceProvider).signOut();
+              Navigator.pop(dialogCtx);
+              await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/user-select');
             },
             child: const Text('Sign Out'),

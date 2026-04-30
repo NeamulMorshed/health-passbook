@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
@@ -38,11 +41,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           final newUser = AppUser(
             uid: uid,
             name: displayName ?? 'New User',
-            phone: '', 
+            phone: '',
             userType: widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
             createdAt: DateTime.now(),
           );
-          await ref.read(authRepositoryProvider).createProfile(newUser);
+          try {
+            await ref.read(authRepositoryProvider).createProfile(newUser);
+          } catch (e) {
+            if (mounted) setState(() { _loading = false; _error = 'Failed to create profile. Please try again.'; });
+            return;
+          }
           if (!mounted) return;
           _navigateForUser(newUser);
         } else {
@@ -61,13 +69,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _navigateForUser(AppUser user) {
+  void _navigateForUser(AppUser user) async {
     if (user.userType == UserType.doctor) {
-      context.go('/doc/dashboard');
+      if (!user.onboardingComplete) {
+        if (mounted) context.go('/doc/onboarding/profile');
+      } else {
+        if (mounted) context.go('/doc/dashboard');
+      }
     } else if (!user.onboardingComplete) {
-      context.go('/onboarding/permissions');
+      if (mounted) context.go('/onboarding/permissions');
     } else {
-      context.go('/home');
+      // Only route through Face ID if the user has biometrics enabled.
+      final prefs = await SharedPreferences.getInstance();
+      final biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+      if (!mounted) return;
+      context.go(biometricEnabled ? '/auth/faceid' : '/home');
     }
   }
 
@@ -193,14 +209,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 20),
                 Center(
-                  child: Text(
-                    'By continuing you agree to our\nTerms of Service & Privacy Policy',
+                  child: RichText(
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground.withValues(alpha: 0.7),
-                      fontFamily: 'Inter',
-                      height: 1.6,
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mutedForeground.withValues(alpha: 0.7),
+                        fontFamily: 'Inter',
+                        height: 1.6,
+                      ),
+                      children: [
+                        const TextSpan(text: 'By continuing you agree to our\n'),
+                        TextSpan(
+                          text: 'Terms of Service',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () async {
+                              final uri = Uri.parse('https://vitalpath.health/terms');
+                              if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                        ),
+                        const TextSpan(text: ' & '),
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () async {
+                              final uri = Uri.parse('https://vitalpath.health/privacy');
+                              if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                        ),
+                      ],
                     ),
                   ),
                 ),

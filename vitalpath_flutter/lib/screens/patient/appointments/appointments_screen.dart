@@ -4,9 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/appointment.dart';
+
+// Tracks how many appointments to load. Incrementing triggers a new query.
+final _apptLimitProvider = StateProvider.autoDispose<int>((ref) => 20);
+const _pageSize = 20;
 
 class AppointmentsScreen extends ConsumerWidget {
   const AppointmentsScreen({super.key});
@@ -17,10 +22,14 @@ class AppointmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('My Appointments')),
+      appBar: AppBar(
+        title: const Text('My Appointments'),
+        automaticallyImplyLeading: false,
+        actions: const [NotifBell()],
+      ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -28,11 +37,13 @@ class AppointmentsScreen extends ConsumerWidget {
             );
             return const Center(child: SizedBox.shrink());
           }
-          final apptsAsync = ref.watch(patientAppointmentsProvider(user.uid));
+
+          final limit      = ref.watch(_apptLimitProvider);
+          final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: limit)));
 
           return apptsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('$e')),
+            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
             data: (appts) {
               if (appts.isEmpty) {
                 return const EmptyState(
@@ -41,9 +52,11 @@ class AppointmentsScreen extends ConsumerWidget {
                   subtitle: 'Book an appointment with a doctor from the My Doctors page.',
                 );
               }
-              final pending = appts.where((a) => a.isPending).toList();
+
+              final pending   = appts.where((a) => a.isPending).toList();
               final confirmed = appts.where((a) => a.isConfirmed).toList();
-              final past = appts.where((a) => a.isCompleted || a.isCancelled).toList();
+              final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
+              final hasMore   = appts.length == limit;
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -64,7 +77,24 @@ class AppointmentsScreen extends ConsumerWidget {
                     const SectionHeader(title: 'Past'),
                     const SizedBox(height: 10),
                     ...past.map((a) => _ApptCard(appt: a)),
+                    const SizedBox(height: 12),
                   ],
+                  if (hasMore)
+                    TextButton.icon(
+                      onPressed: () => ref.read(_apptLimitProvider.notifier).state += _pageSize,
+                      icon: const Icon(Icons.expand_more_rounded),
+                      label: const Text('Load more', style: TextStyle(fontFamily: 'Inter')),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        'Showing all ${appts.length} appointment${appts.length == 1 ? '' : 's'}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
                 ],
               );
             },
@@ -75,12 +105,12 @@ class AppointmentsScreen extends ConsumerWidget {
   }
 }
 
-class _ApptCard extends StatelessWidget {
+class _ApptCard extends ConsumerWidget {
   final Appointment appt;
   const _ApptCard({required this.appt});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     StatusBadge badge;
     if (appt.isPending) {
       badge = StatusBadge.warning('Pending');
@@ -117,7 +147,7 @@ class _ApptCard extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.06), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
               child: Row(children: [
                 const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
@@ -136,6 +166,61 @@ class _ApptCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text('Doctor note: ${appt.notes}', style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter')),
           ],
+          if (appt.isPending) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _confirmCancel(context, ref),
+              icon: const Icon(Icons.cancel_outlined, size: 16),
+              label: const Text('Cancel Request'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+                foregroundColor: AppColors.destructive,
+                side: const BorderSide(color: AppColors.destructive),
+              ),
+            ),
+          ],
+          if (appt.isConfirmed && appt.scheduledAt != null &&
+              appt.scheduledAt!.difference(DateTime.now()).inHours > 24) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _confirmCancel(context, ref),
+              icon: const Icon(Icons.cancel_outlined, size: 16),
+              label: const Text('Cancel Appointment'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+                foregroundColor: AppColors.destructive,
+                side: const BorderSide(color: AppColors.destructive),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _confirmCancel(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Cancel Request', style: TextStyle(fontFamily: 'Inter')),
+        content: const Text('Are you sure you want to cancel this appointment request?', style: TextStyle(fontFamily: 'Inter')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              await ref.read(appointmentNotifierProvider.notifier).cancel(
+                appt.id,
+                patientId: appt.patientId,
+                doctorId: appt.doctorId,
+              );
+              if (context.mounted) {
+                showAppSnack(context, 'Appointment request cancelled.');
+              }
+            },
+            child: const Text('Cancel Request'),
+          ),
         ],
       ),
     );

@@ -34,9 +34,13 @@ final activityLogsProvider = StreamProvider.family<List<ActivityLog>, String>((r
   return ref.watch(firestoreServiceProvider).watchRecentActivity(patientId);
 });
 
-// ─── Patient Appointments Stream ──────────────────────────────────────────────
-final patientAppointmentsProvider = StreamProvider.family<List<Appointment>, String>((ref, patientId) {
-  return ref.watch(firestoreServiceProvider).watchPatientAppointments(patientId);
+// ─── Patient Appointments Stream (paginated) ─────────────────────────────────
+// Use a record key so the limit is part of the cache key — incrementing the
+// limit in the UI transparently re-subscribes with a larger Firestore query.
+typedef ApptsKey = ({String patientId, int limit});
+
+final patientAppointmentsProvider = StreamProvider.family<List<Appointment>, ApptsKey>((ref, key) {
+  return ref.watch(firestoreServiceProvider).watchPatientAppointments(key.patientId, limit: key.limit);
 });
 
 // ─── Patient Prescriptions Stream ────────────────────────────────────────────
@@ -133,7 +137,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         id: _uuid.v4(),
         title: 'Medicine reminder set',
         body: '$name — $dosage at ${reminderTimes[i]} ($repeatLabel)',
-        type: 'medicine_reminder',
+        type: NotificationType.medicineReminder,
         createdAt: DateTime.now(),
         scheduledFor: _todayAt(hour, minute),
       ));
@@ -249,7 +253,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
       id: _uuid.v4(),
       title: 'Meal reminder set',
       body: '$mealType at $reminderTime ($repeatLabel)',
-      type: 'meal_reminder',
+      type: NotificationType.mealReminder,
       createdAt: DateTime.now(),
       scheduledFor: _todayAt(hour, minute),
     ));
@@ -303,11 +307,30 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
         doctorId: doctorId,
         doctorName: doctorName,
         doctorSpecialty: doctorSpecialty,
-        status: 'pending',
+        status: AppointmentStatus.pending,
         patientNote: note,
         createdAt: DateTime.now(),
       );
       await _db.bookAppointment(appt);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+
+  Future<void> cancel(
+    String apptId, {
+    required String patientId,
+    required String doctorId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.updateAppointmentStatus(
+        apptId,
+        AppointmentStatus.cancelled,
+        patientId: patientId,
+        doctorId: doctorId,
+      );
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);

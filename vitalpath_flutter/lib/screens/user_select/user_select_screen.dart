@@ -86,18 +86,33 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
       
       try {
         final result = await authRepo.getUserState(uid);
-        if (result is AuthNewUser) {
+        if (!mounted) return;
+        if (result is AuthSuccess) {
+          // Existing profile — navigate to the appropriate destination.
+          final user = result.user;
+          if (user.userType == UserType.doctor) {
+            if (!user.onboardingComplete) {
+              context.go('/doc/onboarding/profile');
+            } else {
+              context.go('/doc/dashboard');
+            }
+          } else if (!user.onboardingComplete) {
+            context.go('/onboarding/permissions');
+          } else {
+            context.go('/auth/faceid');
+          }
+        } else if (result is AuthNewUser) {
           final newUser = AppUser(
             uid: uid,
             name: result.displayName ?? 'New User',
-            phone: '', 
+            phone: '',
             userType: userType == 'doctor' ? UserType.doctor : UserType.patient,
             createdAt: DateTime.now(),
           );
           await authRepo.createProfile(newUser);
           if (!mounted) return;
           if (userType == 'doctor') {
-            context.go('/doc/dashboard');
+            context.go('/doc/onboarding/profile');
           } else {
             context.go('/onboarding/permissions');
           }
