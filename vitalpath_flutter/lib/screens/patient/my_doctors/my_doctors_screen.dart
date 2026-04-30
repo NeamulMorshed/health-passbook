@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
@@ -123,6 +125,7 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
   final _searchCtrl = TextEditingController();
   String _nameQuery = '';
   String _specialty = '';
+  Timer? _debounce;
 
   static const _specialties = [
     'General Physician',
@@ -146,6 +149,7 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -163,7 +167,12 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: TextField(
             controller: _searchCtrl,
-            onChanged: (v) => setState(() => _nameQuery = v.trim()),
+            onChanged: (v) {
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted) setState(() => _nameQuery = v.trim());
+                });
+              },
             decoration: InputDecoration(
               hintText: 'Search by name, specialty or hospital…',
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
@@ -878,7 +887,7 @@ class _PrescriptionCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Inter')),
                 Text(
-                    '${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}',
+                    DateFormat('MMM d, y').format(rx.issuedAt),
                     style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.mutedForeground,

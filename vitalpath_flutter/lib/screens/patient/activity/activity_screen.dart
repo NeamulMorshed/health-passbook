@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -404,6 +405,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // Weekly steps chart
+                const SectionHeader(title: 'This Week'),
+                const SizedBox(height: 12),
+                activityAsync.when(
+                  data: (logs) => _WeeklyStepsChart(logs: logs),
+                  loading: () => const SizedBox(
+                    height: 140,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 24),
+
                 // Recent activity
                 const SectionHeader(title: 'Recent Activity'),
                 const SizedBox(height: 12),
@@ -509,4 +523,135 @@ class _WalkStat extends StatelessWidget {
             style: const TextStyle(
                 color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
       ]);
+}
+
+class _WeeklyStepsChart extends StatelessWidget {
+  final List<dynamic> logs;
+  const _WeeklyStepsChart({required this.logs});
+
+  static const _dayLabels = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  List<int> _dailySteps() {
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      return logs
+          .where((l) =>
+              l.loggedAt.day == day.day &&
+              l.loggedAt.month == day.month &&
+              l.loggedAt.year == day.year)
+          .fold<int>(0, (sum, l) => sum + ((l.steps ?? 0) as int));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final steps = _dailySteps();
+    final maxSteps = steps.reduce((a, b) => a > b ? a : b);
+    const goal = 10000;
+    final todaySteps = steps.last;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('$todaySteps', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.success)),
+                const Text('steps today', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              ]),
+            ),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('Goal: $goal', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              const SizedBox(height: 2),
+              Text(
+                todaySteps >= goal ? 'Goal reached!' : '${goal - todaySteps} to go',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: todaySteps >= goal ? AppColors.success : AppColors.warning,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ]),
+          ]),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 110,
+            child: BarChart(
+              BarChartData(
+                maxY: maxSteps > 0 ? maxSteps * 1.2 : goal.toDouble(),
+                minY: 0,
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 22,
+                      getTitlesWidget: (value, meta) {
+                        final now = DateTime.now();
+                        final day = now.subtract(Duration(days: 6 - value.toInt()));
+                        final label = _dayLabels[day.weekday];
+                        final isToday = value.toInt() == 6;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontFamily: 'Inter',
+                              color: isToday ? AppColors.success : AppColors.mutedForeground,
+                              fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: List.generate(7, (i) {
+                  final isToday = i == 6;
+                  final hitGoal = steps[i] >= goal;
+                  return BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: steps[i].toDouble(),
+                        color: hitGoal
+                            ? AppColors.success
+                            : isToday
+                                ? AppColors.primary
+                                : AppColors.primary.withValues(alpha: 0.35),
+                        width: 18,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      ),
+                    ],
+                  );
+                }),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
+                      '${steps[groupIndex]}',
+                      const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

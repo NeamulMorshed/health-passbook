@@ -62,7 +62,7 @@ class DocPatientViewScreen extends ConsumerWidget {
 
 }
 
-class _PatientDetailBody extends ConsumerWidget {
+class _PatientDetailBody extends ConsumerStatefulWidget {
   final String doctorId;
   final String doctorName;
   final String patientId;
@@ -74,10 +74,17 @@ class _PatientDetailBody extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final patientAsync = ref.watch(patientProfileProvider(patientId));
-    final medsAsync    = ref.watch(medicinesProvider(patientId));
-    final rxAsync      = ref.watch(patientPrescriptionsProvider(patientId));
+  ConsumerState<_PatientDetailBody> createState() => _PatientDetailBodyState();
+}
+
+class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody> {
+  bool _showAllRx = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final patientAsync = ref.watch(patientProfileProvider(widget.patientId));
+    final medsAsync    = ref.watch(medicinesProvider(widget.patientId));
+    final rxAsync      = ref.watch(patientPrescriptionsProvider(widget.patientId));
 
     return patientAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -170,21 +177,34 @@ class _PatientDetailBody extends ConsumerWidget {
                   rxAsync.when(
                     data: (rxList) {
                       if (rxList.isEmpty) return const Text('No prescriptions yet.', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'));
-                      return Column(children: rxList.take(5).map((rx) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(10)),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Row(children: [
-                            Text('Dr. ${rx.doctorName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                            const Spacer(),
-                            Text('${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                      const pageSize = 5;
+                      final visible = _showAllRx ? rxList : rxList.take(pageSize).toList();
+                      return Column(children: [
+                        ...visible.map((rx) => Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(10)),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              Text('Dr. ${rx.doctorName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                              const Spacer(),
+                              Text('${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                            ]),
+                            if (rx.diagnosis != null) Text(rx.diagnosis!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                            const SizedBox(height: 6),
+                            ...rx.medicines.map((m) => Text('  - ${m.name} ${m.dosage} (${m.frequency})', style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
                           ]),
-                          if (rx.diagnosis != null) Text(rx.diagnosis!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                          const SizedBox(height: 6),
-                          ...rx.medicines.map((m) => Text('  - ${m.name} ${m.dosage} (${m.frequency})', style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
-                        ]),
-                      )).toList());
+                        )),
+                        if (rxList.length > pageSize)
+                          TextButton.icon(
+                            onPressed: () => setState(() => _showAllRx = !_showAllRx),
+                            icon: Icon(_showAllRx ? Icons.expand_less_rounded : Icons.expand_more_rounded, size: 18),
+                            label: Text(
+                              _showAllRx ? 'Show less' : 'Show all ${rxList.length} prescriptions',
+                              style: const TextStyle(fontFamily: 'Inter'),
+                            ),
+                          ),
+                      ]);
                     },
                     loading: () => const CircularProgressIndicator(),
                     error: (_, __) => const SizedBox(),
@@ -200,7 +220,7 @@ class _PatientDetailBody extends ConsumerWidget {
                 child: GradientButton(
                   label: 'Write Prescription',
                   colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
-                  onPressed: () => _showPrescribeSheet(context, patientId, doctorId, doctorName),
+                  onPressed: () => _showPrescribeSheet(context, widget.patientId, widget.doctorId, widget.doctorName),
                 ),
               ),
               const SizedBox(height: 24),
