@@ -66,6 +66,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     String? notes,
     List<String> reminderTimes = const [],
     String reminderRepeat = 'daily',
+    String? scannedPhotoUrl,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -80,6 +81,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         startDate: DateTime.now(),
         reminderTimes: reminderTimes,
         reminderRepeat: reminderRepeat,
+        scannedPhotoUrl: scannedPhotoUrl,
       );
       await _db.addMedicine(patientId, med);
       await _scheduleAndSaveMedicineReminders(patientId, medId, name, dosage, reminderTimes, reminderRepeat);

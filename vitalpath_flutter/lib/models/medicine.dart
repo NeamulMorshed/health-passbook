@@ -58,6 +58,7 @@ class Medicine {
   final List<DateTime> loggedDoses;
   final List<String> reminderTimes; // "HH:mm" e.g. ["08:00", "20:00"]
   final String reminderRepeat;      // 'daily' | 'weekly'
+  final String? scannedPhotoUrl;    // original prescription photo from OCR scan
 
   const Medicine({
     required this.id,
@@ -74,6 +75,7 @@ class Medicine {
     this.loggedDoses = const [],
     this.reminderTimes = const [],
     this.reminderRepeat = 'daily',
+    this.scannedPhotoUrl,
   });
 
   // ── Slot computation ────────────────────────────────────────────────────────
@@ -192,6 +194,7 @@ class Medicine {
               .toList() ??
           [],
       reminderRepeat: map['reminderRepeat'] ?? 'daily',
+      scannedPhotoUrl: map['scannedPhotoUrl'] as String?,
     );
   }
 
@@ -209,5 +212,6 @@ class Medicine {
         'loggedDoses': loggedDoses.map((d) => Timestamp.fromDate(d)).toList(),
         'reminderTimes': reminderTimes,
         'reminderRepeat': reminderRepeat,
+        'scannedPhotoUrl': scannedPhotoUrl,
       };
 }

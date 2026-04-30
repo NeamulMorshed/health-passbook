@@ -55,6 +55,7 @@ dependencies:
   timeago: ^3.7.0
   percent_indicator: ^4.2.3
   http: ^1.2.1
+  google_mlkit_text_recognition: ^0.13.0
 
 dev_dependencies:
   flutter_test:

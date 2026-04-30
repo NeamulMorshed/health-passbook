@@ -11,6 +11,7 @@ import '../../../providers/patient_provider.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
 import '../../../core/constants/app_constants.dart';
+import 'scan_prescription_screen.dart';
 
 class CareScreen extends ConsumerStatefulWidget {
   const CareScreen({super.key});
@@ -76,7 +77,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
               if (_tabCtrl.index == 0) {
-                _showMedicineSheet(context, user.uid);
+                _showMedicineAddChoice(context, user.uid);
               } else {
                 _showMealSheet(context, user.uid);
               }
@@ -87,6 +88,103 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           ),
         );
       },
+    );
+  }
+
+  void _showMedicineAddChoice(BuildContext context, String uid) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 16),
+              const Text('Add Medicine',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter')),
+              const SizedBox(height: 4),
+              const Text('How would you like to add a medicine?',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter')),
+              const SizedBox(height: 20),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                tileColor: AppColors.primary.withValues(alpha: 0.06),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.document_scanner_rounded,
+                      color: AppColors.primary, size: 22),
+                ),
+                title: const Text('Scan Prescription',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Inter')),
+                subtitle: const Text('Take a photo and we\'ll read it for you',
+                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.mutedForeground),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ScanPrescriptionScreen(uid: uid),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                tileColor: AppColors.muted,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.edit_rounded,
+                      color: AppColors.mutedForeground, size: 22),
+                ),
+                title: const Text('Add Manually',
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Inter')),
+                subtitle: const Text('Enter medicine details yourself',
+                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: AppColors.mutedForeground),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showMedicineSheet(context, uid);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
