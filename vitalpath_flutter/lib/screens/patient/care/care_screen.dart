@@ -58,7 +58,14 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           appBar: AppBar(
             title: const Text('Care'),
             automaticallyImplyLeading: false,
-            actions: const [NotifBell()],
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.people_rounded),
+                tooltip: 'Care Circle',
+                onPressed: () => context.push('/care-circle'),
+              ),
+              const NotifBell(),
+            ],
             bottom: TabBar(
               controller: _tabCtrl,
               labelColor: AppColors.primary,

@@ -30,6 +30,7 @@ import '../screens/patient/profile/privacy_screen.dart';
 // import '../screens/patient/gamification/gamification_screen.dart';
 import '../screens/patient/insights/insights_screen.dart';
 import '../screens/patient/prescriptions/prescriptions_screen.dart';
+import '../screens/patient/care/care_circle_screen.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
 // A thin ChangeNotifier whose only job is to ping GoRouter when auth state
@@ -163,6 +164,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/prescriptions',
           builder: (_, __) => const PrescriptionsScreen()),
+      GoRoute(
+          path: '/care-circle',
+          builder: (_, __) => const CareCircleScreen()),
 
       // Doctor shell
       ShellRoute(
