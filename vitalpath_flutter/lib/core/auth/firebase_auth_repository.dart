@@ -66,21 +66,23 @@ class FirebaseAuthRepository implements AuthRepository {
     } on FirebaseAuthException catch (e) {
       return AuthFailure(_codeToMessage(e.code), cause: e);
     } on PlatformException catch (e) {
-      if (e.code == 'sign_in_failed') {
-        final detail = e.message ?? '';
-        if (detail.contains('ApiException: 7')) {
-          return const AuthFailure(
-            'Network error. Check your internet connection and try again.',
-          );
-        }
-        if (detail.contains('ApiException: 10')) {
-          return const AuthFailure(
-            'Google Sign-In is not configured for this device. '
-            'The app\'s SHA-1 fingerprint may not be registered in Firebase Console.',
-          );
-        }
+      final detail = '${e.message ?? ''} ${e.details ?? ''}'.toLowerCase();
+      if (detail.contains('apiexception: 7') || detail.contains('network_error')) {
+        return const AuthFailure(
+          'Network error. Make sure your device has internet and a Google account is signed in, then try again.',
+        );
       }
-      return AuthFailure('Sign-in failed: ${e.message}', cause: e);
+      if (detail.contains('apiexception: 10') || detail.contains('developer_error')) {
+        return const AuthFailure(
+          'Google Sign-In is not configured for this build. Please contact support.',
+        );
+      }
+      if (e.code == 'sign_in_canceled' ||
+          detail.contains('12501') ||
+          detail.contains('sign_in_cancelled')) {
+        return const AuthCancelled();
+      }
+      return const AuthFailure('Sign-in failed. Please try again.');
     } catch (e) {
       return AuthFailure('Sign-in failed. Please try again.', cause: e);
     }
