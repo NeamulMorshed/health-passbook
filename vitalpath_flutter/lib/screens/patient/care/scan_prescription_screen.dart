@@ -7,6 +7,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../models/family_member.dart';
 
 // ── Data class for one entry in the review form ───────────────────────────────
 
@@ -42,7 +43,8 @@ enum _ScanState { capture, processing, review }
 
 class ScanPrescriptionScreen extends ConsumerStatefulWidget {
   final String uid;
-  const ScanPrescriptionScreen({super.key, required this.uid});
+  final FamilyMember? familyMember;
+  const ScanPrescriptionScreen({super.key, required this.uid, this.familyMember});
 
   @override
   ConsumerState<ScanPrescriptionScreen> createState() =>
@@ -212,22 +214,36 @@ class _ScanPrescriptionScreenState
     }
 
     setState(() => _isSaving = true);
+    final fm = widget.familyMember;
     try {
       for (final entry in _entries) {
         final name = entry.name.text.trim();
         if (name.isEmpty) continue;
-        await ref.read(medicineNotifierProvider.notifier).add(
-              widget.uid,
-              name: name,
-              dosage: entry.dosage.text.trim().isEmpty
-                  ? 'As directed'
-                  : entry.dosage.text.trim(),
-              frequency: entry.frequency,
-              notes: entry.notes.text.trim().isEmpty
-                  ? null
-                  : entry.notes.text.trim(),
-              scannedPhotoUrl: _uploadedPhotoUrl,
-            );
+        final dosage = entry.dosage.text.trim().isEmpty
+            ? 'As directed'
+            : entry.dosage.text.trim();
+        final notes = entry.notes.text.trim().isEmpty
+            ? null
+            : entry.notes.text.trim();
+        if (fm != null) {
+          await ref.read(familyMedicinePatchProvider).add(
+                widget.uid, fm.id,
+                name: name,
+                dosage: dosage,
+                frequency: entry.frequency,
+                notes: notes,
+                scannedPhotoUrl: _uploadedPhotoUrl,
+              );
+        } else {
+          await ref.read(medicineNotifierProvider.notifier).add(
+                widget.uid,
+                name: name,
+                dosage: dosage,
+                frequency: entry.frequency,
+                notes: notes,
+                scannedPhotoUrl: _uploadedPhotoUrl,
+              );
+        }
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {

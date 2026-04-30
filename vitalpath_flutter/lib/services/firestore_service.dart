@@ -8,6 +8,7 @@ import '../models/patient.dart';
 import '../models/doctor.dart';
 import '../models/activity_log.dart';
 import '../models/app_notification.dart';
+import '../models/family_member.dart';
 import '../core/constants/app_constants.dart';
 
 const _uuid = Uuid();
@@ -223,6 +224,128 @@ class FirestoreService {
         .doc(medicineId)
         .update({
       'isActive': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ─── Family Members ───────────────────────────────────────────────────────
+
+  Stream<List<FamilyMember>> watchFamilyMembers(String uid) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .orderBy('createdAt')
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => FamilyMember.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addFamilyMember(String uid, FamilyMember member) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(member.id)
+        .set(member.toMap());
+  }
+
+  Future<void> updateFamilyMember(String uid, FamilyMember member) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(member.id)
+        .update({...member.toMap(), 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> deleteFamilyMember(String uid, String memberId) async {
+    // Delete member's medicines first, then the member document
+    final medSnap = await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .get();
+    final batch = _db.batch();
+    for (final doc in medSnap.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId));
+    await batch.commit();
+  }
+
+  // ── Family member medicines ────────────────────────────────────────────────
+
+  Stream<List<Medicine>> watchFamilyMemberMedicines(
+      String uid, String memberId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .where('isActive', isEqualTo: true)
+        .orderBy('startDate', descending: true)
+        .snapshots()
+        .map((s) =>
+            s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+  }
+
+  Future<void> addFamilyMemberMedicine(
+      String uid, String memberId, Medicine medicine) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicine.id)
+        .set(medicine.toMap());
+  }
+
+  Future<void> updateFamilyMemberMedicine(String uid, String memberId,
+      String medicineId, Map<String, dynamic> data) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({...data, 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> deleteFamilyMemberMedicine(
+      String uid, String memberId, String medicineId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({'isActive': false, 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> logFamilyMemberDose(
+      String uid, String memberId, String medicineId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses':
+          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }

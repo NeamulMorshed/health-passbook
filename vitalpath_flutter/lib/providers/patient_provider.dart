@@ -7,6 +7,7 @@ import '../models/prescription.dart';
 import '../models/patient.dart';
 import '../models/activity_log.dart';
 import '../models/app_notification.dart';
+import '../models/family_member.dart';
 import '../core/constants/app_constants.dart';
 import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
@@ -51,6 +52,117 @@ final patientPrescriptionsProvider = StreamProvider.family<List<Prescription>, S
 // ─── Notifications Stream ─────────────────────────────────────────────────────
 final notificationsProvider = StreamProvider.family<List<AppNotification>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchNotifications(patientId);
+});
+
+// ─── Family Members ───────────────────────────────────────────────────────────
+final familyMembersProvider =
+    StreamProvider.family<List<FamilyMember>, String>((ref, uid) {
+  return ref.watch(firestoreServiceProvider).watchFamilyMembers(uid);
+});
+
+typedef FamilyMedKey = ({String uid, String memberId});
+
+final familyMemberMedicinesProvider =
+    StreamProvider.family<List<Medicine>, FamilyMedKey>((ref, key) {
+  return ref
+      .watch(firestoreServiceProvider)
+      .watchFamilyMemberMedicines(key.uid, key.memberId);
+});
+
+class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
+  final FirestoreService _db;
+  FamilyMemberNotifier(this._db) : super(const AsyncValue.data(null));
+
+  Future<void> add(String uid, {
+    required String name,
+    required String relationship,
+    int? age,
+    String? photoUrl,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final member = FamilyMember(
+        id: _uuid.v4(),
+        name: name,
+        relationship: relationship,
+        age: age,
+        photoUrl: photoUrl,
+        createdAt: DateTime.now(),
+      );
+      await _db.addFamilyMember(uid, member);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+
+  Future<void> update(String uid, FamilyMember member) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.updateFamilyMember(uid, member);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+
+  Future<void> delete(String uid, String memberId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.deleteFamilyMember(uid, memberId);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+}
+
+final familyMemberNotifierProvider =
+    StateNotifierProvider<FamilyMemberNotifier, AsyncValue<void>>((ref) {
+  return FamilyMemberNotifier(ref.watch(firestoreServiceProvider));
+});
+
+class FamilyMedicinePatch {
+  final FirestoreService _db;
+  FamilyMedicinePatch(this._db);
+
+  Future<void> add(String uid, String memberId, {
+    required String name,
+    required String dosage,
+    required String frequency,
+    String? notes,
+    String? scannedPhotoUrl,
+    List<String> reminderTimes = const [],
+    String reminderRepeat = 'daily',
+  }) async {
+    final med = Medicine(
+      id: _uuid.v4(),
+      patientId: memberId,
+      name: name,
+      dosage: dosage,
+      frequency: frequency,
+      notes: notes,
+      startDate: DateTime.now(),
+      scannedPhotoUrl: scannedPhotoUrl,
+      reminderTimes: reminderTimes,
+      reminderRepeat: reminderRepeat,
+    );
+    await _db.addFamilyMemberMedicine(uid, memberId, med);
+  }
+
+  Future<void> logDose(String uid, String memberId, String medicineId) =>
+      _db.logFamilyMemberDose(uid, memberId, medicineId);
+
+  Future<void> delete(String uid, String memberId, String medicineId) =>
+      _db.deleteFamilyMemberMedicine(uid, memberId, medicineId);
+
+  Future<void> update(String uid, String memberId, String medicineId,
+      Map<String, dynamic> data) =>
+      _db.updateFamilyMemberMedicine(uid, memberId, medicineId, data);
+}
+
+final familyMedicinePatchProvider = Provider<FamilyMedicinePatch>((ref) {
+  return FamilyMedicinePatch(ref.watch(firestoreServiceProvider));
 });
 
 // ─── Medicine Notifier ────────────────────────────────────────────────────────

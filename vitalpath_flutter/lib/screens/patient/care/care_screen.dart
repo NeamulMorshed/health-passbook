@@ -10,8 +10,10 @@ import '../../../providers/patient_provider.dart';
 // import '../../../providers/gamification_provider.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
+import '../../../models/family_member.dart';
 import '../../../core/constants/app_constants.dart';
 import 'scan_prescription_screen.dart';
+import 'add_family_member_screen.dart';
 
 class CareScreen extends ConsumerStatefulWidget {
   const CareScreen({super.key});
@@ -21,6 +23,8 @@ class CareScreen extends ConsumerStatefulWidget {
 
 class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
+  // null = primary user ("Me"), non-null = active family member
+  FamilyMember? _activeMember;
 
   @override
   void initState() {
@@ -70,14 +74,18 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           body: TabBarView(
             controller: _tabCtrl,
             children: [
-              _MedicineTab(uid: user.uid),
+              _MedicineTab(
+                uid: user.uid,
+                activeMember: _activeMember,
+                onSwitcherChanged: (m) => setState(() => _activeMember = m),
+              ),
               _FoodTab(uid: user.uid),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () {
               if (_tabCtrl.index == 0) {
-                _showMedicineAddChoice(context, user.uid);
+                _showMedicineAddChoice(context, user.uid, _activeMember);
               } else {
                 _showMealSheet(context, user.uid);
               }
@@ -91,7 +99,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
     );
   }
 
-  void _showMedicineAddChoice(BuildContext context, String uid) {
+  void _showMedicineAddChoice(BuildContext context, String uid, FamilyMember? activeMember) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -147,8 +155,10 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          ScanPrescriptionScreen(uid: uid),
+                      builder: (_) => ScanPrescriptionScreen(
+                        uid: uid,
+                        familyMember: activeMember,
+                      ),
                     ),
                   );
                 },
@@ -177,7 +187,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                     size: 14, color: AppColors.mutedForeground),
                 onTap: () {
                   Navigator.pop(context);
-                  _showMedicineSheet(context, uid);
+                  _showMedicineSheet(context, uid, activeMember: activeMember);
                 },
               ),
               const SizedBox(height: 8),
@@ -188,12 +198,15 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
     );
   }
 
-  void _showMedicineSheet(BuildContext context, String uid, {Medicine? existing}) {
+  void _showMedicineSheet(BuildContext context, String uid,
+      {Medicine? existing, FamilyMember? activeMember}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _MedicineSheet(uid: uid, existing: existing),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _MedicineSheet(
+          uid: uid, existing: existing, familyMember: activeMember),
     );
   }
 
@@ -223,12 +236,15 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
   );
 }
 
-void showMedicineSheet(BuildContext context, String uid, {Medicine? existing}) {
+void showMedicineSheet(BuildContext context, String uid,
+    {Medicine? existing, FamilyMember? familyMember}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _MedicineSheet(uid: uid, existing: existing),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) =>
+        _MedicineSheet(uid: uid, existing: existing, familyMember: familyMember),
   );
 }
 
@@ -241,12 +257,13 @@ void showLogMealSheet(BuildContext context, String uid, {MealLog? existing, Stri
   );
 }
 
-void _showMedDetailSheet(BuildContext context, Medicine med, String uid) {
+void _showMedDetailSheet(BuildContext context, Medicine med, String uid,
+    [FamilyMember? familyMember]) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _MedDetailSheet(med: med, uid: uid),
+    builder: (_) => _MedDetailSheet(med: med, uid: uid, familyMember: familyMember),
   );
 }
 
@@ -262,34 +279,232 @@ void _showMealDetailSheet(BuildContext context, MealLog meal, String uid) {
 // ─── Medicine Tab ──────────────────────────────────────────────────────────────
 class _MedicineTab extends ConsumerWidget {
   final String uid;
-  const _MedicineTab({required this.uid});
+  final FamilyMember? activeMember;
+  final ValueChanged<FamilyMember?> onSwitcherChanged;
+
+  const _MedicineTab({
+    required this.uid,
+    required this.activeMember,
+    required this.onSwitcherChanged,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(medicinesProvider(uid));
+    final membersAsync = ref.watch(familyMembersProvider(uid));
+    final medsAsync = activeMember == null
+        ? ref.watch(medicinesProvider(uid))
+        : ref.watch(familyMemberMedicinesProvider(
+            (uid: uid, memberId: activeMember!.id)));
 
-    return medsAsync.when(
-      loading: () => const _ShimmerCardList(height: 90),
-      error: (e, _) => EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
-      data: (meds) {
-        if (meds.isEmpty) {
-          return const EmptyState(
-            icon: Icons.medication_outlined,
-            title: 'No Medicines Yet',
-            subtitle: 'Tap the button below to add your first medicine.',
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: meds.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (_, i) => _MedCard(
-            med: meds[i],
-            uid: uid,
-            onTap: () => _showMedDetailSheet(context, meds[i], uid),
+    return Column(
+      children: [
+        // ── Profile Switcher ───────────────────────────────────────────────
+        membersAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (members) {
+            if (members.isEmpty && activeMember == null) {
+              return const SizedBox.shrink();
+            }
+            return Container(
+              color: AppColors.surface,
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    // "Me" chip
+                    _SwitcherChip(
+                      label: 'Me',
+                      initials: 'Me',
+                      isSelected: activeMember == null,
+                      onTap: () => onSwitcherChanged(null),
+                    ),
+                    const SizedBox(width: 8),
+                    // Family member chips
+                    ...members.map((m) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _SwitcherChip(
+                            label: m.name.split(' ').first,
+                            initials: m.initials,
+                            isSelected: activeMember?.id == m.id,
+                            photoUrl: m.photoUrl,
+                            onTap: () => onSwitcherChanged(m),
+                            onLongPress: () => _editMember(context, m),
+                          ),
+                        )),
+                    // Add member chip
+                    _AddMemberChip(
+                      onTap: () => _addMember(context),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+
+        // ── Medicine list ──────────────────────────────────────────────────
+        Expanded(
+          child: medsAsync.when(
+            loading: () => const _ShimmerCardList(height: 90),
+            error: (e, _) =>
+                EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
+            data: (meds) {
+              final memberName = activeMember?.name.split(' ').first;
+              if (meds.isEmpty) {
+                return EmptyState(
+                  icon: Icons.medication_outlined,
+                  title: activeMember == null
+                      ? 'No Medicines Yet'
+                      : 'No Medicines for $memberName',
+                  subtitle: 'Tap the button below to add the first medicine.',
+                );
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: meds.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, i) => _MedCard(
+                  med: meds[i],
+                  uid: uid,
+                  familyMember: activeMember,
+                  onTap: () =>
+                      _showMedDetailSheet(context, meds[i], uid, activeMember),
+                ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+
+  void _addMember(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddFamilyMemberScreen(uid: uid),
+      ),
+    );
+  }
+
+  void _editMember(BuildContext context, FamilyMember member) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddFamilyMemberScreen(uid: uid, existing: member),
+      ),
+    ).then((result) {
+      if (result == 'deleted') onSwitcherChanged(null);
+    });
+  }
+}
+
+// ── Switcher chips ─────────────────────────────────────────────────────────────
+
+class _SwitcherChip extends StatelessWidget {
+  final String label;
+  final String initials;
+  final bool isSelected;
+  final String? photoUrl;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  const _SwitcherChip({
+    required this.label,
+    required this.initials,
+    required this.isSelected,
+    required this.onTap,
+    this.photoUrl,
+    this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : AppColors.muted,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (photoUrl != null)
+              CircleAvatar(
+                radius: 10,
+                backgroundImage: NetworkImage(photoUrl!),
+              )
+            else
+              CircleAvatar(
+                radius: 10,
+                backgroundColor: isSelected
+                    ? Colors.white.withValues(alpha: 0.3)
+                    : AppColors.border,
+                child: Text(initials,
+                    style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : AppColors.foreground,
+                        fontFamily: 'Inter')),
+              ),
+            const SizedBox(width: 6),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : AppColors.foreground,
+                    fontFamily: 'Inter')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddMemberChip extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddMemberChip({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.muted,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              style: BorderStyle.solid),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_rounded,
+                size: 14,
+                color: AppColors.primary.withValues(alpha: 0.8)),
+            const SizedBox(width: 4),
+            Text('Add member',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary.withValues(alpha: 0.8),
+                    fontFamily: 'Inter')),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -297,8 +512,9 @@ class _MedicineTab extends ConsumerWidget {
 class _MedCard extends ConsumerWidget {
   final Medicine med;
   final String uid;
+  final FamilyMember? familyMember;
   final VoidCallback? onTap;
-  const _MedCard({required this.med, required this.uid, this.onTap});
+  const _MedCard({required this.med, required this.uid, this.familyMember, this.onTap});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -368,7 +584,7 @@ class _MedCard extends ConsumerWidget {
               icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
               onSelected: (v) {
                 if (v == 'edit') {
-                  showMedicineSheet(context, uid, existing: med);
+                  showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
                 } else {
                   _confirmDelete(context, ref);
                 }
@@ -399,11 +615,11 @@ class _MedCard extends ConsumerWidget {
                 slot: slot,
                 onTake: (slot.isDue || slot.isMissed) && !slot.isTaken
                     ? () async {
-                        await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
-                        // final hp = await ref.read(gamificationServiceProvider).awardMedicineDose(uid);
-                        // if (hp > 0 && context.mounted) {
-                        //   showAppSnack(context, '+$hp HP  ${slot.isMissed ? 'Late dose logged!' : 'Medicine taken!'}');
-                        // }
+                        if (familyMember != null) {
+                          await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
+                        } else {
+                          await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                        }
                       }
                     : null,
               )).toList(),
@@ -415,9 +631,11 @@ class _MedCard extends ConsumerWidget {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () async {
-                await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
-                // final hp = await ref.read(gamificationServiceProvider).awardMedicineDose(uid);
-                // if (hp > 0 && context.mounted) showAppSnack(context, '+$hp HP  Medicine taken!');
+                if (familyMember != null) {
+                  await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
+                } else {
+                  await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                }
               },
               icon: const Icon(Icons.check_rounded, size: 16),
               label: const Text('Mark as Taken'),
@@ -443,7 +661,11 @@ class _MedCard extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogCtx);
-              ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
+              if (familyMember != null) {
+                ref.read(familyMedicinePatchProvider).delete(uid, familyMember!.id, med.id);
+              } else {
+                ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             child: const Text('Remove'),
@@ -660,7 +882,8 @@ class _MealCard extends ConsumerWidget {
 class _MedDetailSheet extends ConsumerWidget {
   final Medicine med;
   final String uid;
-  const _MedDetailSheet({required this.med, required this.uid});
+  final FamilyMember? familyMember;
+  const _MedDetailSheet({required this.med, required this.uid, this.familyMember});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -801,7 +1024,7 @@ class _MedDetailSheet extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
-                    showMedicineSheet(context, uid, existing: med);
+                    showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
                   },
                   icon: const Icon(Icons.edit_outlined, size: 16),
                   label: const Text('Edit', style: TextStyle(fontFamily: 'Inter')),
@@ -813,7 +1036,11 @@ class _MedDetailSheet extends ConsumerWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                      if (familyMember != null) {
+                        await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
+                      } else {
+                        await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                      }
                       if (context.mounted) Navigator.pop(context);
                     },
                     icon: const Icon(Icons.check_rounded, size: 16),
@@ -989,7 +1216,8 @@ class _NutritionTile extends StatelessWidget {
 class _MedicineSheet extends ConsumerStatefulWidget {
   final String uid;
   final Medicine? existing;
-  const _MedicineSheet({required this.uid, this.existing});
+  final FamilyMember? familyMember;
+  const _MedicineSheet({required this.uid, this.existing, this.familyMember});
   @override
   ConsumerState<_MedicineSheet> createState() => _MedicineSheetState();
 }
@@ -1062,19 +1290,44 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     if (!_formKey.currentState!.validate()) return;
     final count = _reminderCountFor(_freq);
     final times = count > 0 ? _reminderTimeStrings.take(count).toList() : <String>[];
+    final fm = widget.familyMember;
 
-    if (_isEdit) {
-      await ref.read(medicineNotifierProvider.notifier).update(
-        widget.uid, widget.existing!.id,
-        name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-        frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
-      );
+    if (fm != null) {
+      // Family member context — use patch provider
+      final patch = ref.read(familyMedicinePatchProvider);
+      if (_isEdit) {
+        await patch.update(widget.uid, fm.id, widget.existing!.id, {
+          'name': _nameCtrl.text.trim(),
+          'dosage': _dosageCtrl.text.trim(),
+          'frequency': _freq,
+          'reminderTimes': times,
+          'reminderRepeat': _repeat,
+        });
+      } else {
+        await patch.add(
+          widget.uid, fm.id,
+          name: _nameCtrl.text.trim(),
+          dosage: _dosageCtrl.text.trim(),
+          frequency: _freq,
+          reminderTimes: times,
+          reminderRepeat: _repeat,
+        );
+      }
     } else {
-      await ref.read(medicineNotifierProvider.notifier).add(
-        widget.uid,
-        name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-        frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
-      );
+      // Primary user
+      if (_isEdit) {
+        await ref.read(medicineNotifierProvider.notifier).update(
+          widget.uid, widget.existing!.id,
+          name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
+          frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
+        );
+      } else {
+        await ref.read(medicineNotifierProvider.notifier).add(
+          widget.uid,
+          name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
+          frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
+        );
+      }
     }
     if (mounted) Navigator.pop(context);
   }

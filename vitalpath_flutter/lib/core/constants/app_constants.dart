@@ -10,6 +10,10 @@ class AppConstants {
   static const colActivityLogs = 'activity_logs';
   static const colNotifications = 'notifications';
   static const colConnections = 'connections';
+  static const colFamilyMembers = 'family_members';
+
+  // Family member relationships
+  static const relationships = ['Son', 'Daughter', 'Mother', 'Father', 'Spouse', 'Sibling', 'Other'];
 
   // User types
   static const typePatient = 'patient';
