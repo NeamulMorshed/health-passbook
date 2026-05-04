@@ -57,8 +57,10 @@ class Medicine {
   final DateTime? endDate;
   final List<DateTime> loggedDoses;
   final List<String> reminderTimes; // "HH:mm" e.g. ["08:00", "20:00"]
-  final String reminderRepeat;      // 'daily' | 'weekly'
+  final String reminderRepeat;      // 'daily' | 'weekly' (legacy, use reminderDays for day selection)
+  final List<int> reminderDays;     // 0=Sun, 1=Mon, …, 6=Sat; empty = use reminderRepeat default
   final String? scannedPhotoUrl;    // original prescription photo from OCR scan
+  final int? pillsRemaining;
 
   const Medicine({
     required this.id,
@@ -75,7 +77,9 @@ class Medicine {
     this.loggedDoses = const [],
     this.reminderTimes = const [],
     this.reminderRepeat = 'daily',
+    this.reminderDays = const [0, 1, 2, 3, 4, 5, 6],
     this.scannedPhotoUrl,
+    this.pillsRemaining,
   });
 
   // ── Slot computation ────────────────────────────────────────────────────────
@@ -194,7 +198,18 @@ class Medicine {
               .toList() ??
           [],
       reminderRepeat: map['reminderRepeat'] ?? 'daily',
+      reminderDays: (() {
+        final raw = map['reminderDays'];
+        if (raw is List && raw.isNotEmpty) {
+          return raw.map((d) => (d as num).toInt()).toList();
+        }
+        // Backward compat: derive from reminderRepeat
+        final repeat = map['reminderRepeat'] ?? 'daily';
+        if (repeat == 'weekly') return [1]; // legacy weekly → Monday
+        return [0, 1, 2, 3, 4, 5, 6];      // legacy daily → every day
+      })(),
       scannedPhotoUrl: map['scannedPhotoUrl'] as String?,
+      pillsRemaining: map['pillsRemaining'] as int?,
     );
   }
 
@@ -212,6 +227,8 @@ class Medicine {
         'loggedDoses': loggedDoses.map((d) => Timestamp.fromDate(d)).toList(),
         'reminderTimes': reminderTimes,
         'reminderRepeat': reminderRepeat,
+        'reminderDays': reminderDays,
         'scannedPhotoUrl': scannedPhotoUrl,
+        'pillsRemaining': pillsRemaining,
       };
 }

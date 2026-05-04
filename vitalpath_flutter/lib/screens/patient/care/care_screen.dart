@@ -62,7 +62,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               IconButton(
                 icon: const Icon(Icons.people_rounded),
                 tooltip: 'Care Circle',
-                onPressed: () => context.push('/care-circle'),
+                onPressed: () => context.go('/care-circle'),
               ),
               const NotifBell(),
             ],
@@ -78,15 +78,56 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               ],
             ),
           ),
-          body: TabBarView(
-            controller: _tabCtrl,
+          body: Column(
             children: [
-              _MedicineTab(
-                uid: user.uid,
-                activeMember: _activeMember,
-                onSwitcherChanged: (m) => setState(() => _activeMember = m),
+              // Context banner — shown when viewing a family member's data
+              if (_activeMember != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    border: const Border(
+                      left: BorderSide(color: AppColors.primary, width: 3),
+                    ),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.person_rounded, size: 15, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Viewing ${_activeMember!.name}\'s health data',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primary,
+                            fontFamily: 'Inter'),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _activeMember = null),
+                      child: const Text('Switch back',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                              fontFamily: 'Inter')),
+                    ),
+                  ]),
+                ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    _MedicineTab(
+                      uid: user.uid,
+                      activeMember: _activeMember,
+                      onSwitcherChanged: (m) => setState(() => _activeMember = m),
+                    ),
+                    _FoodTab(uid: user.uid),
+                  ],
+                ),
               ),
-              _FoodTab(uid: user.uid),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -972,8 +1013,21 @@ class _MedDetailSheet extends ConsumerWidget {
                 label: 'End date',
                 value: '${med.endDate!.day}/${med.endDate!.month}/${med.endDate!.year}',
               ),
-            if (med.reminderRepeat.isNotEmpty)
-              _DetailRow(icon: Icons.autorenew_rounded, label: 'Repeat', value: med.reminderRepeat == 'daily' ? 'Every day' : 'Weekly'),
+            if (med.reminderTimes.isNotEmpty)
+              _DetailRow(
+                icon: Icons.autorenew_rounded,
+                label: 'Repeat',
+                value: med.reminderDays.length == 7
+                    ? 'Every day'
+                    : med.reminderDays.isEmpty
+                        ? 'Daily'
+                        : const ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                            .asMap()
+                            .entries
+                            .where((e) => med.reminderDays.contains(e.key))
+                            .map((e) => e.value)
+                            .join(', '),
+              ),
             if (med.notes != null && med.notes!.isNotEmpty)
               _DetailRow(icon: Icons.notes_rounded, label: 'Notes', value: med.notes!),
 
@@ -1234,7 +1288,7 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
   late final TextEditingController _dosageCtrl;
   late String _freq;
   late List<TimeOfDay> _reminderTimes;
-  late String _repeat;
+  late List<int> _reminderDays;
   final _formKey = GlobalKey<FormState>();
 
   bool get _isEdit => widget.existing != null;
@@ -1246,7 +1300,7 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     _nameCtrl = TextEditingController(text: med?.name ?? '');
     _dosageCtrl = TextEditingController(text: med?.dosage ?? '');
     _freq = med?.frequency ?? AppConstants.freqOnce;
-    _repeat = med?.reminderRepeat ?? 'daily';
+    _reminderDays = med?.reminderDays ?? [0, 1, 2, 3, 4, 5, 6];
 
     if (med != null && med.reminderTimes.isNotEmpty) {
       _reminderTimes = med.reminderTimes.map((s) {
@@ -1308,7 +1362,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
           'dosage': _dosageCtrl.text.trim(),
           'frequency': _freq,
           'reminderTimes': times,
-          'reminderRepeat': _repeat,
+          'reminderRepeat': 'daily',
+          'reminderDays': _reminderDays,
         });
       } else {
         await patch.add(
@@ -1317,7 +1372,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
           dosage: _dosageCtrl.text.trim(),
           frequency: _freq,
           reminderTimes: times,
-          reminderRepeat: _repeat,
+          reminderRepeat: 'daily',
+          reminderDays: _reminderDays,
         );
       }
     } else {
@@ -1326,13 +1382,15 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
         await ref.read(medicineNotifierProvider.notifier).update(
           widget.uid, widget.existing!.id,
           name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-          frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
+          frequency: _freq, reminderTimes: times,
+          reminderRepeat: 'daily', reminderDays: _reminderDays,
         );
       } else {
         await ref.read(medicineNotifierProvider.notifier).add(
           widget.uid,
           name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-          frequency: _freq, reminderTimes: times, reminderRepeat: _repeat,
+          frequency: _freq, reminderTimes: times,
+          reminderRepeat: 'daily', reminderDays: _reminderDays,
         );
       }
     }
@@ -1400,29 +1458,11 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                       ),
                     ),
                   )),
-                  const SizedBox(height: 4),
-                  // Repeat selector
-                  Row(children: [
-                    const Icon(Icons.repeat_rounded, size: 16, color: AppColors.mutedForeground),
-                    const SizedBox(width: 6),
-                    const Text('Repeat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                    const SizedBox(width: 12),
-                    ...[('daily', 'Daily'), ('weekly', 'Weekly')].map(((String, String) opt) {
-                      final sel = _repeat == opt.$1;
-                      return GestureDetector(
-                        onTap: () => setState(() => _repeat = opt.$1),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: sel ? AppColors.primary : AppColors.muted,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(opt.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground, fontFamily: 'Inter')),
-                        ),
-                      );
-                    }),
-                  ]),
+                  const SizedBox(height: 12),
+                  _DayPickerWidget(
+                    selectedDays: _reminderDays,
+                    onChanged: (days) => setState(() => _reminderDays = days),
+                  ),
                 ],
                 const SizedBox(height: 20),
                 GradientButton(label: _isEdit ? 'Save Changes' : 'Add Medicine', onPressed: _save),
@@ -1456,6 +1496,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   late bool _setReminder;
   late TimeOfDay _reminderTime;
   late String _reminderRepeat;
+  late List<int> _reminderDays;
   final _formKey = GlobalKey<FormState>();
 
   bool get _isEdit => widget.existing != null;
@@ -1471,6 +1512,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
     _fatCtrl     = TextEditingController(text: meal?.fat?.toString() ?? '');
     _type = meal?.mealType ?? widget.initialType ?? AppConstants.mealBreakfast;
     _reminderRepeat = meal?.reminderRepeat ?? 'once';
+    _reminderDays = meal?.reminderDays ?? [0, 1, 2, 3, 4, 5, 6];
     if (meal?.reminderTime != null) {
       final parts = meal!.reminderTime!.split(':');
       _reminderTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 7, minute: int.tryParse(parts[1]) ?? 30);
@@ -1482,7 +1524,14 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   }
 
   @override
-  void dispose() { _descCtrl.dispose(); _calCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _descCtrl.dispose();
+    _calCtrl.dispose();
+    _proteinCtrl.dispose();
+    _carbsCtrl.dispose();
+    _fatCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickReminderTime() async {
     final picked = await showTimePicker(context: context, initialTime: _reminderTime);
@@ -1497,6 +1546,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
     final reminderTime = _setReminder ? _reminderTimeString : null;
     final repeat = _setReminder ? _reminderRepeat : 'once';
 
+    final days = _setReminder && repeat == 'daily' ? _reminderDays : <int>[];
     if (_isEdit) {
       await ref.read(mealNotifierProvider.notifier).update(
         widget.uid, widget.existing!.id,
@@ -1505,7 +1555,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
         protein: double.tryParse(_proteinCtrl.text),
         carbs: double.tryParse(_carbsCtrl.text),
         fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat,
+        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
       );
     } else {
       await ref.read(mealNotifierProvider.notifier).add(
@@ -1515,7 +1565,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
         protein: double.tryParse(_proteinCtrl.text),
         carbs: double.tryParse(_carbsCtrl.text),
         fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat,
+        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
       );
       // final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
       // if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
@@ -1606,7 +1656,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                     const SizedBox(width: 6),
                     const Text('Repeat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
                     const SizedBox(width: 12),
-                    ...[('once', 'Once'), ('daily', 'Daily')].map(((String, String) opt) {
+                    ...[('once', 'Once'), ('daily', 'Recurring')].map(((String, String) opt) {
                       final sel = _reminderRepeat == opt.$1;
                       return GestureDetector(
                         onTap: () => setState(() => _reminderRepeat = opt.$1),
@@ -1619,6 +1669,14 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                       );
                     }),
                   ]),
+                  if (_reminderRepeat == 'daily') ...[
+                    const SizedBox(height: 10),
+                    _DayPickerWidget(
+                      selectedDays: _reminderDays,
+                      activeColor: AppColors.success,
+                      onChanged: (days) => setState(() => _reminderDays = days),
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 20),
                 GradientButton(label: _isEdit ? 'Save Changes' : 'Log Meal', onPressed: _save),
@@ -1631,6 +1689,108 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
     );
   }
 }
+
+// ─── Day Picker Widget ─────────────────────────────────────────────────────────
+
+class _DayPickerWidget extends StatelessWidget {
+  final List<int> selectedDays; // 0=Sun, 1=Mon, …, 6=Sat
+  final ValueChanged<List<int>> onChanged;
+  final Color activeColor;
+
+  const _DayPickerWidget({
+    required this.selectedDays,
+    required this.onChanged,
+    this.activeColor = AppColors.primary,
+  });
+
+  static const _labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  static const _fullNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  String get _displayLabel {
+    if (selectedDays.length == 7) return 'Every day';
+    if (selectedDays.isEmpty) return 'No days selected';
+    final sorted = [...selectedDays]..sort();
+    return sorted.map((d) => _fullNames[d]).join(', ');
+  }
+
+  void _toggle(int day) {
+    final next = [...selectedDays];
+    if (next.contains(day)) {
+      next.remove(day);
+    } else {
+      next.add(day);
+      next.sort();
+    }
+    onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.muted,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Text(
+                _displayLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selectedDays.isEmpty ? AppColors.mutedForeground : AppColors.foreground,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ),
+            Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.mutedForeground),
+          ]),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(7, (i) {
+              final selected = selectedDays.contains(i);
+              return GestureDetector(
+                onTap: () => _toggle(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? activeColor : Colors.transparent,
+                    border: Border.all(
+                      color: selected ? activeColor : AppColors.border,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _labels[i],
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? Colors.white : AppColors.mutedForeground,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Shimmer ───────────────────────────────────────────────────────────────────
 
 class _ShimmerCardList extends StatelessWidget {
   final double height;

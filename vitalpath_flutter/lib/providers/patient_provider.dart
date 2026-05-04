@@ -134,6 +134,7 @@ class FamilyMedicinePatch {
     String? scannedPhotoUrl,
     List<String> reminderTimes = const [],
     String reminderRepeat = 'daily',
+    List<int> reminderDays = const [0, 1, 2, 3, 4, 5, 6],
   }) async {
     final med = Medicine(
       id: _uuid.v4(),
@@ -146,6 +147,7 @@ class FamilyMedicinePatch {
       scannedPhotoUrl: scannedPhotoUrl,
       reminderTimes: reminderTimes,
       reminderRepeat: reminderRepeat,
+      reminderDays: reminderDays,
     );
     await _db.addFamilyMemberMedicine(uid, memberId, med);
   }
@@ -178,6 +180,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     String? notes,
     List<String> reminderTimes = const [],
     String reminderRepeat = 'daily',
+    List<int> reminderDays = const [0, 1, 2, 3, 4, 5, 6],
     String? scannedPhotoUrl,
   }) async {
     state = const AsyncValue.loading();
@@ -193,6 +196,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         startDate: DateTime.now(),
         reminderTimes: reminderTimes,
         reminderRepeat: reminderRepeat,
+        reminderDays: reminderDays,
         scannedPhotoUrl: scannedPhotoUrl,
       );
       await _db.addMedicine(patientId, med);
@@ -210,6 +214,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     String? notes,
     List<String> reminderTimes = const [],
     String reminderRepeat = 'daily',
+    List<int> reminderDays = const [0, 1, 2, 3, 4, 5, 6],
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -221,6 +226,7 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         'notes': notes,
         'reminderTimes': reminderTimes,
         'reminderRepeat': reminderRepeat,
+        'reminderDays': reminderDays,
       });
       await _scheduleAndSaveMedicineReminders(patientId, medicineId, name, dosage, reminderTimes, reminderRepeat);
       state = const AsyncValue.data(null);
@@ -258,8 +264,11 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> logDose(String patientId, String medicineId) async {
+  Future<void> logDose(String patientId, String medicineId, {Medicine? medicine}) async {
     await _db.logDose(patientId, medicineId);
+    if (medicine != null && medicine.pillsRemaining != null) {
+      await _db.decrementPillCount(patientId, medicineId);
+    }
   }
 
   Future<void> delete(String patientId, String medicineId) async {
@@ -287,6 +296,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
     double? fat,
     String? reminderTime,
     String reminderRepeat = 'once',
+    List<int> reminderDays = const [0, 1, 2, 3, 4, 5, 6],
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -303,6 +313,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
         loggedAt: DateTime.now(),
         reminderTime: reminderTime,
         reminderRepeat: reminderRepeat,
+        reminderDays: reminderDays,
       );
       await _db.addMeal(patientId, meal);
       if (reminderTime != null) {
@@ -323,6 +334,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
     double? fat,
     String? reminderTime,
     String reminderRepeat = 'once',
+    List<int> reminderDays = const [0, 1, 2, 3, 4, 5, 6],
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -336,6 +348,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
         'fat': fat,
         'reminderTime': reminderTime,
         'reminderRepeat': reminderRepeat,
+        'reminderDays': reminderDays,
       });
       if (reminderTime != null) {
         await _scheduleAndSaveMealReminder(patientId, mealId, mealType, reminderTime, reminderRepeat);
@@ -491,3 +504,32 @@ DateTime _todayAt(int hour, int minute) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, now.day, hour, minute);
 }
+
+// ─── Rating Notifier ──────────────────────────────────────────────────────────
+class RatingNotifier extends StateNotifier<AsyncValue<void>> {
+  final FirestoreService _db;
+  RatingNotifier(this._db) : super(const AsyncValue.data(null));
+
+  Future<void> submit({
+    required String appointmentId,
+    required String doctorId,
+    required int rating,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.submitDoctorRating(
+        appointmentId: appointmentId,
+        doctorId: doctorId,
+        rating: rating,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+}
+
+final ratingNotifierProvider =
+    StateNotifierProvider<RatingNotifier, AsyncValue<void>>((ref) {
+  return RatingNotifier(ref.watch(firestoreServiceProvider));
+});
