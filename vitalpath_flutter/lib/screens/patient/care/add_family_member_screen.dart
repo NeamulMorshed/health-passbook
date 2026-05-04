@@ -316,10 +316,10 @@ class _AddFamilyMemberScreenState
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Member',
+        title: const Text('Delete Member Permanently',
             style: TextStyle(fontFamily: 'Inter')),
         content: Text(
-            'Remove ${widget.existing!.name} and all their medicine records?',
+            'This will permanently delete ${widget.existing!.name} and all their health data, including medicines and history. This action cannot be undone.',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(
@@ -337,7 +337,7 @@ class _AddFamilyMemberScreenState
                   .delete(widget.uid, widget.existing!.id);
               if (mounted) nav.pop('deleted');
             },
-            child: const Text('Remove'),
+            child: const Text('Delete Permanently'),
           ),
         ],
       ),

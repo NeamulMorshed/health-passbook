@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
@@ -381,10 +382,11 @@ class _MedicineTab extends ConsumerWidget {
                             onLongPress: () => _editMember(context, m),
                           ),
                         )),
-                    // Add member chip
-                    _AddMemberChip(
-                      onTap: () => _addMember(context),
-                    ),
+                    // Add member chip (only shown when members already exist)
+                    if (members.isNotEmpty)
+                      _AddMemberChip(
+                        onTap: () => _addMember(context),
+                      ),
                   ],
                 ),
               ),
@@ -557,15 +559,40 @@ class _AddMemberChip extends StatelessWidget {
   }
 }
 
-class _MedCard extends ConsumerWidget {
+class _MedCard extends ConsumerStatefulWidget {
   final Medicine med;
   final String uid;
   final FamilyMember? familyMember;
   final VoidCallback? onTap;
   const _MedCard({required this.med, required this.uid, this.familyMember, this.onTap});
+  @override
+  ConsumerState<_MedCard> createState() => _MedCardState();
+}
+
+class _MedCardState extends ConsumerState<_MedCard> {
+  bool _isTaking = false;
+
+  Future<void> _logDose() async {
+    if (_isTaking) return;
+    setState(() => _isTaking = true);
+    HapticFeedback.mediumImpact();
+    try {
+      final fm = widget.familyMember;
+      if (fm != null) {
+        await ref.read(familyMedicinePatchProvider).logDose(widget.uid, fm.id, widget.med.id);
+      } else {
+        await ref.read(medicineNotifierProvider.notifier).logDose(widget.uid, widget.med.id);
+      }
+    } finally {
+      if (mounted) setState(() => _isTaking = false);
+    }
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final med = widget.med;
+    final uid = widget.uid;
+    final familyMember = widget.familyMember;
     final slots = med.todaySlots;
     final fullyTaken = med.fullyTakenToday;
     final hasDue = med.hasDueSlot;
@@ -597,7 +624,7 @@ class _MedCard extends ConsumerWidget {
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
       padding: const EdgeInsets.all(16),
@@ -634,7 +661,7 @@ class _MedCard extends ConsumerWidget {
                 if (v == 'edit') {
                   showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
                 } else {
-                  _confirmDelete(context, ref);
+                  _confirmDelete(context);
                 }
               },
               itemBuilder: (_) => const [
@@ -661,14 +688,8 @@ class _MedCard extends ConsumerWidget {
               runSpacing: 8,
               children: slots.map((slot) => _SlotChip(
                 slot: slot,
-                onTake: (slot.isDue || slot.isMissed) && !slot.isTaken
-                    ? () async {
-                        if (familyMember != null) {
-                          await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
-                        } else {
-                          await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
-                        }
-                      }
+                onTake: (slot.isDue || slot.isMissed) && !slot.isTaken && !_isTaking
+                    ? _logDose
                     : null,
               )).toList(),
             ),
@@ -678,14 +699,10 @@ class _MedCard extends ConsumerWidget {
           if (asNeeded && !fullyTaken) ...[
             const SizedBox(height: 12),
             ElevatedButton.icon(
-              onPressed: () async {
-                if (familyMember != null) {
-                  await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
-                } else {
-                  await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
-                }
-              },
-              icon: const Icon(Icons.check_rounded, size: 16),
+              onPressed: _isTaking ? null : _logDose,
+              icon: _isTaking
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.check_rounded, size: 16),
               label: const Text('Mark as Taken'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
             ),
@@ -697,22 +714,22 @@ class _MedCard extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref) {
+  void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Remove ${med.name} from your medicines?',
+        content: Text('Remove ${widget.med.name} from your medicines?',
             style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              if (familyMember != null) {
-                await ref.read(familyMedicinePatchProvider).delete(uid, familyMember!.id, med.id);
+              if (widget.familyMember != null) {
+                await ref.read(familyMedicinePatchProvider).delete(widget.uid, widget.familyMember!.id, widget.med.id);
               } else {
-                await ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
+                await ref.read(medicineNotifierProvider.notifier).delete(widget.uid, widget.med.id);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
@@ -1415,9 +1432,9 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                 const SizedBox(height: 20),
                 Text(_isEdit ? 'Edit Medicine' : 'Add Medicine', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
                 const SizedBox(height: 20),
-                TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
-                TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: _freq,
@@ -1535,7 +1552,16 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
 
   Future<void> _pickReminderTime() async {
     final picked = await showTimePicker(context: context, initialTime: _reminderTime);
-    if (picked != null) setState(() => _reminderTime = picked);
+    if (picked != null) {
+      setState(() => _reminderTime = picked);
+      final now = TimeOfDay.now();
+      final isPast = picked.hour < now.hour || (picked.hour == now.hour && picked.minute <= now.minute);
+      if (isPast && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This time has already passed today — the reminder will fire tomorrow.')),
+        );
+      }
+    }
   }
 
   String get _reminderTimeString =>
@@ -1606,7 +1632,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   }).toList(),
                 ),
                 const SizedBox(height: 14),
-                TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => v!.isEmpty ? 'Required' : null),
+                TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: TextFormField(controller: _calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories (kcal)'))),

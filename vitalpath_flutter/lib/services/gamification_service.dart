@@ -14,23 +14,29 @@ class GamificationService {
     });
   }
 
-  // Called once per slot taken. Always awards +10 HP.
+  // Called once per slot taken. Awards +10 HP up to a daily cap of 5 doses (50 HP/day).
   // Streak and weekly counter only advance on the first dose of each calendar day.
   Future<int> awardMedicineDose(String uid) async {
     final profile = await _getOrCreate(uid);
     final now = DateTime.now();
 
     const hpGain = 10;
-    final isFirstToday = !_isToday(profile.lastMedDate);
+    const dailyCap = 5;
+
+    final isNewDay = !_isToday(profile.lastMedDate);
+    final currentDailyCount = isNewDay ? 0 : profile.dailyMedDoses;
+    if (currentDailyCount >= dailyCap) return 0;
+
     final weekReset = _resetWeekIfNeeded(profile, now);
 
     var updated = weekReset.copyWith(
       hp: weekReset.hp + hpGain,
-      medStreak: isFirstToday
+      dailyMedDoses: currentDailyCount + 1,
+      medStreak: isNewDay
           ? (_isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1)
           : weekReset.medStreak,
-      lastMedDate: isFirstToday ? now : weekReset.lastMedDate,
-      weeklyMedDays: isFirstToday
+      lastMedDate: isNewDay ? now : weekReset.lastMedDate,
+      weeklyMedDays: isNewDay
           ? weekReset.weeklyMedDays + 1
           : weekReset.weeklyMedDays,
     );

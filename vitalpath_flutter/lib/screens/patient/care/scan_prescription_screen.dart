@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
@@ -56,6 +57,7 @@ class _ScanPrescriptionScreenState
   _ScanState _state = _ScanState.capture;
   File? _imageFile;
   String? _uploadedPhotoUrl;
+  String? _prescribedBy;
   final List<_ScannedEntry> _entries = [];
   bool _isSaving = false;
 
@@ -72,6 +74,17 @@ class _ScanPrescriptionScreenState
   // ── Image pick ────────────────────────────────────────────────────────────
 
   Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Camera permission is required to scan prescriptions.')),
+          );
+        }
+        return;
+      }
+    }
     final picked = await _picker.pickImage(
       source: source,
       imageQuality: 90,
@@ -133,6 +146,13 @@ class _ScanPrescriptionScreenState
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList();
+
+    // Extract prescribing doctor name from full text
+    final doctorRx = RegExp(
+        r'\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
+        caseSensitive: false);
+    final doctorMatch = doctorRx.firstMatch(text);
+    _prescribedBy = doctorMatch?.group(1)?.trim();
 
     // Matches dosage patterns: 500mg, 10 ml, 0.5mcg, 100IU, etc.
     final dosageRx = RegExp(
@@ -213,6 +233,34 @@ class _ScanPrescriptionScreenState
       return;
     }
 
+    // Check for duplicates against existing medicines
+    final existingMeds = ref.read(medicinesProvider(widget.uid)).valueOrNull ?? [];
+    final entryNames = _entries
+        .map((e) => e.name.text.trim().toLowerCase())
+        .where((n) => n.isNotEmpty)
+        .toList();
+    final duplicateNames = entryNames
+        .where((n) => existingMeds.any((m) => m.name.toLowerCase() == n))
+        .map((n) => n[0].toUpperCase() + n.substring(1))
+        .toList();
+
+    if (duplicateNames.isNotEmpty) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Duplicate Medicines', style: TextStyle(fontFamily: 'Inter')),
+          content: Text(
+              '${duplicateNames.join(', ')} ${duplicateNames.length == 1 ? 'already exists' : 'already exist'} in your medicines. Add anyway?',
+              style: const TextStyle(fontFamily: 'Inter')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
     setState(() => _isSaving = true);
     final fm = widget.familyMember;
     try {
@@ -232,6 +280,7 @@ class _ScanPrescriptionScreenState
                 dosage: dosage,
                 frequency: entry.frequency,
                 notes: notes,
+                prescribedBy: _prescribedBy,
                 scannedPhotoUrl: _uploadedPhotoUrl,
               );
         } else {
@@ -241,6 +290,7 @@ class _ScanPrescriptionScreenState
                 dosage: dosage,
                 frequency: entry.frequency,
                 notes: notes,
+                prescribedBy: _prescribedBy,
                 scannedPhotoUrl: _uploadedPhotoUrl,
               );
         }

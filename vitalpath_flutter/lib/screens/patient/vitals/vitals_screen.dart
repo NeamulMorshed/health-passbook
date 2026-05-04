@@ -257,10 +257,29 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
     super.dispose();
   }
 
+  static (double, double) _physicalRange(String type) => switch (type) {
+    VitalType.bpSystolic  => (50, 300),
+    VitalType.bpDiastolic => (30, 200),
+    VitalType.glucose     => (10, 600),
+    VitalType.temp        => (30, 45),
+    VitalType.spo2        => (50, 100),
+    VitalType.pulse       => (20, 300),
+    _                     => (0, double.infinity),
+  };
+
   void _save() async {
     final val = double.tryParse(_valueCtrl.text.trim());
-    if (val == null) {
-      showAppSnack(context, 'Please enter a valid number.', isError: true);
+    if (val == null || val <= 0) {
+      showAppSnack(context, 'Please enter a valid positive number.', isError: true);
+      return;
+    }
+    final (minP, maxP) = _physicalRange(_selectedType);
+    if (val < minP || val > maxP) {
+      showAppSnack(
+        context,
+        'Value is outside the physically possible range for ${VitalType.labelFor(_selectedType)} ($minP–$maxP ${VitalType.unitFor(_selectedType)}).',
+        isError: true,
+      );
       return;
     }
     setState(() => _saving = true);

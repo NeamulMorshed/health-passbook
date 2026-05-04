@@ -95,6 +95,10 @@ class Medicine {
   List<DoseSlot> get todaySlots {
     if (reminderTimes.isEmpty) return [];
 
+    // Skip days not in the schedule (0=Sun, 1=Mon, …, 6=Sat)
+    final todayDow = DateTime.now().weekday % 7; // Mon=1..Sun=7 → %7 gives Mon=1..Sat=6, Sun=0
+    if (reminderDays.isNotEmpty && !reminderDays.contains(todayDow)) return [];
+
     final now = DateTime.now();
     final base = DateTime(now.year, now.month, now.day);
 

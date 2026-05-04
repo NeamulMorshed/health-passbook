@@ -14,6 +14,7 @@ class GamificationProfile {
   final int weeklyMealDays;
   final int weeklyActivityDays;
   final DateTime? weekStartDate;
+  final int dailyMedDoses;
 
   const GamificationProfile({
     this.hp = 0,
@@ -28,6 +29,7 @@ class GamificationProfile {
     this.weeklyMealDays = 0,
     this.weeklyActivityDays = 0,
     this.weekStartDate,
+    this.dailyMedDoses = 0,
   });
 
   static const int hpPerLevel = 500;
@@ -57,6 +59,7 @@ class GamificationProfile {
     int? weeklyMealDays,
     int? weeklyActivityDays,
     DateTime? weekStartDate,
+    int? dailyMedDoses,
   }) {
     return GamificationProfile(
       hp: hp ?? this.hp,
@@ -71,6 +74,7 @@ class GamificationProfile {
       weeklyMealDays: weeklyMealDays ?? this.weeklyMealDays,
       weeklyActivityDays: weeklyActivityDays ?? this.weeklyActivityDays,
       weekStartDate: weekStartDate ?? this.weekStartDate,
+      dailyMedDoses: dailyMedDoses ?? this.dailyMedDoses,
     );
   }
 
@@ -88,6 +92,7 @@ class GamificationProfile {
       weeklyMealDays: (map['weeklyMealDays'] as num?)?.toInt() ?? 0,
       weeklyActivityDays: (map['weeklyActivityDays'] as num?)?.toInt() ?? 0,
       weekStartDate: (map['weekStartDate'] as Timestamp?)?.toDate(),
+      dailyMedDoses: (map['dailyMedDoses'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -104,6 +109,7 @@ class GamificationProfile {
     'weeklyMealDays': weeklyMealDays,
     'weeklyActivityDays': weeklyActivityDays,
     'weekStartDate': weekStartDate != null ? Timestamp.fromDate(weekStartDate!) : null,
+    'dailyMedDoses': dailyMedDoses,
     'updatedAt': FieldValue.serverTimestamp(),
   };
 }

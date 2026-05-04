@@ -116,7 +116,7 @@ class ProfileScreen extends ConsumerWidget {
                               patient.emergencyContact!.relationship),
                         if (patient.emergencyContact!.name.isNotEmpty &&
                             patient.emergencyContact!.phone.isNotEmpty)
-                          _InfoRow('EC Phone', patient.emergencyContact!.phone),
+                          _InfoRow('Emergency Phone', patient.emergencyContact!.phone),
                       ],
                     ]),
                   );
