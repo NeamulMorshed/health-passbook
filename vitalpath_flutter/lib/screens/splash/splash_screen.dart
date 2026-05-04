@@ -180,77 +180,92 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          FadeTransition(
-            opacity: _fadeAnim,
-            child: ScaleTransition(
-              scale: _scaleAnim,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: data.color.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: Column(
+              children: [
+                // ── Centre content ──────────────────────────────────────────
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: data.color.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(data.icon, size: 56, color: data.color),
                       ),
-                      child: Icon(data.icon, size: 52, color: data.color),
-                    ),
-                    const SizedBox(height: 28),
-                    Text(
-                      data.title,
-                      style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Inter',
-                        color: AppColors.foreground,
+                      const SizedBox(height: 32),
+                      Text(
+                        data.title,
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Inter',
+                          color: AppColors.foreground,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      data.subtitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter',
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 60),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        3,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: i == _step ? 24 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: i == _step
-                                ? data.color
-                                : data.color.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(4),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          data.subtitle,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: AppColors.mutedForeground,
+                            fontFamily: 'Inter',
+                            height: 1.55,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
-                      child: SizedBox(
+                    ],
+                  ),
+                ),
+
+                // ── Bottom section: dots + buttons ──────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Page indicator dots
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          3,
+                          (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: i == _step ? 24 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: i == _step
+                                  ? data.color
+                                  : data.color.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Next / Get Started button
+                      SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: 54,
                         child: ElevatedButton(
                           onPressed: _nextStep,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: data.color,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14)),
+                                borderRadius: BorderRadius.circular(16)),
                           ),
                           child: Text(
                             _step < 2 ? 'Next' : 'Get Started',
@@ -262,30 +277,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ),
                         ),
                       ),
-                    ),
-                  ],
+
+                      // Skip link — slides 0 and 1 only
+                      if (_step < 2) ...[
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _navigate,
+                          child: const Text(
+                            'Skip',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'Inter',
+                                color: AppColors.mutedForeground),
+                          ),
+                        ),
+                      ] else
+                        const SizedBox(height: 48),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-          // Skip button — visible on slides 0 and 1
-          if (_step < 2)
-            Positioned(
-              top: 52,
-              right: 24,
-              child: SafeArea(
-                child: TextButton(
-                  onPressed: _navigate,
-                  child: const Text('Skip',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Inter',
-                          color: AppColors.mutedForeground)),
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
