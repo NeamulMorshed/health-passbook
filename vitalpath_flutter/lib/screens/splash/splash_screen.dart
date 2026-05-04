@@ -263,7 +263,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         child: ElevatedButton(
                           onPressed: _nextStep,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: data.color,
+                            backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16)),
                           ),
