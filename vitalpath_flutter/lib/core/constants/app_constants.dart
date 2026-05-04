@@ -11,6 +11,7 @@ class AppConstants {
   static const colNotifications = 'notifications';
   static const colConnections = 'connections';
   static const colFamilyMembers = 'family_members';
+  static const colVitals = 'vitals';
 
   // Family member relationships
   static const relationships = ['Son', 'Daughter', 'Mother', 'Father', 'Spouse', 'Sibling', 'Other'];

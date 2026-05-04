@@ -733,7 +733,7 @@ class FirestoreService {
 
   Stream<List<VitalReading>> watchVitals(String patientId, {int limit = 50}) {
     return _db
-        .collection('vitals')
+        .collection(AppConstants.colVitals)
         .where('patientId', isEqualTo: patientId)
         .orderBy('recordedAt', descending: true)
         .limit(limit)
@@ -744,10 +744,10 @@ class FirestoreService {
   }
 
   Future<void> addVitalReading(VitalReading reading) =>
-      _db.collection('vitals').doc(reading.id).set(reading.toMap());
+      _db.collection(AppConstants.colVitals).doc(reading.id).set(reading.toMap());
 
   Future<void> deleteVitalReading(String readingId) =>
-      _db.collection('vitals').doc(readingId).delete();
+      _db.collection(AppConstants.colVitals).doc(readingId).delete();
 
   // ─── Pill Count ───────────────────────────────────────────────────────────
 

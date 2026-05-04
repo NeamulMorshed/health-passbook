@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/patient.dart';
 
 class HealthProfileScreen extends ConsumerStatefulWidget {
   const HealthProfileScreen({super.key});
@@ -29,8 +30,9 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
   // Step 3 fields
   final List<String> _selectedConditions = [];
-  final _allergiesCtrl       = TextEditingController();
-  final _emergencyCtrlContact = TextEditingController();
+  final _allergiesCtrl   = TextEditingController();
+  final _ecNameCtrl      = TextEditingController();
+  final _ecPhoneCtrl     = TextEditingController();
 
   @override
   void dispose() {
@@ -40,7 +42,8 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _allergiesCtrl.dispose();
-    _emergencyCtrlContact.dispose();
+    _ecNameCtrl.dispose();
+    _ecPhoneCtrl.dispose();
     super.dispose();
   }
 
@@ -109,7 +112,12 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
         'bloodType':        _selectedBlood,
         'conditions':       _selectedConditions,
         'allergies':        _allergiesCtrl.text.trim().isEmpty ? null : _allergiesCtrl.text.trim(),
-        'emergencyContact': _emergencyCtrlContact.text.trim().isEmpty ? null : _emergencyCtrlContact.text.trim(),
+        'emergencyContact': _ecNameCtrl.text.trim().isEmpty && _ecPhoneCtrl.text.trim().isEmpty
+            ? null
+            : EmergencyContact(
+                name: _ecNameCtrl.text.trim(),
+                phone: _ecPhoneCtrl.text.trim(),
+              ).toMap(),
       });
       await ref.read(firestoreServiceProvider).updateUserProfile(uid, {
         'name': _nameCtrl.text.trim(),
@@ -174,7 +182,8 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                 _Step3(
                   selectedConditions: _selectedConditions,
                   allergiesCtrl: _allergiesCtrl,
-                  emergencyCtrl: _emergencyCtrlContact,
+                  ecNameCtrl: _ecNameCtrl,
+                  ecPhoneCtrl: _ecPhoneCtrl,
                   onConditionChanged: (c, selected) => setState(() {
                     if (c == 'None') {
                       _selectedConditions.clear();
@@ -308,7 +317,9 @@ class _Step2 extends StatelessWidget {
 // ── Step 3: Medical Details ────────────────────────────────────────────────────
 class _Step3 extends StatelessWidget {
   final List<String> selectedConditions;
-  final TextEditingController allergiesCtrl, emergencyCtrl;
+  final TextEditingController allergiesCtrl;
+  final TextEditingController ecNameCtrl;
+  final TextEditingController ecPhoneCtrl;
   final void Function(String condition, bool selected) onConditionChanged;
 
   static const _conditions = [
@@ -319,7 +330,8 @@ class _Step3 extends StatelessWidget {
   const _Step3({
     required this.selectedConditions,
     required this.allergiesCtrl,
-    required this.emergencyCtrl,
+    required this.ecNameCtrl,
+    required this.ecPhoneCtrl,
     required this.onConditionChanged,
   });
 
@@ -359,9 +371,15 @@ class _Step3 extends StatelessWidget {
         const SizedBox(height: 16),
         _label('Emergency Contact (optional)'),
         TextField(
-          controller: emergencyCtrl,
+          controller: ecNameCtrl,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Contact name'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: ecPhoneCtrl,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(hintText: 'e.g. +1 555 000 0000'),
+          decoration: const InputDecoration(hintText: 'Phone number'),
         ),
       ],
     );

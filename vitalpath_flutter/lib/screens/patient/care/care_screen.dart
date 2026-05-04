@@ -272,9 +272,9 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
       actions: [
         TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             Navigator.pop(dialogCtx);
-            ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+            await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
           child: const Text('Delete'),
@@ -707,12 +707,12 @@ class _MedCard extends ConsumerWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogCtx);
               if (familyMember != null) {
-                ref.read(familyMedicinePatchProvider).delete(uid, familyMember!.id, med.id);
+                await ref.read(familyMedicinePatchProvider).delete(uid, familyMember!.id, med.id);
               } else {
-                ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
+                await ref.read(medicineNotifierProvider.notifier).delete(uid, med.id);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
