@@ -8,11 +8,55 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/patient.dart';
 
-class DocPatientsScreen extends ConsumerWidget {
+enum _SortOrder { nameAsc, nameDesc, ageAsc, ageDesc }
+
+class DocPatientsScreen extends ConsumerStatefulWidget {
   const DocPatientsScreen({super.key});
+  @override
+  ConsumerState<DocPatientsScreen> createState() => _DocPatientsScreenState();
+}
+
+class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+  _SortOrder _sort = _SortOrder.nameAsc;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<PatientProfile> _applyFilter(List<PatientProfile> all) {
+    final q = _query.toLowerCase();
+    var filtered = q.isEmpty
+        ? all
+        : all.where((p) => p.name.toLowerCase().contains(q)).toList();
+
+    switch (_sort) {
+      case _SortOrder.nameAsc:
+        filtered.sort((a, b) => a.name.compareTo(b.name));
+      case _SortOrder.nameDesc:
+        filtered.sort((a, b) => b.name.compareTo(a.name));
+      case _SortOrder.ageAsc:
+        filtered.sort((a, b) => (a.age ?? 0).compareTo(b.age ?? 0));
+      case _SortOrder.ageDesc:
+        filtered.sort((a, b) => (b.age ?? 0).compareTo(a.age ?? 0));
+    }
+    return filtered;
+  }
+
+  String get _sortLabel {
+    switch (_sort) {
+      case _SortOrder.nameAsc:  return 'Name A–Z';
+      case _SortOrder.nameDesc: return 'Name Z–A';
+      case _SortOrder.ageAsc:   return 'Age ↑';
+      case _SortOrder.ageDesc:  return 'Age ↓';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -20,6 +64,20 @@ class DocPatientsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Patients'),
         automaticallyImplyLeading: false,
+        actions: [
+          PopupMenuButton<_SortOrder>(
+            tooltip: 'Sort',
+            icon: const Icon(Icons.sort_rounded),
+            initialValue: _sort,
+            onSelected: (v) => setState(() => _sort = v),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: _SortOrder.nameAsc,  child: Text('Name A–Z')),
+              const PopupMenuItem(value: _SortOrder.nameDesc, child: Text('Name Z–A')),
+              const PopupMenuItem(value: _SortOrder.ageAsc,   child: Text('Age (youngest first)')),
+              const PopupMenuItem(value: _SortOrder.ageDesc,  child: Text('Age (oldest first)')),
+            ],
+          ),
+        ],
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -44,13 +102,69 @@ class DocPatientsScreen extends ConsumerWidget {
                   subtitle: 'Patients will appear here once they book an appointment with you.',
                 );
               }
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: patients.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) =>
-                    _PatientCard(patient: patients[i], doctorId: user.uid),
-              );
+
+              final visible = _applyFilter(patients);
+
+              return Column(children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _query = v.trim()),
+                    decoration: InputDecoration(
+                      hintText: 'Search patients by name…',
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      suffixIcon: _query.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _query = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.muted,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Count + sort label
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(children: [
+                    Text('${visible.length} patient${visible.length == 1 ? '' : 's'}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    const Spacer(),
+                    Text('Sorted: $_sortLabel',
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+
+                // List
+                Expanded(
+                  child: visible.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.person_search_rounded,
+                          title: 'No Match',
+                          subtitle: 'Try a different name.',
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          itemCount: visible.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemBuilder: (_, i) =>
+                              _PatientCard(patient: visible[i], doctorId: user.uid),
+                        ),
+                ),
+              ]);
             },
           );
         },

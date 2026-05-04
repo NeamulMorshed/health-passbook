@@ -27,10 +27,13 @@ import '../screens/patient/notifications/notifications_screen.dart';
 import '../screens/patient/notifications/notification_settings_screen.dart';
 import '../screens/patient/profile/edit_profile_screen.dart';
 import '../screens/patient/profile/privacy_screen.dart';
-// import '../screens/patient/gamification/gamification_screen.dart';
+import '../screens/patient/gamification/gamification_screen.dart';
 import '../screens/patient/insights/insights_screen.dart';
 import '../screens/patient/prescriptions/prescriptions_screen.dart';
 import '../screens/patient/care/care_circle_screen.dart';
+import '../screens/patient/care/invite_family_member_screen.dart';
+import '../screens/onboarding/caregiver_setup_screen.dart';
+import '../screens/patient/vitals/vitals_screen.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
 // A thin ChangeNotifier whose only job is to ping GoRouter when auth state
@@ -119,6 +122,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/onboarding/health-profile',
           builder: (_, __) => const HealthProfileScreen()),
+      GoRoute(
+          path: '/onboarding/caregiver-setup',
+          builder: (_, __) => const CaregiverSetupScreen()),
 
       // Doctor onboarding
       GoRoute(
@@ -132,7 +138,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/care', builder: (_, __) => const CareScreen()),
           GoRoute(
-              path: '/activity', builder: (_, __) => const ActivityScreen()),
+              path: '/care-circle',
+              builder: (_, __) => const CareCircleScreen()),
           GoRoute(
               path: '/appointments',
               builder: (_, __) => const AppointmentsScreen()),
@@ -140,6 +147,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
+
+      // Activity is a full-screen push route (accessible from Home)
+      GoRoute(
+          path: '/activity', builder: (_, __) => const ActivityScreen()),
 
       GoRoute(
           path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
@@ -155,9 +166,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/privacy-security',
           builder: (_, __) => const PrivacySecurityScreen()),
-      // GoRoute(
-      //     path: '/gamification',
-      //     builder: (_, __) => const GamificationScreen()),
+      GoRoute(
+          path: '/gamification',
+          builder: (_, __) => const GamificationScreen()),
       GoRoute(
           path: '/insights',
           builder: (_, __) => const InsightsScreen()),
@@ -165,8 +176,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/prescriptions',
           builder: (_, __) => const PrescriptionsScreen()),
       GoRoute(
-          path: '/care-circle',
-          builder: (_, __) => const CareCircleScreen()),
+          path: '/invite-family',
+          builder: (_, __) => const InviteFamilyMemberScreen()),
+      GoRoute(
+          path: '/vitals',
+          builder: (_, __) => const VitalsScreen()),
 
       // Doctor shell
       ShellRoute(

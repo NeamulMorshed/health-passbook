@@ -42,6 +42,9 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<AuthResult> signInWithGoogle() async {
     try {
+      // Clear any stale GMS session so retries always start fresh.
+      await _googleSignIn.signOut();
+
       final account = await _googleSignIn.signIn();
       if (account == null) return const AuthCancelled();
 
@@ -56,8 +59,8 @@ class FirebaseAuthRepository implements AuthRepository {
         final uc = await _auth.signInWithCredential(credential);
         uid = uc.user!.uid;
       } on FirebaseAuthException {
-        // firebase_auth emits FirebaseAuthException even on success in some
-        // plugin versions; if currentUser is populated the sign-in worked.
+        // Some plugin versions emit FirebaseAuthException even on success;
+        // if currentUser is populated the sign-in worked.
         if (_auth.currentUser == null) rethrow;
         uid = _auth.currentUser!.uid;
       }
@@ -66,22 +69,40 @@ class FirebaseAuthRepository implements AuthRepository {
     } on FirebaseAuthException catch (e) {
       return AuthFailure(_codeToMessage(e.code), cause: e);
     } on PlatformException catch (e) {
+      final code = e.code.toLowerCase();
       final detail = '${e.message ?? ''} ${e.details ?? ''}'.toLowerCase();
-      if (detail.contains('apiexception: 7') || detail.contains('network_error')) {
-        return const AuthFailure(
-          'Network error. Make sure your device has internet and a Google account is signed in, then try again.',
-        );
-      }
-      if (detail.contains('apiexception: 10') || detail.contains('developer_error')) {
-        return const AuthFailure(
-          'Google Sign-In is not configured for this build. Please contact support.',
-        );
-      }
-      if (e.code == 'sign_in_canceled' ||
+
+      // User dismissed the account picker.
+      if (code == 'sign_in_canceled' ||
           detail.contains('12501') ||
           detail.contains('sign_in_cancelled')) {
         return const AuthCancelled();
       }
+
+      // ApiException: 7 = GMS cannot find a signed-in Google account on the
+      // device. On an Android Studio emulator open the emulator's Settings →
+      // Accounts → Add account → Google and sign in, then retry.
+      if (detail.contains('apiexception: 7') ||
+          detail.contains('network_error')) {
+        return const AuthFailure(
+          'No Google account found on this device.\n\n'
+          'If you are using an Android emulator:\n'
+          '1. Open the emulator Settings\n'
+          '2. Go to Accounts → Add account → Google\n'
+          '3. Sign in with your Gmail\n'
+          '4. Return to VitalPath and try again.',
+        );
+      }
+
+      // ApiException: 10 = SHA-1 fingerprint or package name mismatch.
+      if (detail.contains('apiexception: 10') ||
+          detail.contains('developer_error')) {
+        return const AuthFailure(
+          'Google Sign-In configuration error. '
+          'Check that the app SHA-1 is registered in Firebase Console.',
+        );
+      }
+
       return const AuthFailure('Sign-in failed. Please try again.');
     } catch (e) {
       return AuthFailure('Sign-in failed. Please try again.', cause: e);
@@ -131,7 +152,7 @@ class FirebaseAuthRepository implements AuthRepository {
           'reviewCount': 0,
         },
       );
-    } else {
+    } else if (user.userType == UserType.patient) {
       batch.set(
         _db.collection(AppConstants.colPatients).doc(user.uid),
         {
@@ -141,6 +162,7 @@ class FirebaseAuthRepository implements AuthRepository {
         },
       );
     }
+    // caregiver: only the users/{uid} doc is created — no patients/ or doctors/ sub-doc
 
     await batch.commit();
   }

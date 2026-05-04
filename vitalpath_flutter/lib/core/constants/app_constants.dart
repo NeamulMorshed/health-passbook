@@ -55,4 +55,8 @@ class AppConstants {
   static const prefUserType = 'user_type';
   static const prefOnboardingDone = 'onboarding_done';
   static const prefFaceIdEnabled = 'face_id_enabled';
+  static const prefOnboardingTourDone = 'onboarding_tour_done';
+
+  // Cities for doctor search
+  static const cities = ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna'];
 }

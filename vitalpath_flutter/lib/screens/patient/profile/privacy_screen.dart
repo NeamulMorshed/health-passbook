@@ -64,11 +64,13 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
               Navigator.pop(dialogCtx);
               try {
                 await ref.read(authRepositoryProvider).deleteAccount();
-                if (context.mounted) context.go('/user-select');
+                if (!mounted) return;
+                // ignore: use_build_context_synchronously
+                context.go('/user-select');
               } catch (e) {
-                if (context.mounted) {
-                  showAppSnack(context, 'Could not delete account. Please sign out and sign back in, then try again.');
-                }
+                if (!mounted) return;
+                // ignore: use_build_context_synchronously
+                showAppSnack(context, 'Could not delete account. Please sign out and sign back in, then try again.');
               }
             },
             child: const Text('Delete'),

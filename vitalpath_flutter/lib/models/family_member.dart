@@ -7,6 +7,8 @@ class FamilyMember {
   final int? age;
   final String? photoUrl;
   final DateTime createdAt;
+  final String profileType; // 'dependent' | 'linked'
+  final String? linkedUid;  // only set when profileType == 'linked'
 
   const FamilyMember({
     required this.id,
@@ -15,6 +17,8 @@ class FamilyMember {
     this.age,
     this.photoUrl,
     required this.createdAt,
+    this.profileType = 'dependent',
+    this.linkedUid,
   });
 
   factory FamilyMember.fromMap(Map<String, dynamic> map, String id) {
@@ -25,6 +29,8 @@ class FamilyMember {
       age: map['age'] as int?,
       photoUrl: map['photoUrl'] as String?,
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      profileType: map['profileType'] as String? ?? 'dependent',
+      linkedUid: map['linkedUid'] as String?,
     );
   }
 
@@ -34,6 +40,8 @@ class FamilyMember {
         'age': age,
         'photoUrl': photoUrl,
         'createdAt': Timestamp.fromDate(createdAt),
+        'profileType': profileType,
+        if (linkedUid != null) 'linkedUid': linkedUid,
       };
 
   String get initials {

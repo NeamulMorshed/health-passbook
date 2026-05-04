@@ -7,6 +7,15 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/gamification_provider.dart';
 import '../../../models/gamification.dart';
 
+void _showHowToEarn(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _HowToEarnSheet(),
+  );
+}
+
 class GamificationScreen extends ConsumerWidget {
   const GamificationScreen({super.key});
 
@@ -16,7 +25,16 @@ class GamificationScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Health Rewards')),
+      appBar: AppBar(
+        title: const Text('Health Rewards'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            tooltip: 'How to earn HP',
+            onPressed: () => _showHowToEarn(context),
+          ),
+        ],
+      ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(
@@ -327,6 +345,112 @@ class _BadgesSection extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+// ── How to Earn HP Sheet ──────────────────────────────────────────────────────
+
+class _HowToEarnSheet extends StatelessWidget {
+  const _HowToEarnSheet();
+
+  static const _items = [
+    (icon: Icons.medication_rounded,            color: Color(0xFF6366F1), action: 'Log medicine on time',      hp: '+10 HP'),
+    (icon: Icons.restaurant_rounded,            color: Color(0xFF22C55E), action: 'Log a meal',                hp: '+5 HP'),
+    (icon: Icons.directions_walk_rounded,       color: Color(0xFFF59E0B), action: 'Log an activity session',   hp: '+10 HP'),
+    (icon: Icons.local_fire_department_rounded, color: Color(0xFFEF4444), action: '7-day medicine streak',     hp: '+50 HP'),
+    (icon: Icons.favorite_rounded,              color: Color(0xFF22C55E), action: '7-day meal streak',         hp: '+50 HP'),
+    (icon: Icons.fitness_center_rounded,        color: Color(0xFFF59E0B), action: '5-day activity streak',     hp: '+30 HP'),
+    (icon: Icons.emoji_events_rounded,          color: Color(0xFF8B5CF6), action: 'Complete weekly challenge', hp: '+100 HP'),
+    (icon: Icons.military_tech_rounded,         color: Color(0xFFF59E0B), action: 'Unlock a badge',            hp: '+50 HP'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'How to Earn HP',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          const Text(
+            'Health Points (HP) level you up and unlock badges.',
+            style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+          ),
+          const SizedBox(height: 20),
+          ..._items.map((item) => _EarnRow(item: item)),
+          const SizedBox(height: 4),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Got it', style: TextStyle(fontFamily: 'Inter')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EarnRow extends StatelessWidget {
+  final ({IconData icon, Color color, String action, String hp}) item;
+  const _EarnRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: item.color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(item.icon, color: item.color, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(item.action,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(item.hp,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Inter')),
+        ),
+      ]),
     );
   }
 }

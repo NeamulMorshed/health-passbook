@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../../core/theme/app_theme.dart';
@@ -272,6 +273,38 @@ class _AddFamilyMemberScreenState
                   ),
                 ),
               ],
+
+              // Invite as linked account — only shown in add mode
+              if (!_isEdit) ...[
+                const SizedBox(height: 16),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
+                const Text(
+                  'They use VitalPath?',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'),
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => context.push('/invite-family'),
+                    style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.zero),
+                    child: const Text(
+                      'Invite as a linked account →',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -296,11 +329,13 @@ class _AddFamilyMemberScreenState
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.destructive),
             onPressed: () async {
+              // Capture navigator before async gap to avoid context misuse.
+              final nav = Navigator.of(context);
               Navigator.pop(dialogCtx);
               await ref
                   .read(familyMemberNotifierProvider.notifier)
                   .delete(widget.uid, widget.existing!.id);
-              if (mounted) Navigator.pop(context, 'deleted');
+              if (mounted) nav.pop('deleted');
             },
             child: const Text('Remove'),
           ),

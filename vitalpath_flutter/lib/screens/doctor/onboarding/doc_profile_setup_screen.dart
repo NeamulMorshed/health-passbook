@@ -22,7 +22,11 @@ class _DocProfileSetupScreenState
   final _phoneCtrl = TextEditingController();
   final _licenseCtrl = TextEditingController();
   final _hospitalCtrl = TextEditingController();
+  final _hoursCtrl = TextEditingController();
+  final _feeCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
   String? _specialty;
+  bool _accepting = true;
 
   static const _specialties = [
     'General Physician',
@@ -62,6 +66,9 @@ class _DocProfileSetupScreenState
     _phoneCtrl.dispose();
     _licenseCtrl.dispose();
     _hospitalCtrl.dispose();
+    _hoursCtrl.dispose();
+    _feeCtrl.dispose();
+    _cityCtrl.dispose();
     super.dispose();
   }
 
@@ -81,6 +88,10 @@ class _DocProfileSetupScreenState
         'specialty': _specialty,
         'licenseNo': _licenseCtrl.text.trim(),
         'hospital': _hospitalCtrl.text.trim(),
+        'acceptingNewPatients': _accepting,
+        'availableHours': _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim(),
+        'consultationFee': _feeCtrl.text.trim().isEmpty ? null : _feeCtrl.text.trim(),
+        'city': _cityCtrl.text.trim().isEmpty ? null : _cityCtrl.text.trim(),
       });
 
       await ref.read(firestoreServiceProvider).updateUserProfile(uid, {
@@ -222,6 +233,47 @@ class _DocProfileSetupScreenState
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Hospital or clinic name is required'
                       : null,
+                ),
+                const SizedBox(height: 16),
+
+                _label('Available Hours (optional)'),
+                TextFormField(
+                  controller: _hoursCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. Mon–Fri 9am–5pm'),
+                ),
+                const SizedBox(height: 16),
+
+                _label('Consultation Fee (optional)'),
+                TextFormField(
+                  controller: _feeCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. \$50 / Free'),
+                ),
+                const SizedBox(height: 16),
+
+                _label('City (optional)'),
+                TextFormField(
+                  controller: _cityCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. Dhaka'),
+                ),
+                const SizedBox(height: 16),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(children: [
+                    const Expanded(child: Text('Accepting New Patients',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter'))),
+                    Switch(
+                      value: _accepting,
+                      activeThumbColor: AppColors.doctorPrimary,
+                      activeTrackColor: AppColors.doctorPrimary.withValues(alpha: 0.4),
+                      onChanged: (v) => setState(() => _accepting = v),
+                    ),
+                  ]),
                 ),
                 const SizedBox(height: 36),
 

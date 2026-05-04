@@ -86,7 +86,7 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
                     unselectedLabelColor: AppColors.mutedForeground,
                     indicatorColor: AppColors.doctorPrimary,
                     tabs: [
-                      Tab(text: 'Pending (${pending.length})'),
+                      Tab(text: 'New Requests (${pending.length})'),
                       Tab(text: 'Confirmed (${confirmed.length})'),
                       Tab(text: 'Past (${past.length})'),
                     ],
@@ -156,6 +156,25 @@ class _DocApptCard extends ConsumerWidget {
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
             Text('Requested ${DateFormat('MMM d, h:mm a').format(appt.createdAt)}',
                 style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            if (appt.familyMemberId != null && appt.familyMemberName != null) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'For ${appt.familyMemberName}',
+                  style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                      fontFamily: 'Inter'),
+                ),
+              ),
+            ],
           ])),
           _buildBadge(),
         ]),
@@ -228,7 +247,7 @@ class _DocApptCard extends ConsumerWidget {
   }
 
   Widget _buildBadge() {
-    if (appt.isPending)   return StatusBadge.warning('Pending');
+    if (appt.isPending)   return StatusBadge.warning('New Request');
     if (appt.isConfirmed) return StatusBadge.success('Confirmed');
     if (appt.isCompleted) return StatusBadge.info('Completed');
     return StatusBadge.danger('Cancelled');

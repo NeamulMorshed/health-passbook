@@ -34,6 +34,15 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="vitalpath" android:host="sync"/>
             </intent-filter>
+            <!-- Required for Firebase signInWithProvider (Google OAuth via Chrome Custom Tab).
+                 The scheme is the reverse of the Android OAuth client ID in google-services.json.
+                 Without this, the Chrome Tab redirect cannot return to the app after auth. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.googleusercontent.apps.768599207887-fmj1hs6d8uutei248j0qf69emv53vcqa"/>
+            </intent-filter>
         </activity>
 
         <service

@@ -10,6 +10,7 @@ import '../../../providers/doctor_provider.dart';
 import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
 import '../../../models/medicine.dart';
+import '../../../models/patient.dart';
 import 'add_family_member_screen.dart';
 
 class CareCircleScreen extends ConsumerWidget {
@@ -231,7 +232,7 @@ class _CareCircleBody extends ConsumerWidget {
             error: (_, __) => const SizedBox.shrink(),
             data: (patient) {
               final contact = patient?.emergencyContact;
-              if (contact == null || contact.isEmpty) {
+              if (contact == null) {
                 return _EmptyCard(
                   icon: Icons.add_call,
                   message: 'No emergency contact saved.',
@@ -397,18 +398,21 @@ class _FamilyMemberCard extends ConsumerWidget {
     final medsAsync = ref.watch(
         familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
     final medCount = medsAsync.asData?.value.length ?? 0;
+    final isLinked = member.profileType == 'linked';
+
+    void openEdit() => Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (_) =>
+                  AddFamilyMemberScreen(uid: uid, existing: member)),
+        );
 
     return GestureDetector(
       onTap: () => _showMemberDetail(context, ref, medsAsync),
-      onLongPress: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (_) =>
-                AddFamilyMemberScreen(uid: uid, existing: member)),
-      ),
+      onLongPress: openEdit,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
@@ -438,11 +442,42 @@ class _FamilyMemberCard extends ConsumerWidget {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(member.name,
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter')),
+                  Row(children: [
+                    Expanded(
+                      child: Text(member.name,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter')),
+                    ),
+                    const SizedBox(width: 6),
+                    // Profile type badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isLinked
+                            ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                            : AppColors.muted,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isLinked
+                              ? const Color(0xFFF59E0B)
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: Text(
+                        isLinked ? 'Linked' : 'Dependent',
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isLinked
+                                ? const Color(0xFFF59E0B)
+                                : AppColors.mutedForeground,
+                            fontFamily: 'Inter'),
+                      ),
+                    ),
+                  ]),
                   Text(
                     [
                       member.relationship,
@@ -453,38 +488,37 @@ class _FamilyMemberCard extends ConsumerWidget {
                         color: AppColors.mutedForeground,
                         fontFamily: 'Inter'),
                   ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: medCount > 0
+                          ? AppColors.primary.withValues(alpha: 0.1)
+                          : AppColors.muted,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      '$medCount ${medCount == 1 ? 'medicine' : 'medicines'}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: medCount > 0
+                              ? AppColors.primary
+                              : AppColors.mutedForeground,
+                          fontFamily: 'Inter'),
+                    ),
+                  ),
                 ]),
           ),
 
-          // Medicine count badge
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: medCount > 0
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : AppColors.muted,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$medCount ${medCount == 1 ? 'medicine' : 'medicines'}',
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: medCount > 0
-                        ? AppColors.primary
-                        : AppColors.mutedForeground,
-                    fontFamily: 'Inter'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text('Hold to edit',
-                style: TextStyle(
-                    fontSize: 10,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter')),
-          ]),
+          // Edit button (visible trailing icon)
+          IconButton(
+            tooltip: 'Edit member',
+            icon: const Icon(Icons.edit_rounded,
+                size: 18, color: AppColors.mutedForeground),
+            onPressed: openEdit,
+          ),
         ]),
       ),
     );
@@ -514,10 +548,10 @@ class _MemberDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.55,
+      initialChildSize: 0.6,
       minChildSize: 0.35,
-      maxChildSize: 0.85,
-      builder: (_, controller) => Container(
+      maxChildSize: 0.9,
+      builder: (sheetCtx, controller) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -579,7 +613,28 @@ class _MemberDetailSheet extends StatelessWidget {
               ),
             ]),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Connect a Doctor button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.push('/my-doctors');
+                },
+                icon: const Icon(Icons.medical_services_rounded, size: 16),
+                label: const Text('Connect a Doctor',
+                    style: TextStyle(fontFamily: 'Inter')),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.doctorPrimary,
+                  side: const BorderSide(color: AppColors.doctorPrimary),
+                  minimumSize: const Size(0, 42),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 16),
 
@@ -700,7 +755,7 @@ class _MemberDetailSheet extends StatelessWidget {
 
 // ─── Emergency contact card ───────────────────────────────────────────────────
 class _EmergencyContactCard extends StatelessWidget {
-  final String contact;
+  final EmergencyContact contact;
   const _EmergencyContactCard({required this.contact});
 
   @override
@@ -710,8 +765,7 @@ class _EmergencyContactCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-            color: AppColors.destructive.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
         Container(
@@ -728,20 +782,33 @@ class _EmergencyContactCard extends StatelessWidget {
           child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Emergency Contact',
-                    style: TextStyle(
+                if (contact.relationship.isNotEmpty)
+                  Text(
+                    contact.relationship,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mutedForeground,
+                        fontFamily: 'Inter'),
+                  ),
+                Text(
+                  contact.name.isNotEmpty ? contact.name : contact.phone,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter'),
+                ),
+                if (contact.name.isNotEmpty && contact.phone.isNotEmpty)
+                  Text(
+                    contact.phone,
+                    style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
-                Text(contact,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
+                        fontFamily: 'Inter'),
+                  ),
               ]),
         ),
         IconButton(
-          onPressed: () => _call(contact),
+          onPressed: contact.phone.isNotEmpty ? () => _call(contact.phone) : null,
           icon: const Icon(Icons.call_rounded, color: AppColors.success),
           tooltip: 'Call',
         ),
@@ -750,7 +817,6 @@ class _EmergencyContactCard extends StatelessWidget {
   }
 
   Future<void> _call(String number) async {
-    // Strip non-digit characters except leading +
     final cleaned = number.replaceAll(RegExp(r'[^\d+]'), '');
     final uri = Uri.parse('tel:$cleaned');
     if (await canLaunchUrl(uri)) {

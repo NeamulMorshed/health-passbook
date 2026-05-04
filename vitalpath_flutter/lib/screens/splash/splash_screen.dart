@@ -101,7 +101,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     switch (result) {
       case AuthSuccess(:final user):
         if (user.userType == UserType.doctor) {
-          context.go('/doc/dashboard');
+          if (!user.onboardingComplete) {
+            context.go('/doc/onboarding/profile');
+          } else {
+            context.go('/doc/dashboard');
+          }
+        } else if (user.userType == UserType.caregiver) {
+          if (!user.onboardingComplete) {
+            context.go('/onboarding/caregiver-setup');
+          } else {
+            context.go('/home');
+          }
         } else if (!user.onboardingComplete) {
           context.go('/onboarding/permissions');
         } else {
@@ -151,68 +161,112 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: ScaleTransition(
-          scale: _scaleAnim,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    // withValues(alpha:) replaces deprecated withOpacity()
-                    color: data.color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(data.icon, size: 52, color: data.color),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  data.title,
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Inter',
-                    color: AppColors.foreground,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  data.subtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 60),
-                Row(
+      body: Stack(
+        children: [
+          FadeTransition(
+            opacity: _fadeAnim,
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Center(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    3,
-                    (i) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: i == _step ? 24 : 8,
-                      height: 8,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
-                        color: i == _step
-                            ? data.color
-                            : data.color.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(4),
+                        color: data.color.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(data.icon, size: 52, color: data.color),
+                    ),
+                    const SizedBox(height: 28),
+                    Text(
+                      data.title,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Inter',
+                        color: AppColors.foreground,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(
+                      data.subtitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.mutedForeground,
+                        fontFamily: 'Inter',
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        3,
+                        (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: i == _step ? 24 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: i == _step
+                                ? data.color
+                                : data.color.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // "Get Started" CTA on final slide
+                    if (_step == 2)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _navigate,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: data.color,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: const Text('Get Started',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Inter',
+                                    color: Colors.white)),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          // Skip button — visible on slides 0 and 1
+          if (_step < 2)
+            Positioned(
+              top: 52,
+              right: 24,
+              child: SafeArea(
+                child: TextButton(
+                  onPressed: _navigate,
+                  child: const Text('Skip',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Inter',
+                          color: AppColors.mutedForeground)),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

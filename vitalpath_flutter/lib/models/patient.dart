@@ -1,4 +1,42 @@
 
+class EmergencyContact {
+  final String name;
+  final String phone;
+  final String relationship;
+
+  const EmergencyContact({
+    required this.name,
+    required this.phone,
+    this.relationship = '',
+  });
+
+  factory EmergencyContact.fromMap(Map<String, dynamic> map) => EmergencyContact(
+        name: map['name'] ?? '',
+        phone: map['phone'] ?? '',
+        relationship: map['relationship'] ?? '',
+      );
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'phone': phone,
+        'relationship': relationship,
+      };
+
+  String get displayLine {
+    final parts = [name, if (relationship.isNotEmpty) relationship].join(' · ');
+    return parts;
+  }
+}
+
+EmergencyContact? _parseEmergencyContact(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is Map<String, dynamic>) return EmergencyContact.fromMap(raw);
+  if (raw is String && raw.isNotEmpty) {
+    return EmergencyContact(name: raw, phone: raw);
+  }
+  return null;
+}
+
 class PatientProfile {
   final String uid;
   final String name;
@@ -8,7 +46,7 @@ class PatientProfile {
   final String? bloodType;
   final List<String> conditions;
   final String? allergies;
-  final String? emergencyContact;
+  final EmergencyContact? emergencyContact;
   final String? doctorId;
 
   const PatientProfile({
@@ -38,7 +76,7 @@ class PatientProfile {
       bloodType: map['bloodType'],
       conditions: List<String>.from(map['conditions'] ?? []),
       allergies: map['allergies'],
-      emergencyContact: map['emergencyContact'],
+      emergencyContact: _parseEmergencyContact(map['emergencyContact']),
       doctorId: map['doctorId'],
     );
   }
@@ -51,7 +89,7 @@ class PatientProfile {
         'bloodType': bloodType,
         'conditions': conditions,
         'allergies': allergies,
-        'emergencyContact': emergencyContact,
+        'emergencyContact': emergencyContact?.toMap(),
         'doctorId': doctorId,
       };
 }

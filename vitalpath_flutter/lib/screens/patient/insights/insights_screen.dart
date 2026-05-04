@@ -22,8 +22,8 @@ class InsightsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(
             icon: Icons.error_outline_rounded,
-            title: 'Something went wrong',
-            subtitle: 'Pull to refresh or try again.'),
+            title: "Can't load right now",
+            subtitle: 'Check your connection and try again.'),
         data: (user) {
           if (user == null) return const SizedBox.shrink();
           return _InsightsContent(uid: user.uid);

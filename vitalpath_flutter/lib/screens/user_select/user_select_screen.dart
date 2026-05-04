@@ -59,6 +59,14 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                 subtitle: 'Manage patients, appointments\nand write prescriptions',
                 onTap: () => _handleRoleSelected('doctor'),
               ),
+              const SizedBox(height: 16),
+              _RoleCard(
+                icon: Icons.family_restroom_rounded,
+                color: const Color(0xFFF59E0B),
+                title: 'I\'m a Caregiver',
+                subtitle: 'Manage health for your family\nand connect with their doctors',
+                onTap: () => _handleRoleSelected('caregiver'),
+              ),
               const Spacer(),
               Center(
                 child: Text('By continuing you agree to our Terms & Privacy Policy',
@@ -96,23 +104,36 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
             } else {
               context.go('/doc/dashboard');
             }
+          } else if (user.userType == UserType.caregiver) {
+            if (!user.onboardingComplete) {
+              context.go('/onboarding/caregiver-setup');
+            } else {
+              context.go('/home');
+            }
           } else if (!user.onboardingComplete) {
             context.go('/onboarding/permissions');
           } else {
             context.go('/auth/faceid');
           }
         } else if (result is AuthNewUser) {
+          final parsedType = userType == 'doctor'
+              ? UserType.doctor
+              : userType == 'caregiver'
+                  ? UserType.caregiver
+                  : UserType.patient;
           final newUser = AppUser(
             uid: uid,
             name: result.displayName ?? 'New User',
             phone: '',
-            userType: userType == 'doctor' ? UserType.doctor : UserType.patient,
+            userType: parsedType,
             createdAt: DateTime.now(),
           );
           await authRepo.createProfile(newUser);
           if (!mounted) return;
           if (userType == 'doctor') {
             context.go('/doc/onboarding/profile');
+          } else if (userType == 'caregiver') {
+            context.go('/onboarding/caregiver-setup');
           } else {
             context.go('/onboarding/permissions');
           }

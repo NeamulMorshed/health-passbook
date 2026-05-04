@@ -15,17 +15,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   final _perms = [
     _PermData(
-      icon: Icons.notifications_rounded,
-      color: AppColors.warning,
-      title: 'Medication Reminders',
-      subtitle: 'Get notified when it\'s time to take your medicine. Never miss a dose again.',
-      permission: Permission.notification,
-    ),
-    _PermData(
       icon: Icons.location_on_rounded,
       color: AppColors.success,
       title: 'Location Access',
       subtitle: 'Track your walks and outdoor activities with GPS for accurate distance measurement.',
+      why: 'So we can measure walking distance accurately',
       permission: Permission.location,
     ),
     _PermData(
@@ -33,7 +27,16 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       color: AppColors.primary,
       title: 'Camera & Photos',
       subtitle: 'Take photos of your meals and prescriptions to keep detailed health records.',
+      why: 'So you can scan prescriptions and log meals with photos',
       permission: Permission.camera,
+    ),
+    _PermData(
+      icon: Icons.notifications_rounded,
+      color: AppColors.warning,
+      title: 'Medication Reminders',
+      subtitle: 'Get notified when it\'s time to take your medicine. Never miss a dose again.',
+      why: 'So you never miss a dose or appointment',
+      permission: Permission.notification,
     ),
   ];
 
@@ -85,12 +88,26 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               Text(data.title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
               const SizedBox(height: 12),
               Text(data.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.5)),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: data.color.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: data.color.withValues(alpha: 0.2)),
+                ),
+                child: Row(children: [
+                  Icon(Icons.info_outline_rounded, size: 15, color: data.color),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(data.why, style: TextStyle(fontSize: 13, color: data.color, fontFamily: 'Inter'))),
+                ]),
+              ),
               const Spacer(),
               GradientButton(label: 'Allow ${data.title}', colors: [data.color, data.color.withValues(alpha:0.8)], onPressed: _allow),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _next,
-                child: const Text('Skip', style: TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                child: const Text('Not now', style: TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter')),
               ),
               const SizedBox(height: 8),
             ],
@@ -106,6 +123,7 @@ class _PermData {
   final Color color;
   final String title;
   final String subtitle;
+  final String why;
   final Permission? permission;
-  const _PermData({required this.icon, required this.color, required this.title, required this.subtitle, this.permission});
+  const _PermData({required this.icon, required this.color, required this.title, required this.subtitle, required this.why, this.permission});
 }

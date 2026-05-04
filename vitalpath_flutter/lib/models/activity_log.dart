@@ -1,4 +1,40 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+class ActivityType {
+  static const walk = 'walk';
+  static const run = 'run';
+  static const cycle = 'cycle';
+  static const yoga = 'yoga';
+  static const swim = 'swim';
+  static const gym = 'gym';
+  static const other = 'other';
+
+  static const gpsTracked = [walk, run, cycle];
+  static const manualLog = [yoga, swim, gym, other];
+
+  static const allTypes = [walk, run, cycle, yoga, swim, gym, other];
+
+  static IconData iconFor(String type) => switch (type) {
+    run => Icons.directions_run_rounded,
+    cycle => Icons.directions_bike_rounded,
+    yoga => Icons.self_improvement_rounded,
+    swim => Icons.pool_rounded,
+    gym => Icons.fitness_center_rounded,
+    other => Icons.sports_rounded,
+    _ => Icons.directions_walk_rounded, // walk + fallback
+  };
+
+  static String labelFor(String type) => switch (type) {
+    run => 'Run',
+    cycle => 'Cycle',
+    yoga => 'Yoga',
+    swim => 'Swim',
+    gym => 'Gym',
+    other => 'Other',
+    _ => 'Walk',
+  };
+}
 
 class ActivityLog {
   final String id;

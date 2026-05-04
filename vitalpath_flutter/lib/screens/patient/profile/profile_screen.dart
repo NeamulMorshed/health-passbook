@@ -6,7 +6,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-// import '../../../providers/gamification_provider.dart';
+import '../../../providers/gamification_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -26,21 +26,14 @@ class ProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final patientAsync = ref.watch(patientProfileProvider(user.uid));
-        // final gamAsync = ref.watch(gamificationProvider(user.uid));
+        final gamAsync = ref.watch(gamificationProvider(user.uid));
 
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
             title: const Text('My Profile'),
             automaticallyImplyLeading: false,
-            actions: [
-              const NotifBell(),
-              IconButton(
-                icon: const Icon(Icons.edit_rounded),
-                tooltip: 'Edit Profile',
-                onPressed: () => context.push('/edit-profile'),
-              ),
-            ],
+            actions: const [NotifBell()],
           ),
           body: ListView(
             children: [
@@ -55,26 +48,26 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(user.phone, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
                   const SizedBox(height: 8),
-                  // gamAsync.when(
-                  //   data: (g) => GestureDetector(
-                  //     onTap: () => context.push('/gamification'),
-                  //     child: Container(
-                  //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  //       decoration: BoxDecoration(
-                  //         color: AppColors.primary.withValues(alpha: 0.1),
-                  //         borderRadius: BorderRadius.circular(20),
-                  //         border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                  //       ),
-                  //       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  //         const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
-                  //         const SizedBox(width: 5),
-                  //         Text('Lv ${g.level} • ${g.hp} HP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
-                  //       ]),
-                  //     ),
-                  //   ),
-                  //   loading: () => const SizedBox.shrink(),
-                  //   error: (_, __) => const SizedBox.shrink(),
-                  // ),
+                  gamAsync.when(
+                    data: (g) => GestureDetector(
+                      onTap: () => context.push('/gamification'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 5),
+                          Text('Lv ${g.level} • ${g.hp} HP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+                        ]),
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 16),
                   patientAsync.when(
                     data: (patient) {
@@ -113,8 +106,18 @@ class ProfileScreen extends ConsumerWidget {
                         _InfoRow('Conditions', patient.conditions.join(', ')),
                       if (patient.allergies != null)
                         _InfoRow('Allergies', patient.allergies!),
-                      if (patient.emergencyContact != null)
-                        _InfoRow('Emergency Contact', patient.emergencyContact!),
+                      if (patient.emergencyContact != null) ...[
+                        _InfoRow('Emergency Contact',
+                            patient.emergencyContact!.name.isNotEmpty
+                                ? patient.emergencyContact!.name
+                                : patient.emergencyContact!.phone),
+                        if (patient.emergencyContact!.relationship.isNotEmpty)
+                          _InfoRow('EC Relationship',
+                              patient.emergencyContact!.relationship),
+                        if (patient.emergencyContact!.name.isNotEmpty &&
+                            patient.emergencyContact!.phone.isNotEmpty)
+                          _InfoRow('EC Phone', patient.emergencyContact!.phone),
+                      ],
                     ]),
                   );
                 },
@@ -124,22 +127,42 @@ class ProfileScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
-              // Menu items
+              // ── Health Section ──────────────────────────────────────────
+              _SectionLabel('Health'),
               Container(
                 color: AppColors.surface,
                 child: Column(children: [
                   _MenuItem(icon: Icons.people_rounded, label: 'My Doctors', color: AppColors.doctorPrimary, onTap: () => context.push('/my-doctors')),
+                  _MenuDivider(),
                   _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.go('/appointments')),
+                  _MenuDivider(),
                   _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/prescriptions')),
-                  // _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
+                  _MenuDivider(),
+                  _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
+                  _MenuDivider(),
                   _MenuItem(icon: Icons.auto_awesome_rounded, label: 'AI Health Insights', color: const Color(0xFF0EA5E9), onTap: () => context.push('/insights')),
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
+                ]),
+              ),
+
+              const SizedBox(height: 12),
+
+              // ── Settings Section ────────────────────────────────────────
+              _SectionLabel('Settings'),
+              Container(
+                color: AppColors.surface,
+                child: Column(children: [
+                  _MenuItem(icon: Icons.edit_rounded, label: 'Edit Profile', color: AppColors.foreground, onTap: () => context.push('/edit-profile')),
+                  _MenuDivider(),
+                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notification Settings', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
+                  _MenuDivider(),
                   _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
                 ]),
               ),
 
               const SizedBox(height: 12),
 
+              // ── Account Section ─────────────────────────────────────────
+              _SectionLabel('Account'),
               Container(
                 color: AppColors.surface,
                 child: _MenuItem(
@@ -232,4 +255,26 @@ class _MenuItem extends StatelessWidget {
     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
     onTap: onTap,
   );
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+    child: Text(text,
+        style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.mutedForeground,
+            letterSpacing: 0.5,
+            fontFamily: 'Inter')),
+  );
+}
+
+class _MenuDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, indent: 56, color: AppColors.border);
 }

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../models/patient.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 
@@ -24,7 +25,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _bloodTypeCtrl = TextEditingController();
   final _conditionsCtrl = TextEditingController();
   final _allergiesCtrl = TextEditingController();
-  final _emergencyCtrl = TextEditingController();
+  final _ecNameCtrl = TextEditingController();
+  final _ecPhoneCtrl = TextEditingController();
+  final _ecRelCtrl = TextEditingController();
 
   File? _pickedImage;
   bool _saving = false;
@@ -43,7 +46,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _bloodTypeCtrl.dispose();
     _conditionsCtrl.dispose();
     _allergiesCtrl.dispose();
-    _emergencyCtrl.dispose();
+    _ecNameCtrl.dispose();
+    _ecPhoneCtrl.dispose();
+    _ecRelCtrl.dispose();
     super.dispose();
   }
 
@@ -61,7 +66,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _selectedBloodType = _bloodTypes.contains(patient.bloodType) ? patient.bloodType : null;
       _conditionsCtrl.text = patient.conditions.join(', ');
       _allergiesCtrl.text = patient.allergies ?? '';
-      _emergencyCtrl.text = patient.emergencyContact ?? '';
+      _ecNameCtrl.text = patient.emergencyContact?.name ?? '';
+      _ecPhoneCtrl.text = patient.emergencyContact?.phone ?? '';
+      _ecRelCtrl.text = patient.emergencyContact?.relationship ?? '';
     }
     _loaded = true;
   }
@@ -106,7 +113,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         'bloodType': _selectedBloodType,
         'conditions': conditions,
         'allergies': _allergiesCtrl.text.trim().isEmpty ? null : _allergiesCtrl.text.trim(),
-        'emergencyContact': _emergencyCtrl.text.trim().isEmpty ? null : _emergencyCtrl.text.trim(),
+        'emergencyContact': _ecNameCtrl.text.trim().isEmpty && _ecPhoneCtrl.text.trim().isEmpty
+            ? null
+            : EmergencyContact(
+                name: _ecNameCtrl.text.trim(),
+                phone: _ecPhoneCtrl.text.trim(),
+                relationship: _ecRelCtrl.text.trim(),
+              ).toMap(),
       });
 
       ref.invalidate(currentUserProvider);
@@ -228,9 +241,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             _Field(controller: _allergiesCtrl, label: 'Allergies', icon: Icons.warning_amber_rounded),
             const SizedBox(height: 24),
 
-            _SectionLabel('Emergency'),
+            _SectionLabel('Emergency Contact'),
             const SizedBox(height: 12),
-            _Field(controller: _emergencyCtrl, label: 'Emergency Contact', icon: Icons.contact_phone_outlined, keyboardType: TextInputType.phone),
+            _Field(controller: _ecNameCtrl, label: 'Contact Name', icon: Icons.person_outline_rounded),
+            const SizedBox(height: 12),
+            _Field(controller: _ecPhoneCtrl, label: 'Contact Phone', icon: Icons.contact_phone_outlined, keyboardType: TextInputType.phone),
+            const SizedBox(height: 12),
+            _Field(controller: _ecRelCtrl, label: 'Relationship (e.g. Spouse)', icon: Icons.people_outline_rounded),
             const SizedBox(height: 32),
           ],
         ),

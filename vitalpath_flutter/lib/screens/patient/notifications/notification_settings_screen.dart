@@ -218,7 +218,7 @@ class _ToggleTile extends StatelessWidget {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: color,
+        activeThumbColor: color,
       ),
     );
   }

@@ -9,6 +9,8 @@ import '../models/doctor.dart';
 import '../models/activity_log.dart';
 import '../models/app_notification.dart';
 import '../models/family_member.dart';
+import '../models/consultation_note.dart';
+import '../models/vital_reading.dart';
 import '../core/constants/app_constants.dart';
 
 const _uuid = Uuid();
@@ -118,10 +120,13 @@ class FirestoreService {
         .map((s) => s.docs.length);
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery}) async {
+  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery, String? city}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
+    }
+    if (city != null && city.isNotEmpty) {
+      query = query.where('city', isEqualTo: city);
     }
     final snap = await query.limit(50).get();
     var results = snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
@@ -545,6 +550,7 @@ class FirestoreService {
     String? notes,
     String? patientId,
     String? doctorId,
+    String? doctorName,
   }) async {
     final data = <String, dynamic>{
       'status': status.value,
@@ -554,9 +560,27 @@ class FirestoreService {
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
 
-    if (status == AppointmentStatus.cancelled &&
-        patientId != null && doctorId != null) {
-      await _cleanupConnectionIfInactive(patientId, doctorId);
+    if (status == AppointmentStatus.cancelled && patientId != null) {
+      // Write in-app notification to patient
+      final cancelNotif = <String, dynamic>{
+        'title': 'Appointment Cancelled',
+        'body': doctorName != null
+            ? 'Dr. $doctorName has cancelled your appointment.'
+            : 'Your appointment has been cancelled.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+      await _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4())
+          .set(cancelNotif);
+
+      if (doctorId != null) {
+        await _cleanupConnectionIfInactive(patientId, doctorId);
+      }
     }
   }
 
@@ -623,6 +647,116 @@ class FirestoreService {
       );
     }
 
+    // In-app notification for the patient
+    final medCount = rx.medicines.length;
+    batch.set(
+      _db.collection(AppConstants.colPatients).doc(rx.patientId)
+          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      {
+        'title': 'New Prescription',
+        'body': 'Dr. ${rx.doctorName} prescribed $medCount '
+            '${medCount == 1 ? 'medicine' : 'medicines'}'
+            '${rx.diagnosis != null ? ' for ${rx.diagnosis}' : ''}.',
+        'type': NotificationType.general.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      },
+    );
+
     await batch.commit();
+  }
+
+  // ─── Doctor Rating ────────────────────────────────────────────────────────
+
+  Future<void> submitDoctorRating({
+    required String appointmentId,
+    required String doctorId,
+    required int rating,
+  }) async {
+    await _db.runTransaction((tx) async {
+      final doctorRef = _db.collection(AppConstants.colDoctors).doc(doctorId);
+      final apptRef   = _db.collection(AppConstants.colAppointments).doc(appointmentId);
+
+      final doctorSnap = await tx.get(doctorRef);
+      if (!doctorSnap.exists) return;
+
+      final currentRating     = (doctorSnap.data()?['rating'] as num?)?.toDouble() ?? 0.0;
+      final currentReviewCount = (doctorSnap.data()?['reviewCount'] as int?) ?? 0;
+
+      final newCount  = currentReviewCount + 1;
+      final newRating = ((currentRating * currentReviewCount) + rating) / newCount;
+
+      tx.update(doctorRef, {
+        'rating':      newRating,
+        'reviewCount': newCount,
+      });
+      tx.update(apptRef, {
+        'patientRating': rating,
+      });
+    });
+  }
+
+  // ─── Consultation Notes ───────────────────────────────────────────────────
+
+  Stream<List<ConsultationNote>> watchConsultationNotes(String patientId, String doctorId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection('consultationNotes')
+        .where('doctorId', isEqualTo: doctorId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => ConsultationNote.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addConsultationNote(ConsultationNote note) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(note.patientId)
+        .collection('consultationNotes')
+        .doc(note.id)
+        .set(note.toMap());
+  }
+
+  Future<void> deleteConsultationNote(String patientId, String noteId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection('consultationNotes')
+        .doc(noteId)
+        .delete();
+  }
+
+  // ─── Vitals ───────────────────────────────────────────────────────────────
+
+  Stream<List<VitalReading>> watchVitals(String patientId, {int limit = 50}) {
+    return _db
+        .collection('vitals')
+        .where('patientId', isEqualTo: patientId)
+        .orderBy('recordedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => VitalReading.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addVitalReading(VitalReading reading) =>
+      _db.collection('vitals').doc(reading.id).set(reading.toMap());
+
+  Future<void> deleteVitalReading(String readingId) =>
+      _db.collection('vitals').doc(readingId).delete();
+
+  // ─── Pill Count ───────────────────────────────────────────────────────────
+
+  Future<void> decrementPillCount(String patientId, String medicineId) async {
+    final ref = _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId);
+    await ref.update({'pillsRemaining': FieldValue.increment(-1)});
   }
 }

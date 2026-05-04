@@ -29,7 +29,7 @@ class AppointmentsScreen extends ConsumerWidget {
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+        error: (_, __) => const EmptyState(icon: Icons.wifi_off_rounded, title: "Can't load appointments", subtitle: 'Check your connection and pull to refresh.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -43,7 +43,7 @@ class AppointmentsScreen extends ConsumerWidget {
 
           return apptsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+            error: (_, __) => const EmptyState(icon: Icons.wifi_off_rounded, title: "Can't load appointments", subtitle: 'Check your connection and pull to refresh.'),
             data: (appts) {
               if (appts.isEmpty) {
                 return const EmptyState(
@@ -62,7 +62,7 @@ class AppointmentsScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (pending.isNotEmpty) ...[
-                    const SectionHeader(title: 'Pending'),
+                    const SectionHeader(title: 'Awaiting Confirmation'),
                     const SizedBox(height: 10),
                     ...pending.map((a) => _ApptCard(appt: a)),
                     const SizedBox(height: 20),
@@ -113,7 +113,7 @@ class _ApptCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     StatusBadge badge;
     if (appt.isPending) {
-      badge = StatusBadge.warning('Pending');
+      badge = StatusBadge.warning('Awaiting Confirmation');
     } else if (appt.isConfirmed) {
       badge = StatusBadge.success('Confirmed');
     } else if (appt.isCompleted) {
@@ -193,8 +193,41 @@ class _ApptCard extends ConsumerWidget {
               ),
             ),
           ],
+          if (appt.isCompleted) ...[
+            const SizedBox(height: 12),
+            appt.patientRating != null
+                ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    ...List.generate(5, (i) => Icon(
+                      i < appt.patientRating! ? Icons.star_rounded : Icons.star_outline_rounded,
+                      size: 18,
+                      color: AppColors.warning,
+                    )),
+                    const SizedBox(width: 8),
+                    Text('Your rating', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  ])
+                : OutlinedButton.icon(
+                    onPressed: () => _showRateSheet(context),
+                    icon: const Icon(Icons.star_outline_rounded, size: 16),
+                    label: const Text('Rate this appointment'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 40),
+                      foregroundColor: AppColors.warning,
+                      side: const BorderSide(color: AppColors.warning),
+                    ),
+                  ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _showRateSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _RateAppointmentSheet(appt: appt),
     );
   }
 
@@ -222,6 +255,95 @@ class _ApptCard extends ConsumerWidget {
             child: const Text('Cancel Request'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Rate Appointment Sheet ────────────────────────────────────────────────────
+class _RateAppointmentSheet extends ConsumerStatefulWidget {
+  final Appointment appt;
+  const _RateAppointmentSheet({required this.appt});
+  @override
+  ConsumerState<_RateAppointmentSheet> createState() => _RateAppointmentSheetState();
+}
+
+class _RateAppointmentSheetState extends ConsumerState<_RateAppointmentSheet> {
+  int _rating = 0;
+  bool _submitting = false;
+
+  void _submit() async {
+    if (_rating == 0) return;
+    setState(() => _submitting = true);
+    await ref.read(ratingNotifierProvider.notifier).submit(
+          appointmentId: widget.appt.id,
+          doctorId: widget.appt.doctorId,
+          rating: _rating,
+        );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    final state = ref.read(ratingNotifierProvider);
+    if (state is AsyncError) {
+      showAppSnack(context, 'Failed to submit rating. Try again.');
+      return;
+    }
+    Navigator.pop(context);
+    showAppSnack(context, 'Rating submitted! Thank you.');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Text('Rate Dr. ${widget.appt.doctorName}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            const SizedBox(height: 6),
+            const Text('How was your appointment experience?',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            const SizedBox(height: 24),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) {
+              final star = i + 1;
+              return GestureDetector(
+                onTap: () => setState(() => _rating = star),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(
+                    _rating >= star ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 40,
+                    color: AppColors.warning,
+                  ),
+                ),
+              );
+            })),
+            const SizedBox(height: 8),
+            Text(
+              _rating == 0 ? 'Tap to rate' : ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][_rating],
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _rating == 0 ? AppColors.mutedForeground : AppColors.warning,
+                  fontFamily: 'Inter'),
+            ),
+            const SizedBox(height: 24),
+            _submitting
+                ? const CircularProgressIndicator()
+                : GradientButton(
+                    label: 'Submit Rating',
+                    colors: [AppColors.warning, const Color(0xFFB45309)],
+                    onPressed: _rating > 0 ? _submit : () {},
+                  ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

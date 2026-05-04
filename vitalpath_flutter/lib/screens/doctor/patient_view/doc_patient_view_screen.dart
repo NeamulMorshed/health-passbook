@@ -13,6 +13,8 @@ import '../../../models/meal.dart';
 import '../../../models/activity_log.dart';
 import '../../../models/prescription.dart';
 import '../../../models/patient.dart';
+import '../../../models/consultation_note.dart';
+import 'package:intl/intl.dart';
 
 const _uuid = Uuid();
 
@@ -97,7 +99,7 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 4, vsync: this);
+    _tabCtrl = TabController(length: 5, vsync: this);
     _tabCtrl.addListener(() => setState(() {}));
   }
 
@@ -152,6 +154,7 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                   Tab(icon: Icon(Icons.medication_rounded, size: 18), text: 'Medicines'),
                   Tab(icon: Icon(Icons.monitor_heart_rounded, size: 18), text: 'Health Log'),
                   Tab(icon: Icon(Icons.description_rounded, size: 18), text: 'Rx History'),
+                  Tab(icon: Icon(Icons.note_alt_rounded, size: 18), text: 'Notes'),
                 ],
               ),
             ),
@@ -168,6 +171,11 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                   ),
                   _PrescriptionsTab(
                     rxAsync: rxAsync,
+                    patientId: widget.patientId,
+                    doctorId: widget.doctorId,
+                    doctorName: widget.doctorName,
+                  ),
+                  _NotesTab(
                     patientId: widget.patientId,
                     doctorId: widget.doctorId,
                     doctorName: widget.doctorName,
@@ -346,20 +354,49 @@ class _OverviewTab extends StatelessWidget {
         ],
 
         // Emergency contact
-        if (patient.emergencyContact != null &&
-            patient.emergencyContact!.isNotEmpty) ...[
+        if (patient.emergencyContact != null) ...[
           _SectionCard(
             title: 'Emergency Contact',
             icon: Icons.emergency_rounded,
-            child: Row(children: [
-              const Icon(Icons.phone_rounded,
-                  size: 16, color: AppColors.mutedForeground),
-              const SizedBox(width: 8),
-              Text(
-                patient.emergencyContact!,
-                style: const TextStyle(fontSize: 13, fontFamily: 'Inter'),
-              ),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.person_outline_rounded,
+                      size: 16, color: AppColors.mutedForeground),
+                  const SizedBox(width: 8),
+                  Text(
+                    patient.emergencyContact!.name.isNotEmpty
+                        ? patient.emergencyContact!.name
+                        : patient.emergencyContact!.phone,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                  ),
+                ]),
+                if (patient.emergencyContact!.relationship.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    patient.emergencyContact!.relationship,
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                  ),
+                ],
+                if (patient.emergencyContact!.name.isNotEmpty &&
+                    patient.emergencyContact!.phone.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    const Icon(Icons.phone_rounded,
+                        size: 14, color: AppColors.mutedForeground),
+                    const SizedBox(width: 6),
+                    Text(
+                      patient.emergencyContact!.phone,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                    ),
+                  ]),
+                ],
+              ],
+            ),
           ),
         ],
       ],
@@ -1128,6 +1165,157 @@ class _MacroStat extends StatelessWidget {
       ]);
 }
 
+// ─── Tab 5: Consultation Notes ────────────────────────────────────────────────
+class _NotesTab extends ConsumerStatefulWidget {
+  final String patientId, doctorId, doctorName;
+  const _NotesTab({required this.patientId, required this.doctorId, required this.doctorName});
+  @override
+  ConsumerState<_NotesTab> createState() => _NotesTabState();
+}
+
+class _NotesTabState extends ConsumerState<_NotesTab> {
+  final _noteCtrl = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  void _addNote() async {
+    final text = _noteCtrl.text.trim();
+    if (text.isEmpty) return;
+    setState(() => _saving = true);
+    await ref.read(consultationNoteNotifierProvider.notifier).add(
+          patientId: widget.patientId,
+          doctorId: widget.doctorId,
+          doctorName: widget.doctorName,
+          note: text,
+        );
+    _noteCtrl.clear();
+    if (mounted) setState(() => _saving = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final notesAsync = ref.watch(consultationNotesProvider(
+      (patientId: widget.patientId, doctorId: widget.doctorId),
+    ));
+
+    return Column(children: [
+      // Add note input area
+      Container(
+        color: AppColors.surface,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(
+            child: TextField(
+              controller: _noteCtrl,
+              maxLines: 3,
+              minLines: 1,
+              decoration: const InputDecoration(
+                hintText: 'Write a private consultation note…',
+                filled: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          _saving
+              ? const SizedBox(width: 42, height: 42,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+              : ElevatedButton(
+                  onPressed: _addNote,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.doctorPrimary,
+                    minimumSize: const Size(42, 42),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Icon(Icons.send_rounded, size: 18),
+                ),
+        ]),
+      ),
+      const Divider(height: 1, color: AppColors.border),
+
+      // Notes list
+      Expanded(
+        child: notesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const EmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Could not load notes',
+              subtitle: 'Check your connection and try again.'),
+          data: (notes) {
+            if (notes.isEmpty) {
+              return const EmptyState(
+                icon: Icons.note_alt_outlined,
+                title: 'No Notes Yet',
+                subtitle: 'Your private consultation notes will appear here.',
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: notes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, i) => _NoteCard(note: notes[i], onDelete: () async {
+                await ref.read(consultationNoteNotifierProvider.notifier)
+                    .delete(widget.patientId, notes[i].id);
+              }),
+            );
+          },
+        ),
+      ),
+    ]);
+  }
+}
+
+class _NoteCard extends StatelessWidget {
+  final ConsultationNote note;
+  final VoidCallback onDelete;
+  const _NoteCard({required this.note, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.note_alt_rounded, size: 15, color: AppColors.doctorPrimary),
+          const SizedBox(width: 6),
+          Text(DateFormat('MMM d, y · h:mm a').format(note.createdAt),
+              style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete Note', style: TextStyle(fontFamily: 'Inter')),
+                content: const Text('Delete this consultation note?', style: TextStyle(fontFamily: 'Inter')),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                    onPressed: () { Navigator.pop(ctx); onDelete(); },
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            ),
+            child: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.destructive),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Text(note.note, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', height: 1.5)),
+      ]),
+    );
+  }
+}
+
 // ─── Write Prescription Sheet ─────────────────────────────────────────────────
 class _PrescribeSheet extends ConsumerStatefulWidget {
   final String patientId, doctorId, doctorName;
@@ -1149,6 +1337,9 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
   void dispose() {
     _diagCtrl.dispose();
     _notesCtrl.dispose();
+    for (final m in _meds) {
+      m.dispose();
+    }
     super.dispose();
   }
 
@@ -1353,4 +1544,10 @@ class _MedEntry {
   final dosageCtrl = TextEditingController();
   String frequency = AppConstants.freqOnce;
   final instructionsCtrl = TextEditingController();
+
+  void dispose() {
+    nameCtrl.dispose();
+    dosageCtrl.dispose();
+    instructionsCtrl.dispose();
+  }
 }

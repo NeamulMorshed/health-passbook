@@ -72,6 +72,17 @@ class NotificationService {
     );
   }
 
+  // ── Medicine reminder helper ──────────────────────────────────────────────
+  // Builds a medicine notification title, optionally prefixed with the
+  // family member's name: "[Name]'s medicine: [MedicineName]"
+
+  static String medicineReminderTitle(String medicineName, {String? familyMemberName}) {
+    if (familyMemberName != null && familyMemberName.isNotEmpty) {
+      return "$familyMemberName's medicine: $medicineName";
+    }
+    return 'Time to take $medicineName';
+  }
+
   // ── Unified scheduled reminder ────────────────────────────────────────────
   // repeat: 'daily' | 'weekly' | 'once'
 
@@ -83,14 +94,18 @@ class NotificationService {
     required int minute,
     required String repeat,
     String channel = AppConstants.notifChannelMedicine,
+    String? familyMemberName,
   }) async {
+    final effectiveTitle = familyMemberName != null
+        ? medicineReminderTitle(title, familyMemberName: familyMemberName)
+        : title;
     final DateTimeComponents? components = switch (repeat) {
       'daily'  => DateTimeComponents.time,
       'weekly' => DateTimeComponents.dayOfWeekAndTime,
       _        => null, // 'once'
     };
     await _local.zonedSchedule(
-      id, title, body,
+      id, effectiveTitle, body,
       _nextInstanceOfTime(hour, minute),
       NotificationDetails(
         android: AndroidNotificationDetails(channel, channel, importance: Importance.high, priority: Priority.high),

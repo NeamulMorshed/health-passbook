@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../models/doctor.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 
@@ -65,6 +67,16 @@ class DocProfileScreen extends ConsumerWidget {
                 ]),
               ),
 
+              // Verification banner
+              docAsync.whenData((doc) {
+                final status = doc?.verificationStatus ?? 'unverified';
+                if (status == 'verified') return null;
+                return _VerificationBanner(
+                  uid: user.uid,
+                  isPending: status == 'pending',
+                );
+              }).value ?? const SizedBox.shrink(),
+
               const SizedBox(height: 12),
 
               // Doctor info
@@ -79,7 +91,12 @@ class DocProfileScreen extends ConsumerWidget {
                     _InfoRow('Specialty', doc?.specialty ?? 'Not set'),
                     _InfoRow('Hospital', doc?.hospital ?? 'Not set'),
                     _InfoRow('Phone', doc?.phone ?? user.phone),
-                    _InfoRow('Verified', doc?.isVerified == true ? 'Yes' : 'Pending'),
+                    _InfoRow('Verification', _verificationLabel(doc?.verificationStatus)),
+                    if (doc?.availableHours != null && doc!.availableHours!.isNotEmpty)
+                      _InfoRow('Available Hours', doc.availableHours!),
+                    if (doc?.consultationFee != null && doc!.consultationFee!.isNotEmpty)
+                      _InfoRow('Consultation Fee', doc.consultationFee!),
+                    _InfoRow('Accepting Patients', doc?.acceptingNewPatients == true ? 'Yes' : 'Not currently'),
                   ]),
                 ),
                 loading: () => const SizedBox(),
@@ -133,48 +150,11 @@ class DocProfileScreen extends ConsumerWidget {
 
   void _showEditSheet(BuildContext context, WidgetRef ref, String uid) {
     final doc = ref.read(doctorProfileProvider(uid)).asData?.value;
-    final specialtyCtrl = TextEditingController(text: doc?.specialty ?? '');
-    final hospitalCtrl = TextEditingController(text: doc?.hospital ?? '');
-    final licenseCtrl = TextEditingController(text: doc?.licenseNo ?? '');
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
-            const Text('Edit Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            const SizedBox(height: 20),
-            TextField(controller: specialtyCtrl, decoration: const InputDecoration(labelText: 'Specialty', hintText: 'e.g. Cardiology')),
-            const SizedBox(height: 12),
-            TextField(controller: hospitalCtrl, decoration: const InputDecoration(labelText: 'Hospital', hintText: 'e.g. City General Hospital')),
-            const SizedBox(height: 12),
-            TextField(controller: licenseCtrl, decoration: const InputDecoration(labelText: 'License Number')),
-            const SizedBox(height: 20),
-            GradientButton(
-              label: 'Save Changes',
-              colors: [AppColors.doctorPrimary, const Color(0xFF5B21B6)],
-              onPressed: () async {
-                final data = <String, dynamic>{};
-                if (specialtyCtrl.text.isNotEmpty) data['specialty'] = specialtyCtrl.text.trim();
-                if (hospitalCtrl.text.isNotEmpty) data['hospital'] = hospitalCtrl.text.trim();
-                if (licenseCtrl.text.isNotEmpty) data['licenseNo'] = licenseCtrl.text.trim();
-                if (data.isNotEmpty) {
-                  await ref.read(firestoreServiceProvider).updateDoctorProfile(uid, data);
-                  ref.invalidate(doctorProfileProvider(uid));
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-            ),
-            const SizedBox(height: 8),
-          ]),
-        ),
-      ),
+      builder: (_) => _EditProfileSheet(uid: uid, doc: doc, ref: ref),
     );
   }
 
@@ -222,6 +202,107 @@ class DocProfileScreen extends ConsumerWidget {
   }
 }
 
+// ─── Edit Profile Sheet ────────────────────────────────────────────────────────
+class _EditProfileSheet extends StatefulWidget {
+  final String uid;
+  final DoctorProfile? doc;
+  final WidgetRef ref;
+  const _EditProfileSheet({required this.uid, required this.doc, required this.ref});
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _specialtyCtrl;
+  late final TextEditingController _hospitalCtrl;
+  late final TextEditingController _licenseCtrl;
+  late final TextEditingController _hoursCtrl;
+  late final TextEditingController _feeCtrl;
+  late bool _accepting;
+
+  @override
+  void initState() {
+    super.initState();
+    _specialtyCtrl = TextEditingController(text: widget.doc?.specialty ?? '');
+    _hospitalCtrl  = TextEditingController(text: widget.doc?.hospital ?? '');
+    _licenseCtrl   = TextEditingController(text: widget.doc?.licenseNo ?? '');
+    _hoursCtrl     = TextEditingController(text: widget.doc?.availableHours ?? '');
+    _feeCtrl       = TextEditingController(text: widget.doc?.consultationFee ?? '');
+    _accepting     = widget.doc?.acceptingNewPatients ?? true;
+  }
+
+  @override
+  void dispose() {
+    _specialtyCtrl.dispose();
+    _hospitalCtrl.dispose();
+    _licenseCtrl.dispose();
+    _hoursCtrl.dispose();
+    _feeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 20),
+          const Text('Edit Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+          const SizedBox(height: 20),
+          TextField(controller: _specialtyCtrl,
+              decoration: const InputDecoration(labelText: 'Specialty', hintText: 'e.g. Cardiology')),
+          const SizedBox(height: 12),
+          TextField(controller: _hospitalCtrl,
+              decoration: const InputDecoration(labelText: 'Hospital', hintText: 'e.g. City General Hospital')),
+          const SizedBox(height: 12),
+          TextField(controller: _licenseCtrl,
+              decoration: const InputDecoration(labelText: 'License Number')),
+          const SizedBox(height: 12),
+          TextField(controller: _hoursCtrl,
+              decoration: const InputDecoration(labelText: 'Available Hours', hintText: 'e.g. Mon–Fri 9am–5pm')),
+          const SizedBox(height: 12),
+          TextField(controller: _feeCtrl,
+              decoration: const InputDecoration(labelText: 'Consultation Fee', hintText: 'e.g. \$50 / Free')),
+          const SizedBox(height: 12),
+          Row(children: [
+            const Expanded(child: Text('Accepting New Patients',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter'))),
+            Switch(
+              value: _accepting,
+              activeThumbColor: AppColors.doctorPrimary,
+              activeTrackColor: AppColors.doctorPrimary.withValues(alpha: 0.4),
+              onChanged: (v) => setState(() => _accepting = v),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          GradientButton(
+            label: 'Save Changes',
+            colors: [AppColors.doctorPrimary, const Color(0xFF5B21B6)],
+            onPressed: () async {
+              final data = <String, dynamic>{
+                'acceptingNewPatients': _accepting,
+              };
+              if (_specialtyCtrl.text.isNotEmpty) data['specialty'] = _specialtyCtrl.text.trim();
+              if (_hospitalCtrl.text.isNotEmpty)  data['hospital']  = _hospitalCtrl.text.trim();
+              if (_licenseCtrl.text.isNotEmpty)   data['licenseNo'] = _licenseCtrl.text.trim();
+              data['availableHours']  = _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim();
+              data['consultationFee'] = _feeCtrl.text.trim().isEmpty  ? null : _feeCtrl.text.trim();
+              await widget.ref.read(firestoreServiceProvider).updateDoctorProfile(widget.uid, data);
+              widget.ref.invalidate(doctorProfileProvider(widget.uid));
+              if (context.mounted) Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
+}
+
 class _HeaderStat extends StatelessWidget {
   final String value, label;
   const _HeaderStat(this.value, this.label);
@@ -262,4 +343,112 @@ class _MenuItem extends StatelessWidget {
     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
     onTap: onTap,
   );
+}
+
+String _verificationLabel(String? status) => switch (status) {
+  'verified' => 'Verified',
+  'pending'  => 'Pending review',
+  _          => 'Unverified',
+};
+
+// ── Verification Banner ───────────────────────────────────────────────────────
+class _VerificationBanner extends StatefulWidget {
+  final String uid;
+  final bool isPending;
+  const _VerificationBanner({required this.uid, required this.isPending});
+  @override
+  State<_VerificationBanner> createState() => _VerificationBannerState();
+}
+
+class _VerificationBannerState extends State<_VerificationBanner> {
+  bool _requesting = false;
+
+  Future<void> _requestVerification() async {
+    setState(() => _requesting = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('verificationRequests')
+          .doc(widget.uid)
+          .set({
+        'uid': widget.uid,
+        'status': 'pending',
+        'requestedAt': FieldValue.serverTimestamp(),
+      });
+      await FirebaseFirestore.instance
+          .collection('doctors')
+          .doc(widget.uid)
+          .update({'verificationStatus': 'pending'});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification request submitted. We\'ll review within 2–3 business days.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _requesting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isPending ? AppColors.warning : AppColors.destructive;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+      padding: const EdgeInsets.all(16),
+      color: color.withValues(alpha: 0.07),
+      child: Row(children: [
+        Icon(
+          widget.isPending ? Icons.hourglass_top_rounded : Icons.verified_outlined,
+          color: color,
+          size: 22,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              widget.isPending ? 'Verification pending' : 'Profile unverified',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  fontFamily: 'Inter'),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              widget.isPending
+                  ? 'Your request is under review. We\'ll notify you when it\'s done.'
+                  : 'Patients can see this. Request verification to show a trusted badge.',
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mutedForeground,
+                  fontFamily: 'Inter'),
+            ),
+          ]),
+        ),
+        if (!widget.isPending) ...[
+          const SizedBox(width: 10),
+          _requesting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : TextButton(
+                  onPressed: _requestVerification,
+                  style: TextButton.styleFrom(
+                    backgroundColor: color.withValues(alpha: 0.12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: Text('Request',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'Inter',
+                          color: color,
+                          fontWeight: FontWeight.w600)),
+                ),
+        ],
+      ]),
+    );
+  }
 }
