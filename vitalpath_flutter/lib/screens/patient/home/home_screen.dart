@@ -232,7 +232,7 @@ class _FamilyStatusBar extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             SizedBox(
-              height: 76,
+              height: 84,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: members.length,
