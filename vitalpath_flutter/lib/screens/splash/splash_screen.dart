@@ -22,6 +22,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   int _step = 0;
   bool _navigated = false;
+  bool _advancedManually = false;
 
   @override
   void initState() {
@@ -60,6 +61,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void _runOnboardingAnimation() async {
     await Future<void>.delayed(const Duration(milliseconds: 1400));
     if (!mounted) return;
+    // User manually advanced — this scheduled call is stale, bail out.
+    if (_advancedManually) {
+      _advancedManually = false;
+      return;
+    }
 
     if (_step < 2) {
       setState(() => _step++);
@@ -70,6 +76,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     } else {
       await Future<void>.delayed(const Duration(milliseconds: 800));
       if (mounted) _navigate();
+    }
+  }
+
+  void _nextStep() {
+    _advancedManually = true;
+    if (_step < 2) {
+      setState(() => _step++);
+      _ctrl
+        ..reset()
+        ..forward();
+      _runOnboardingAnimation();
+    } else {
+      _navigate();
     }
   }
 
@@ -221,29 +240,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // "Get Started" CTA on final slide
-                    if (_step == 2)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: _navigate,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: data.color,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14)),
-                            ),
-                            child: const Text('Get Started',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Inter',
-                                    color: Colors.white)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _nextStep,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: data.color,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: Text(
+                            _step < 2 ? 'Next' : 'Get Started',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Inter',
+                                color: Colors.white),
                           ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
