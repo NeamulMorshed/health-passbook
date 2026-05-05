@@ -11,6 +11,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../models/activity_log.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -169,9 +170,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           caloriesBurned: kcal,
         );
 
+    int hp = 0;
+    try {
+      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: finalSteps, type: _activityType);
+    } catch (_) {}
+
     if (mounted) {
+      final hpSuffix = hp > 0 ? '  +$hp HP' : '';
       showAppSnack(context,
-          '${ActivityType.labelFor(_activityType)} saved — ${_distanceKm.toStringAsFixed(2)} km · $finalSteps steps · ${_formatTime(_seconds)}');
+          '${ActivityType.labelFor(_activityType)} saved — ${_distanceKm.toStringAsFixed(2)} km · $finalSteps steps · ${_formatTime(_seconds)}$hpSuffix');
     }
   }
 
@@ -197,12 +204,18 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           caloriesBurned: calories,
         );
 
+    int hp = 0;
+    try {
+      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: 0, type: _activityType);
+    } catch (_) {}
+
     if (mounted) {
       _manualDurationCtrl.clear();
       _manualCaloriesCtrl.clear();
       _manualNotesCtrl.clear();
+      final hpSuffix = hp > 0 ? '  +$hp HP' : '';
       showAppSnack(context,
-          '${ActivityType.labelFor(_activityType)} logged — $minutes min${calories != null ? ' · $calories kcal' : ''}');
+          '${ActivityType.labelFor(_activityType)} logged — $minutes min${calories != null ? ' · $calories kcal' : ''}$hpSuffix');
     }
   }
 
