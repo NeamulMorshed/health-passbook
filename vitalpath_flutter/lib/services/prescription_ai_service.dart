@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../core/config/ai_config.dart';
 import '../core/constants/app_constants.dart';
 import 'drug_database_service.dart';
+import 'rxnorm_service.dart';
 
 // ── Result models ─────────────────────────────────────────────────────────────
 
@@ -133,22 +134,14 @@ class PrescriptionAiService {
     final db = DrugDatabaseService.instance;
     await db.load();
 
-    final medicines = ((parsed['medicines'] as List?) ?? [])
+    final rawMedicines = ((parsed['medicines'] as List?) ?? [])
         .map((e) => ScannedMedicine.fromMap(e as Map<String, dynamic>))
         .where((m) => m.name.isNotEmpty)
-        .map((m) {
-          final match = db.findBestMatch(m.name);
-          if (match == null) return m;
-          return ScannedMedicine(
-            name: db.canonicalName(match),
-            dosage: m.dosage,
-            frequency: m.frequency,
-            duration: m.duration,
-            notes: m.notes,
-            uncertain: m.uncertain && match.confidence < 0.92,
-          );
-        })
         .toList();
+
+    // Enrich each medicine: offline DB first, RxNorm API fallback.
+    // Both lookups are safe — any failure silently preserves the raw AI name.
+    final medicines = await Future.wait(rawMedicines.map(_enrich));
 
     return PrescriptionScanResult(
       doctorName: (parsed['doctor_name'] as String?)?.trim().isNotEmpty == true
@@ -156,6 +149,43 @@ class PrescriptionAiService {
           : null,
       medicines: medicines,
     );
+  }
+
+  // ── Enrichment pipeline ───────────────────────────────────────────────────
+
+  static final _db = DrugDatabaseService.instance;
+
+  /// Resolves [m]'s name against the offline drug DB, then (on miss) RxNorm.
+  /// Always returns a valid ScannedMedicine — worst case the raw AI output.
+  static Future<ScannedMedicine> _enrich(ScannedMedicine m) async {
+    // 1. Offline Levenshtein match (fast, no network).
+    final offlineMatch = _db.findBestMatch(m.name);
+    if (offlineMatch != null) {
+      return ScannedMedicine(
+        name: _db.canonicalName(offlineMatch),
+        dosage: m.dosage,
+        frequency: m.frequency,
+        duration: m.duration,
+        notes: m.notes,
+        uncertain: m.uncertain && offlineMatch.confidence < 0.92,
+      );
+    }
+
+    // 2. RxNorm API fallback (network, Firestore-cached after first lookup).
+    final rxGeneric = await RxNormService.instance.lookupGeneric(m.name);
+    if (rxGeneric != null) {
+      return ScannedMedicine(
+        name: rxGeneric,
+        dosage: m.dosage,
+        frequency: m.frequency,
+        duration: m.duration,
+        notes: m.notes,
+        uncertain: false,
+      );
+    }
+
+    // 3. No match — keep the raw AI name as-is.
+    return m;
   }
 
   // ── Prompt ────────────────────────────────────────────────────────────────
