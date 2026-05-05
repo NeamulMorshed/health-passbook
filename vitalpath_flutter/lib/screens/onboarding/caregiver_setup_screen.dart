@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -22,7 +22,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
   // Step 1 — Who are you caring for?
   final _nameCtrl = TextEditingController();
-  final _ageCtrl  = TextEditingController();
+  DateTime? _dob;
   String _relationship = AppConstants.relationships.first;
 
   // Step 2 — Doctor (optional, stored as notes only; real linking done in-app)
@@ -32,7 +32,6 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
   void dispose() {
     _pageCtrl.dispose();
     _nameCtrl.dispose();
-    _ageCtrl.dispose();
     _doctorNoteCtrl.dispose();
     super.dispose();
   }
@@ -82,7 +81,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
         uid,
         name: _nameCtrl.text.trim(),
         relationship: _relationship,
-        age: int.tryParse(_ageCtrl.text),
+        dateOfBirth: _dob,
       );
 
       // Mark caregiver onboarding complete
@@ -149,7 +148,8 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
               children: [
                 _Step1(
                   nameCtrl: _nameCtrl,
-                  ageCtrl: _ageCtrl,
+                  dob: _dob,
+                  onDobChanged: (d) => setState(() => _dob = d),
                   relationship: _relationship,
                   onRelationshipChanged: (r) => setState(() => _relationship = r),
                 ),
@@ -195,13 +195,16 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
 // ── Step 1: Who are you caring for? ───────────────────────────────────────────
 class _Step1 extends StatelessWidget {
-  final TextEditingController nameCtrl, ageCtrl;
+  final TextEditingController nameCtrl;
+  final DateTime? dob;
+  final ValueChanged<DateTime?> onDobChanged;
   final String relationship;
   final ValueChanged<String> onRelationshipChanged;
 
   const _Step1({
     required this.nameCtrl,
-    required this.ageCtrl,
+    required this.dob,
+    required this.onDobChanged,
     required this.relationship,
     required this.onRelationshipChanged,
   });
@@ -260,12 +263,50 @@ class _Step1 extends StatelessWidget {
           }).toList(),
         ),
         const SizedBox(height: 16),
-        _label('Their Age (optional)'),
-        TextField(
-          controller: ageCtrl,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(hintText: 'e.g. 68'),
+        _label('Date of Birth (optional)'),
+        const SizedBox(height: 6),
+        InkWell(
+          onTap: () async {
+            final now = DateTime.now();
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: dob ?? DateTime(now.year - 40),
+              firstDate: DateTime(now.year - 120),
+              lastDate: now,
+              helpText: 'Date of birth',
+            );
+            if (picked != null) onDobChanged(picked);
+          },
+          borderRadius: BorderRadius.circular(10),
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.cake_outlined),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    dob != null
+                        ? DateFormat('d MMM yyyy').format(dob!)
+                        : 'Tap to select',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: dob != null
+                          ? AppColors.foreground
+                          : AppColors.mutedForeground,
+                    ),
+                  ),
+                ),
+                if (dob != null)
+                  GestureDetector(
+                    onTap: () => onDobChanged(null),
+                    child: const Icon(Icons.clear_rounded,
+                        size: 16, color: AppColors.mutedForeground),
+                  ),
+              ],
+            ),
+          ),
         ),
       ],
     );
