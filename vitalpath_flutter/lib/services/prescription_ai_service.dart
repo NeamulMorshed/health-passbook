@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../core/config/ai_config.dart';
 import '../core/constants/app_constants.dart';
+import 'drug_database_service.dart';
 
 // ── Result models ─────────────────────────────────────────────────────────────
 
@@ -129,14 +130,31 @@ class PrescriptionAiService {
 
     final parsed = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
 
+    final db = DrugDatabaseService.instance;
+    await db.load();
+
+    final medicines = ((parsed['medicines'] as List?) ?? [])
+        .map((e) => ScannedMedicine.fromMap(e as Map<String, dynamic>))
+        .where((m) => m.name.isNotEmpty)
+        .map((m) {
+          final match = db.findBestMatch(m.name);
+          if (match == null) return m;
+          return ScannedMedicine(
+            name: db.canonicalName(match),
+            dosage: m.dosage,
+            frequency: m.frequency,
+            duration: m.duration,
+            notes: m.notes,
+            uncertain: m.uncertain && match.confidence < 0.92,
+          );
+        })
+        .toList();
+
     return PrescriptionScanResult(
       doctorName: (parsed['doctor_name'] as String?)?.trim().isNotEmpty == true
           ? (parsed['doctor_name'] as String).trim()
           : null,
-      medicines: ((parsed['medicines'] as List?) ?? [])
-          .map((e) => ScannedMedicine.fromMap(e as Map<String, dynamic>))
-          .where((m) => m.name.isNotEmpty)
-          .toList(),
+      medicines: medicines,
     );
   }
 
