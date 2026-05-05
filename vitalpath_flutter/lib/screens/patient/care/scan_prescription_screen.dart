@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,8 +9,11 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
+import '../../../models/drug_interaction.dart';
 import '../../../models/family_member.dart';
+import '../../../services/drug_interaction_service.dart';
 import '../../../services/prescription_ai_service.dart';
+import '../../../widgets/interaction_warning_card.dart';
 
 // ── Data class for one entry in the review form ───────────────────────────────
 
@@ -62,6 +66,11 @@ class _ScanPrescriptionScreenState
   bool _usedAi = false;
   final List<_ScannedEntry> _entries = [];
   bool _isSaving = false;
+
+  // Phase C — drug interaction check
+  List<DrugInteraction> _interactions = [];
+  bool _checkingInteractions = false;
+  bool _interactionCheckDone = false;
 
   final _picker = ImagePicker();
 
@@ -138,6 +147,7 @@ class _ScanPrescriptionScreenState
                 }));
               _state = _ScanState.review;
             });
+            unawaited(_checkInteractions());
             return;
           }
         } catch (_) {
@@ -158,6 +168,7 @@ class _ScanPrescriptionScreenState
         _entries.addAll(parsed.isNotEmpty ? parsed : [_ScannedEntry()]);
         _state = _ScanState.review;
       });
+      unawaited(_checkInteractions());
     } catch (_) {
       setState(() {
         _entries..clear()..add(_ScannedEntry());
@@ -248,6 +259,50 @@ class _ScanPrescriptionScreenState
     }
 
     return entries;
+  }
+
+  // ── Drug interaction check ────────────────────────────────────────────────
+
+  /// Runs in the background after scan completes — does not block the review UI.
+  /// Checks new medicines against each other AND against existing saved medicines.
+  Future<void> _checkInteractions() async {
+    final newNames = _entries
+        .map((e) => e.name.text.trim())
+        .where((n) => n.isNotEmpty)
+        .toList();
+    if (newNames.isEmpty) return; // Need ≥1 new + possibly existing to form a pair.
+
+    if (!mounted) return;
+    setState(() {
+      _checkingInteractions = true;
+      _interactionCheckDone = false;
+    });
+
+    try {
+      final existingNames =
+          (ref.read(medicinesProvider(widget.uid)).valueOrNull ?? [])
+              .map((m) => m.name)
+              .toList();
+      final allNames = [...newNames, ...existingNames];
+
+      final result = await DrugInteractionService.instance
+          .checkInteractions(allNames);
+
+      if (mounted) {
+        setState(() {
+          _interactions = result;
+          _checkingInteractions = false;
+          _interactionCheckDone = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _checkingInteractions = false;
+          _interactionCheckDone = true;
+        });
+      }
+    }
   }
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -502,6 +557,14 @@ class _ScanPrescriptionScreenState
             ),
           ]),
         ),
+
+        // Interaction warnings (loading → clear → list)
+        if (_checkingInteractions || _interactionCheckDone)
+          InteractionWarningCard(
+            interactions: _interactions,
+            isLoading: _checkingInteractions,
+            isDone: _interactionCheckDone,
+          ),
 
         Expanded(
           child: ListView(
