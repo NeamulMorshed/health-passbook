@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/family_member.dart';
+import '../../../services/prescription_ai_service.dart';
 
 // ── Data class for one entry in the review form ───────────────────────────────
 
@@ -58,6 +59,7 @@ class _ScanPrescriptionScreenState
   File? _imageFile;
   String? _uploadedPhotoUrl;
   String? _prescribedBy;
+  bool _usedAi = false;
   final List<_ScannedEntry> _entries = [];
   bool _isSaving = false;
 
@@ -99,39 +101,66 @@ class _ScanPrescriptionScreenState
     await _processImage(file);
   }
 
-  // ── OCR + upload ──────────────────────────────────────────────────────────
+  // ── AI + upload ───────────────────────────────────────────────────────────
 
   Future<void> _processImage(File file) async {
     try {
-      // Upload first so the URL is available regardless of OCR result
-      final ts = DateTime.now().millisecondsSinceEpoch;
+      // Upload first so the URL is available regardless of scan result.
+      final ts  = DateTime.now().millisecondsSinceEpoch;
       final ref = FirebaseStorage.instance
           .ref('${AppConstants.storagePrescriptions}/${widget.uid}/scan_$ts.jpg');
       await ref.putFile(file);
       _uploadedPhotoUrl = await ref.getDownloadURL();
 
-      // Run OCR
+      // ── Primary: Claude Vision ─────────────────────────────────────────────
+      final aiService = PrescriptionAiService();
+      if (aiService.isConfigured) {
+        try {
+          final result = await aiService.scan(file);
+          if (result.hasData) {
+            _prescribedBy = result.doctorName;
+            _usedAi = true;
+            setState(() {
+              _entries
+                ..clear()
+                ..addAll(result.medicines.map((m) {
+                  final noteParts = [
+                    if (m.duration != null) 'Duration: ${m.duration}',
+                    if (m.notes != null) m.notes!,
+                  ];
+                  return _ScannedEntry(
+                    initialName:   m.name,
+                    initialDosage: m.dosage,
+                    initialNotes:  noteParts.join(' · '),
+                    frequency:     m.frequency,
+                    isUncertain:   m.uncertain,
+                  );
+                }));
+              _state = _ScanState.review;
+            });
+            return;
+          }
+        } catch (_) {
+          // AI failed — fall through to MLKit.
+        }
+      }
+
+      // ── Fallback: MLKit OCR + regex ────────────────────────────────────────
+      _usedAi = false;
       final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
       final inputImage = InputImage.fromFile(file);
-      final result = await recognizer.processImage(inputImage);
+      final ocrResult  = await recognizer.processImage(inputImage);
       await recognizer.close();
-
-      final parsed = _parsePrescription(result.text);
+      final parsed = _parsePrescription(ocrResult.text);
 
       setState(() {
         _entries.clear();
-        if (parsed.isEmpty) {
-          // Fallback: one blank entry, user fills in manually
-          _entries.add(_ScannedEntry());
-        } else {
-          _entries.addAll(parsed);
-        }
+        _entries.addAll(parsed.isNotEmpty ? parsed : [_ScannedEntry()]);
         _state = _ScanState.review;
       });
     } catch (_) {
       setState(() {
-        _entries.clear();
-        _entries.add(_ScannedEntry());
+        _entries..clear()..add(_ScannedEntry());
         _state = _ScanState.review;
       });
     }
@@ -442,7 +471,7 @@ class _ScanPrescriptionScreenState
 
     return Column(
       children: [
-        // OCR result banner
+        // Scan result banner
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -452,7 +481,7 @@ class _ScanPrescriptionScreenState
           child: Row(children: [
             Icon(
               hasOcrData
-                  ? Icons.auto_fix_high_rounded
+                  ? (_usedAi ? Icons.smart_toy_rounded : Icons.auto_fix_high_rounded)
                   : Icons.warning_amber_rounded,
               size: 16,
               color: hasOcrData ? AppColors.success : AppColors.warning,
@@ -461,7 +490,7 @@ class _ScanPrescriptionScreenState
             Expanded(
               child: Text(
                 hasOcrData
-                    ? 'We found ${_entries.length} medicine${_entries.length == 1 ? '' : 's'}. Review and correct if needed.'
+                    ? '${_usedAi ? 'AI' : 'OCR'} found ${_entries.length} medicine${_entries.length == 1 ? '' : 's'}. Review and correct if needed.'
                     : 'Couldn\'t read the prescription clearly. Please fill in the details manually.',
                 style: TextStyle(
                   fontSize: 12,
