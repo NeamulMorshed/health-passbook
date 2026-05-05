@@ -397,7 +397,7 @@ class _MedicineTab extends ConsumerWidget {
         // ── Medicine list ──────────────────────────────────────────────────
         Expanded(
           child: medsAsync.when(
-            loading: () => const _ShimmerCardList(height: 90),
+            loading: () => const _ShimmerCardList(height: 140),
             error: (e, _) =>
                 EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
             data: (meds) {
