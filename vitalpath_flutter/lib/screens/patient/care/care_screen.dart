@@ -8,7 +8,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-// import '../../../providers/gamification_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
 import '../../../models/family_member.dart';
@@ -581,7 +581,14 @@ class _MedCardState extends ConsumerState<_MedCard> {
       if (fm != null) {
         await ref.read(familyMedicinePatchProvider).logDose(widget.uid, fm.id, widget.med.id);
       } else {
-        await ref.read(medicineNotifierProvider.notifier).logDose(widget.uid, widget.med.id);
+        final hp = await ref.read(medicineNotifierProvider.notifier).logDose(widget.uid, widget.med.id);
+        if (hp > 0 && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('+$hp HP  Dose logged!'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
       }
     } finally {
       if (mounted) setState(() => _isTaking = false);
@@ -1117,7 +1124,14 @@ class _MedDetailSheet extends ConsumerWidget {
                       if (familyMember != null) {
                         await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
                       } else {
-                        await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                        final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                        if (hp > 0 && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text('+$hp HP  Dose logged!'),
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                          ));
+                        }
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
@@ -1593,8 +1607,8 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
         fat: double.tryParse(_fatCtrl.text),
         reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
       );
-      // final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
-      // if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
+      final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
+      if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
     }
     if (mounted) Navigator.pop(context);
   }

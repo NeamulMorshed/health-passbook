@@ -127,5 +127,18 @@ service cloud.firestore {
     match /gamification/{uid} {
       allow read, write: if isSignedIn() && isOwner(uid);
     }
+
+    // ── Shared drug-lookup caches (Phase B + C) ───────────────────────────────
+    // Populated by any authenticated user, readable by all authenticated users.
+    // This is intentional: shared caches mean each unique drug name / pair is
+    // looked up only once across the entire user base.
+
+    match /rxnorm_cache/{doc} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /drug_interaction_cache/{doc} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

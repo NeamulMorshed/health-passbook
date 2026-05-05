@@ -1,7 +1,7 @@
 name: vitalpath
 description: VitalPath - Health Passbook App for Patients and Doctors
 publish_to: 'none'
-version: 1.8.0+9
+version: 1.9.0+10
 
 environment:
   # Bumped from 3.1.0 — firebase_core 3.x requires Dart >=3.2.0

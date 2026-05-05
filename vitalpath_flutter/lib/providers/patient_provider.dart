@@ -10,8 +10,10 @@ import '../models/app_notification.dart';
 import '../models/family_member.dart';
 import '../core/constants/app_constants.dart';
 import '../services/firestore_service.dart';
+import '../services/gamification_service.dart';
 import '../services/notification_service.dart';
 import 'auth_provider.dart';
+import 'gamification_provider.dart';
 
 const _uuid = Uuid();
 
@@ -173,7 +175,9 @@ final familyMedicinePatchProvider = Provider<FamilyMedicinePatch>((ref) {
 class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   final FirestoreService _db;
   final NotificationService _notif;
-  MedicineNotifier(this._db, this._notif) : super(const AsyncValue.data(null));
+  final GamificationService _gamification;
+  MedicineNotifier(this._db, this._notif, this._gamification)
+      : super(const AsyncValue.data(null));
 
   Future<void> add(String patientId, {
     required String name,
@@ -268,10 +272,17 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> logDose(String patientId, String medicineId, {Medicine? medicine}) async {
+  /// Logs a dose and awards HP. Returns the HP gained (0 if daily cap reached).
+  /// Gamification failure never throws — dose is always recorded.
+  Future<int> logDose(String patientId, String medicineId, {Medicine? medicine}) async {
     await _db.logDose(patientId, medicineId);
     if (medicine != null && medicine.pillsRemaining != null) {
       await _db.decrementPillCount(patientId, medicineId);
+    }
+    try {
+      return await _gamification.awardMedicineDose(patientId);
+    } catch (_) {
+      return 0;
     }
   }
 
@@ -282,7 +293,11 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final medicineNotifierProvider = StateNotifierProvider<MedicineNotifier, AsyncValue<void>>((ref) {
-  return MedicineNotifier(ref.watch(firestoreServiceProvider), ref.watch(notificationServiceProvider));
+  return MedicineNotifier(
+    ref.watch(firestoreServiceProvider),
+    ref.watch(notificationServiceProvider),
+    ref.watch(gamificationServiceProvider),
+  );
 });
 
 // ─── Meal Notifier ────────────────────────────────────────────────────────────

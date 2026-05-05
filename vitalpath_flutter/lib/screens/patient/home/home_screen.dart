@@ -1332,7 +1332,14 @@ class _TaskMedCard extends ConsumerWidget {
           const SizedBox(width: 10),
           GestureDetector(
             onTap: () async {
-              await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
+              final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
+              if (hp > 0 && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('+$hp HP  Dose logged!'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
