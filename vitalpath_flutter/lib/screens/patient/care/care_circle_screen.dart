@@ -9,7 +9,6 @@ import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
-import '../../../models/medicine.dart';
 import '../../../models/patient.dart';
 import 'add_family_member_screen.dart';
 
@@ -48,6 +47,14 @@ class CareCircleScreen extends ConsumerWidget {
 class _CareCircleBody extends ConsumerWidget {
   final String uid;
   const _CareCircleBody({required this.uid});
+
+  Future<void> _refresh(WidgetRef ref) async {
+    ref.invalidate(myDoctorsProvider(uid));
+    ref.invalidate(familyMembersProvider(uid));
+    ref.invalidate(patientProfileProvider(uid));
+    // Wait for at least one provider to settle
+    await ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -89,7 +96,9 @@ class _CareCircleBody extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
+      body: RefreshIndicator(
+        onRefresh: () => _refresh(ref),
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // ── Intro banner ──────────────────────────────────────────────────
@@ -247,6 +256,7 @@ class _CareCircleBody extends ConsumerWidget {
           const SizedBox(height: 32),
         ],
       ),
+      ),
     );
   }
 }
@@ -261,13 +271,20 @@ class _DoctorCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(children: [
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => context.push('/my-doctors'),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(children: [
         // Avatar
         CircleAvatar(
           radius: 24,
@@ -355,6 +372,9 @@ class _DoctorCard extends ConsumerWidget {
           ],
         ),
       ]),
+          ),
+        ),
+      ),
     );
   }
 
@@ -408,7 +428,7 @@ class _FamilyMemberCard extends ConsumerWidget {
         );
 
     return GestureDetector(
-      onTap: () => _showMemberDetail(context, ref, medsAsync),
+      onTap: () => _showMemberDetail(context),
       onLongPress: openEdit,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -524,28 +544,29 @@ class _FamilyMemberCard extends ConsumerWidget {
     );
   }
 
-  void _showMemberDetail(
-      BuildContext context, WidgetRef ref, AsyncValue<List<Medicine>> medsAsync) {
+  void _showMemberDetail(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _MemberDetailSheet(member: member, medsAsync: medsAsync),
+      builder: (_) => _MemberDetailSheet(uid: uid, member: member),
     );
   }
 }
 
 // ─── Family member detail sheet ───────────────────────────────────────────────
-class _MemberDetailSheet extends StatelessWidget {
+class _MemberDetailSheet extends ConsumerWidget {
+  final String uid;
   final FamilyMember member;
-  final AsyncValue<List<Medicine>> medsAsync;
 
   const _MemberDetailSheet(
-      {required this.member, required this.medsAsync});
+      {required this.uid, required this.member});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final medsAsync = ref.watch(
+        familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.6,
