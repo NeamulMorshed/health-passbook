@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
+
+const _kOnboardingShownKey = 'onboarding_shown';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -23,6 +26,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   int _step = 0;
   bool _navigated = false;
   bool _advancedManually = false;
+  bool _onboardingShown = false;
 
   @override
   void initState() {
@@ -42,18 +46,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _start() async {
-    // Brief pause so Firebase Auth can resolve its persisted session.
+    // Load the flag and give Firebase Auth time to resolve its persisted session.
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_kOnboardingShownKey) ?? false;
+    if (seen && mounted) {
+      setState(() => _onboardingShown = true);
+    }
+
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
 
-    final authState = ref.read(firebaseAuthStateProvider);
-
-    if (authState.asData?.value != null) {
-      // Returning user — skip the onboarding animation.
-      await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (_onboardingShown) {
+      // Not first launch — skip carousel, just navigate after auth resolves.
+      await Future<void>.delayed(const Duration(milliseconds: 600));
       if (mounted) _navigate();
     } else {
-      // First-time / signed-out — run full 3-step animation.
+      // First install — run the 3-step onboarding carousel.
       _runOnboardingAnimation();
     }
   }
@@ -95,6 +103,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _navigate() async {
     if (_navigated || !mounted) return;
     _navigated = true;
+
+    // Mark onboarding as seen so the carousel never appears again.
+    if (!_onboardingShown) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kOnboardingShownKey, true);
+      _onboardingShown = true;
+    }
 
     // Resolve auth state — poll briefly if still loading (max 2 s).
     String? uid = ref.read(firebaseAuthStateProvider).asData?.value?.uid;
@@ -155,12 +170,49 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // After first install, show a simple centred logo while auth resolves.
+    if (_onboardingShown) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.favorite_rounded,
+                      size: 46, color: AppColors.primary),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Omra',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Inter',
+                    color: AppColors.foreground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     const splashData = [
       _SplashData(
         icon: Icons.favorite_rounded,
         color: AppColors.primary,
-        title: 'VitalPath',
-        subtitle: 'Your complete health companion',
+        title: 'Omra',
+        subtitle: 'Your health, in harmony',
       ),
       _SplashData(
         icon: Icons.medical_services_rounded,
