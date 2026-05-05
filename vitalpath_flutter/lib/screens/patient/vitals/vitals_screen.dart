@@ -282,6 +282,29 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
       );
       return;
     }
+
+    // Soft confirmation for readings outside the normal (clinically healthy) range.
+    if (!VitalType.isNormal(_selectedType, val)) {
+      final (minN, maxN) = VitalType.normalRange(_selectedType);
+      final unit = VitalType.unitFor(_selectedType);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Unusual Reading', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+          content: Text(
+            '${VitalType.labelFor(_selectedType)} of $val $unit is outside the normal range ($minN–$maxN $unit). '
+            'Please double-check the value. Log anyway?',
+            style: const TextStyle(fontFamily: 'Inter'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Edit')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Log Anyway')),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
     setState(() => _saving = true);
     await ref.read(vitalsNotifierProvider.notifier).add(
           patientId: widget.patientId,

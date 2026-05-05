@@ -1383,6 +1383,35 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     final count = _reminderCountFor(_freq);
     final times = count > 0 ? _reminderTimeStrings.take(count).toList() : <String>[];
     final fm = widget.familyMember;
+    final newName = _nameCtrl.text.trim().toLowerCase();
+
+    // Duplicate medicine check — warn before adding (not during edit).
+    if (!_isEdit) {
+      List<Medicine> existing;
+      if (fm != null) {
+        existing = ref.read(familyMemberMedicinesProvider((uid: widget.uid, memberId: fm.id))).asData?.value ?? [];
+      } else {
+        existing = ref.read(medicinesProvider(widget.uid)).asData?.value ?? [];
+      }
+      final isDuplicate = existing.any((m) => m.name.trim().toLowerCase() == newName);
+      if (isDuplicate) {
+        final addAnyway = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Duplicate Medicine', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+            content: Text(
+              '${_nameCtrl.text.trim()} is already in the medicines list. Add it again?',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+            ],
+          ),
+        );
+        if (addAnyway != true || !mounted) return;
+      }
+    }
 
     if (fm != null) {
       // Family member context — use patch provider
