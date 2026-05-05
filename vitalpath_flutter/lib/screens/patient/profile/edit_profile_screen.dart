@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/patient.dart';
@@ -19,7 +21,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  final _ageCtrl = TextEditingController();
+  DateTime? _dob;
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _bloodTypeCtrl = TextEditingController();
@@ -36,11 +38,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   static const _bloodTypes = ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'];
   String? _selectedBloodType;
 
+  Future<void> _pickDob() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob ?? DateTime(now.year - 30),
+      firstDate: DateTime(now.year - 120),
+      lastDate: now,
+      helpText: 'Select date of birth',
+    );
+    if (picked != null) setState(() => _dob = picked);
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
-    _ageCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _bloodTypeCtrl.dispose();
@@ -60,7 +73,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneCtrl.text = user.phone;
     final patient = ref.read(patientProfileProvider(user.uid)).asData?.value;
     if (patient != null) {
-      _ageCtrl.text = patient.age?.toString() ?? '';
+      _dob = patient.dateOfBirth;
       _weightCtrl.text = patient.weight?.toStringAsFixed(0) ?? '';
       _heightCtrl.text = patient.height?.toStringAsFixed(0) ?? '';
       _selectedBloodType = _bloodTypes.contains(patient.bloodType) ? patient.bloodType : null;
@@ -107,7 +120,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       await ref.read(firestoreServiceProvider).updatePatientProfile(user.uid, {
         'name': _nameCtrl.text.trim(),
-        'age': int.tryParse(_ageCtrl.text),
+        'dateOfBirth': _dob != null ? Timestamp.fromDate(_dob!) : null,
         'weight': double.tryParse(_weightCtrl.text),
         'height': double.tryParse(_heightCtrl.text),
         'bloodType': _selectedBloodType,
@@ -211,7 +224,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             _SectionLabel('Health Information'),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _Field(controller: _ageCtrl, label: 'Age', icon: Icons.cake_outlined, keyboardType: TextInputType.number)),
+              Expanded(child: _DobPicker(dob: _dob, onTap: _pickDob)),
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
@@ -262,6 +275,37 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(text,
       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter', letterSpacing: 0.5));
+}
+
+class _DobPicker extends StatelessWidget {
+  final DateTime? dob;
+  final VoidCallback onTap;
+  const _DobPicker({required this.dob, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final label = dob != null ? DateFormat('d MMM yyyy').format(dob!) : 'Date of Birth';
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.cake_outlined, size: 20),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+          filled: true, fillColor: AppColors.muted,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Inter', fontSize: 14,
+            color: dob != null ? AppColors.foreground : AppColors.mutedForeground,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Field extends StatelessWidget {

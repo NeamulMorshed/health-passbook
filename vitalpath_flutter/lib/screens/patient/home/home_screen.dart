@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 // import '../../../providers/gamification_provider.dart';
@@ -46,6 +47,67 @@ class HomeScreen extends ConsumerWidget {
         );
         return _HomeContent(user: user);
       },
+    );
+  }
+}
+
+// ── Notification permission nudge ─────────────────────────────────────────────
+class _NotifPermBanner extends ConsumerStatefulWidget {
+  const _NotifPermBanner();
+  @override
+  ConsumerState<_NotifPermBanner> createState() => _NotifPermBannerState();
+}
+
+class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+    final permAsync = ref.watch(notifPermGrantedProvider);
+    // Only show when we know permission is denied (not while loading).
+    final granted = permAsync.asData?.value ?? true;
+    if (granted) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_off_outlined, color: AppColors.warning, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Notifications off', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.foreground)),
+                const SizedBox(height: 2),
+                const Text('Enable notifications to receive medicine reminders.', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.mutedForeground)),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    await openAppSettings();
+                    // Refresh permission check when user returns from settings.
+                    ref.invalidate(notifPermGrantedProvider);
+                  },
+                  child: const Text('Open Settings', style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, decoration: TextDecoration.underline)),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.mutedForeground),
+            onPressed: () => setState(() => _dismissed = true),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -107,6 +169,7 @@ class _HomeContent extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  const _NotifPermBanner(),
                   // AI Insights shortcut — prominent placement above stats
                   GestureDetector(
                     onTap: () => context.push('/insights'),

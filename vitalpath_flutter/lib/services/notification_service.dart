@@ -55,6 +55,13 @@ class NotificationService {
 
   Future<String?> getToken() => _fcm.getToken();
 
+  // Returns true when the user has granted notification permission on this device.
+  Future<bool> isPermissionGranted() async {
+    final settings = await _fcm.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
   // ── Immediate notification ────────────────────────────────────────────────
 
   Future<void> showLocalNotification({

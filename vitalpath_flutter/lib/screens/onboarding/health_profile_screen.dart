@@ -1,7 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../core/constants/app_constants.dart';
@@ -21,7 +22,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
   // Step 1 fields
   final _nameCtrl = TextEditingController();
-  final _ageCtrl  = TextEditingController();
+  DateTime? _dob;
 
   // Step 2 fields
   final _weightCtrl = TextEditingController();
@@ -34,11 +35,22 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
   final _ecNameCtrl      = TextEditingController();
   final _ecPhoneCtrl     = TextEditingController();
 
+  Future<void> _pickDob() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob ?? DateTime(now.year - 30),
+      firstDate: DateTime(now.year - 120),
+      lastDate: now,
+      helpText: 'Select date of birth',
+    );
+    if (picked != null) setState(() => _dob = picked);
+  }
+
   @override
   void dispose() {
     _pageCtrl.dispose();
     _nameCtrl.dispose();
-    _ageCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
     _allergiesCtrl.dispose();
@@ -106,7 +118,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
       if (uid == null) return;
       await ref.read(firestoreServiceProvider).updatePatientProfile(uid, {
         'name':             _nameCtrl.text.trim(),
-        'age':              int.tryParse(_ageCtrl.text),
+        'dateOfBirth':      _dob != null ? Timestamp.fromDate(_dob!) : null,
         'weight':           double.tryParse(_weightCtrl.text),
         'height':           double.tryParse(_heightCtrl.text),
         'bloodType':        _selectedBlood,
@@ -172,7 +184,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
               controller: _pageCtrl,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _Step1(nameCtrl: _nameCtrl, ageCtrl: _ageCtrl),
+                _Step1(nameCtrl: _nameCtrl, dob: _dob, onPickDob: _pickDob),
                 _Step2(
                   weightCtrl: _weightCtrl,
                   heightCtrl: _heightCtrl,
@@ -231,11 +243,14 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
 // ── Step 1: Basic Info ─────────────────────────────────────────────────────────
 class _Step1 extends StatelessWidget {
-  final TextEditingController nameCtrl, ageCtrl;
-  const _Step1({required this.nameCtrl, required this.ageCtrl});
+  final TextEditingController nameCtrl;
+  final DateTime? dob;
+  final VoidCallback onPickDob;
+  const _Step1({required this.nameCtrl, required this.dob, required this.onPickDob});
 
   @override
   Widget build(BuildContext context) {
+    final dobLabel = dob != null ? DateFormat('d MMM yyyy').format(dob!) : 'Tap to select';
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
@@ -248,12 +263,25 @@ class _Step1 extends StatelessWidget {
           decoration: const InputDecoration(hintText: 'Your full name'),
         ),
         const SizedBox(height: 16),
-        _label('Age'),
-        TextField(
-          controller: ageCtrl,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(hintText: 'e.g. 32'),
+        _label('Date of Birth (optional)'),
+        InkWell(
+          onTap: onPickDob,
+          borderRadius: BorderRadius.circular(8),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.cake_outlined, size: 20, color: AppColors.mutedForeground),
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              hintText: 'Tap to select',
+            ),
+            child: Text(
+              dobLabel,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                color: dob != null ? AppColors.foreground : AppColors.mutedForeground,
+              ),
+            ),
+          ),
         ),
       ],
     );

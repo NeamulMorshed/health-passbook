@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmergencyContact {
   final String name;
@@ -40,7 +41,8 @@ EmergencyContact? _parseEmergencyContact(dynamic raw) {
 class PatientProfile {
   final String uid;
   final String name;
-  final int? age;
+  final DateTime? dateOfBirth;
+  final int? _legacyAge; // retained for records that predate DOB field
   final double? weight; // kg
   final double? height; // cm
   final String? bloodType;
@@ -52,7 +54,8 @@ class PatientProfile {
   const PatientProfile({
     required this.uid,
     required this.name,
-    this.age,
+    this.dateOfBirth,
+    int? legacyAge,
     this.weight,
     this.height,
     this.bloodType,
@@ -60,7 +63,21 @@ class PatientProfile {
     this.allergies,
     this.emergencyContact,
     this.doctorId,
-  });
+  }) : _legacyAge = legacyAge;
+
+  // Dynamically computed from DOB; falls back to legacy stored age.
+  int? get age {
+    if (dateOfBirth != null) {
+      final now = DateTime.now();
+      int years = now.year - dateOfBirth!.year;
+      if (now.month < dateOfBirth!.month ||
+          (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
+        years--;
+      }
+      return years;
+    }
+    return _legacyAge;
+  }
 
   double? get bmi => (weight != null && height != null && height! > 0)
       ? weight! / ((height! / 100) * (height! / 100))
@@ -70,7 +87,8 @@ class PatientProfile {
     return PatientProfile(
       uid: uid,
       name: map['name'] ?? '',
-      age: map['age'],
+      dateOfBirth: (map['dateOfBirth'] as Timestamp?)?.toDate(),
+      legacyAge: map['age'] as int?,
       weight: (map['weight'] as num?)?.toDouble(),
       height: (map['height'] as num?)?.toDouble(),
       bloodType: map['bloodType'],
@@ -83,7 +101,9 @@ class PatientProfile {
 
   Map<String, dynamic> toMap() => {
         'name': name,
+        // Store computed age for backward compat with queries that read 'age'.
         'age': age,
+        'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
         'weight': weight,
         'height': height,
         'bloodType': bloodType,
