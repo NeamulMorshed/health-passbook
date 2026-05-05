@@ -21,7 +21,7 @@ class _InviteFamilyMemberScreenState
     extends ConsumerState<InviteFamilyMemberScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
-  String _relationship = AppConstants.relationships.first;
+  String? _relationship;
   bool _isSending = false;
   bool _sent = false;
 
@@ -33,6 +33,12 @@ class _InviteFamilyMemberScreenState
 
   Future<void> _sendInvite() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_relationship == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a relationship')),
+      );
+      return;
+    }
     final user = await ref.read(currentUserProvider.future);
     if (user == null) return;
 
@@ -44,6 +50,7 @@ class _InviteFamilyMemberScreenState
           .doc(inviteId)
           .set({
         'fromUid': user.uid,
+        'fromName': user.name,
         'toEmail': _emailCtrl.text.trim().toLowerCase(),
         'relationship': _relationship,
         'status': 'pending',
@@ -61,12 +68,13 @@ class _InviteFamilyMemberScreenState
     }
   }
 
-  Future<void> _copyLink() async {
-    await Clipboard.setData(
-        const ClipboardData(text: 'Join me on Omra!'));
+  Future<void> _copyMessage() async {
+    await Clipboard.setData(ClipboardData(
+        text:
+            'Hey! I\'m using Omra to manage our health together. Search for "Omra health app" to download it, then create an account with this email so we can link up: ${_emailCtrl.text.trim().isNotEmpty ? _emailCtrl.text.trim() : "your email"}.'));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Copied to clipboard!')),
+        const SnackBar(content: Text('Message copied to clipboard!')),
       );
     }
   }
@@ -78,14 +86,20 @@ class _InviteFamilyMemberScreenState
       appBar: AppBar(title: const Text('Invite Family Member')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: _sent ? _SuccessView(onCopyLink: _copyLink) : _FormView(
-          formKey: _formKey,
-          emailCtrl: _emailCtrl,
-          relationship: _relationship,
-          onRelationshipChanged: (r) => setState(() => _relationship = r),
-          isSending: _isSending,
-          onSend: _sendInvite,
-        ),
+        child: _sent
+            ? _SuccessView(
+                email: _emailCtrl.text.trim(),
+                onCopyMessage: _copyMessage,
+              )
+            : _FormView(
+                formKey: _formKey,
+                emailCtrl: _emailCtrl,
+                relationship: _relationship,
+                onRelationshipChanged: (r) =>
+                    setState(() => _relationship = r),
+                isSending: _isSending,
+                onSend: _sendInvite,
+              ),
       ),
     );
   }
@@ -96,7 +110,7 @@ class _InviteFamilyMemberScreenState
 class _FormView extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailCtrl;
-  final String relationship;
+  final String? relationship;
   final ValueChanged<String> onRelationshipChanged;
   final bool isSending;
   final VoidCallback onSend;
@@ -145,7 +159,7 @@ class _FormView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'They\'ll get their own Omra account that appears in your care circle.',
+                  'A linked account means they log in with their own Omra account and you both appear in each other\'s care circle.',
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 13,
@@ -154,7 +168,31 @@ class _FormView extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
+
+          // How it works note
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+            ),
+            child: const Row(children: [
+              Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'When they sign up with this email, the accounts link automatically. No email is sent — share the app link manually.',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                      fontFamily: 'Inter'),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 20),
 
           // Email field
           TextFormField(
@@ -178,14 +216,21 @@ class _FormView extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Relationship chips
-          const Text(
-            'Relationship',
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter'),
-          ),
+          Row(children: [
+            const Text(
+              'Relationship',
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.mutedForeground,
+                  fontFamily: 'Inter'),
+            ),
+            const Text(' *',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.destructive,
+                    fontFamily: 'Inter')),
+          ]),
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -234,9 +279,9 @@ class _FormView extends StatelessWidget {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Icon(Icons.send_rounded, size: 18),
+                  : const Icon(Icons.link_rounded, size: 18),
               label: Text(
-                isSending ? 'Sending…' : 'Send Invite',
+                isSending ? 'Saving…' : 'Save Invite',
                 style: const TextStyle(
                     fontFamily: 'Inter', fontWeight: FontWeight.w600),
               ),
@@ -251,8 +296,9 @@ class _FormView extends StatelessWidget {
 // ─── Success View ─────────────────────────────────────────────────────────────
 
 class _SuccessView extends StatelessWidget {
-  final VoidCallback onCopyLink;
-  const _SuccessView({required this.onCopyLink});
+  final String email;
+  final VoidCallback onCopyMessage;
+  const _SuccessView({required this.email, required this.onCopyMessage});
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +316,7 @@ class _SuccessView extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         const Text(
-          'Invite sent!',
+          'Invite saved!',
           style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -278,10 +324,10 @@ class _SuccessView extends StatelessWidget {
               color: AppColors.foreground),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'They\'ll receive an email to join Omra and link their account to yours.',
+        Text(
+          'When $email creates an Omra account, they\'ll automatically appear in your care circle.',
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
               fontSize: 14,
               color: AppColors.mutedForeground,
               fontFamily: 'Inter'),
@@ -299,7 +345,7 @@ class _SuccessView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Share manually',
+                'Share the app with them',
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -307,7 +353,7 @@ class _SuccessView extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'You can also share this message directly with them.',
+                'Copy a message to send them directly.',
                 style: TextStyle(
                     fontSize: 12,
                     color: AppColors.mutedForeground,
@@ -317,9 +363,9 @@ class _SuccessView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: onCopyLink,
+                  onPressed: onCopyMessage,
                   icon: const Icon(Icons.copy_rounded, size: 16),
-                  label: const Text('Copy invite link',
+                  label: const Text('Copy invite message',
                       style: TextStyle(fontFamily: 'Inter')),
                 ),
               ),

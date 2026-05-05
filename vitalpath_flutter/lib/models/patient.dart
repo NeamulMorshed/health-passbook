@@ -32,8 +32,9 @@ class EmergencyContact {
 EmergencyContact? _parseEmergencyContact(dynamic raw) {
   if (raw == null) return null;
   if (raw is Map<String, dynamic>) return EmergencyContact.fromMap(raw);
+  // Legacy: old records stored just a phone number string — treat as phone-only.
   if (raw is String && raw.isNotEmpty) {
-    return EmergencyContact(name: raw, phone: raw);
+    return EmergencyContact(name: '', phone: raw);
   }
   return null;
 }

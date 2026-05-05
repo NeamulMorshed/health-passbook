@@ -78,7 +78,7 @@ class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> add(String uid, {
     required String name,
     required String relationship,
-    int? age,
+    DateTime? dateOfBirth,
     String? photoUrl,
   }) async {
     state = const AsyncValue.loading();
@@ -87,7 +87,7 @@ class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
         id: _uuid.v4(),
         name: name,
         relationship: relationship,
-        age: age,
+        dateOfBirth: dateOfBirth,
         photoUrl: photoUrl,
         createdAt: DateTime.now(),
       );

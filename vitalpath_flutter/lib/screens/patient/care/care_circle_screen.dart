@@ -52,8 +52,23 @@ class _CareCircleBody extends ConsumerWidget {
     ref.invalidate(myDoctorsProvider(uid));
     ref.invalidate(familyMembersProvider(uid));
     ref.invalidate(patientProfileProvider(uid));
-    // Wait for at least one provider to settle
-    await ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]);
+    await Future.wait([
+      ref.read(myDoctorsProvider(uid).future).catchError((_) => <DoctorProfile>[]),
+      ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
+      ref.read(patientProfileProvider(uid).future).catchError((_) => null),
+    ]);
+  }
+
+  Future<void> _openAddMember(BuildContext context, WidgetRef ref) async {
+    final result = await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(builder: (_) => AddFamilyMemberScreen(uid: uid)),
+    );
+    if (result == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Family member added')),
+      );
+    }
   }
 
   @override
@@ -62,200 +77,247 @@ class _CareCircleBody extends ConsumerWidget {
     final membersAsync = ref.watch(familyMembersProvider(uid));
     final patientAsync = ref.watch(patientProfileProvider(uid));
 
-    final doctorCount =
-        doctorsAsync.asData?.value.length ?? 0;
-    final memberCount =
-        membersAsync.asData?.value.length ?? 0;
-    final totalPeople = doctorCount + memberCount;
+    final doctorCount = doctorsAsync.asData?.value.length ?? 0;
+    final memberCount = membersAsync.asData?.value.length ?? 0;
+    final hasEmergencyContact =
+        patientAsync.asData?.value?.emergencyContact != null;
+    final totalPeople =
+        doctorCount + memberCount + (hasEmergencyContact ? 1 : 0);
+    final isLoading = doctorsAsync.isLoading ||
+        membersAsync.isLoading ||
+        patientAsync.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Care Circle'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$totalPeople ${totalPeople == 1 ? 'person' : 'people'}',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                      fontFamily: 'Inter'),
+          if (!isLoading)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$totalPeople ${totalPeople == 1 ? 'person' : 'people'}',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        fontFamily: 'Inter'),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () => _refresh(ref),
         child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // ── Intro banner ──────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          padding: const EdgeInsets.all(16),
+          children: [
+            // ── Intro banner ────────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(children: [
-              const Icon(Icons.people_rounded, color: Colors.white, size: 32),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Your Care Circle',
+              child: Row(children: [
+                const Icon(Icons.people_rounded,
+                    color: Colors.white, size: 32),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Your Care Circle',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                fontFamily: 'Inter')),
+                        Text(
+                          isLoading
+                              ? 'Everyone involved in your health journey.'
+                              : [
+                                  if (doctorCount > 0)
+                                    '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
+                                  if (memberCount > 0)
+                                    '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
+                                  if (hasEmergencyContact)
+                                    'emergency contact',
+                                ].isEmpty
+                                  ? 'Add people to your care circle.'
+                                  : [
+                                      if (doctorCount > 0)
+                                        '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
+                                      if (memberCount > 0)
+                                        '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
+                                      if (hasEmergencyContact)
+                                        'emergency contact',
+                                    ].join(' · '),
                           style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              fontFamily: 'Inter')),
-                      Text(
-                        'Everyone involved in your health journey.',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontFamily: 'Inter'),
-                      ),
-                    ]),
-              ),
-            ]),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── Doctors section ───────────────────────────────────────────────
-          _SectionHeader(
-            icon: Icons.medical_services_rounded,
-            title: 'My Doctors',
-            count: doctorCount,
-            color: AppColors.doctorPrimary,
-            action: TextButton.icon(
-              onPressed: () => context.push('/my-doctors'),
-              icon: const Icon(Icons.search_rounded, size: 14),
-              label: const Text('Find more',
-                  style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
-              style: TextButton.styleFrom(
-                  foregroundColor: AppColors.doctorPrimary,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                              fontSize: 12,
+                              color:
+                                  Colors.white.withValues(alpha: 0.85),
+                              fontFamily: 'Inter'),
+                        ),
+                      ]),
+                ),
+              ]),
             ),
-          ),
-          const SizedBox(height: 10),
-          doctorsAsync.when(
-            loading: () => const _ShimmerCard(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (doctors) {
-              if (doctors.isEmpty) {
-                return _EmptyCard(
-                  icon: Icons.person_add_rounded,
-                  message: 'No connected doctors yet.',
-                  actionLabel: 'Find a doctor',
-                  onAction: () => context.push('/my-doctors'),
-                );
-              }
-              return Column(
-                children: doctors
-                    .map((d) => _DoctorCard(uid: uid, doctor: d))
-                    .toList(),
-              );
-            },
-          ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // ── Family members section ────────────────────────────────────────
-          _SectionHeader(
-            icon: Icons.family_restroom_rounded,
-            title: 'Family Members',
-            count: memberCount,
-            color: AppColors.primary,
-            action: TextButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => AddFamilyMemberScreen(uid: uid)),
+            // ── Doctors section ─────────────────────────────────────────────
+            _SectionHeader(
+              icon: Icons.medical_services_rounded,
+              title: 'My Doctors',
+              count: doctorsAsync.hasValue ? doctorCount : null,
+              color: AppColors.doctorPrimary,
+              action: TextButton.icon(
+                onPressed: () => context.push('/my-doctors'),
+                icon: const Icon(Icons.search_rounded, size: 14),
+                label: const Text('Find more',
+                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppColors.doctorPrimary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
               ),
-              icon: const Icon(Icons.add_rounded, size: 14),
-              label: const Text('Add',
-                  style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
-              style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             ),
-          ),
-          const SizedBox(height: 10),
-          membersAsync.when(
-            loading: () => const _ShimmerCard(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (members) {
-              if (members.isEmpty) {
-                return _EmptyCard(
-                  icon: Icons.person_add_rounded,
-                  message: 'No family members added yet.',
-                  actionLabel: 'Add member',
-                  onAction: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => AddFamilyMemberScreen(uid: uid)),
-                  ),
+            const SizedBox(height: 10),
+            doctorsAsync.when(
+              loading: () => const _ShimmerCard(),
+              error: (_, __) => _ErrorCard(
+                message: 'Could not load doctors.',
+                onRetry: () => ref.invalidate(myDoctorsProvider(uid)),
+              ),
+              data: (doctors) {
+                if (doctors.isEmpty) {
+                  return _EmptyCard(
+                    icon: Icons.person_add_rounded,
+                    message: 'No connected doctors yet.',
+                    actionLabel: 'Find a doctor',
+                    onAction: () => context.push('/my-doctors'),
+                  );
+                }
+                return Column(
+                  children: doctors
+                      .map((d) => _DoctorCard(uid: uid, doctor: d))
+                      .toList(),
                 );
-              }
-              return Column(
-                children: members
-                    .map((m) => _FamilyMemberCard(uid: uid, member: m))
-                    .toList(),
-              );
-            },
-          ),
+              },
+            ),
 
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // ── Emergency contact section ─────────────────────────────────────
-          _SectionHeader(
-            icon: Icons.emergency_rounded,
-            title: 'Emergency Contact',
-            color: AppColors.destructive,
-          ),
-          const SizedBox(height: 10),
-          patientAsync.when(
-            loading: () => const _ShimmerCard(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (patient) {
-              final contact = patient?.emergencyContact;
-              if (contact == null) {
-                return _EmptyCard(
-                  icon: Icons.add_call,
-                  message: 'No emergency contact saved.',
-                  actionLabel: 'Add in Profile',
-                  onAction: () => context.push('/edit-profile'),
+            // ── Family members section ──────────────────────────────────────
+            _SectionHeader(
+              icon: Icons.family_restroom_rounded,
+              title: 'Family Members',
+              count: membersAsync.hasValue ? memberCount : null,
+              color: AppColors.primary,
+              action: TextButton.icon(
+                onPressed: () => _openAddMember(context, ref),
+                icon: const Icon(Icons.add_rounded, size: 14),
+                label: const Text('Add',
+                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              ),
+            ),
+            const SizedBox(height: 10),
+            membersAsync.when(
+              loading: () => const _ShimmerCard(),
+              error: (_, __) => _ErrorCard(
+                message: 'Could not load family members.',
+                onRetry: () => ref.invalidate(familyMembersProvider(uid)),
+              ),
+              data: (members) {
+                if (members.isEmpty) {
+                  return _EmptyCard(
+                    icon: Icons.person_add_rounded,
+                    message: 'No family members added yet.',
+                    actionLabel: 'Add member',
+                    onAction: () => _openAddMember(context, ref),
+                  );
+                }
+                return Column(
+                  children: members
+                      .map((m) => _FamilyMemberCard(uid: uid, member: m))
+                      .toList(),
                 );
-              }
-              return _EmergencyContactCard(contact: contact);
-            },
-          ),
+              },
+            ),
 
-          const SizedBox(height: 32),
-        ],
-      ),
+            const SizedBox(height: 24),
+
+            // ── Emergency contact section ───────────────────────────────────
+            _SectionHeader(
+              icon: Icons.emergency_rounded,
+              title: 'Emergency Contact',
+              color: AppColors.destructive,
+              action: TextButton.icon(
+                onPressed: () => context.push('/edit-profile'),
+                icon: Icon(
+                  hasEmergencyContact
+                      ? Icons.edit_rounded
+                      : Icons.add_rounded,
+                  size: 14,
+                ),
+                label: Text(
+                  hasEmergencyContact ? 'Edit' : 'Add',
+                  style: const TextStyle(fontSize: 12, fontFamily: 'Inter'),
+                ),
+                style: TextButton.styleFrom(
+                    foregroundColor: AppColors.destructive,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              ),
+            ),
+            const SizedBox(height: 10),
+            patientAsync.when(
+              loading: () => const _ShimmerCard(),
+              error: (_, __) => _ErrorCard(
+                message: 'Could not load emergency contact.',
+                onRetry: () => ref.invalidate(patientProfileProvider(uid)),
+              ),
+              data: (patient) {
+                final contact = patient?.emergencyContact;
+                if (contact == null) {
+                  return _EmptyCard(
+                    icon: Icons.add_call,
+                    message: 'No emergency contact saved.',
+                    actionLabel: 'Add in Profile',
+                    onAction: () => context.push('/edit-profile'),
+                  );
+                }
+                return _EmergencyContactCard(
+                  contact: contact,
+                  onEdit: () => context.push('/edit-profile'),
+                );
+              },
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -281,97 +343,174 @@ class _DoctorCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => context.push('/my-doctors'),
+          onTap: () => _showDoctorDetail(context, ref),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-        // Avatar
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.doctorLight,
-          backgroundImage: doctor.photoUrl != null
-              ? NetworkImage(doctor.photoUrl!)
-              : null,
-          child: doctor.photoUrl == null
-              ? Text(
-                  doctor.name.isNotEmpty ? doctor.name[0].toUpperCase() : 'D',
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.doctorPrimary,
-                      fontFamily: 'Inter'),
-                )
-              : null,
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.doctorLight,
+                backgroundImage: doctor.photoUrl != null
+                    ? NetworkImage(doctor.photoUrl!)
+                    : null,
+                child: doctor.photoUrl == null
+                    ? Text(
+                        doctor.name.isNotEmpty
+                            ? doctor.name[0].toUpperCase()
+                            : 'D',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.doctorPrimary,
+                            fontFamily: 'Inter'),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Text('Dr. ${doctor.name}',
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Inter')),
+                        if (doctor.isVerified) ...[
+                          const SizedBox(width: 4),
+                          const Icon(Icons.verified_rounded,
+                              size: 14, color: AppColors.doctorPrimary),
+                        ],
+                      ]),
+                      if (doctor.specialty != null)
+                        Text(doctor.specialty!,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mutedForeground,
+                                fontFamily: 'Inter')),
+                      if (doctor.hospital != null)
+                        Text(doctor.hospital!,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.mutedForeground,
+                                fontFamily: 'Inter')),
+                    ]),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+            ]),
+          ),
         ),
-        const SizedBox(width: 12),
+      ),
+    );
+  }
 
-        // Info
-        Expanded(
+  void _showDoctorDetail(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
           child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Text('Dr. ${doctor.name}',
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter')),
-                  if (doctor.isVerified) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.verified_rounded,
-                        size: 14, color: AppColors.doctorPrimary),
-                  ],
-                ]),
-                if (doctor.specialty != null)
-                  Text(doctor.specialty!,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
-                if (doctor.hospital != null)
-                  Text(doctor.hospital!,
-                      style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 20),
+              Row(children: [
+                CircleAvatar(
+                  radius: 28,
+                  backgroundColor: AppColors.doctorLight,
+                  backgroundImage: doctor.photoUrl != null
+                      ? NetworkImage(doctor.photoUrl!)
+                      : null,
+                  child: doctor.photoUrl == null
+                      ? Text(
+                          doctor.name.isNotEmpty
+                              ? doctor.name[0].toUpperCase()
+                              : 'D',
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.doctorPrimary,
+                              fontFamily: 'Inter'),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text('Dr. ${doctor.name}',
+                              style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Inter')),
+                          if (doctor.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const Icon(Icons.verified_rounded,
+                                size: 15, color: AppColors.doctorPrimary),
+                          ],
+                        ]),
+                        if (doctor.specialty != null)
+                          Text(doctor.specialty!,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.mutedForeground,
+                                  fontFamily: 'Inter')),
+                        if (doctor.hospital != null)
+                          Text(doctor.hospital!,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.mutedForeground,
+                                  fontFamily: 'Inter')),
+                      ]),
+                ),
               ]),
-        ),
-
-        // Actions
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert_rounded,
-              size: 20, color: AppColors.mutedForeground),
-          onSelected: (v) {
-            if (v == 'book') {
-              context.go('/appointments');
-            } else if (v == 'remove') {
-              _confirmRemove(context, ref);
-            }
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(
-              value: 'book',
-              child: Row(children: [
-                Icon(Icons.calendar_today_rounded, size: 16),
-                SizedBox(width: 8),
-                Text('Book Appointment',
-                    style: TextStyle(fontFamily: 'Inter')),
-              ]),
-            ),
-            const PopupMenuItem(
-              value: 'remove',
-              child: Row(children: [
-                Icon(Icons.link_off_rounded,
-                    size: 16, color: AppColors.destructive),
-                SizedBox(width: 8),
-                Text('Remove Connection',
-                    style: TextStyle(
-                        fontFamily: 'Inter', color: AppColors.destructive)),
-              ]),
-            ),
-          ],
-        ),
-      ]),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/appointments');
+                  },
+                  icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                  label: const Text('Book Appointment',
+                      style: TextStyle(fontFamily: 'Inter')),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _confirmRemove(context, ref);
+                  },
+                  icon: const Icon(Icons.link_off_rounded,
+                      size: 16, color: AppColors.destructive),
+                  label: const Text('Remove Connection',
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: AppColors.destructive)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.destructive),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -397,7 +536,9 @@ class _DoctorCard extends ConsumerWidget {
                 backgroundColor: AppColors.destructive),
             onPressed: () {
               Navigator.pop(dialogCtx);
-              ref.read(connectionNotifierProvider.notifier).remove(uid, doctor.uid);
+              ref
+                  .read(connectionNotifierProvider.notifier)
+                  .remove(uid, doctor.uid);
             },
             child: const Text('Remove'),
           ),
@@ -415,9 +556,6 @@ class _FamilyMemberCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(
-        familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
-    final medCount = medsAsync.asData?.value.length ?? 0;
     final isLinked = member.profileType == 'linked';
 
     void openEdit() => Navigator.push(
@@ -429,7 +567,6 @@ class _FamilyMemberCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => _showMemberDetail(context),
-      onLongPress: openEdit,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
@@ -439,7 +576,6 @@ class _FamilyMemberCard extends ConsumerWidget {
           border: Border.all(color: AppColors.border),
         ),
         child: Row(children: [
-          // Avatar
           CircleAvatar(
             radius: 24,
             backgroundColor: AppColors.primary.withValues(alpha: 0.12),
@@ -456,8 +592,6 @@ class _FamilyMemberCard extends ConsumerWidget {
                 : null,
           ),
           const SizedBox(width: 12),
-
-          // Info
           Expanded(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +605,6 @@ class _FamilyMemberCard extends ConsumerWidget {
                               fontFamily: 'Inter')),
                     ),
                     const SizedBox(width: 6),
-                    // Profile type badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
@@ -510,29 +643,23 @@ class _FamilyMemberCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: medCount > 0
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : AppColors.muted,
+                      color: AppColors.muted,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      '$medCount ${medCount == 1 ? 'medicine' : 'medicines'}',
+                    child: const Text(
+                      'View details →',
                       style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: medCount > 0
-                              ? AppColors.primary
-                              : AppColors.mutedForeground,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.mutedForeground,
                           fontFamily: 'Inter'),
                     ),
                   ),
                 ]),
           ),
-
-          // Edit button (visible trailing icon)
           IconButton(
             tooltip: 'Edit member',
             icon: const Icon(Icons.edit_rounded,
@@ -560,8 +687,7 @@ class _MemberDetailSheet extends ConsumerWidget {
   final String uid;
   final FamilyMember member;
 
-  const _MemberDetailSheet(
-      {required this.uid, required this.member});
+  const _MemberDetailSheet({required this.uid, required this.member});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -581,7 +707,6 @@ class _MemberDetailSheet extends ConsumerWidget {
           controller: controller,
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
           children: [
-            // Handle
             Center(
               child: Container(
                   width: 40,
@@ -592,7 +717,6 @@ class _MemberDetailSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
 
-            // Member header
             Row(children: [
               CircleAvatar(
                 radius: 28,
@@ -623,7 +747,8 @@ class _MemberDetailSheet extends ConsumerWidget {
                       Text(
                         [
                           member.relationship,
-                          if (member.age != null) '${member.age} years old',
+                          if (member.age != null)
+                            '${member.age} years old',
                         ].join(' · '),
                         style: const TextStyle(
                             fontSize: 13,
@@ -636,20 +761,25 @@ class _MemberDetailSheet extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            // Connect a Doctor button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.push('/my-doctors');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AddFamilyMemberScreen(uid: uid, existing: member),
+                    ),
+                  );
                 },
-                icon: const Icon(Icons.medical_services_rounded, size: 16),
-                label: const Text('Connect a Doctor',
+                icon: const Icon(Icons.edit_rounded, size: 16),
+                label: const Text('Edit member details',
                     style: TextStyle(fontFamily: 'Inter')),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.doctorPrimary,
-                  side: const BorderSide(color: AppColors.doctorPrimary),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
                   minimumSize: const Size(0, 42),
                 ),
               ),
@@ -659,7 +789,6 @@ class _MemberDetailSheet extends ConsumerWidget {
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 16),
 
-            // Medicines
             const Text('Medicines',
                 style: TextStyle(
                     fontSize: 14,
@@ -670,7 +799,18 @@ class _MemberDetailSheet extends ConsumerWidget {
             medsAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, __) => Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.muted,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('Could not load medicines.',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.mutedForeground,
+                        fontFamily: 'Inter')),
+              ),
               data: (meds) {
                 if (meds.isEmpty) {
                   return Container(
@@ -743,7 +883,6 @@ class _MemberDetailSheet extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
-            // Go to Care screen hint
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -777,7 +916,9 @@ class _MemberDetailSheet extends ConsumerWidget {
 // ─── Emergency contact card ───────────────────────────────────────────────────
 class _EmergencyContactCard extends StatelessWidget {
   final EmergencyContact contact;
-  const _EmergencyContactCard({required this.contact});
+  final VoidCallback onEdit;
+  const _EmergencyContactCard(
+      {required this.contact, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -786,7 +927,8 @@ class _EmergencyContactCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
       ),
       child: Row(children: [
         Container(
@@ -829,16 +971,24 @@ class _EmergencyContactCard extends StatelessWidget {
               ]),
         ),
         IconButton(
-          onPressed: contact.phone.isNotEmpty ? () => _call(contact.phone) : null,
-          icon: const Icon(Icons.call_rounded, color: AppColors.success),
-          tooltip: 'Call',
+          onPressed: onEdit,
+          icon: const Icon(Icons.edit_rounded,
+              size: 18, color: AppColors.mutedForeground),
+          tooltip: 'Edit contact',
         ),
+        if (contact.phone.isNotEmpty)
+          IconButton(
+            onPressed: () => _call(contact.phone),
+            icon: const Icon(Icons.call_rounded, color: AppColors.success),
+            tooltip: 'Call',
+          ),
       ]),
     );
   }
 
   Future<void> _call(String number) async {
     final cleaned = number.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleaned.isEmpty) return;
     final uri = Uri.parse('tel:$cleaned');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -941,15 +1091,85 @@ class _EmptyCard extends StatelessWidget {
       );
 }
 
-class _ShimmerCard extends StatelessWidget {
-  const _ShimmerCard();
+class _ErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorCard({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 72,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.muted,
-          borderRadius: BorderRadius.circular(14),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
+        ),
+        child: Row(children: [
+          const Icon(Icons.error_outline_rounded,
+              size: 20, color: AppColors.destructive),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Text(message,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'))),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            child: const Text('Retry',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Inter',
+                    color: AppColors.primary)),
+          ),
+        ]),
+      );
+}
+
+class _ShimmerCard extends StatefulWidget {
+  const _ShimmerCard();
+
+  @override
+  State<_ShimmerCard> createState() => _ShimmerCardState();
+}
+
+class _ShimmerCardState extends State<_ShimmerCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 0.9).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _anim,
+        builder: (_, __) => Container(
+          height: 72,
+          decoration: BoxDecoration(
+            color: AppColors.muted.withValues(alpha: _anim.value),
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
 }

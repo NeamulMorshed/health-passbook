@@ -40,6 +40,14 @@
         { "fieldPath": "isActive",   "order": "ASCENDING" },
         { "fieldPath": "startDate",  "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "medicines",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isActive",   "order": "ASCENDING" },
+        { "fieldPath": "startDate",  "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/family_member.dart';
@@ -24,10 +25,11 @@ class _AddFamilyMemberScreenState
     extends ConsumerState<AddFamilyMemberScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
-  late final TextEditingController _ageCtrl;
-  late String _relationship;
+  String? _relationship;
+  DateTime? _dob;
   String? _photoUrl;
   File? _photoFile;
+  bool _photoRemoved = false;
   bool _isSaving = false;
 
   bool get _isEdit => widget.existing != null;
@@ -37,29 +39,84 @@ class _AddFamilyMemberScreenState
     super.initState();
     final m = widget.existing;
     _nameCtrl = TextEditingController(text: m?.name ?? '');
-    _ageCtrl = TextEditingController(text: m?.age?.toString() ?? '');
-    _relationship = m?.relationship ?? AppConstants.relationships.first;
+    _relationship = m?.relationship;
+    _dob = m?.dateOfBirth;
     _photoUrl = m?.photoUrl;
   }
 
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _ageCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _pickDob() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dob ?? DateTime(now.year - 10),
+      firstDate: DateTime(now.year - 120),
+      lastDate: now,
+      helpText: 'Date of birth',
+    );
+    if (picked != null) setState(() => _dob = picked);
+  }
+
   Future<void> _pickPhoto() async {
+    final choice = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded),
+              title: const Text('Take a photo', style: TextStyle(fontFamily: 'Inter')),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: const Text('Choose from gallery', style: TextStyle(fontFamily: 'Inter')),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            if (_photoFile != null || (_photoUrl != null && !_photoRemoved))
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: AppColors.destructive),
+                title: const Text('Remove photo', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive)),
+                onTap: () => Navigator.pop(ctx, null),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (choice == null) {
+      // User tapped Remove
+      if (_photoFile != null || (_photoUrl != null && !_photoRemoved)) {
+        setState(() {
+          _photoFile = null;
+          _photoRemoved = true;
+        });
+      }
+      return;
+    }
+
     final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
+      source: choice,
       imageQuality: 80,
       maxWidth: 400,
     );
     if (picked == null) return;
-    setState(() => _photoFile = File(picked.path));
+    setState(() {
+      _photoFile = File(picked.path);
+      _photoRemoved = false;
+    });
   }
 
   Future<String?> _uploadPhoto(String uid) async {
+    if (_photoRemoved) return null;
     if (_photoFile == null) return _photoUrl;
     final ts = DateTime.now().millisecondsSinceEpoch;
     final ref = FirebaseStorage.instance
@@ -70,6 +127,12 @@ class _AddFamilyMemberScreenState
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_relationship == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a relationship')),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
     try {
       final uploadedUrl = await _uploadPhoto(widget.uid);
@@ -78,8 +141,8 @@ class _AddFamilyMemberScreenState
         final updated = FamilyMember(
           id: widget.existing!.id,
           name: _nameCtrl.text.trim(),
-          relationship: _relationship,
-          age: int.tryParse(_ageCtrl.text),
+          relationship: _relationship!,
+          dateOfBirth: _dob,
           photoUrl: uploadedUrl,
           createdAt: widget.existing!.createdAt,
         );
@@ -88,8 +151,8 @@ class _AddFamilyMemberScreenState
         await notifier.add(
           widget.uid,
           name: _nameCtrl.text.trim(),
-          relationship: _relationship,
-          age: int.tryParse(_ageCtrl.text),
+          relationship: _relationship!,
+          dateOfBirth: _dob,
           photoUrl: uploadedUrl,
         );
       }
@@ -106,6 +169,8 @@ class _AddFamilyMemberScreenState
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = _photoFile != null || (_photoUrl != null && !_photoRemoved);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -130,10 +195,10 @@ class _AddFamilyMemberScreenState
                             AppColors.primary.withValues(alpha: 0.1),
                         backgroundImage: _photoFile != null
                             ? FileImage(_photoFile!)
-                            : (_photoUrl != null
+                            : (!_photoRemoved && _photoUrl != null
                                 ? NetworkImage(_photoUrl!)
                                 : null) as ImageProvider?,
-                        child: (_photoFile == null && _photoUrl == null)
+                        child: !hasPhoto
                             ? const Icon(Icons.person_rounded,
                                 size: 40, color: AppColors.primary)
                             : null,
@@ -157,11 +222,13 @@ class _AddFamilyMemberScreenState
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text('Add photo (optional)',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                child: Text(
+                  hasPhoto ? 'Tap to change or remove' : 'Add photo (optional)',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'),
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -179,13 +246,59 @@ class _AddFamilyMemberScreenState
               ),
               const SizedBox(height: 14),
 
+              // Date of birth
+              InkWell(
+                onTap: _pickDob,
+                borderRadius: BorderRadius.circular(10),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Date of Birth (optional)',
+                    prefixIcon: Icon(Icons.cake_outlined),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _dob != null
+                              ? DateFormat('d MMM yyyy').format(_dob!)
+                              : 'Tap to select',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            color: _dob != null
+                                ? AppColors.foreground
+                                : AppColors.mutedForeground,
+                          ),
+                        ),
+                      ),
+                      if (_dob != null)
+                        GestureDetector(
+                          onTap: () => setState(() => _dob = null),
+                          child: const Icon(Icons.clear_rounded,
+                              size: 16, color: AppColors.mutedForeground),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
               // Relationship
-              const Text('Relationship',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+              Row(
+                children: [
+                  const Text('Relationship',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.mutedForeground,
+                          fontFamily: 'Inter')),
+                  const Text(' *',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.destructive,
+                          fontFamily: 'Inter')),
+                ],
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -217,26 +330,6 @@ class _AddFamilyMemberScreenState
                     ),
                   );
                 }).toList(),
-              ),
-              const SizedBox(height: 14),
-
-              // Age
-              TextFormField(
-                controller: _ageCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Age (optional)',
-                  hintText: 'e.g. 8',
-                  prefixIcon: Icon(Icons.cake_outlined),
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null;
-                  final age = int.tryParse(v.trim());
-                  if (age == null || age < 0 || age > 130) {
-                    return 'Enter a valid age';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 32),
 
@@ -287,7 +380,15 @@ class _AddFamilyMemberScreenState
                       color: AppColors.mutedForeground,
                       fontFamily: 'Inter'),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
+                const Text(
+                  'Link their account so you can both see each other\'s care circle.',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'),
+                ),
+                const SizedBox(height: 6),
                 SizedBox(
                   width: double.infinity,
                   child: TextButton(
@@ -329,7 +430,6 @@ class _AddFamilyMemberScreenState
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.destructive),
             onPressed: () async {
-              // Capture navigator before async gap to avoid context misuse.
               final nav = Navigator.of(context);
               Navigator.pop(dialogCtx);
               await ref

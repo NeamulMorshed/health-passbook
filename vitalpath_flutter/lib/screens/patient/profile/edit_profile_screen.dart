@@ -258,7 +258,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 12),
             _Field(controller: _ecNameCtrl, label: 'Contact Name', icon: Icons.person_outline_rounded),
             const SizedBox(height: 12),
-            _Field(controller: _ecPhoneCtrl, label: 'Contact Phone', icon: Icons.contact_phone_outlined, keyboardType: TextInputType.phone),
+            _Field(
+              controller: _ecPhoneCtrl,
+              label: 'Contact Phone',
+              icon: Icons.contact_phone_outlined,
+              keyboardType: TextInputType.phone,
+              validator: (v) {
+                final name = _ecNameCtrl.text.trim();
+                final phone = v?.trim() ?? '';
+                if (name.isNotEmpty && phone.isEmpty) {
+                  return 'Phone number required when name is set';
+                }
+                if (phone.isNotEmpty) {
+                  final cleaned = phone.replaceAll(RegExp(r'[\s\-().+]'), '');
+                  if (cleaned.length < 7 || !RegExp(r'^\d+$').hasMatch(cleaned)) {
+                    return 'Enter a valid phone number';
+                  }
+                }
+                return null;
+              },
+            ),
             const SizedBox(height: 12),
             _Field(controller: _ecRelCtrl, label: 'Relationship (e.g. Spouse)', icon: Icons.people_outline_rounded),
             const SizedBox(height: 32),
