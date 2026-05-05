@@ -76,7 +76,7 @@ class AiInsightsService {
     required int medStreak,
     required int activityStreak,
   }) {
-    return '''You are a supportive health assistant for VitalPath, a personal health app. Analyze the patient's recent health data and provide 3 concise, actionable health insights.
+    return '''You are a supportive health assistant for Omra, a personal health app. Analyze the patient's recent health data and provide 3 concise, actionable health insights.
 
 Patient health data (last 7 days):
 - Medical conditions: ${conditions.isEmpty ? 'None listed' : conditions.join(', ')}

@@ -63,7 +63,7 @@ class _InviteFamilyMemberScreenState
 
   Future<void> _copyLink() async {
     await Clipboard.setData(
-        const ClipboardData(text: 'Join me on VitalPath!'));
+        const ClipboardData(text: 'Join me on Omra!'));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Copied to clipboard!')),
@@ -145,7 +145,7 @@ class _FormView extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'They\'ll get their own VitalPath account that appears in your care circle.',
+                  'They\'ll get their own Omra account that appears in your care circle.',
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 13,
@@ -279,7 +279,7 @@ class _SuccessView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'They\'ll receive an email to join VitalPath and link their account to yours.',
+          'They\'ll receive an email to join Omra and link their account to yours.',
           textAlign: TextAlign.center,
           style: TextStyle(
               fontSize: 14,

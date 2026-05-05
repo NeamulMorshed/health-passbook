@@ -40,9 +40,9 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                 child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 32),
               ),
               const SizedBox(height: 28),
-              const Text('Welcome to\nVitalPath', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground, height: 1.2)),
+              const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground, height: 1.2)),
               const SizedBox(height: 10),
-              const Text('How are you using VitalPath today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              const Text('How are you using Omra today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter')),
               const SizedBox(height: 48),
               _RoleCard(
                 icon: Icons.person_rounded,

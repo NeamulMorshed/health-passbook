@@ -41,20 +41,20 @@ void main() async {
       overrides: [
         // You can override providers here for testing
       ],
-      child: const VitalPathApp(),
+      child: const OmraApp(),
     ),
   );
 }
 
-class VitalPathApp extends ConsumerWidget {
-  const VitalPathApp({super.key});
+class OmraApp extends ConsumerWidget {
+  const OmraApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'VitalPath',
+      title: 'Omra',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,

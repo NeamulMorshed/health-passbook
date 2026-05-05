@@ -148,7 +148,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text('VitalPath v1.5.0', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              child: Text('Omra v2.0.0', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
             ),
           ),
         ],

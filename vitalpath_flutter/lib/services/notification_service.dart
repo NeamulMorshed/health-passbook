@@ -38,7 +38,7 @@ class NotificationService {
       if (notification != null) {
         showLocalNotification(
           id: message.hashCode,
-          title: notification.title ?? 'VitalPath',
+          title: notification.title ?? 'Omra',
           body: notification.body ?? '',
           channel: message.data['channel'] ?? AppConstants.notifChannelGeneral,
         );

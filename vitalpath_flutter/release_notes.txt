@@ -1,4 +1,4 @@
-VitalPath v1.9.0 — Test Build
+Omra v2.0.0 — Test Build
 
 What's new in this build:
 - Prescription scanner: offline Bangladesh drug database (350+ drugs) with fuzzy name matching

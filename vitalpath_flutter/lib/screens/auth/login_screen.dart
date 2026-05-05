@@ -120,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // ── Heading ────────────────────────────────────────────────
                 const Text(
-                  'Welcome to\nVitalPath',
+                  'Welcome to\nOmra',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,

@@ -90,7 +90,7 @@ class FirebaseAuthRepository implements AuthRepository {
           '1. Open the emulator Settings\n'
           '2. Go to Accounts → Add account → Google\n'
           '3. Sign in with your Gmail\n'
-          '4. Return to VitalPath and try again.',
+          '4. Return to Omra and try again.',
         );
       }
 

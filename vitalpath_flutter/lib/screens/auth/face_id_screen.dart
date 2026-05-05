@@ -65,7 +65,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
         return;
       }
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Use biometrics to log into VitalPath',
+        localizedReason: 'Use biometrics to log into Omra',
         options: const AuthenticationOptions(biometricOnly: false),
       );
       if (authenticated && mounted) {

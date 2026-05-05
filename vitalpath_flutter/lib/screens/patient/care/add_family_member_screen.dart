@@ -280,7 +280,7 @@ class _AddFamilyMemberScreenState
                 const Divider(height: 1, color: AppColors.border),
                 const SizedBox(height: 12),
                 const Text(
-                  'They use VitalPath?',
+                  'They use Omra?',
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,

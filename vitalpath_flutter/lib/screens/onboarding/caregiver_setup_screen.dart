@@ -329,7 +329,7 @@ class _Step2 extends StatelessWidget {
         _featureTile(
           Icons.search_rounded,
           'Search by name or hospital',
-          'Find any verified doctor on VitalPath',
+          'Find any verified doctor on Omra',
         ),
         const SizedBox(height: 10),
         _featureTile(
@@ -434,7 +434,7 @@ class _Step3State extends State<_Step3> {
         const SizedBox(height: 8),
         const Center(
           child: Text(
-            'VitalPath will help you stay on top of\ntheir medicines, meals, and appointments.',
+            'Omra will help you stay on top of\ntheir medicines, meals, and appointments.',
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 14,
