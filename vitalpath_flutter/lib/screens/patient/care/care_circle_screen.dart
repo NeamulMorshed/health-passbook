@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -9,7 +8,6 @@ import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
-import '../../../models/patient.dart';
 import 'add_family_member_screen.dart';
 
 class CareCircleScreen extends ConsumerWidget {
@@ -51,11 +49,9 @@ class _CareCircleBody extends ConsumerWidget {
   Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(myDoctorsProvider(uid));
     ref.invalidate(familyMembersProvider(uid));
-    ref.invalidate(patientProfileProvider(uid));
     await Future.wait([
       ref.read(myDoctorsProvider(uid).future).catchError((_) => <DoctorProfile>[]),
       ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
-      ref.read(patientProfileProvider(uid).future).catchError((_) => null),
     ]);
   }
 
@@ -75,17 +71,11 @@ class _CareCircleBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final doctorsAsync = ref.watch(myDoctorsProvider(uid));
     final membersAsync = ref.watch(familyMembersProvider(uid));
-    final patientAsync = ref.watch(patientProfileProvider(uid));
 
     final doctorCount = doctorsAsync.asData?.value.length ?? 0;
     final memberCount = membersAsync.asData?.value.length ?? 0;
-    final hasEmergencyContact =
-        patientAsync.asData?.value?.emergencyContact != null;
-    final totalPeople =
-        doctorCount + memberCount + (hasEmergencyContact ? 1 : 0);
-    final isLoading = doctorsAsync.isLoading ||
-        membersAsync.isLoading ||
-        patientAsync.isLoading;
+    final totalPeople = doctorCount + memberCount;
+    final isLoading = doctorsAsync.isLoading || membersAsync.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -154,8 +144,6 @@ class _CareCircleBody extends ConsumerWidget {
                                     '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
-                                  if (hasEmergencyContact)
-                                    'emergency contact',
                                 ].isEmpty
                                   ? 'Add people to your care circle.'
                                   : [
@@ -163,8 +151,6 @@ class _CareCircleBody extends ConsumerWidget {
                                         '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
-                                      if (hasEmergencyContact)
-                                        'emergency contact',
                                     ].join(' · '),
                           style: TextStyle(
                               fontSize: 12,
@@ -261,56 +247,6 @@ class _CareCircleBody extends ConsumerWidget {
                   children: members
                       .map((m) => _FamilyMemberCard(uid: uid, member: m))
                       .toList(),
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── Emergency contact section ───────────────────────────────────
-            _SectionHeader(
-              icon: Icons.emergency_rounded,
-              title: 'Emergency Contact',
-              color: AppColors.destructive,
-              action: TextButton.icon(
-                onPressed: () => context.push('/edit-profile'),
-                icon: Icon(
-                  hasEmergencyContact
-                      ? Icons.edit_rounded
-                      : Icons.add_rounded,
-                  size: 14,
-                ),
-                label: Text(
-                  hasEmergencyContact ? 'Edit' : 'Add',
-                  style: const TextStyle(fontSize: 12, fontFamily: 'Inter'),
-                ),
-                style: TextButton.styleFrom(
-                    foregroundColor: AppColors.destructive,
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              ),
-            ),
-            const SizedBox(height: 10),
-            patientAsync.when(
-              loading: () => const _ShimmerCard(),
-              error: (_, __) => _ErrorCard(
-                message: 'Could not load emergency contact.',
-                onRetry: () => ref.invalidate(patientProfileProvider(uid)),
-              ),
-              data: (patient) {
-                final contact = patient?.emergencyContact;
-                if (contact == null) {
-                  return _EmptyCard(
-                    icon: Icons.add_call,
-                    message: 'No emergency contact saved.',
-                    actionLabel: 'Add in Profile',
-                    onAction: () => context.push('/edit-profile'),
-                  );
-                }
-                return _EmergencyContactCard(
-                  contact: contact,
-                  onEdit: () => context.push('/edit-profile'),
                 );
               },
             ),
@@ -910,89 +846,6 @@ class _MemberDetailSheet extends ConsumerWidget {
         ),
       ),
     );
-  }
-}
-
-// ─── Emergency contact card ───────────────────────────────────────────────────
-class _EmergencyContactCard extends StatelessWidget {
-  final EmergencyContact contact;
-  final VoidCallback onEdit;
-  const _EmergencyContactCard(
-      {required this.contact, required this.onEdit});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border:
-            Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.destructive.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.emergency_rounded,
-              color: AppColors.destructive, size: 22),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (contact.relationship.isNotEmpty)
-                  Text(
-                    contact.relationship,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'),
-                  ),
-                Text(
-                  contact.name.isNotEmpty ? contact.name : contact.phone,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter'),
-                ),
-                if (contact.name.isNotEmpty && contact.phone.isNotEmpty)
-                  Text(
-                    contact.phone,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'),
-                  ),
-              ]),
-        ),
-        IconButton(
-          onPressed: onEdit,
-          icon: const Icon(Icons.edit_rounded,
-              size: 18, color: AppColors.mutedForeground),
-          tooltip: 'Edit contact',
-        ),
-        if (contact.phone.isNotEmpty)
-          IconButton(
-            onPressed: () => _call(contact.phone),
-            icon: const Icon(Icons.call_rounded, color: AppColors.success),
-            tooltip: 'Call',
-          ),
-      ]),
-    );
-  }
-
-  Future<void> _call(String number) async {
-    final cleaned = number.replaceAll(RegExp(r'[^\d+]'), '');
-    if (cleaned.isEmpty) return;
-    final uri = Uri.parse('tel:$cleaned');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
   }
 }
 

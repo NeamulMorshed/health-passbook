@@ -62,6 +62,16 @@ service cloud.firestore {
         allow delete: if isSignedIn() && isOwner(patientId);
       }
 
+      match /family_members/{memberId} {
+        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)));
+        allow create, update: if isSignedIn() && isOwner(patientId);
+        allow delete:         if isSignedIn() && isOwner(patientId);
+
+        match /medicines/{medId} {
+          allow read, write: if isSignedIn() && isOwner(patientId);
+        }
+      }
+
       // Patient ↔ Doctor connections — doctor creates both sides during confirmation batch.
       match /connections/{doctorId} {
         allow read:   if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
