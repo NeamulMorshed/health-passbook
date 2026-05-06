@@ -132,6 +132,19 @@ service cloud.firestore {
         request.resource.data.doctorId == request.auth.uid;
     }
 
+    // ── vitals ────────────────────────────────────────────────────────────────
+
+    match /vitals/{readingId} {
+      allow read:   if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId))
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.patientId == request.auth.uid;
+      allow delete: if isSignedIn() &&
+        resource.data.patientId == request.auth.uid;
+    }
+
     // ── gamification ──────────────────────────────────────────────────────────
 
     match /gamification/{uid} {

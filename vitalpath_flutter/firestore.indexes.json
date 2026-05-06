@@ -48,6 +48,14 @@
         { "fieldPath": "isActive",   "order": "ASCENDING" },
         { "fieldPath": "startDate",  "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "vitals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientId",  "order": "ASCENDING" },
+        { "fieldPath": "recordedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
