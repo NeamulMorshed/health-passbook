@@ -56,6 +56,13 @@ abstract interface class AuthRepository {
   /// Launches the Google sign-in sheet and returns an [AuthResult].
   Future<AuthResult> signInWithGoogle();
 
+  /// Signs in with email + password. Returns [AuthSuccess] or [AuthFailure].
+  Future<AuthResult> signInWithEmail(String email, String password);
+
+  /// Creates a new Firebase Auth account with email + password.
+  /// Returns [AuthNewUser] on success so the caller can complete onboarding.
+  Future<AuthResult> registerWithEmail(String email, String password);
+
   /// Resolves the Firestore profile for [uid].
   /// Returns [AuthSuccess] if a profile exists, [AuthNewUser] if not.
   Future<AuthResult> getUserState(String uid);

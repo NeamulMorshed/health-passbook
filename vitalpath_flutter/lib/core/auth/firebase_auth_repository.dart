@@ -110,6 +110,32 @@ class FirebaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthResult> signInWithEmail(String email, String password) async {
+    try {
+      final uc = await _auth.signInWithEmailAndPassword(
+          email: email.trim(), password: password);
+      return getUserState(uc.user!.uid);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_codeToMessage(e.code), cause: e);
+    } catch (e) {
+      return AuthFailure('Sign-in failed. Please try again.', cause: e);
+    }
+  }
+
+  @override
+  Future<AuthResult> registerWithEmail(String email, String password) async {
+    try {
+      final uc = await _auth.createUserWithEmailAndPassword(
+          email: email.trim(), password: password);
+      return AuthNewUser(uid: uc.user!.uid, email: uc.user!.email);
+    } on FirebaseAuthException catch (e) {
+      return AuthFailure(_codeToMessage(e.code), cause: e);
+    } catch (e) {
+      return AuthFailure('Registration failed. Please try again.', cause: e);
+    }
+  }
+
+  @override
   Future<AuthResult> getUserState(String uid) async {
     try {
       final doc =
@@ -214,8 +240,19 @@ class FirebaseAuthRepository implements AuthRepository {
   String _codeToMessage(String code) => switch (code) {
         'account-exists-with-different-credential' =>
           'This email is linked to a different sign-in method.',
-        'invalid-credential' =>
-          'Sign-in credentials are invalid or expired.',
+        'invalid-credential' ||
+        'wrong-password' =>
+          'Email or password is incorrect.',
+        'user-not-found' =>
+          'No account found with this email.',
+        'email-already-in-use' =>
+          'An account already exists with this email. Try signing in instead.',
+        'weak-password' =>
+          'Password must be at least 6 characters.',
+        'invalid-email' =>
+          'Please enter a valid email address.',
+        'too-many-requests' =>
+          'Too many attempts. Please wait a moment and try again.',
         'network-request-failed' =>
           'No internet connection. Please try again.',
         'user-disabled' =>
