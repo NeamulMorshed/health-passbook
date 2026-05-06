@@ -1050,6 +1050,87 @@ class _MedDetailSheet extends ConsumerWidget {
             if (med.notes != null && med.notes!.isNotEmpty)
               _DetailRow(icon: Icons.notes_rounded, label: 'Notes', value: med.notes!),
 
+            // Prescription photo
+            if (med.scannedPhotoUrl != null) ...[
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 16),
+              const Text('Prescription Photo',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Inter')),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    insetPadding: const EdgeInsets.all(16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        med.scannedPhotoUrl!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Icon(Icons.broken_image_rounded,
+                              size: 48, color: AppColors.mutedForeground),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    med.scannedPhotoUrl!,
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (_, child, progress) => progress == null
+                        ? child
+                        : Container(
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: AppColors.muted,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Center(
+                                child: CircularProgressIndicator()),
+                          ),
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.muted,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.broken_image_rounded,
+                                size: 18, color: AppColors.mutedForeground),
+                            SizedBox(width: 8),
+                            Text('Could not load image',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.mutedForeground,
+                                    fontFamily: 'Inter')),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text('Tap to view full size',
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter')),
+            ],
+
             // Today's doses
             if (slots.isNotEmpty) ...[
               const SizedBox(height: 20),
