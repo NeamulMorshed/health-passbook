@@ -16,10 +16,20 @@ class PatientShell extends StatelessWidget {
 
   int _currentIndex(BuildContext context) {
     final loc = GoRouterState.of(context).matchedLocation;
+    // Longest-match first: check exact or prefix, but don't let '/care'
+    // steal a match from '/care-circle'.
+    int best = 0;
+    int bestLen = 0;
     for (int i = 0; i < _tabs.length; i++) {
-      if (loc.startsWith(_tabs[i].route)) return i;
+      final route = _tabs[i].route;
+      if (loc == route || loc.startsWith('$route/')) {
+        if (route.length > bestLen) {
+          best = i;
+          bestLen = route.length;
+        }
+      }
     }
-    return 0;
+    return best;
   }
 
   @override

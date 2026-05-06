@@ -60,11 +60,6 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
             title: const Text('Care'),
             automaticallyImplyLeading: false,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.people_rounded),
-                tooltip: 'Care Circle',
-                onPressed: () => context.go('/care-circle'),
-              ),
               const NotifBell(),
             ],
             bottom: TabBar(
