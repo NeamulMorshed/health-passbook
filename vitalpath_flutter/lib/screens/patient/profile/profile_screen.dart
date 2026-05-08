@@ -127,6 +127,19 @@ class ProfileScreen extends ConsumerWidget {
 
               const SizedBox(height: 12),
 
+              // ── Family & Care ────────────────────────────────────────────
+              _SectionLabel('Family & Care'),
+              Container(
+                color: AppColors.surface,
+                child: Column(children: [
+                  _MenuItem(icon: Icons.shield_rounded, label: 'Care Circle', subtitle: 'Manage caregivers & access', color: const Color(0xFF7C3AED), onTap: () => context.push('/care-circle')),
+                  _MenuDivider(),
+                  _MenuItem(icon: Icons.family_restroom_rounded, label: 'Family Members', subtitle: 'Add & manage household', color: const Color(0xFFF59E0B), onTap: () => context.push('/care-circle')),
+                ]),
+              ),
+
+              const SizedBox(height: 12),
+
               // ── Health Section ──────────────────────────────────────────
               _SectionLabel('Health'),
               Container(
@@ -241,17 +254,21 @@ class _InfoRow extends StatelessWidget {
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? subtitle;
   final Color color;
   final VoidCallback onTap;
-  const _MenuItem({required this.icon, required this.label, required this.color, required this.onTap});
+  const _MenuItem({required this.icon, required this.label, required this.color, required this.onTap, this.subtitle});
   @override
   Widget build(BuildContext context) => ListTile(
     leading: Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
       child: Icon(icon, color: color, size: 20),
     ),
     title: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+    subtitle: subtitle != null
+        ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'))
+        : null,
     trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
     onTap: onTap,
   );

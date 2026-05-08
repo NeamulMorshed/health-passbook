@@ -136,15 +136,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/doc/onboarding/profile',
           builder: (_, __) => const DocProfileSetupScreen()),
 
-      // Patient shell
+      // Patient shell — 5 tabs: Home, Medicines, Vitals, Appointments, Profile
       ShellRoute(
         builder: (context, state, child) => PatientShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/care', builder: (_, __) => const CareScreen()),
-          GoRoute(
-              path: '/care-circle',
-              builder: (_, __) => const CareCircleScreen()),
+          GoRoute(path: '/vitals', builder: (_, __) => const VitalsScreen()),
           GoRoute(
               path: '/appointments',
               builder: (_, __) => const AppointmentsScreen()),
@@ -152,6 +150,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
+
+      // Care Circle is a push route accessible from Profile and Home
+      GoRoute(
+          path: '/care-circle',
+          builder: (_, __) => const CareCircleScreen()),
 
       // Activity is a full-screen push route (accessible from Home)
       GoRoute(
@@ -207,10 +210,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CaregiverPatientProfileScreen(connection: conn);
         },
       ),
-      GoRoute(
-          path: '/vitals',
-          builder: (_, __) => const VitalsScreen()),
-
       // Doctor shell
       ShellRoute(
         builder: (context, state, child) => DoctorShell(child: child),

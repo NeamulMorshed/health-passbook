@@ -6,18 +6,45 @@ class PatientShell extends StatelessWidget {
   final Widget child;
   const PatientShell({super.key, required this.child});
 
+  // Home · Medicines · Vitals · Appointments · Profile
+  // "Care" renamed to "Medicines" — clearer daily-use label.
+  // "Vitals" promoted from full-screen push to a first-class tab.
+  // "Circle" removed from nav — accessible via Profile → Care Circle.
   static const _tabs = [
-    _TabItem(icon: Icons.home_rounded, label: 'Home', route: '/home'),
-    _TabItem(icon: Icons.medication_rounded, label: 'Care', route: '/care'),
-    _TabItem(icon: Icons.people_rounded, label: 'Circle', route: '/care-circle'),
-    _TabItem(icon: Icons.calendar_today_rounded, label: 'Visits', route: '/appointments'),
-    _TabItem(icon: Icons.person_rounded, label: 'Profile', route: '/profile'),
+    _TabItem(
+      icon: Icons.home_rounded,
+      activeIcon: Icons.home_rounded,
+      label: 'Home',
+      route: '/home',
+    ),
+    _TabItem(
+      icon: Icons.medication_outlined,
+      activeIcon: Icons.medication_rounded,
+      label: 'Medicines',
+      route: '/care',
+    ),
+    _TabItem(
+      icon: Icons.monitor_heart_outlined,
+      activeIcon: Icons.monitor_heart_rounded,
+      label: 'Vitals',
+      route: '/vitals',
+    ),
+    _TabItem(
+      icon: Icons.calendar_today_outlined,
+      activeIcon: Icons.calendar_today_rounded,
+      label: 'Appointments',
+      route: '/appointments',
+    ),
+    _TabItem(
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      label: 'Profile',
+      route: '/profile',
+    ),
   ];
 
   int _currentIndex(BuildContext context) {
     final loc = GoRouterState.of(context).matchedLocation;
-    // Longest-match first: check exact or prefix, but don't let '/care'
-    // steal a match from '/care-circle'.
     int best = 0;
     int bestLen = 0;
     for (int i = 0; i < _tabs.length; i++) {
@@ -44,10 +71,30 @@ class PatientShell extends StatelessWidget {
         child: BottomNavigationBar(
           currentIndex: idx,
           onTap: (i) => context.go(_tabs[i].route),
-          items: _tabs.map((t) => BottomNavigationBarItem(
-            icon: Icon(t.icon),
-            label: t.label,
-          )).toList(),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.mutedForeground,
+          selectedLabelStyle: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+            fontSize: 11,
+          ),
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          items: List.generate(_tabs.length, (i) {
+            final t = _tabs[i];
+            final active = i == idx;
+            return BottomNavigationBarItem(
+              icon: Icon(active ? t.activeIcon : t.icon),
+              label: t.label,
+            );
+          }),
         ),
       ),
     );
@@ -56,7 +103,13 @@ class PatientShell extends StatelessWidget {
 
 class _TabItem {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final String route;
-  const _TabItem({required this.icon, required this.label, required this.route});
+  const _TabItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.route,
+  });
 }
