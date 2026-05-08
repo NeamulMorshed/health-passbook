@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
+import '../../../providers/caregiver_provider.dart';
 import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
+import '../../../models/caregiver_connection.dart';
 import 'add_family_member_screen.dart';
+import 'invite_caregiver_screen.dart';
+import 'manage_caregiver_screen.dart';
 
 class CareCircleScreen extends ConsumerWidget {
   const CareCircleScreen({super.key});
@@ -49,6 +54,7 @@ class _CareCircleBody extends ConsumerWidget {
   Future<void> _refresh(WidgetRef ref) async {
     ref.invalidate(myDoctorsProvider(uid));
     ref.invalidate(familyMembersProvider(uid));
+    ref.invalidate(patientCaregiverConnectionsProvider(uid));
     await Future.wait([
       ref.read(myDoctorsProvider(uid).future).catchError((_) => <DoctorProfile>[]),
       ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
@@ -71,10 +77,13 @@ class _CareCircleBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final doctorsAsync = ref.watch(myDoctorsProvider(uid));
     final membersAsync = ref.watch(familyMembersProvider(uid));
+    final caregiversAsync = ref.watch(patientCaregiverConnectionsProvider(uid));
 
     final doctorCount = doctorsAsync.asData?.value.length ?? 0;
     final memberCount = membersAsync.asData?.value.length ?? 0;
-    final totalPeople = doctorCount + memberCount;
+    final caregiverCount = caregiversAsync.asData?.value
+        .where((c) => c.isConnected).length ?? 0;
+    final totalPeople = doctorCount + memberCount + caregiverCount;
     final isLoading = doctorsAsync.isLoading || membersAsync.isLoading;
 
     return Scaffold(
@@ -144,6 +153,8 @@ class _CareCircleBody extends ConsumerWidget {
                                     '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
+                                  if (caregiverCount > 0)
+                                    '$caregiverCount ${caregiverCount == 1 ? 'caregiver' : 'caregivers'}',
                                 ].isEmpty
                                   ? 'Add people to your care circle.'
                                   : [
@@ -151,6 +162,8 @@ class _CareCircleBody extends ConsumerWidget {
                                         '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
+                                      if (caregiverCount > 0)
+                                        '$caregiverCount ${caregiverCount == 1 ? 'caregiver' : 'caregivers'}',
                                     ].join(' · '),
                           style: TextStyle(
                               fontSize: 12,
@@ -246,6 +259,62 @@ class _CareCircleBody extends ConsumerWidget {
                 return Column(
                   children: members
                       .map((m) => _FamilyMemberCard(uid: uid, member: m))
+                      .toList(),
+                );
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Caregivers / family viewers section ─────────────────────────
+            _SectionHeader(
+              icon: Icons.shield_rounded,
+              title: 'Caregivers',
+              count: caregiversAsync.hasValue
+                  ? caregiversAsync.asData!.value.length
+                  : null,
+              color: const Color(0xFF7C3AED),
+              action: TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const InviteCaregiverScreen()),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 14),
+                label: const Text('Invite',
+                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF7C3AED),
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+              ),
+            ),
+            const SizedBox(height: 10),
+            caregiversAsync.when(
+              loading: () => const _ShimmerCard(),
+              error: (_, __) => _ErrorCard(
+                message: 'Could not load caregivers.',
+                onRetry: () =>
+                    ref.invalidate(patientCaregiverConnectionsProvider(uid)),
+              ),
+              data: (connections) {
+                if (connections.isEmpty) {
+                  return _EmptyCard(
+                    icon: Icons.shield_outlined,
+                    message:
+                        'No caregivers connected yet.\nInvite a family member to view your health.',
+                    actionLabel: 'Invite caregiver',
+                    onAction: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const InviteCaregiverScreen()),
+                    ),
+                  );
+                }
+                return Column(
+                  children: connections
+                      .map((c) => _CaregiverCard(connection: c))
                       .toList(),
                 );
               },
@@ -1025,4 +1094,107 @@ class _ShimmerCardState extends State<_ShimmerCard>
           ),
         ),
       );
+}
+
+// ─── Caregiver card ───────────────────────────────────────────────────────────
+class _CaregiverCard extends ConsumerWidget {
+  final CaregiverConnection connection;
+  const _CaregiverCard({required this.connection});
+
+  static const _purple = Color(0xFF7C3AED);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = connection.caregiverName ?? connection.caregiverEmail;
+    final initials = _initials(name);
+    final isPending = connection.isPending;
+
+    return GestureDetector(
+      onTap: isPending
+          ? null
+          : () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ManageCaregiverScreen(connection: connection),
+                ),
+              ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: isPending
+                  ? AppColors.warning.withValues(alpha: 0.4)
+                  : AppColors.border),
+        ),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: _purple.withValues(alpha: 0.12),
+            child: Text(initials,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: _purple,
+                    fontFamily: 'Inter')),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter')),
+                  Text(connection.relationship.relationshipLabel,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.mutedForeground,
+                          fontFamily: 'Inter')),
+                  if (!isPending)
+                    Text(
+                      'Connected ${connection.connectedAt != null ? DateFormat('MMM d, y').format(connection.connectedAt!) : ''}',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.mutedForeground,
+                          fontFamily: 'Inter'),
+                    ),
+                ]),
+          ),
+          if (isPending)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('Pending',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.warning,
+                      fontFamily: 'Inter')),
+            )
+          else
+            const Icon(Icons.chevron_right_rounded,
+                size: 20, color: AppColors.mutedForeground),
+        ]),
+      ),
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    if (name.contains('@')) return name[0].toUpperCase();
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
 }

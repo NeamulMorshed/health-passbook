@@ -20,6 +20,10 @@ import '../care/care_screen.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../models/vital_reading.dart';
 import '../../../core/widgets/onboarding_tour.dart';
+import '../../../providers/caregiver_provider.dart';
+import '../../../models/caregiver_connection.dart';
+import '../../caregiver/accept_invite_screen.dart';
+import '../../caregiver/caregiver_patient_profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -112,6 +116,76 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
   }
 }
 
+// ── Pending caregiver invite banner ──────────────────────────────────────────
+// Shown to any user who has a pending caregiver invite addressed to their email.
+
+class _PendingInviteBanner extends ConsumerWidget {
+  final String email;
+  const _PendingInviteBanner({required this.email});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (email.isEmpty) return const SizedBox.shrink();
+    final invitesAsync = ref.watch(pendingInvitesForEmailProvider(email));
+    final invites = invitesAsync.asData?.value ?? [];
+    if (invites.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: invites
+          .map((inv) => GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => AcceptInviteScreen(connection: inv)),
+                ),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color:
+                            const Color(0xFF7C3AED).withValues(alpha: 0.3)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.shield_rounded,
+                        color: Color(0xFF7C3AED), size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${inv.patientName} invited you to their Care Circle',
+                            style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: AppColors.foreground),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Tap to view and accept or decline',
+                            style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                color: AppColors.mutedForeground),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 18, color: Color(0xFF7C3AED)),
+                  ]),
+                ),
+              ))
+          .toList(),
+    );
+  }
+}
+
 class _HomeContent extends ConsumerWidget {
   final AppUser user;
   const _HomeContent({required this.user});
@@ -170,6 +244,7 @@ class _HomeContent extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   const _NotifPermBanner(),
+                  _PendingInviteBanner(email: user.email ?? ''),
                   // AI Insights shortcut — prominent placement above stats
                   GestureDetector(
                     onTap: () => context.push('/insights'),
@@ -603,9 +678,21 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
     return 'Good Evening';
   }
 
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
   @override
   Widget build(BuildContext context) {
     final membersAsync = ref.watch(familyMembersProvider(widget.user.uid));
+    final connectedPatientsAsync =
+        ref.watch(caregiverPatientsProvider(widget.user.uid));
+    final pendingInvitesAsync = ref.watch(
+        pendingInvitesForEmailProvider(widget.user.email ?? ''));
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     return membersAsync.when(
@@ -684,6 +771,132 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
                   padding: const EdgeInsets.all(20),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
+                      // ── Pending care circle invites ───────────────────────
+                      ...((pendingInvitesAsync.asData?.value ?? [])
+                          .map((inv) => GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          AcceptInviteScreen(connection: inv)),
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF7C3AED)
+                                        .withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: const Color(0xFF7C3AED)
+                                            .withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(children: [
+                                    const Icon(Icons.shield_rounded,
+                                        color: Color(0xFF7C3AED), size: 20),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        '${inv.patientName} invited you to their Care Circle',
+                                        style: const TextStyle(
+                                            fontFamily: 'Inter',
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13),
+                                      ),
+                                    ),
+                                    const Icon(Icons.chevron_right_rounded,
+                                        size: 18,
+                                        color: Color(0xFF7C3AED)),
+                                  ]),
+                                ),
+                              ))),
+
+                      // ── My Patients (connected via Care Circle) ───────────
+                      ...((connectedPatientsAsync.asData?.value ?? [])
+                          .isNotEmpty
+                          ? [
+                              const Text(
+                                'My Patients',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.mutedForeground,
+                                    fontFamily: 'Inter'),
+                              ),
+                              const SizedBox(height: 10),
+                              ...((connectedPatientsAsync.asData?.value ?? [])
+                                  .map((conn) => GestureDetector(
+                                        onTap: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                CaregiverPatientProfileScreen(
+                                                    connection: conn),
+                                          ),
+                                        ),
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(bottom: 10),
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.surface,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                                color: AppColors.border),
+                                          ),
+                                          child: Row(children: [
+                                            CircleAvatar(
+                                              radius: 22,
+                                              backgroundColor: const Color(
+                                                      0xFF7C3AED)
+                                                  .withValues(alpha: 0.12),
+                                              child: Text(
+                                                _initials(conn.patientName),
+                                                style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFF7C3AED),
+                                                    fontFamily: 'Inter'),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(conn.patientName,
+                                                      style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          fontFamily: 'Inter')),
+                                                  Text(
+                                                    conn.relationship
+                                                        .relationshipLabel,
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors
+                                                            .mutedForeground,
+                                                        fontFamily: 'Inter'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Icon(
+                                                Icons.chevron_right_rounded,
+                                                size: 18,
+                                                color:
+                                                    AppColors.mutedForeground),
+                                          ]),
+                                        ),
+                                      ))),
+                              const SizedBox(height: 14),
+                            ]
+                          : []),
+
                       // ── Who are you checking on? ──────────────────────────
                       const Text(
                         'Who are you checking on today?',

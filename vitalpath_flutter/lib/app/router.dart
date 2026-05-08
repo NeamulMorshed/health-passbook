@@ -32,8 +32,13 @@ import '../screens/patient/insights/insights_screen.dart';
 import '../screens/patient/prescriptions/prescriptions_screen.dart';
 import '../screens/patient/care/care_circle_screen.dart';
 import '../screens/patient/care/invite_family_member_screen.dart';
+import '../screens/patient/care/invite_caregiver_screen.dart';
+import '../screens/patient/care/manage_caregiver_screen.dart';
+import '../screens/caregiver/accept_invite_screen.dart';
+import '../screens/caregiver/caregiver_patient_profile_screen.dart';
 import '../screens/onboarding/caregiver_setup_screen.dart';
 import '../screens/patient/vitals/vitals_screen.dart';
+import '../models/caregiver_connection.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
 // A thin ChangeNotifier whose only job is to ping GoRouter when auth state
@@ -178,6 +183,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/invite-family',
           builder: (_, __) => const InviteFamilyMemberScreen()),
+      GoRoute(
+          path: '/invite-caregiver',
+          builder: (_, __) => const InviteCaregiverScreen()),
+      GoRoute(
+        path: '/manage-caregiver',
+        builder: (_, state) {
+          final conn = state.extra as CaregiverConnection;
+          return ManageCaregiverScreen(connection: conn);
+        },
+      ),
+      GoRoute(
+        path: '/accept-invite',
+        builder: (_, state) {
+          final conn = state.extra as CaregiverConnection;
+          return AcceptInviteScreen(connection: conn);
+        },
+      ),
+      GoRoute(
+        path: '/caregiver-patient-profile',
+        builder: (_, state) {
+          final conn = state.extra as CaregiverConnection;
+          return CaregiverPatientProfileScreen(connection: conn);
+        },
+      ),
       GoRoute(
           path: '/vitals',
           builder: (_, __) => const VitalsScreen()),

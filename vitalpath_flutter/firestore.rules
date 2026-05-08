@@ -145,6 +145,29 @@ service cloud.firestore {
         resource.data.patientId == request.auth.uid;
     }
 
+    // ── caregiver_connections ─────────────────────────────────────────────────
+    // Patient creates and owns connections. Caregiver (matched by email or UID)
+    // can read their own and update to accept/decline an invite.
+
+    match /caregiver_connections/{connId} {
+      allow read: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverUid == request.auth.uid ||
+        resource.data.caregiverEmail == request.auth.token.email
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.patientId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverEmail == request.auth.token.email ||
+        resource.data.caregiverUid == request.auth.uid
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverUid == request.auth.uid
+      );
+    }
+
     // ── gamification ──────────────────────────────────────────────────────────
 
     match /gamification/{uid} {
