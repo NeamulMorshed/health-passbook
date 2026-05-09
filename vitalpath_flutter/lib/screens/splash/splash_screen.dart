@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -180,15 +181,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.favorite_rounded,
-                      size: 46, color: AppColors.primary),
+                SvgPicture.asset(
+                  'assets/icons/Starting logo.svg',
+                  width: 120,
+                  height: 120,
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -244,15 +240,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 110,
-                        height: 110,
-                        decoration: BoxDecoration(
-                          color: data.color.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(data.icon, size: 56, color: data.color),
-                      ),
+                      _step == 0
+                          ? SvgPicture.asset(
+                              'assets/icons/Starting logo.svg',
+                              width: 110,
+                              height: 110,
+                            )
+                          : Container(
+                              width: 110,
+                              height: 110,
+                              decoration: BoxDecoration(
+                                color: data.color.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(data.icon, size: 56, color: data.color),
+                            ),
                       const SizedBox(height: 32),
                       Text(
                         data.title,

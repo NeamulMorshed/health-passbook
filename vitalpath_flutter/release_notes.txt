@@ -1,15 +1,4 @@
-Omra v2.0.0 — Test Build
+VitalPath v2.4.1+16 — Custom Splash Logo
 
-What's new in this build:
-- Prescription scanner: offline Bangladesh drug database (350+ drugs) with fuzzy name matching
-- Prescription scanner: drug interaction warnings powered by RxNorm
-- Date of birth picker replaces manual age entry (age calculated dynamically)
-- Notification permission nudge on home screen when notifications are disabled
-- Abnormal vital reading confirmation before saving
-- Duplicate medicine name warning before adding
-- Gamification HP awards now active for doses, meals, and activity sessions
-- Various stability and UX fixes
-
-Features requiring setup (disabled in this build):
-- AI prescription scanner (requires Claude API key)
-- AI Health Insights (requires Claude API key)
+- Replaced placeholder heart icon on the starting screen with the custom SVG logo
+- Logo appears on both the loading splash and the onboarding first slide
