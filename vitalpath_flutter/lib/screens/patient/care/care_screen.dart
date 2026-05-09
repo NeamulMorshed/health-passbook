@@ -662,13 +662,14 @@ class _MedCardState extends ConsumerState<_MedCard> {
               onSelected: (v) {
                 if (v == 'edit') {
                   showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
-                } else {
+                } else if (v == 'delete') {
                   _confirmDelete(context);
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
-                PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Remove', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
+                if (widget.med.prescribedBy == null)
+                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Remove', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
               ],
             ),
           ]),
@@ -719,26 +720,65 @@ class _MedCardState extends ConsumerState<_MedCard> {
   void _confirmDelete(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Remove ${widget.med.name} from your medicines?',
-            style: const TextStyle(fontFamily: 'Inter')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              if (widget.familyMember != null) {
-                await ref.read(familyMedicinePatchProvider).delete(widget.uid, widget.familyMember!.id, widget.med.id);
-              } else {
-                await ref.read(medicineNotifierProvider.notifier).delete(widget.uid, widget.med.id);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            child: const Text('Remove'),
+      builder: (dialogCtx) {
+        bool removing = false;
+        return StatefulBuilder(
+          builder: (_, setDialogState) => AlertDialog(
+            title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
+            content: Text(
+              'Are you sure you want to remove ${widget.med.name} from your medicines? This action cannot be undone.',
+              style: const TextStyle(fontFamily: 'Inter'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: removing ? null : () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: removing
+                    ? null
+                    : () async {
+                        setDialogState(() => removing = true);
+                        try {
+                          if (widget.familyMember != null) {
+                            await ref.read(familyMedicinePatchProvider).delete(
+                                widget.uid, widget.familyMember!.id, widget.med.id);
+                          } else {
+                            await ref
+                                .read(medicineNotifierProvider.notifier)
+                                .delete(widget.uid, widget.med.id);
+                          }
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('${widget.med.name} removed'),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                            ));
+                          }
+                        } catch (_) {
+                          setDialogState(() => removing = false);
+                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('Failed to remove medicine. Please try again.'),
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                          }
+                        }
+                      },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                child: removing
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Remove'),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

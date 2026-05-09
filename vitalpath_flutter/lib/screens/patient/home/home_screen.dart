@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -216,6 +215,14 @@ class _HomeContent extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
 
+                  // ── SNAPSHOT: TODAY'S HEALTH AT A GLANCE ──────────────────
+                  _DailySnapshotRow(
+                    medsAsync: medsAsync,
+                    medStreak: gamAsync.asData?.value.medStreak,
+                    apptsAsync: apptsAsync,
+                  ),
+                  const SizedBox(height: 16),
+
                   // ── TIER 0: ALERTS ─────────────────────────────────────────
                   const _NotifPermBanner(),
                   _PendingInviteBanner(email: user.email ?? ''),
@@ -226,19 +233,14 @@ class _HomeContent extends ConsumerWidget {
                   _MorningCheckinCard(uid: user.uid),
                   // Hydration tracker (11am onwards)
                   _HydrationTracker(),
-                  // Symptom quick log (always available, compact)
-                  _SymptomQuickLog(uid: user.uid),
                   const SizedBox(height: 6),
 
                   // ── TIER 2: TODAY'S ACTIONS ────────────────────────────────
-                  const _SectionLabel('What needs doing now'),
-                  const SizedBox(height: 10),
+                  _EndOfDayAwarenessCard(uid: user.uid),
                   _UpcomingTasksCard(uid: user.uid),
                   const SizedBox(height: 20),
 
                   // ── TIER 3: DAILY STATUS ───────────────────────────────────
-                  _Zone1StatusCard(user: user, vitalsAsync: vitalsAsync, medsAsync: medsAsync),
-                  const SizedBox(height: 6),
                   _CaregiversActiveBanner(uid: user.uid),
                   const SizedBox(height: 14),
 
@@ -249,14 +251,7 @@ class _HomeContent extends ConsumerWidget {
                   _RefillCountdownCard(medsAsync: medsAsync),
 
                   // ── TIER 5: NUMBERS & EXPLORATION ─────────────────────────
-                  const _SectionLabel("Today's health at a glance"),
-                  const SizedBox(height: 10),
-                  _DailySnapshotRow(
-                    medsAsync: medsAsync,
-                    medStreak: gamAsync.asData?.value.medStreak,
-                    apptsAsync: apptsAsync,
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 4),
                   _AdherenceRingCard(uid: user.uid),
                   const SizedBox(height: 14),
                   _FamilyStatusBar(uid: user.uid),
@@ -285,8 +280,6 @@ class _HomeContent extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // ── FOOTER: EMERGENCY CONTACTS ─────────────────────────────
-                  _EmergencyContactsStrip(uid: user.uid, apptsAsync: apptsAsync),
                   const SizedBox(height: 24),
                 ]),
               ),
@@ -304,20 +297,6 @@ class _HomeContent extends ConsumerWidget {
     if (h < 17) return 'Good Afternoon';
     if (h < 21) return 'Good Evening';
     return 'Good Night';
-  }
-}
-
-// ── Section label ──────────────────────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter', letterSpacing: 0.2),
-    );
   }
 }
 
@@ -558,108 +537,6 @@ class _HydrationTracker extends ConsumerWidget {
   }
 }
 
-// ── TIER 1: Symptom quick log ─────────────────────────────────────────────────
-class _SymptomQuickLog extends StatelessWidget {
-  final String uid;
-  const _SymptomQuickLog({required this.uid});
-
-  static const _symptoms = [
-    'Headache', 'Chest pain', 'Dizziness', 'Nausea',
-    'Fatigue', 'Shortness of breath', 'Joint pain', 'Other',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _show(context),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: const Row(children: [
-          Icon(Icons.add_circle_outline_rounded, size: 16, color: AppColors.mutedForeground),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text('Log a symptom',
-                style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-          ),
-          Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.mutedForeground),
-        ]),
-      ),
-    );
-  }
-
-  void _show(BuildContext context) {
-    String? selected;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (sheetCtx) => StatefulBuilder(
-        builder: (sheetCtx, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(sheetCtx).viewInsets.bottom + 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('What are you experiencing?',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              const SizedBox(height: 6),
-              const Text('Select the symptom that best describes how you feel.',
-                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _symptoms.map((s) => GestureDetector(
-                  onTap: () => setModalState(() => selected = s),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: selected == s ? AppColors.destructive.withValues(alpha: 0.1) : AppColors.muted,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: selected == s ? AppColors.destructive : AppColors.border),
-                    ),
-                    child: Text(s, style: TextStyle(fontSize: 13, fontWeight: selected == s ? FontWeight.w600 : FontWeight.w400, color: selected == s ? AppColors.destructive : AppColors.foreground, fontFamily: 'Inter')),
-                  ),
-                )).toList(),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: selected == null
-                      ? null
-                      : () {
-                          Navigator.pop(sheetCtx);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Symptom logged: $selected'),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                          ));
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.destructive,
-                    disabledBackgroundColor: AppColors.border,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Log Symptom', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ── TIER 0: Abnormal vital alerts ─────────────────────────────────────────────
 class _AbnormalVitalAlerts extends StatelessWidget {
@@ -734,170 +611,6 @@ class _AbnormalVitalAlerts extends StatelessWidget {
 }
 
 // ── TIER 3: Zone 1 Health Status Card ─────────────────────────────────────────
-class _Zone1StatusCard extends ConsumerWidget {
-  final AppUser user;
-  final AsyncValue<List<VitalReading>> vitalsAsync;
-  final AsyncValue<List<Medicine>> medsAsync;
-
-  const _Zone1StatusCard({required this.user, required this.vitalsAsync, required this.medsAsync});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final gamProfile = ref.watch(gamificationProvider(user.uid)).asData?.value;
-    final meds = medsAsync.asData?.value ?? [];
-    final readings = vitalsAsync.asData?.value ?? [];
-
-    final activeMeds = meds.where((m) => m.isActive).toList();
-    final missedMeds = activeMeds.where((m) => m.hasMissedSlot && !m.hasDueSlot).toList();
-    final abnormalReadings = readings.where((r) => !VitalType.isNormal(r.type, r.value)).toList();
-
-    final Color statusColor;
-    final String statusText;
-    final IconData statusIcon;
-
-    if (missedMeds.isNotEmpty && abnormalReadings.isNotEmpty) {
-      statusColor = AppColors.destructive;
-      statusText = 'Needs attention';
-      statusIcon = Icons.warning_rounded;
-    } else if (missedMeds.isNotEmpty || abnormalReadings.isNotEmpty) {
-      statusColor = AppColors.warning;
-      statusText = 'Check in today';
-      statusIcon = Icons.info_rounded;
-    } else if (activeMeds.isNotEmpty && activeMeds.every((m) => m.takenToday)) {
-      statusColor = AppColors.success;
-      statusText = 'On track';
-      statusIcon = Icons.check_circle_rounded;
-    } else {
-      statusColor = AppColors.primary;
-      statusText = 'Good day';
-      statusIcon = Icons.wb_sunny_rounded;
-    }
-
-    final medStreak = gamProfile?.medStreak ?? 0;
-    final latestBpSys = readings.where((r) => r.type == VitalType.bpSystolic).firstOrNull;
-    final latestBpDia = readings.where((r) => r.type == VitalType.bpDiastolic).firstOrNull;
-    final latestPulse = readings.where((r) => r.type == VitalType.pulse).firstOrNull;
-    final latestGlucose = readings.where((r) => r.type == VitalType.glucose).firstOrNull;
-    final vitalSummary = _interpret(latestBpSys, latestBpDia, latestPulse, latestGlucose);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [statusColor.withValues(alpha: 0.08), statusColor.withValues(alpha: 0.03)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withValues(alpha: 0.25)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(statusIcon, size: 13, color: statusColor),
-              const SizedBox(width: 5),
-              Text(statusText, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Inter')),
-            ]),
-          ),
-          const Spacer(),
-          if (medStreak > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.local_fire_department_rounded, size: 13, color: Color(0xFFF59E0B)),
-                const SizedBox(width: 4),
-                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B), fontFamily: 'Inter')),
-              ]),
-            ),
-        ]),
-        const SizedBox(height: 12),
-        Text(vitalSummary, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', color: AppColors.foreground, height: 1.4)),
-        if (latestBpSys != null || latestPulse != null || latestGlucose != null) ...[
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            if (latestBpSys != null && latestBpDia != null)
-              _VitalChip(
-                label: '${latestBpSys.value.toInt()}/${latestBpDia.value.toInt()}',
-                unit: 'mmHg',
-                icon: Icons.favorite_rounded,
-                isNormal: VitalType.isNormal(VitalType.bpSystolic, latestBpSys.value) &&
-                    VitalType.isNormal(VitalType.bpDiastolic, latestBpDia.value),
-              ),
-            if (latestPulse != null)
-              _VitalChip(label: '${latestPulse.value.toInt()}', unit: 'bpm', icon: Icons.show_chart_rounded, isNormal: VitalType.isNormal(VitalType.pulse, latestPulse.value)),
-            if (latestGlucose != null)
-              _VitalChip(label: '${latestGlucose.value.toInt()}', unit: 'mg/dL', icon: Icons.water_drop_rounded, isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value)),
-          ]),
-        ],
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () => context.go('/vitals'),
-          child: Row(children: [
-            const Icon(Icons.add_rounded, size: 14, color: AppColors.mutedForeground),
-            const SizedBox(width: 4),
-            Text(
-              readings.isEmpty ? 'Log your first vital reading' : 'Update vitals',
-              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter', decoration: TextDecoration.underline),
-            ),
-          ]),
-        ),
-      ]),
-    );
-  }
-
-  String _interpret(VitalReading? bpSys, VitalReading? bpDia, VitalReading? pulse, VitalReading? glucose) {
-    if (bpSys == null && pulse == null && glucose == null) return 'No vitals logged yet — tap below to add your first reading.';
-    final parts = <String>[];
-    if (bpSys != null && bpDia != null) {
-      final ok = VitalType.isNormal(VitalType.bpSystolic, bpSys.value) && VitalType.isNormal(VitalType.bpDiastolic, bpDia.value);
-      parts.add(ok ? 'Blood pressure is within normal range (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)' : bpSys.value > 120 ? 'Blood pressure is slightly elevated (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)' : 'Blood pressure is low (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)');
-    }
-    if (glucose != null && !VitalType.isNormal(VitalType.glucose, glucose.value)) {
-      parts.add('glucose is ${glucose.value > 140 ? "above target" : "low"} (${glucose.value.toInt()} mg/dL)');
-    }
-    if (pulse != null && !VitalType.isNormal(VitalType.pulse, pulse.value)) {
-      parts.add('pulse is ${pulse.value > 100 ? "elevated" : "low"} (${pulse.value.toInt()} bpm)');
-    }
-    if (parts.isEmpty) return 'Vitals are looking good — keep it up!';
-    final first = parts.first[0].toUpperCase() + parts.first.substring(1);
-    return parts.length > 1 ? '$first and ${parts.sublist(1).join(', ')}.' : '$first.';
-  }
-}
-
-// ── Vital chip (color + shape) ────────────────────────────────────────────────
-class _VitalChip extends StatelessWidget {
-  final String label, unit;
-  final IconData icon;
-  final bool isNormal;
-  const _VitalChip({required this.label, required this.unit, required this.icon, required this.isNormal});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isNormal ? AppColors.success : AppColors.warning;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: color),
-        const SizedBox(width: 5),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
-        const SizedBox(width: 3),
-        Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        const SizedBox(width: 5),
-        Icon(isNormal ? Icons.check_circle_rounded : Icons.warning_amber_rounded, size: 11, color: color),
-      ]),
-    );
-  }
-}
-
 // ── TIER 3: Caregiver active banner ──────────────────────────────────────────
 class _CaregiversActiveBanner extends ConsumerWidget {
   final String uid;
@@ -1241,15 +954,14 @@ class _DailySnapshotRow extends StatelessWidget {
     return Row(children: [
       Expanded(child: GestureDetector(
         onTap: () => context.go('/care'),
-        child: _SnapshotChip(icon: Icons.medication_rounded, value: active.isEmpty ? '--' : '$taken/${active.length}', label: 'medicines', color: medColor),
+        child: _SnapshotChip(value: active.isEmpty ? '--' : '$taken/${active.length}', label: 'medicines', color: medColor),
       )),
       const SizedBox(width: 8),
-      Expanded(child: _SnapshotChip(icon: Icons.local_fire_department_rounded, value: '${medStreak ?? 0}', label: 'day streak', color: streakColor)),
+      Expanded(child: _SnapshotChip(value: '${medStreak ?? 0}', label: 'day streak', color: streakColor)),
       const SizedBox(width: 8),
       Expanded(child: GestureDetector(
         onTap: () => context.go('/appointments'),
         child: _SnapshotChip(
-          icon: Icons.calendar_today_rounded,
           value: daysToAppt == null ? '--' : daysToAppt == 0 ? 'today' : '${daysToAppt}d',
           label: 'next visit',
           color: visitColor,
@@ -1260,26 +972,36 @@ class _DailySnapshotRow extends StatelessWidget {
 }
 
 class _SnapshotChip extends StatelessWidget {
-  final IconData icon;
   final String value, label;
   final Color color;
-  const _SnapshotChip({required this.icon, required this.value, required this.label, required this.color});
+  const _SnapshotChip({required this.value, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 72),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter'), textAlign: TextAlign.center),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        Text(value,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
       ]),
     );
   }
@@ -1451,82 +1173,77 @@ class _FamilyStatusChip extends ConsumerWidget {
 }
 
 // ── FOOTER: Emergency contacts strip ─────────────────────────────────────────
-class _EmergencyContactsStrip extends ConsumerWidget {
+
+// ── End of Day Awareness Card ─────────────────────────────────────────────────
+class _EndOfDayAwarenessCard extends ConsumerWidget {
   final String uid;
-  final AsyncValue<List<Appointment>> apptsAsync;
-  const _EmergencyContactsStrip({required this.uid, required this.apptsAsync});
+  const _EndOfDayAwarenessCard({required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connections = ref.watch(patientCaregiverConnectionsProvider(uid)).asData?.value ?? [];
-    final connected = connections.where((c) => c.status == 'connected').toList();
+    final meds = ref.watch(medicinesProvider(uid)).asData?.value ?? [];
+    final meals = ref.watch(todayMealsProvider(uid)).asData?.value ?? [];
 
-    final appts = apptsAsync.asData?.value ?? [];
-    final recentDoctor = appts.where((a) => a.doctorName.isNotEmpty).firstOrNull;
+    final hasMissedMed = meds.any((m) => m.isActive && m.hasMissedSlot);
+    final loggedTypes = meals.map((m) => m.mealType).toSet();
+    final h = DateTime.now().hour;
+    final hasMissedMeal = (h >= 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) ||
+        (h >= 16 && !loggedTypes.contains(AppConstants.mealLunch)) ||
+        (h >= 23 && !loggedTypes.contains(AppConstants.mealDinner));
 
-    final hasDoctor = recentDoctor != null;
-    final hasCaregiver = connected.isNotEmpty;
-    if (!hasDoctor && !hasCaregiver) return const SizedBox.shrink();
+    if (!hasMissedMed && !hasMissedMeal) return const SizedBox.shrink();
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Row(children: [
-        Icon(Icons.emergency_rounded, size: 13, color: AppColors.destructive),
-        SizedBox(width: 6),
-        Text('Quick Contact', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.foreground, fontFamily: 'Inter')),
-      ]),
-      const SizedBox(height: 10),
-      Row(children: [
-        if (hasDoctor) Expanded(
-          child: GestureDetector(
-            onTap: () => context.push('/my-doctors'),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 64),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.medical_services_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(height: 5),
-                Text(
-                  recentDoctor.doctorName.split(' ').last,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter'),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Text('Doctor', style: TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
+    final String message;
+    if (hasMissedMed && hasMissedMeal) {
+      message = "You haven't taken your medicine or logged your meals on time. It is important to stay on schedule.";
+    } else if (hasMissedMed) {
+      message = 'You have missed one or more scheduled medication doses today. Try to take them as soon as possible.';
+    } else {
+      message = "You haven't logged some meals today. Keeping track helps you stay on top of your health.";
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.mutedForeground.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: const Icon(Icons.bedtime_rounded, size: 18, color: AppColors.mutedForeground),
           ),
-        ),
-        if (hasDoctor && hasCaregiver) const SizedBox(width: 10),
-        if (hasCaregiver) Expanded(
-          child: GestureDetector(
-            onTap: () => context.push('/care-circle'),
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 64),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.2)),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.shield_rounded, color: Color(0xFF7C3AED), size: 20),
-                const SizedBox(height: 5),
-                Text(
-                  connected.first.caregiverName?.split(' ').first ?? 'Caregiver',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF7C3AED), fontFamily: 'Inter'),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const Text('Caregiver', style: TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
+          const SizedBox(width: 10),
+          const Text('End of day',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
+        ]),
+        const SizedBox(height: 10),
+        Text(message,
+            style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.45)),
+        const SizedBox(height: 14),
+        GestureDetector(
+          onTap: () => context.go('/care'),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.mutedForeground.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
+            alignment: Alignment.center,
+            child: const Text('View Summary',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
           ),
         ),
       ]),
-    ]);
+    );
   }
 }
 
@@ -1558,15 +1275,17 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     final meds = ref.watch(medicinesProvider(widget.uid)).asData?.value ?? [];
     final meals = ref.watch(todayMealsProvider(widget.uid)).asData?.value ?? [];
 
-    final dueMeds = meds.where((m) => m.isActive && (m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)).toList();
-    final missedMeds = meds.where((m) => m.isActive && m.hasMissedSlot && !m.hasDueSlot).toList();
-    final upcomingMeals = _upcomingMeals(meals);
-    final totalPending = dueMeds.length + upcomingMeals.length;
+    final actionableMeds = meds.where((m) =>
+      m.isActive && (m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot || m.hasMissedSlot)
+    ).toList();
+
+    final currentMeal = _currentMealType();
+    final loggedTypes = meals.map((m) => m.mealType).toSet();
+    final hasActionableMeal = currentMeal != null && !loggedTypes.contains(currentMeal);
+    final totalPending = actionableMeds.length + (hasActionableMeal ? 1 : 0);
 
     final header = Row(children: [
-      const Icon(Icons.checklist_rounded, size: 18),
-      const SizedBox(width: 8),
-      const Expanded(child: Text("Today's Tasks", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
+      const Expanded(child: Text('What needs to be done now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
       if (totalPending > 0)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1585,7 +1304,7 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         ),
     ]);
 
-    if (totalPending == 0 && missedMeds.isEmpty) {
+    if (totalPending == 0 && actionableMeds.isEmpty) {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         header,
         const SizedBox(height: 12),
@@ -1607,159 +1326,259 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       header,
       const SizedBox(height: 12),
-      ...dueMeds.take(3).map((m) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _TaskMedCard(medicine: m, uid: widget.uid))),
-      if (dueMeds.length > 3)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () => context.go('/care'),
-            child: Container(
-              width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 13),
-              decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-              child: Center(child: Text('+${dueMeds.length - 3} more — see all in Medicines', style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500))),
-            ),
-          ),
-        ),
-      ...missedMeds.take(2).map((m) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _TaskMedCard(medicine: m, uid: widget.uid, isMissed: true))),
-      ...upcomingMeals.map((mealType) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _TaskMealCard(mealType: mealType, uid: widget.uid, onTap: () => showLogMealSheet(context, widget.uid, initialType: mealType)),
-      )),
+      if (actionableMeds.isNotEmpty) ...[
+        _MedsGroupCard(meds: actionableMeds, uid: widget.uid),
+        const SizedBox(height: 10),
+      ],
+      _MealStatusCard(
+        meals: meals,
+        currentMeal: currentMeal,
+        onLogMeal: (type) => showLogMealSheet(context, widget.uid, initialType: type),
+      ),
+      const SizedBox(height: 20),
     ]);
   }
 
-  List<String> _upcomingMeals(List<MealLog> logged) {
-    final loggedTypes = logged.map((m) => m.mealType).toSet();
+  String? _currentMealType() {
     final h = DateTime.now().hour;
-    return [
-      if (h < 14 && !loggedTypes.contains(AppConstants.mealBreakfast)) AppConstants.mealBreakfast,
-      if (h < 18 && !loggedTypes.contains(AppConstants.mealLunch)) AppConstants.mealLunch,
-      if (h < 23 && !loggedTypes.contains(AppConstants.mealDinner)) AppConstants.mealDinner,
-    ];
+    if (h >= 5 && h < 11) return AppConstants.mealBreakfast;
+    if (h >= 11 && h < 16) return AppConstants.mealLunch;
+    if (h >= 16 && h < 23) return AppConstants.mealDinner;
+    return null;
   }
 }
 
-// ── Task Med Card ─────────────────────────────────────────────────────────────
-class _TaskMedCard extends ConsumerWidget {
-  final Medicine medicine;
+// ── Meds Group Card ───────────────────────────────────────────────────────────
+class _MedsGroupCard extends ConsumerWidget {
+  final List<Medicine> meds;
   final String uid;
-  final bool isMissed;
-  const _TaskMedCard({required this.medicine, required this.uid, this.isMissed = false});
+  const _MedsGroupCard({required this.meds, required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final slot = isMissed ? medicine.todaySlots.where((s) => s.isMissed).firstOrNull : medicine.nextPendingSlot;
-    final subtitle = slot != null
-        ? (isMissed ? 'Missed · ${slot.displayTime}' : '${medicine.dosage} · Due at ${slot.displayTime}')
-        : '${medicine.dosage} · ${medicine.frequency}';
+    final display = meds.take(3).toList();
+    final overflow = meds.length - 3;
 
-    final totalSlots = medicine.todaySlots.length;
-    final takenSlots = medicine.todaySlots.where((s) => s.isTaken).length;
-    final iconColor = isMissed ? AppColors.warning : AppColors.primary;
-    final btnColor = isMissed ? AppColors.warning : AppColors.primary;
-    final borderColor = isMissed ? AppColors.warning.withValues(alpha: 0.35) : AppColors.border;
-
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: borderColor)),
-        child: Row(children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(Icons.medication_rounded, color: iconColor, size: 22)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
-              if (totalSlots > 1) Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
-                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < display.length; i++) ...[
+            if (i > 0) const Divider(height: 1, color: AppColors.border),
+            _MedRow(medicine: display[i], uid: uid),
+          ],
+          if (overflow > 0) ...[
+            const Divider(height: 1, color: AppColors.border),
+            GestureDetector(
+              onTap: () => context.go('/care'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                child: Center(
+                  child: Text('+$overflow more — see all in Medicines',
+                      style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+                ),
               ),
-            ]),
-            const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(fontSize: 12, color: isMissed ? AppColors.warning : AppColors.mutedForeground, fontFamily: 'Inter')),
-          ])),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () async {
-              final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
-              if (hp > 0 && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('+$hp HP  Dose logged!'), duration: const Duration(seconds: 2), behavior: SnackBarBehavior.floating));
-              }
-            },
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: btnColor, borderRadius: BorderRadius.circular(10)),
-              child: Text(isMissed ? 'Log' : 'Take', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
             ),
-          ),
-        ]),
+          ],
+        ],
       ),
     );
   }
 }
 
-// ── Task Meal Card ────────────────────────────────────────────────────────────
-class _TaskMealCard extends StatefulWidget {
-  final String mealType, uid;
-  final VoidCallback onTap;
-  const _TaskMealCard({required this.mealType, required this.uid, required this.onTap});
+// ── Med Row ───────────────────────────────────────────────────────────────────
+class _MedRow extends ConsumerWidget {
+  final Medicine medicine;
+  final String uid;
+  const _MedRow({required this.medicine, required this.uid});
+
   @override
-  State<_TaskMealCard> createState() => _TaskMealCardState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isMissed = medicine.hasMissedSlot && !medicine.hasDueSlot;
+    final slot = isMissed
+        ? medicine.todaySlots.where((s) => s.isMissed).firstOrNull
+        : medicine.nextPendingSlot;
+    final subtitle = slot != null
+        ? (isMissed ? 'Missed · ${slot.displayTime}' : '${medicine.dosage} · Due at ${slot.displayTime}')
+        : '${medicine.dosage} · ${medicine.frequency}';
+    final totalSlots = medicine.todaySlots.length;
+    final takenSlots = medicine.todaySlots.where((s) => s.isTaken).length;
+    final iconColor = isMissed ? AppColors.warning : AppColors.primary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Icon(Icons.medication_rounded, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
+            if (totalSlots > 1)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
+                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              ),
+          ]),
+          const SizedBox(height: 2),
+          Text(subtitle, style: TextStyle(fontSize: 12, color: isMissed ? AppColors.warning : AppColors.mutedForeground, fontFamily: 'Inter')),
+        ])),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () async {
+            final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
+            if (hp > 0 && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('+$hp HP  Dose logged!'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ));
+            }
+          },
+          child: Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: iconColor, borderRadius: BorderRadius.circular(10)),
+            child: Text(isMissed ? 'Log' : 'Take',
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+          ),
+        ),
+      ]),
+    );
+  }
 }
 
-class _TaskMealCardState extends State<_TaskMealCard> {
-  static const _defaults = {'Breakfast': '7:30 AM', 'Lunch': '12:30 PM', 'Dinner': '7:00 PM'};
-  String? _timeHint;
+// ── Meal Status Card ──────────────────────────────────────────────────────────
+class _MealStatusCard extends StatelessWidget {
+  final List<MealLog> meals;
+  final String? currentMeal;
+  final void Function(String) onLogMeal;
+  const _MealStatusCard({required this.meals, required this.currentMeal, required this.onLogMeal});
 
-  @override
-  void initState() {
-    super.initState();
-    _loadTime();
-  }
-
-  Future<void> _loadTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('meal_time_${widget.mealType.toLowerCase()}');
-    if (mounted) setState(() => _timeHint = saved ?? _defaults[widget.mealType]);
-  }
+  static const _allMeals = [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner];
+  static const _mealIcons = {
+    'Breakfast': Icons.wb_sunny_rounded,
+    'Lunch': Icons.light_mode_rounded,
+    'Dinner': Icons.nights_stay_rounded,
+  };
 
   @override
   Widget build(BuildContext context) {
-    const mealIcons = {'Breakfast': Icons.wb_sunny_rounded, 'Lunch': Icons.light_mode_rounded, 'Dinner': Icons.nights_stay_rounded, 'Snack': Icons.cookie_rounded};
-    final icon = mealIcons[widget.mealType] ?? Icons.restaurant_rounded;
+    final loggedTypes = meals.map((m) => m.mealType).toSet();
+    final h = DateTime.now().hour;
 
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: widget.onTap,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Row(children: [
-            Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: AppColors.success, size: 22)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Log your ${widget.mealType}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              Text(_timeHint != null ? 'Usual time · $_timeHint' : "Haven't logged this meal yet", style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ])),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: widget.onTap,
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
-                child: const Text('Log Meal', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              ),
-            ),
-          ]),
-        ),
+        border: Border.all(color: AppColors.border),
       ),
+      child: Column(
+        children: [
+          for (int i = 0; i < _allMeals.length; i++) ...[
+            if (i > 0) const Divider(height: 1, color: AppColors.border),
+            _MealRow(
+              mealType: _allMeals[i],
+              icon: _mealIcons[_allMeals[i]] ?? Icons.restaurant_rounded,
+              isCurrent: _allMeals[i] == currentMeal,
+              isLogged: loggedTypes.contains(_allMeals[i]),
+              isPast: _isPast(_allMeals[i], h),
+              onLog: () => onLogMeal(_allMeals[i]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static bool _isPast(String meal, int h) {
+    if (meal == AppConstants.mealBreakfast) return h >= 11;
+    if (meal == AppConstants.mealLunch) return h >= 16;
+    if (meal == AppConstants.mealDinner) return h >= 23;
+    return false;
+  }
+}
+
+// ── Meal Row ──────────────────────────────────────────────────────────────────
+class _MealRow extends StatelessWidget {
+  final String mealType;
+  final IconData icon;
+  final bool isCurrent, isLogged, isPast;
+  final VoidCallback onLog;
+  const _MealRow({
+    required this.mealType,
+    required this.icon,
+    required this.isCurrent,
+    required this.isLogged,
+    required this.isPast,
+    required this.onLog,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isCurrent && !isLogged) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: AppColors.success, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(mealType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            const Text("Haven't logged yet", style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          ])),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: onLog,
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
+              child: const Text('Log', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            ),
+          ),
+        ]),
+      );
+    }
+
+    final Color statusColor;
+    final String statusLabel;
+    if (isLogged) {
+      statusColor = AppColors.success;
+      statusLabel = 'Logged';
+    } else if (isPast) {
+      statusColor = AppColors.warning;
+      statusLabel = 'Missed';
+    } else {
+      statusColor = AppColors.mutedForeground;
+      statusLabel = 'Upcoming';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(children: [
+        Icon(icon, size: 16, color: AppColors.mutedForeground),
+        const SizedBox(width: 10),
+        Expanded(child: Text(mealType, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', color: AppColors.foreground))),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+          child: Text(statusLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Inter')),
+        ),
+      ]),
     );
   }
 }

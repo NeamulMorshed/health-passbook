@@ -1,4 +1,23 @@
-VitalPath v2.4.1+16 — Custom Splash Logo
+VitalPath v2.4.2+17 — Dashboard UX Overhaul + Care Page Fixes
 
-- Replaced placeholder heart icon on the starting screen with the custom SVG logo
-- Logo appears on both the loading splash and the onboarding first slide
+Home Page:
+- Daily snapshot (steps, streak, meds) moved to very top of the page
+- Removed icons from snapshot chips; restyled to match vitals keypoint cards
+- Renamed tasks section to "What needs to be done now"
+- Medications now grouped in a single card with dividers between items
+- Meal card dynamically shows action button for current meal; others show read-only status
+- Added "End of Day Awareness" card that appears when meds or meals are missed
+- Removed "Log a symptom" widget (not yet implemented)
+- Removed Quick Contact section
+
+Vitals Page:
+- Vital status summary card moved from home page to top of vitals screen
+
+Care Page:
+- Medicine remove option hidden for doctor-prescribed medications
+- Fixed remove confirmation dialog stuck in loading state
+- Added proper error handling and dismiss after delete
+
+Splash / Icon:
+- App launcher icon updated to custom brand icon
+- Splash screen logo replaced with custom SVG (184×36, centred, no text)

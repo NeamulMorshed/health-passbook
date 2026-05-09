@@ -5,6 +5,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/vitals_provider.dart';
+import '../../../providers/patient_provider.dart';
+import '../../../providers/gamification_provider.dart';
 import '../../../models/vital_reading.dart';
 
 class VitalsScreen extends ConsumerWidget {
@@ -65,6 +67,8 @@ class _VitalsContent extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _VitalStatusCard(patientId: patientId, readings: readings),
+                const SizedBox(height: 20),
                 const SectionHeader(title: 'Current Readings'),
                 const SizedBox(height: 12),
                 GridView.count(
@@ -542,6 +546,160 @@ class _VitalHistorySheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Vital Status Card ─────────────────────────────────────────────────────────
+class _VitalStatusCard extends ConsumerWidget {
+  final String patientId;
+  final List<VitalReading> readings;
+  const _VitalStatusCard({required this.patientId, required this.readings});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final meds = ref.watch(medicinesProvider(patientId)).asData?.value ?? [];
+    final gamProfile = ref.watch(gamificationProvider(patientId)).asData?.value;
+
+    final activeMeds = meds.where((m) => m.isActive).toList();
+    final missedMeds = activeMeds.where((m) => m.hasMissedSlot && !m.hasDueSlot).toList();
+    final abnormalReadings = readings.where((r) => !VitalType.isNormal(r.type, r.value)).toList();
+
+    final Color statusColor;
+    final String statusText;
+    final IconData statusIcon;
+
+    if (missedMeds.isNotEmpty && abnormalReadings.isNotEmpty) {
+      statusColor = AppColors.destructive;
+      statusText = 'Needs attention';
+      statusIcon = Icons.warning_rounded;
+    } else if (missedMeds.isNotEmpty || abnormalReadings.isNotEmpty) {
+      statusColor = AppColors.warning;
+      statusText = 'Check in today';
+      statusIcon = Icons.info_rounded;
+    } else if (activeMeds.isNotEmpty && activeMeds.every((m) => m.takenToday)) {
+      statusColor = AppColors.success;
+      statusText = 'On track';
+      statusIcon = Icons.check_circle_rounded;
+    } else {
+      statusColor = AppColors.primary;
+      statusText = 'Good day';
+      statusIcon = Icons.wb_sunny_rounded;
+    }
+
+    final medStreak = gamProfile?.medStreak ?? 0;
+    final latestBpSys = readings.where((r) => r.type == VitalType.bpSystolic).firstOrNull;
+    final latestBpDia = readings.where((r) => r.type == VitalType.bpDiastolic).firstOrNull;
+    final latestPulse = readings.where((r) => r.type == VitalType.pulse).firstOrNull;
+    final latestGlucose = readings.where((r) => r.type == VitalType.glucose).firstOrNull;
+    final vitalSummary = _interpret(latestBpSys, latestBpDia, latestPulse, latestGlucose);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [statusColor.withValues(alpha: 0.08), statusColor.withValues(alpha: 0.03)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(statusIcon, size: 13, color: statusColor),
+              const SizedBox(width: 5),
+              Text(statusText, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Inter')),
+            ]),
+          ),
+          const Spacer(),
+          if (medStreak > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.local_fire_department_rounded, size: 13, color: Color(0xFFF59E0B)),
+                const SizedBox(width: 4),
+                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B), fontFamily: 'Inter')),
+              ]),
+            ),
+        ]),
+        const SizedBox(height: 12),
+        Text(vitalSummary, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', color: AppColors.foreground, height: 1.4)),
+        if (latestBpSys != null || latestPulse != null || latestGlucose != null) ...[
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            if (latestBpSys != null && latestBpDia != null)
+              _VitalChip(
+                label: '${latestBpSys.value.toInt()}/${latestBpDia.value.toInt()}',
+                unit: 'mmHg',
+                icon: Icons.favorite_rounded,
+                isNormal: VitalType.isNormal(VitalType.bpSystolic, latestBpSys.value) &&
+                    VitalType.isNormal(VitalType.bpDiastolic, latestBpDia.value),
+              ),
+            if (latestPulse != null)
+              _VitalChip(label: '${latestPulse.value.toInt()}', unit: 'bpm', icon: Icons.show_chart_rounded, isNormal: VitalType.isNormal(VitalType.pulse, latestPulse.value)),
+            if (latestGlucose != null)
+              _VitalChip(label: '${latestGlucose.value.toInt()}', unit: 'mg/dL', icon: Icons.water_drop_rounded, isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value)),
+          ]),
+        ],
+      ]),
+    );
+  }
+
+  String _interpret(VitalReading? bpSys, VitalReading? bpDia, VitalReading? pulse, VitalReading? glucose) {
+    if (bpSys == null && pulse == null && glucose == null) return 'No vitals logged yet — use the button below to add your first reading.';
+    final parts = <String>[];
+    if (bpSys != null && bpDia != null) {
+      final ok = VitalType.isNormal(VitalType.bpSystolic, bpSys.value) && VitalType.isNormal(VitalType.bpDiastolic, bpDia.value);
+      parts.add(ok
+          ? 'Blood pressure is within normal range (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)'
+          : bpSys.value > 120
+              ? 'Blood pressure is slightly elevated (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)'
+              : 'Blood pressure is low (${bpSys.value.toInt()}/${bpDia.value.toInt()} mmHg)');
+    }
+    if (glucose != null && !VitalType.isNormal(VitalType.glucose, glucose.value)) {
+      parts.add('glucose is ${glucose.value > 140 ? "above target" : "low"} (${glucose.value.toInt()} mg/dL)');
+    }
+    if (pulse != null && !VitalType.isNormal(VitalType.pulse, pulse.value)) {
+      parts.add('pulse is ${pulse.value > 100 ? "elevated" : "low"} (${pulse.value.toInt()} bpm)');
+    }
+    if (parts.isEmpty) return 'Vitals are looking good — keep it up!';
+    final first = parts.first[0].toUpperCase() + parts.first.substring(1);
+    return parts.length > 1 ? '$first and ${parts.sublist(1).join(', ')}.' : '$first.';
+  }
+}
+
+// ── Vital Chip ────────────────────────────────────────────────────────────────
+class _VitalChip extends StatelessWidget {
+  final String label, unit;
+  final IconData icon;
+  final bool isNormal;
+  const _VitalChip({required this.label, required this.unit, required this.icon, required this.isNormal});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isNormal ? AppColors.success : AppColors.warning;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 5),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
+        const SizedBox(width: 3),
+        Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+        const SizedBox(width: 5),
+        Icon(isNormal ? Icons.check_circle_rounded : Icons.warning_amber_rounded, size: 11, color: color),
+      ]),
     );
   }
 }
