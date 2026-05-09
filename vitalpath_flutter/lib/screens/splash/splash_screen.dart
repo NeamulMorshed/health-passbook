@@ -178,25 +178,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         body: Center(
           child: FadeTransition(
             opacity: _fadeAnim,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/Starting logo.svg',
-                  width: 120,
-                  height: 120,
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Omra',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Inter',
-                    color: AppColors.foreground,
-                  ),
-                ),
-              ],
+            child: SvgPicture.asset(
+              'assets/icons/Starting logo.svg',
+              width: 184,
+              height: 36,
             ),
           ),
         ),
@@ -243,8 +228,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       _step == 0
                           ? SvgPicture.asset(
                               'assets/icons/Starting logo.svg',
-                              width: 110,
-                              height: 110,
+                              width: 184,
+                              height: 36,
                             )
                           : Container(
                               width: 110,
@@ -256,16 +241,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               child: Icon(data.icon, size: 56, color: data.color),
                             ),
                       const SizedBox(height: 32),
-                      Text(
-                        data.title,
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
-                          color: AppColors.foreground,
+                      if (_step > 0)
+                        Text(
+                          data.title,
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter',
+                            color: AppColors.foreground,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                      if (_step > 0) const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
