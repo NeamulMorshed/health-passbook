@@ -1,9 +1,4 @@
-VitalPath v2.5.1+19 — Home Screen UX Polish
+VitalPath v2.6.0+20 — UI Redesign (in progress)
 
-Home Screen:
-- Replaced three separate awareness cards (Morning check-in, Midday check-in, End of day)
-  with a single dynamic "Stay on track" card at the very top of the home page
-- Awareness card appears only when a medicine dose or meal is overdue; hides automatically
-  the moment the user takes their medicine or logs a meal (fully reactive)
-- Dynamic message adapts: both missed / only medicine / only meal
-- Removed appointment section from home page — appointments are accessible via the nav bar tab
+UI Redesign:
+- Work in progress

@@ -1,7 +1,7 @@
 name: vitalpath
 description: Omra - Health App for Patients and Doctors
 publish_to: 'none'
-version: 2.5.1+19
+version: 2.6.0+20
 
 environment:
   # Bumped from 3.1.0 — firebase_core 3.x requires Dart >=3.2.0
