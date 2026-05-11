@@ -341,7 +341,7 @@ class _MedCard extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.medication_rounded,
+              child: const Icon(Icons.medication_outlined,
                   size: 18, color: AppColors.primary),
             ),
             const SizedBox(width: 12),

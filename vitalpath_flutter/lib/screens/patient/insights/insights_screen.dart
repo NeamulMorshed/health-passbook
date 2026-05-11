@@ -311,7 +311,7 @@ class _InsightCard extends StatelessWidget {
 
   (IconData, Color) _categoryStyle(String category) {
     switch (category) {
-      case 'medication': return (Icons.medication_rounded, AppColors.primary);
+      case 'medication': return (Icons.medication_outlined, AppColors.primary);
       case 'nutrition':  return (Icons.restaurant_rounded, AppColors.warning);
       case 'activity':   return (Icons.directions_walk_rounded, AppColors.success);
       case 'appointments': return (Icons.calendar_month_rounded, AppColors.primary);

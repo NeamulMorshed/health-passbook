@@ -760,7 +760,7 @@ class _EntryCardState extends State<_EntryCard> {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.medication_rounded,
+                child: const Icon(Icons.medication_outlined,
                     size: 16, color: AppColors.primary),
               ),
               const SizedBox(width: 10),

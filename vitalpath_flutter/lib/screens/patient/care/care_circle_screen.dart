@@ -789,7 +789,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Icon(
-                                      Icons.medication_rounded,
+                                      Icons.medication_outlined,
                                       size: 14,
                                       color: AppColors.primary),
                                 ),

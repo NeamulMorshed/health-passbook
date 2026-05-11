@@ -128,7 +128,7 @@ class _ManageCaregiverScreenState
           const SizedBox(height: 10),
 
           _PermSwitch(
-            icon: Icons.medication_rounded,
+            icon: Icons.medication_outlined,
             label: 'Medicines & dose tracking',
             value: _permissions.medicines,
             onChanged: (v) =>

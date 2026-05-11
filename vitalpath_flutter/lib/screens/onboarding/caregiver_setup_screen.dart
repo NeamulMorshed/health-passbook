@@ -548,7 +548,7 @@ class _Step3State extends State<_Step3> {
         ),
         const SizedBox(height: 20),
         // Feature summary tiles — kept as Container (custom color border)
-        _summaryTile(Icons.medication_rounded, AppColors.primary,
+        _summaryTile(Icons.medication_outlined, AppColors.primary,
             'Medicine Tracker', 'Log and schedule their daily medications'),
         const SizedBox(height: 10),
         _summaryTile(Icons.restaurant_rounded, AppColors.success,

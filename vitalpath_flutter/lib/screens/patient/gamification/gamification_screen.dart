@@ -183,7 +183,7 @@ class _StreakSection extends StatelessWidget {
         const BentoSectionHeader(title: 'Active Streaks'),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: _StreakTile(label: 'Medicine', streak: profile.medStreak, color: AppColors.primary, icon: Icons.medication_rounded)),
+          Expanded(child: _StreakTile(label: 'Medicine', streak: profile.medStreak, color: AppColors.primary, icon: Icons.medication_outlined)),
           const SizedBox(width: 10),
           Expanded(child: _StreakTile(label: 'Meals', streak: profile.mealStreak, color: AppColors.success, icon: Icons.restaurant_rounded)),
           const SizedBox(width: 10),
@@ -367,7 +367,7 @@ class _HowToEarnSheet extends StatelessWidget {
   const _HowToEarnSheet();
 
   static const _items = [
-    (icon: Icons.medication_rounded,            color: Color(0xFF6366F1), action: 'Log medicine on time',      hp: '+10 HP'),
+    (icon: Icons.medication_outlined,            color: Color(0xFF6366F1), action: 'Log medicine on time',      hp: '+10 HP'),
     (icon: Icons.restaurant_rounded,            color: Color(0xFF22C55E), action: 'Log a meal',                hp: '+5 HP'),
     (icon: Icons.directions_walk_rounded,       color: Color(0xFFF59E0B), action: 'Log an activity session',   hp: '+10 HP'),
     (icon: Icons.local_fire_department_rounded, color: Color(0xFFEF4444), action: '7-day medicine streak',     hp: '+50 HP'),

@@ -193,7 +193,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
   Widget _permissionList(CaregiverPermissions p) {
     final items = <(bool, IconData, String)>[
-      (p.medicines, Icons.medication_rounded, 'Medicines & dose tracking'),
+      (p.medicines, Icons.medication_outlined, 'Medicines & dose tracking'),
       (p.vitals, Icons.monitor_heart_rounded, 'Vitals & readings'),
       (p.appointments, Icons.calendar_today_rounded, 'Upcoming appointments'),
       (p.prescriptions, Icons.receipt_long_rounded, 'Prescriptions'),

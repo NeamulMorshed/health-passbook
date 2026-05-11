@@ -97,7 +97,7 @@ class _NotifCard extends StatelessWidget {
   const _NotifCard({required this.notif, required this.onTap});
 
   IconData get _icon => switch (notif.type) {
-    NotificationType.medicineReminder => Icons.medication_rounded,
+    NotificationType.medicineReminder => Icons.medication_outlined,
     NotificationType.mealReminder     => Icons.restaurant_rounded,
     NotificationType.appointment      => Icons.calendar_month_rounded,
     NotificationType.general          => Icons.notifications_rounded,

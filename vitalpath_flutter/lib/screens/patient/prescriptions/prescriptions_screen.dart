@@ -141,7 +141,7 @@ class _RxCard extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 20),
+                    child: const Icon(Icons.medication_outlined, color: AppColors.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

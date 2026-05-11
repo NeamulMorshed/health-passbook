@@ -150,7 +150,7 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                 unselectedLabelStyle: const TextStyle(fontSize: 11),
                 tabs: const [
                   Tab(icon: User(width: 18, height: 18), text: 'Overview'),
-                  Tab(icon: Icon(Icons.medication_rounded, size: 18), text: 'Medicines'),
+                  Tab(icon: Icon(Icons.medication_outlined, size: 18), text: 'Medicines'),
                   Tab(icon: Activity(width: 18, height: 18), text: 'Health Log'),
                   Tab(icon: Icon(Icons.description_rounded, size: 18), text: 'Rx History'),
                   Tab(icon: Notes(width: 18, height: 18), text: 'Notes'),
@@ -245,7 +245,7 @@ class _OverviewTab extends StatelessWidget {
             return Row(children: [
               Expanded(
                 child: _InsightChip(
-                  icon: Icons.medication_rounded,
+                  icon: Icons.medication_outlined,
                   label: "Today's Meds",
                   value: '$takenToday/$total',
                   subtitle: 'taken today',
@@ -481,7 +481,7 @@ class _AdherenceCard extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.medication_rounded,
+              child: const Icon(Icons.medication_outlined,
                   color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),

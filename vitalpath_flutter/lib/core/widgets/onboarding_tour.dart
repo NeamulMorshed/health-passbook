@@ -40,7 +40,7 @@ class _TourSheetState extends State<_TourSheet> {
       body: 'The Home screen shows you exactly how your day is going — medicines taken, meals logged, steps walked, and upcoming appointments.',
     ),
     _TourStep(
-      icon: Icons.medication_rounded,
+      icon: Icons.medication_outlined,
       color: AppColors.success,
       title: 'Log medicines and meals',
       body: 'Tap the Care tab to add your medicines, log breakfast, lunch and dinner, and see your family member\'s health at a glance.',

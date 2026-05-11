@@ -64,7 +64,7 @@ class _NotificationSettingsScreenState
                   padding: EdgeInsets.zero,
                   child: Column(children: [
                     BentoSettingsTile(
-                      icon: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 20),
+                      icon: const Icon(Icons.medication_outlined, color: AppColors.primary, size: 20),
                       title: 'Medicine Reminders',
                       subtitle: "Notify when it's time to take your medicine",
                       trailing: Switch(

@@ -131,7 +131,7 @@ class BadgeDefinition {
 }
 
 const List<BadgeDefinition> kAllBadges = [
-  BadgeDefinition(id: 'med_first',    name: 'First Dose',      description: 'Logged your first medicine',     icon: Icons.medication_rounded,       color: Color(0xFF6366F1)),
+  BadgeDefinition(id: 'med_first',    name: 'First Dose',      description: 'Logged your first medicine',     icon: Icons.medication_outlined,       color: Color(0xFF6366F1)),
   BadgeDefinition(id: 'meal_first',   name: 'First Meal',      description: 'Logged your first meal',         icon: Icons.restaurant_rounded,       color: Color(0xFF22C55E)),
   BadgeDefinition(id: 'active_first', name: 'First Steps',     description: 'Logged your first activity',     icon: Icons.directions_walk_rounded,  color: Color(0xFFF59E0B)),
   BadgeDefinition(id: 'med_7',        name: 'Dedicated',       description: '7-day medicine streak',          icon: Icons.local_fire_department_rounded, color: Color(0xFF6366F1)),

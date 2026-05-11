@@ -342,7 +342,7 @@ class _Step2 extends StatelessWidget {
         const SizedBox(height: 24),
 
         _PermRow(
-          icon: Icons.medication_rounded,
+          icon: Icons.medication_outlined,
           label: 'Medicines & dose tracking',
           value: permissions.medicines,
           onChanged: (v) =>
