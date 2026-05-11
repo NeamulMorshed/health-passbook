@@ -100,9 +100,8 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
       final ok = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Unusual Weight', style: TextStyle(fontFamily: 'Inter')),
-          content: Text('${w}kg seems unusual. Are you sure this is correct?',
-              style: const TextStyle(fontFamily: 'Inter')),
+          title: const Text('Unusual Weight'),
+          content: Text('${w}kg seems unusual. Are you sure this is correct?'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Edit')),
             ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm')),
@@ -164,7 +163,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
     const steps = ['Basic Info', 'Body Metrics', 'Medical Details'];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Health Profile'),
         automaticallyImplyLeading: false,
@@ -192,7 +191,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
               ))),
               const SizedBox(height: 6),
               Text('Step ${_page + 1} of 3 — ${steps[_page]}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
             ]),
           ),
 
@@ -247,7 +246,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                   onPressed: _skipStep,
                   child: Text(
                     _page < 2 ? 'Skip this step' : 'Skip',
-                    style: const TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                    style: const TextStyle(color: AppColors.mutedForeground),
                   ),
                 ),
               ],
@@ -295,7 +294,6 @@ class _Step1 extends StatelessWidget {
             child: Text(
               dobLabel,
               style: TextStyle(
-                fontFamily: 'Inter',
                 color: dob != null ? AppColors.foreground : AppColors.mutedForeground,
               ),
             ),
@@ -348,10 +346,10 @@ class _Step2 extends StatelessWidget {
         _label('Blood Type'),
         DropdownButtonFormField<String>(
           initialValue: selectedBlood,
-          hint: const Text('Select', style: TextStyle(fontFamily: 'Inter')),
+          hint: const Text('Select'),
           decoration: const InputDecoration(),
           items: AppConstants.bloodTypes
-              .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontFamily: 'Inter'))))
+              .map((b) => DropdownMenuItem(value: b, child: Text(b)))
               .toList(),
           onChanged: onBloodChanged,
         ),
@@ -401,7 +399,6 @@ class _Step3 extends StatelessWidget {
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
               checkmarkColor: AppColors.primary,
               labelStyle: TextStyle(
-                fontFamily: 'Inter',
                 color: selected ? AppColors.primary : AppColors.foreground,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
               ),
@@ -437,7 +434,7 @@ Widget _label(String t) => Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(t,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.foreground, fontFamily: 'Inter')),
+              fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.foreground)),
     );
 
 Widget _infoBox(String text) => Container(
@@ -451,6 +448,6 @@ Widget _infoBox(String text) => Container(
         Expanded(
             child: Text(text,
                 style: const TextStyle(
-                    fontSize: 13, color: AppColors.primary, fontFamily: 'Inter'))),
+                    fontSize: 13, color: AppColors.primary))),
       ]),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -110,7 +111,7 @@ class _DocProfileSetupScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: LoadingOverlay(
         isLoading: _saving,
         message: 'Setting up your profile…',
@@ -134,8 +135,9 @@ class _DocProfileSetupScreenState
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.medical_services_rounded,
-                          color: Colors.white, size: 28),
+                      child: const Center(
+                        child: HealthShield(width: 28, height: 28, color: Colors.white),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -147,7 +149,6 @@ class _DocProfileSetupScreenState
                             style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                fontFamily: 'Inter',
                                 color: AppColors.foreground),
                           ),
                           SizedBox(height: 2),
@@ -155,8 +156,7 @@ class _DocProfileSetupScreenState
                             'Complete your details to get started.',
                             style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter'),
+                                color: AppColors.mutedForeground),
                           ),
                         ],
                       ),
@@ -197,15 +197,13 @@ class _DocProfileSetupScreenState
                 _label('Specialty'),
                 DropdownButtonFormField<String>(
                   initialValue: _specialty,
-                  hint: const Text('Select your specialty',
-                      style: TextStyle(fontFamily: 'Inter')),
+                  hint: const Text('Select your specialty'),
                   decoration: const InputDecoration(),
                   isExpanded: true,
                   items: _specialties
                       .map((s) => DropdownMenuItem(
                           value: s,
-                          child: Text(s,
-                              style: const TextStyle(fontFamily: 'Inter'))))
+                          child: Text(s)))
                       .toList(),
                   validator: (v) =>
                       v == null ? 'Please select your specialty' : null,
@@ -257,16 +255,11 @@ class _DocProfileSetupScreenState
                 ),
                 const SizedBox(height: 16),
 
-                Container(
+                BentoCard(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
                   child: Row(children: [
                     const Expanded(child: Text('Accepting New Patients',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter'))),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
                     Switch(
                       value: _accepting,
                       activeThumbColor: AppColors.doctorPrimary,
@@ -299,8 +292,7 @@ class _DocProfileSetupScreenState
           style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.foreground,
-              fontFamily: 'Inter'),
+              color: AppColors.foreground),
         ),
       );
 }

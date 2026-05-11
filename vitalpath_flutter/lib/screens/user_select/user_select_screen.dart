@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/app_user.dart';
@@ -16,11 +17,12 @@ class UserSelectScreen extends ConsumerStatefulWidget {
 
 class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
   bool _loading = false;
+  String? _selectedRole;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _loading,
@@ -40,38 +42,41 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                 child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 32),
               ),
               const SizedBox(height: 28),
-              const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground, height: 1.2)),
+              const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.foreground, height: 1.2)),
               const SizedBox(height: 10),
-              const Text('How are you using Omra today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              const Text('How are you using Omra today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground)),
               const SizedBox(height: 48),
               _RoleCard(
-                icon: Icons.person_rounded,
+                icon: const User(width: 28, height: 28, color: AppColors.primary),
                 color: AppColors.primary,
                 title: 'I\'m a Patient',
                 subtitle: 'Track medicines, meals, activity\nand connect with your doctor',
                 onTap: () => _handleRoleSelected('patient'),
+                isSelected: _selectedRole == 'patient',
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                icon: Icons.medical_services_rounded,
+                icon: const HealthShield(width: 28, height: 28, color: AppColors.doctorPrimary),
                 color: AppColors.doctorPrimary,
                 title: 'I\'m a Doctor',
                 subtitle: 'Manage patients, appointments\nand write prescriptions',
                 onTap: () => _handleRoleSelected('doctor'),
+                isSelected: _selectedRole == 'doctor',
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                icon: Icons.family_restroom_rounded,
+                icon: const Icon(Icons.family_restroom_rounded, color: Color(0xFFF59E0B), size: 28),
                 color: const Color(0xFFF59E0B),
                 title: 'I\'m a Caregiver',
                 subtitle: 'Manage health for your family\nand connect with their doctors',
                 onTap: () => _handleRoleSelected('caregiver'),
+                isSelected: _selectedRole == 'caregiver',
               ),
               const Spacer(),
-              Center(
+              const Center(
                 child: Text('By continuing you agree to our Terms & Privacy Policy',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    style: TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],
@@ -83,15 +88,16 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
 
   void _handleRoleSelected(String userType) async {
     if (_loading) return;
-    
+    setState(() => _selectedRole = userType);
+
     final authRepo = ref.read(authRepositoryProvider);
     final uid = authRepo.currentUid;
-    
+
     if (uid != null) {
       // User is already signed into Firebase Auth (e.g. they came here from login)
       // but they don't have a Firestore profile yet. Create it now!
       setState(() => _loading = true);
-      
+
       try {
         final result = await authRepo.getUserState(uid);
         if (!mounted) return;
@@ -164,48 +170,72 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
 
 
 class _RoleCard extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool isSelected;
 
-  const _RoleCard({required this.icon, required this.color, required this.title, required this.subtitle, required this.onTap});
+  const _RoleCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.isSelected = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha:0.25), width: 1.5),
-          boxShadow: [BoxShadow(color: color.withValues(alpha:0.06), blurRadius: 16, offset: const Offset(0, 4))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(14)),
-              child: Icon(icon, color: color, size: 28),
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : color.withValues(alpha: 0.25),
+                width: isSelected ? 2 : 1.5,
+              ),
+              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
             ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.4)),
-                ],
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                  child: Center(child: icon),
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.foreground)),
+                      const SizedBox(height: 4),
+                      Text(subtitle, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, height: 1.4)),
+                    ],
+                  ),
+                ),
+                NavArrowRight(width: 20, height: 20, color: color),
+              ],
+            ),
+          ),
+          if (isSelected)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+                child: const CheckCircle(width: 20, height: 20, color: AppColors.primary),
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: color),
-          ],
-        ),
+        ],
       ),
     );
   }

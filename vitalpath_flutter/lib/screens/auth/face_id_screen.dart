@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
@@ -61,10 +62,10 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
     _ => 'Enable Biometrics',
   };
 
-  IconData get _biometricIcon => switch (_biometricType) {
-    BiometricType.face => Icons.face_retouching_natural_rounded,
-    BiometricType.fingerprint => Icons.fingerprint_rounded,
-    _ => Icons.lock_open_rounded,
+  Widget get _biometricWidget => switch (_biometricType) {
+    BiometricType.face => const User(width: 64, height: 64, color: AppColors.primary),
+    BiometricType.fingerprint => const Fingerprint(width: 64, height: 64, color: AppColors.primary),
+    _ => const Lock(width: 64, height: 64, color: AppColors.primary),
   };
 
   Future<void> _authenticate() async {
@@ -129,7 +130,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -142,7 +143,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                 decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle),
-                child: Icon(_biometricIcon, size: 64, color: AppColors.primary),
+                child: Center(child: _biometricWidget),
               ),
               const SizedBox(height: 32),
               Text(
@@ -150,7 +151,6 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                 style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'Inter',
                     color: AppColors.foreground),
               ),
               const SizedBox(height: 12),
@@ -160,7 +160,6 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                 style: TextStyle(
                     fontSize: 15,
                     color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
                     height: 1.5),
               ),
               // Fix H4b — display auth failure message.
@@ -170,8 +169,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                   _errorMessage!,
                   style: const TextStyle(
                       fontSize: 13,
-                      color: Colors.red,
-                      fontFamily: 'Inter'),
+                      color: Colors.red),
                 ),
               ],
               const Spacer(),
@@ -184,8 +182,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                 onPressed: _checking ? null : _skip,
                 child: const Text('Skip for now',
                     style: TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                        color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],

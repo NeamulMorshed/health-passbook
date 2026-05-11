@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -168,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: LoadingOverlay(
           isLoading: _loading,
@@ -201,7 +202,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
-                    fontFamily: 'Inter',
                     color: AppColors.foreground,
                     height: 1.2,
                   ),
@@ -212,7 +212,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
                     height: 1.5,
                   ),
                 ),
@@ -239,7 +238,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             style: const TextStyle(
                               fontSize: 13,
                               color: Colors.red,
-                              fontFamily: 'Inter',
                               height: 1.5,
                             ),
                           ),
@@ -273,7 +271,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            fontFamily: 'Inter',
                             color: AppColors.foreground,
                           ),
                         ),
@@ -293,8 +290,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'or',
                       style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.mutedForeground.withValues(alpha: 0.7),
-                          fontFamily: 'Inter'),
+                          color: AppColors.mutedForeground.withValues(alpha: 0.7)),
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.border)),
@@ -329,7 +325,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
                               color: AppColors.foreground,
                             ),
                           ),
@@ -344,7 +339,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter',
                         color: AppColors.foreground),
                   ),
                   const SizedBox(height: 14),
@@ -380,11 +374,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             _loading ? null : _submitEmail(),
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
+                          prefixIcon: const Lock(width: 20, height: 20),
                           suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined),
+                            icon: _obscurePassword
+                                ? const Eye(width: 20, height: 20)
+                                : const EyeClosed(width: 20, height: 20),
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
                           ),
@@ -411,8 +405,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         _isRegisterMode ? 'Create Account' : 'Sign In',
                         style: const TextStyle(
                             fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Inter'),
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -424,8 +417,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : "Don't have an account? ",
                       style: const TextStyle(
                           fontSize: 13,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter'),
+                          color: AppColors.mutedForeground),
                     ),
                     GestureDetector(
                       onTap: () => setState(() {
@@ -438,8 +430,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                            fontFamily: 'Inter'),
+                            color: AppColors.primary),
                       ),
                     ),
                   ]),
@@ -456,8 +447,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         '← Back',
                         style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter'),
+                            color: AppColors.mutedForeground),
                       ),
                     ),
                   ),
@@ -473,7 +463,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.mutedForeground.withValues(alpha: 0.7),
-                        fontFamily: 'Inter',
                         height: 1.6,
                       ),
                       children: [

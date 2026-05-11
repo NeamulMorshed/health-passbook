@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -15,7 +16,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   final _perms = [
     _PermData(
-      icon: Icons.location_on_rounded,
+      icon: const MapPin(width: 50, height: 50, color: AppColors.success),
       color: AppColors.success,
       title: 'Location Access',
       subtitle: 'Track your walks and outdoor activities with GPS for accurate distance measurement.',
@@ -23,7 +24,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       permission: Permission.location,
     ),
     _PermData(
-      icon: Icons.camera_alt_rounded,
+      icon: const Camera(width: 50, height: 50, color: AppColors.primary),
       color: AppColors.primary,
       title: 'Camera & Photos',
       subtitle: 'Take photos of your meals and prescriptions to keep detailed health records.',
@@ -31,7 +32,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       permission: Permission.camera,
     ),
     _PermData(
-      icon: Icons.notifications_rounded,
+      icon: const Bell(width: 50, height: 50, color: AppColors.warning),
       color: AppColors.warning,
       title: 'Medication Reminders',
       subtitle: 'Get notified when it\'s time to take your medicine. Never miss a dose again.',
@@ -60,7 +61,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
   Widget build(BuildContext context) {
     final data = _perms[_step];
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -96,12 +97,12 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(color: data.color.withValues(alpha:0.12), shape: BoxShape.circle),
-                child: Icon(data.icon, size: 50, color: data.color),
+                child: Center(child: data.icon),
               ),
               const SizedBox(height: 36),
-              Text(data.title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
+              Text(data.title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.foreground)),
               const SizedBox(height: 12),
-              Text(data.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.5)),
+              Text(data.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: AppColors.mutedForeground, height: 1.5)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -113,7 +114,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 child: Row(children: [
                   Icon(Icons.info_outline_rounded, size: 15, color: data.color),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(data.why, style: TextStyle(fontSize: 13, color: data.color, fontFamily: 'Inter'))),
+                  Expanded(child: Text(data.why, style: TextStyle(fontSize: 13, color: data.color))),
                 ]),
               ),
               const Spacer(),
@@ -121,7 +122,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _next,
-                child: const Text('Not now', style: TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                child: const Text('Not now', style: TextStyle(color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],
@@ -133,7 +134,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 }
 
 class _PermData {
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final String title;
   final String subtitle;

@@ -6,7 +6,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
-import '../../core/widgets/bento_card.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
@@ -339,8 +338,7 @@ class _Step2 extends StatelessWidget {
         BentoCard(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.local_hospital_rounded,
-                color: Color(0xFFF59E0B), size: 28),
+            const Hospital(width: 28, height: 28, color: Color(0xFFF59E0B)),
             const SizedBox(height: 12),
             const Text(
               'Connect with their doctor',

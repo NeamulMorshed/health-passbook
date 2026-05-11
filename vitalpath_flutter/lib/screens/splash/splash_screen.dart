@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_repository.dart';
@@ -190,21 +191,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       );
     }
 
-    const splashData = [
+    final splashData = [
       _SplashData(
-        icon: Icons.favorite_rounded,
+        icon: const Icon(Icons.favorite_rounded, size: 56, color: AppColors.primary),
         color: AppColors.primary,
         title: 'Omra',
         subtitle: 'Your health, in harmony',
       ),
       _SplashData(
-        icon: Icons.medical_services_rounded,
+        icon: const HealthShield(width: 56, height: 56, color: AppColors.success),
         color: AppColors.success,
         title: 'Smart Health Tracking',
         subtitle: 'Medicines, meals, and activity\nall in one place',
       ),
       _SplashData(
-        icon: Icons.people_rounded,
+        icon: const Icon(Icons.people_rounded, size: 56, color: AppColors.doctorPrimary),
         color: AppColors.doctorPrimary,
         title: 'Doctor Connect',
         subtitle: 'Book appointments and receive\nprescriptions instantly',
@@ -240,7 +241,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                                 color: data.color.withValues(alpha: 0.12),
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(data.icon, size: 56, color: data.color),
+                              child: Center(child: data.icon),
                             ),
                       const SizedBox(height: 32),
                       if (_step > 0)
@@ -249,7 +250,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter',
                             color: AppColors.foreground,
                           ),
                         ),
@@ -262,7 +262,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           style: const TextStyle(
                             fontSize: 15,
                             color: AppColors.mutedForeground,
-                            fontFamily: 'Inter',
                             height: 1.55,
                           ),
                         ),
@@ -314,7 +313,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                fontFamily: 'Inter',
                                 color: Colors.white),
                           ),
                         ),
@@ -330,7 +328,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                fontFamily: 'Inter',
                                 color: AppColors.mutedForeground),
                           ),
                         ),
@@ -349,7 +346,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 }
 
 class _SplashData {
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final String title;
   final String subtitle;
