@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../models/doctor.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
@@ -42,7 +41,7 @@ class DocProfileScreen extends ConsumerWidget {
                 color: AppColors.surface,
                 padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
                 child: Column(children: [
-                  AppAvatar(name: user.name, size: 80, imageUrl: user.photoUrl, backgroundColor: AppColors.doctorPrimary),
+                  AppAvatar(name: user.name, size: 80, imageUrl: user.photoUrl, backgroundColor: AppColors.primary),
                   const SizedBox(height: 14),
                   Text('Dr. ${user.name}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                   docAsync.when(
@@ -299,15 +298,15 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
             Switch(
               value: _accepting,
-              activeThumbColor: AppColors.doctorPrimary,
-              activeTrackColor: AppColors.doctorPrimary.withValues(alpha: 0.4),
+              activeThumbColor: AppColors.primary,
+              activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
               onChanged: (v) => setState(() => _accepting = v),
             ),
           ]),
           const SizedBox(height: 20),
           GradientButton(
             label: 'Save Changes',
-            colors: [AppColors.doctorPrimary, const Color(0xFF5B21B6)],
+            colors: [AppColors.primary, const Color(0xFF5B21B6)],
             onPressed: () async {
               final data = <String, dynamic>{
                 'acceptingNewPatients': _accepting,

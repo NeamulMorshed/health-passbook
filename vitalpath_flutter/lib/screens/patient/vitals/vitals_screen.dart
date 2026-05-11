@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -493,7 +492,7 @@ class _VitalHistorySheet extends ConsumerWidget {
                         final Widget statusIcon;
                         if (isNormal) {
                           statusColor = AppColors.success;
-                          statusIcon = Icon(Icons.check_circle_rounded, size: 16, color: AppColors.success);
+                          statusIcon = const CheckCircle(width: 16, height: 16, color: AppColors.success);
                         } else if (val >= borderlineLow && val <= borderlineHigh) {
                           statusColor = AppColors.warning;
                           statusIcon = WarningTriangle(width: 16, height: 16, color: AppColors.warning);
@@ -604,15 +603,15 @@ class _VitalStatusCard extends ConsumerWidget {
     } else if (missedMeds.isNotEmpty || abnormalReadings.isNotEmpty) {
       statusColor = AppColors.warning;
       statusText = 'Check in today';
-      statusIcon = Icon(Icons.info_rounded, size: 13, color: AppColors.warning);
+      statusIcon = const InfoCircle(width: 13, height: 13, color: AppColors.warning);
     } else if (activeMeds.isNotEmpty && activeMeds.every((m) => m.takenToday)) {
       statusColor = AppColors.success;
       statusText = 'On track';
-      statusIcon = Icon(Icons.check_circle_rounded, size: 13, color: AppColors.success);
+      statusIcon = const CheckCircle(width: 13, height: 13, color: AppColors.success);
     } else {
       statusColor = AppColors.primary;
       statusText = 'Good day';
-      statusIcon = Icon(Icons.wb_sunny_rounded, size: 13, color: AppColors.primary);
+      statusIcon = const SunLight(width: 13, height: 13, color: AppColors.primary);
     }
 
     final medStreak = gamProfile?.medStreak ?? 0;
@@ -680,7 +679,7 @@ class _VitalStatusCard extends ConsumerWidget {
               _VitalChip(
                 label: '${latestGlucose.value.toInt()}',
                 unit: 'mg/dL',
-                iconBuilder: (c) => Icon(Icons.water_drop_rounded, size: 12, color: c),
+                iconBuilder: (c) => Droplet(width: 12, height: 12, color: c),
                 isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value),
               ),
           ]),
@@ -737,7 +736,7 @@ class _VitalChip extends StatelessWidget {
         Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
         const SizedBox(width: 5),
         isNormal
-            ? Icon(Icons.check_circle_rounded, size: 11, color: color)
+            ? CheckCircle(width: 11, height: 11, color: color)
             : WarningTriangle(width: 11, height: 11, color: color),
       ]),
     );

@@ -170,8 +170,7 @@ class _FormView extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.15)),
             ),
             child: const Row(children: [
-              Icon(Icons.info_outline_rounded,
-                  size: 16, color: AppColors.primary),
+              InfoCircle(width: 16, height: 16, color: AppColors.primary),
               SizedBox(width: 8),
               Expanded(
                 child: Text(

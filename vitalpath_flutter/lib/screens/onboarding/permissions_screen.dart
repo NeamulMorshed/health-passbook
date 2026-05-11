@@ -112,7 +112,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   border: Border.all(color: data.color.withValues(alpha: 0.2)),
                 ),
                 child: Row(children: [
-                  Icon(Icons.info_outline_rounded, size: 15, color: data.color),
+                  InfoCircle(width: 15, height: 15, color: data.color),
                   const SizedBox(width: 8),
                   Expanded(child: Text(data.why, style: TextStyle(fontSize: 13, color: data.color))),
                 ]),

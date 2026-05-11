@@ -193,7 +193,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final splashData = [
       _SplashData(
-        icon: const Icon(Icons.favorite_rounded, size: 56, color: AppColors.primary),
+        icon: const Heart(width: 56, height: 56, color: AppColors.primary),
         color: AppColors.primary,
         title: 'Omra',
         subtitle: 'Your health, in harmony',
@@ -205,8 +205,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         subtitle: 'Medicines, meals, and activity\nall in one place',
       ),
       _SplashData(
-        icon: const Icon(Icons.people_rounded, size: 56, color: AppColors.doctorPrimary),
-        color: AppColors.doctorPrimary,
+        icon: const Group(width: 56, height: 56, color: AppColors.primary),
+        color: AppColors.primary,
         title: 'Doctor Connect',
         subtitle: 'Book appointments and receive\nprescriptions instantly',
       ),

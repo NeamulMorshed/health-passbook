@@ -103,8 +103,7 @@ class _NotificationSettingsScreenState
                   padding: EdgeInsets.zero,
                   child: Column(children: [
                     BentoSettingsTile(
-                      icon: const Icon(Icons.calendar_month_rounded,
-                          color: AppColors.doctorPrimary, size: 20),
+                      icon: const Calendar(width: 20, height: 20, color: AppColors.primary),
                       title: 'Appointment Alerts',
                       subtitle: 'When a doctor confirms, reschedules or cancels',
                       trailing: Switch(
@@ -113,12 +112,12 @@ class _NotificationSettingsScreenState
                           setState(() => _appointments = v);
                           _save(_keyAppts, v);
                         },
-                        activeThumbColor: AppColors.doctorPrimary,
+                        activeThumbColor: AppColors.primary,
                       ),
                       showDivider: true,
                     ),
                     BentoSettingsTile(
-                      icon: const Group(width: 20, height: 20, color: AppColors.doctorPrimary),
+                      icon: const Group(width: 20, height: 20, color: AppColors.primary),
                       title: 'Doctor Updates',
                       subtitle: 'New prescriptions and updates from your doctors',
                       trailing: Switch(
@@ -127,7 +126,7 @@ class _NotificationSettingsScreenState
                           setState(() => _doctors = v);
                           _save(_keyDoctors, v);
                         },
-                        activeThumbColor: AppColors.doctorPrimary,
+                        activeThumbColor: AppColors.primary,
                       ),
                       showDivider: false,
                     ),

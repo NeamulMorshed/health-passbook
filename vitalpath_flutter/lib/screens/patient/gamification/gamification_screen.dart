@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/gamification_provider.dart';
 import '../../../models/gamification.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 
 void _showHowToEarn(BuildContext context) {
   showModalBottomSheet(
@@ -30,7 +30,7 @@ class GamificationScreen extends ConsumerWidget {
         title: const Text('Health Rewards'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline_rounded),
+            icon: const InfoCircle(width: 24, height: 24),
             tooltip: 'How to earn HP',
             onPressed: () => _showHowToEarn(context),
           ),
@@ -403,7 +403,7 @@ class _HowToEarnSheet extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
+              child: const Flash(width: 20, height: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             const Text(

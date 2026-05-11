@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -72,7 +71,7 @@ class ProfileScreen extends ConsumerWidget {
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
+                          const Medal(width: 14, height: 14, color: AppColors.primary),
                           const SizedBox(width: 5),
                           Text(
                             'Lv ${g.level} • ${g.hp} HP',

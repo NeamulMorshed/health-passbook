@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import '../core/theme/app_theme.dart';
 import '../models/drug_interaction.dart';
 
@@ -59,8 +60,7 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
           'Checking for drug interactions…',
           style: TextStyle(
               fontSize: 12,
-              color: AppColors.mutedForeground,
-              fontFamily: 'Inter'),
+              color: AppColors.mutedForeground),
         ),
       ]),
     );
@@ -77,16 +77,14 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: const Row(children: [
-        Icon(Icons.check_circle_outline_rounded,
-            size: 15, color: AppColors.success),
+        CheckCircle(width: 15, height: 15, color: AppColors.success),
         SizedBox(width: 8),
         Text(
           'No known drug interactions detected.',
           style: TextStyle(
               fontSize: 12,
               color: AppColors.success,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Inter'),
+              fontWeight: FontWeight.w500),
         ),
       ]),
     );
@@ -135,7 +133,6 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter',
                   color: hasMajor ? AppColors.destructive : AppColors.warning,
                 ),
               ),
@@ -161,7 +158,6 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
                     color: hasMajor ? AppColors.destructive : AppColors.warning,
                     decoration: TextDecoration.underline,
                   ),
@@ -220,7 +216,6 @@ class _InteractionRowState extends State<_InteractionRow> {
                   style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'Inter',
                       color: color),
                 ),
               ),
@@ -231,19 +226,14 @@ class _InteractionRowState extends State<_InteractionRow> {
                   style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter',
                       color: AppColors.foreground),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(
-                _showDetail
-                    ? Icons.expand_less_rounded
-                    : Icons.expand_more_rounded,
-                size: 16,
-                color: AppColors.mutedForeground,
-              ),
+              _showDetail
+                  ? const NavArrowUp(width: 16, height: 16, color: AppColors.mutedForeground)
+                  : const NavArrowDown(width: 16, height: 16, color: AppColors.mutedForeground),
             ]),
             if (_showDetail) ...[
               const SizedBox(height: 6),
@@ -251,7 +241,6 @@ class _InteractionRowState extends State<_InteractionRow> {
                 i.description,
                 style: const TextStyle(
                     fontSize: 11,
-                    fontFamily: 'Inter',
                     color: AppColors.cardForeground,
                     height: 1.5),
               ),
@@ -261,7 +250,6 @@ class _InteractionRowState extends State<_InteractionRow> {
                   'Source: ${i.source}',
                   style: const TextStyle(
                       fontSize: 10,
-                      fontFamily: 'Inter',
                       color: AppColors.mutedForeground),
                 ),
               ],

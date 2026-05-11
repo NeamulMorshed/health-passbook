@@ -8,6 +8,7 @@ import '../../core/widgets/app_widgets.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/patient.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 
 class HealthProfileScreen extends ConsumerStatefulWidget {
   const HealthProfileScreen({super.key});
@@ -443,7 +444,7 @@ Widget _infoBox(String text) => Container(
           color: AppColors.primary.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 18),
+        const InfoCircle(width: 18, height: 18, color: AppColors.primary),
         const SizedBox(width: 10),
         Expanded(
             child: Text(text,

@@ -53,7 +53,7 @@ class _TourSheetState extends State<_TourSheet> {
     ),
     _TourStep(
       icon: Icons.local_hospital_rounded,
-      color: AppColors.doctorPrimary,
+      color: AppColors.primary,
       title: 'Connect with doctors',
       body: 'Find and connect with your doctor from My Doctors. They can send you prescriptions and approve appointments directly in the app.',
     ),
@@ -128,7 +128,6 @@ class _TourSheetState extends State<_TourSheet> {
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
                           color: AppColors.foreground),
                     ),
                     const SizedBox(height: 10),
@@ -138,7 +137,6 @@ class _TourSheetState extends State<_TourSheet> {
                       style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.mutedForeground,
-                          fontFamily: 'Inter',
                           height: 1.5),
                     ),
                   ],
@@ -182,7 +180,6 @@ class _TourSheetState extends State<_TourSheet> {
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
                     color: Colors.white),
               ),
             ),
@@ -192,7 +189,7 @@ class _TourSheetState extends State<_TourSheet> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Skip tour',
                 style: TextStyle(
-                    color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    color: AppColors.mutedForeground)),
           ),
         ]),
       ),

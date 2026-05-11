@@ -425,8 +425,7 @@ class _ScanPrescriptionScreenState
                 color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.document_scanner_rounded,
-                  size: 56, color: AppColors.primary),
+              child: const ScanBarcode(width: 56, height: 56, color: AppColors.primary),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -604,7 +603,7 @@ class _ScanPrescriptionScreenState
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.black54,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text('Tap to view full',
                             style: TextStyle(
@@ -776,7 +775,7 @@ class _EntryCardState extends State<_EntryCard> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text('Check this',
                       style: TextStyle(

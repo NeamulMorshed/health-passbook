@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/appointment.dart';
@@ -82,9 +81,9 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
                   color: AppColors.surface,
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: AppColors.doctorPrimary,
+                    labelColor: AppColors.primary,
                     unselectedLabelColor: AppColors.mutedForeground,
-                    indicatorColor: AppColors.doctorPrimary,
+                    indicatorColor: AppColors.primary,
                     tabs: [
                       Tab(text: 'New Requests (${pending.length})'),
                       Tab(text: 'Confirmed (${confirmed.length})'),
@@ -156,7 +155,7 @@ class _DocApptCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Text(
@@ -186,15 +185,15 @@ class _DocApptCard extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-                color: AppColors.doctorPrimary.withValues(alpha: 0.06),
+                color: AppColors.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8)),
             child: Row(children: [
-              const Clock(width: 16, height: 16, color: AppColors.doctorPrimary),
+              const Clock(width: 16, height: 16, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w600,
-                      color: AppColors.doctorPrimary)),
+                      color: AppColors.primary)),
             ]),
           ),
         ],
@@ -396,7 +395,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Calendar(width: 18, height: 18, color: AppColors.doctorPrimary),
+                  const Calendar(width: 18, height: 18, color: AppColors.primary),
                   const SizedBox(width: 10),
                   Text(DateFormat('EEEE, MMM d, y').format(_selectedDate),
                       style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -417,7 +416,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Clock(width: 18, height: 18, color: AppColors.doctorPrimary),
+                  const Clock(width: 18, height: 18, color: AppColors.primary),
                   const SizedBox(width: 10),
                   Text(_selectedTime.format(context),
                       style: const TextStyle(fontWeight: FontWeight.w500)),

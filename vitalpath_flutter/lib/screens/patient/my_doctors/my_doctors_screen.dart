@@ -9,7 +9,6 @@ import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
@@ -179,10 +178,10 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
               },
             decoration: InputDecoration(
               hintText: 'Search by name, specialty or hospital…',
-              prefixIcon: const Icon(Icons.search_rounded, size: 20),
+              prefixIcon: const Search(width: 20, height: 20),
               suffixIcon: _nameQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      icon: const Xmark(width: 18, height: 18),
                       onPressed: () {
                         _debounce?.cancel();
                         _searchCtrl.clear();
@@ -338,7 +337,7 @@ class _DoctorCard extends ConsumerWidget {
                 name: doctor.name,
                 imageUrl: doctor.photoUrl,
                 size: 50,
-                backgroundColor: AppColors.doctorPrimary),
+                backgroundColor: AppColors.primary),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -351,8 +350,7 @@ class _DoctorCard extends ConsumerWidget {
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600))),
                       if (doctor.verificationStatus == 'verified')
-                        const Icon(Icons.verified_rounded,
-                            color: AppColors.primary, size: 18)
+                        const ShieldCheck(width: 18, height: 18, color: AppColors.primary)
                       else if (doctor.verificationStatus == 'pending')
                         const Icon(Icons.hourglass_top_rounded,
                             color: AppColors.warning, size: 16),
@@ -361,7 +359,7 @@ class _DoctorCard extends ConsumerWidget {
                       Text(doctor.specialty!,
                           style: const TextStyle(
                               fontSize: 13,
-                              color: AppColors.doctorPrimary,
+                              color: AppColors.primary,
                               fontWeight: FontWeight.w500)),
                     if (doctor.hospital != null)
                       Text(doctor.hospital!,
@@ -434,12 +432,12 @@ class _DoctorCard extends ConsumerWidget {
                 onPressed: doctor.acceptingNewPatients != true
                     ? null
                     : () => _showBookSheet(context, doctor),
-                icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                icon: const Calendar(width: 16, height: 16),
                 label: const Text('Book Appointment'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 40),
-                  foregroundColor: AppColors.doctorPrimary,
-                  side: const BorderSide(color: AppColors.doctorPrimary),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
                 ),
               ),
             ),
@@ -448,7 +446,7 @@ class _DoctorCard extends ConsumerWidget {
               onPressed: doctor.phone != null && doctor.phone!.isNotEmpty
                   ? () => _callDoctor(context, doctor.phone!)
                   : null,
-              icon: const Icon(Icons.phone_rounded, size: 16),
+              icon: const Phone(width: 16, height: 16),
               label: const Text('Call'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
             ),
@@ -575,7 +573,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                     name: doctor.name,
                     imageUrl: doctor.photoUrl,
                     size: 72,
-                    backgroundColor: AppColors.doctorPrimary),
+                    backgroundColor: AppColors.primary),
                 const SizedBox(height: 14),
                 Row(mainAxisSize: MainAxisSize.min, children: [
                   Text('Dr. ${doctor.name}',
@@ -584,8 +582,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                           fontWeight: FontWeight.w700)),
                   if (doctor.verificationStatus == 'verified') ...[
                     const SizedBox(width: 6),
-                    const Icon(Icons.verified_rounded,
-                        color: AppColors.primary, size: 20),
+                    const ShieldCheck(width: 20, height: 20, color: AppColors.primary),
                   ] else if (doctor.verificationStatus == 'pending') ...[
                     const SizedBox(width: 6),
                     const Icon(Icons.hourglass_top_rounded,
@@ -597,7 +594,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                   Text(doctor.specialty!,
                       style: const TextStyle(
                           fontSize: 14,
-                          color: AppColors.doctorPrimary,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w500)),
                 ],
                 if (doctor.hospital != null) ...[
@@ -650,27 +647,28 @@ class _DoctorProfileSheet extends StatelessWidget {
 
             // Details
             if (doctor.hospital != null)
-              _ProfileRow(const Icon(Icons.local_hospital_rounded, size: 16, color: AppColors.mutedForeground), 'Hospital', doctor.hospital!),
+              _ProfileRow(const Hospital(width: 16, height: 16, color: AppColors.mutedForeground), 'Hospital', doctor.hospital!),
             if (doctor.specialty != null)
               _ProfileRow(const Icon(Icons.medical_information_rounded, size: 16, color: AppColors.mutedForeground), 'Specialty', doctor.specialty!),
             if (doctor.phone != null && doctor.phone!.isNotEmpty)
-              _ProfileRow(const Icon(Icons.phone_rounded, size: 16, color: AppColors.mutedForeground), 'Phone', doctor.phone!),
+              _ProfileRow(const Phone(width: 16, height: 16, color: AppColors.mutedForeground), 'Phone', doctor.phone!),
             if (doctor.licenseNo != null && doctor.licenseNo!.isNotEmpty)
               _ProfileRow(const Medal(width: 16, height: 16, color: AppColors.mutedForeground), 'License', doctor.licenseNo!),
             if (doctor.availableHours != null && doctor.availableHours!.isNotEmpty)
-              _ProfileRow(const Icon(Icons.access_time_rounded, size: 16, color: AppColors.mutedForeground), 'Hours', doctor.availableHours!),
+              _ProfileRow(const Clock(width: 16, height: 16, color: AppColors.mutedForeground), 'Hours', doctor.availableHours!),
             if (doctor.consultationFee != null && doctor.consultationFee!.isNotEmpty)
               _ProfileRow(const Icon(Icons.payments_rounded, size: 16, color: AppColors.mutedForeground), 'Fee', doctor.consultationFee!),
             _ProfileRow(
-              Icon(doctor.acceptingNewPatients ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                  size: 16, color: AppColors.mutedForeground),
+              doctor.acceptingNewPatients
+                  ? const CheckCircle(width: 16, height: 16, color: AppColors.mutedForeground)
+                  : const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
               'Availability',
               doctor.acceptingNewPatients ? 'Accepting new patients' : 'Not accepting new patients',
               valueColor: doctor.acceptingNewPatients ? AppColors.success : AppColors.destructive,
             ),
             if (isConnected)
               _ProfileRow(
-                const Icon(Icons.check_circle_rounded, size: 16, color: AppColors.mutedForeground),
+                const CheckCircle(width: 16, height: 16, color: AppColors.mutedForeground),
                 'Status',
                 'Connected — your doctor',
                 valueColor: AppColors.success,
@@ -692,12 +690,12 @@ class _DoctorProfileSheet extends StatelessWidget {
                       _BookAppointmentSheet(doctor: doctor, patientId: patientId),
                 );
               },
-              icon: const Icon(Icons.calendar_today_rounded, size: 16),
+              icon: const Calendar(width: 16, height: 16),
               label: const Text('Book Appointment'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 46),
-                foregroundColor: AppColors.doctorPrimary,
-                side: const BorderSide(color: AppColors.doctorPrimary),
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
               ),
             ),
             if (doctor.phone != null && doctor.phone!.isNotEmpty) ...[
@@ -707,7 +705,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                   final uri = Uri.parse('tel:${doctor.phone}');
                   if (await canLaunchUrl(uri)) await launchUrl(uri);
                 },
-                icon: const Icon(Icons.phone_rounded, size: 16),
+                icon: const Phone(width: 16, height: 16),
                 label: const Text('Call Doctor'),
                 style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 46)),
@@ -873,20 +871,20 @@ class _BookAppointmentSheetState
                 padding: const EdgeInsets.all(13),
                 decoration: BoxDecoration(
                   color: _preferredDate != null
-                      ? AppColors.doctorPrimary.withValues(alpha: 0.06)
+                      ? AppColors.primary.withValues(alpha: 0.06)
                       : AppColors.muted,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: _preferredDate != null
-                        ? AppColors.doctorPrimary.withValues(alpha: 0.4)
+                        ? AppColors.primary.withValues(alpha: 0.4)
                         : AppColors.border,
                   ),
                 ),
                 child: Row(children: [
-                  Icon(Icons.calendar_today_rounded,
-                      size: 16,
+                  Calendar(
+                      width: 16, height: 16,
                       color: _preferredDate != null
-                          ? AppColors.doctorPrimary
+                          ? AppColors.primary
                           : AppColors.mutedForeground),
                   const SizedBox(width: 10),
                   Text(
@@ -899,15 +897,14 @@ class _BookAppointmentSheetState
                             ? FontWeight.w600
                             : FontWeight.w400,
                         color: _preferredDate != null
-                            ? AppColors.doctorPrimary
+                            ? AppColors.primary
                             : AppColors.mutedForeground),
                   ),
                   if (_preferredDate != null) ...[
                     const Spacer(),
                     GestureDetector(
                       onTap: () => setState(() => _preferredDate = null),
-                      child: const Icon(Icons.close_rounded,
-                          size: 16, color: AppColors.mutedForeground),
+                      child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
                     ),
                   ],
                 ]),
@@ -928,10 +925,10 @@ class _BookAppointmentSheetState
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: selected ? AppColors.doctorPrimary : AppColors.muted,
+                      color: selected ? AppColors.primary : AppColors.muted,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: selected ? AppColors.doctorPrimary : AppColors.border),
+                          color: selected ? AppColors.primary : AppColors.border),
                     ),
                     child: Text(slot,
                         style: TextStyle(
@@ -965,7 +962,7 @@ class _BookAppointmentSheetState
                 ? const Center(child: CircularProgressIndicator())
                 : GradientButton(
                     label: 'Send Request',
-                    colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                    colors: const [AppColors.primary, Color(0xFF5B21B6)],
                     onPressed: _book),
             const SizedBox(height: 8),
           ],

@@ -246,7 +246,7 @@ class _AddFamilyMemberScreenState
                 decoration: const InputDecoration(
                   labelText: 'Full Name *',
                   hintText: 'e.g. Aryan Ahmed',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  prefixIcon: User(width: 24, height: 24),
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Name is required' : null,
@@ -280,8 +280,7 @@ class _AddFamilyMemberScreenState
                       if (_dob != null)
                         GestureDetector(
                           onTap: () => setState(() => _dob = null),
-                          child: const Icon(Icons.clear_rounded,
-                              size: 16, color: AppColors.mutedForeground),
+                          child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
                         ),
                     ],
                   ),

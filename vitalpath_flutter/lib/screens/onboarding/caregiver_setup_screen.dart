@@ -308,8 +308,7 @@ class _Step1 extends StatelessWidget {
                 if (dob != null)
                   GestureDetector(
                     onTap: () => onDobChanged(null),
-                    child: const Icon(Icons.clear_rounded,
-                        size: 16, color: AppColors.mutedForeground),
+                    child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
                   ),
               ],
             ),
@@ -606,7 +605,7 @@ Widget _infoBox(String text, Color color) => Container(
           color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        Icon(Icons.info_outline_rounded, color: color, size: 18),
+        InfoCircle(width: 18, height: 18, color: color),
         const SizedBox(width: 10),
         Expanded(
             child: Text(text,

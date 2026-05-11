@@ -106,7 +106,7 @@ class _NotifCard extends StatelessWidget {
   Color get _color => switch (notif.type) {
     NotificationType.medicineReminder => AppColors.primary,
     NotificationType.mealReminder     => AppColors.warning,
-    NotificationType.appointment      => AppColors.doctorPrimary,
+    NotificationType.appointment      => AppColors.primary,
     NotificationType.general          => AppColors.mutedForeground,
   };
 

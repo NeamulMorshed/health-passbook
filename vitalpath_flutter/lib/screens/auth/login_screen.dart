@@ -188,10 +188,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
+                  child: const Heart(
+                    width: 32, height: 32,
                     color: AppColors.primary,
-                    size: 32,
                   ),
                 ),
                 const SizedBox(height: 28),

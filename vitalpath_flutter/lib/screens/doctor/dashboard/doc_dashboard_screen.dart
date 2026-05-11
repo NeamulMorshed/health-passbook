@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/appointment.dart';
@@ -67,7 +66,7 @@ class DocDashboardScreen extends ConsumerWidget {
                   name: user.name,
                   size: 38,
                   imageUrl: user.photoUrl,
-                  backgroundColor: AppColors.doctorPrimary,
+                  backgroundColor: AppColors.primary,
                 ),
               ),
             ],
@@ -131,9 +130,9 @@ class DocDashboardScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     _ActionTile(
-                      icon: const Calendar(width: 22, height: 22, color: AppColors.doctorPrimary),
+                      icon: const Calendar(width: 22, height: 22, color: AppColors.primary),
                       label: 'Appointments',
-                      color: AppColors.doctorPrimary,
+                      color: AppColors.primary,
                       onTap: () => context.go('/doc/appointments'),
                     ),
                     const SizedBox(width: 12),

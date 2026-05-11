@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 
@@ -139,10 +138,10 @@ class _RxCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.doctorPrimary.withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.medication_rounded, color: AppColors.doctorPrimary, size: 20),
+                    child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -189,7 +188,7 @@ class _RxCard extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Row(children: [
                         const Icon(Icons.circle,
-                            size: 5, color: AppColors.doctorPrimary),
+                            size: 5, color: AppColors.primary),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -270,11 +269,11 @@ class _RxDetailSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.doctorPrimary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Notes(
-                    color: AppColors.doctorPrimary, width: 24, height: 24),
+                    color: AppColors.primary, width: 24, height: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

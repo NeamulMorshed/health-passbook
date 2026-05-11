@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -144,9 +143,9 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
               color: AppColors.surface,
               child: TabBar(
                 controller: _tabCtrl,
-                labelColor: AppColors.doctorPrimary,
+                labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.mutedForeground,
-                indicatorColor: AppColors.doctorPrimary,
+                indicatorColor: AppColors.primary,
                 labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
                 unselectedLabelStyle: const TextStyle(fontSize: 11),
                 tabs: const [
@@ -154,7 +153,7 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                   Tab(icon: Icon(Icons.medication_rounded, size: 18), text: 'Medicines'),
                   Tab(icon: Activity(width: 18, height: 18), text: 'Health Log'),
                   Tab(icon: Icon(Icons.description_rounded, size: 18), text: 'Rx History'),
-                  Tab(icon: Icon(Icons.note_alt_rounded, size: 18), text: 'Notes'),
+                  Tab(icon: Notes(width: 18, height: 18), text: 'Notes'),
                 ],
               ),
             ),
@@ -272,7 +271,7 @@ class _OverviewTab extends StatelessWidget {
                   label: 'Medicines',
                   value: '$total',
                   subtitle: 'active',
-                  color: AppColors.doctorPrimary,
+                  color: AppColors.primary,
                 ),
               ),
             ]);
@@ -297,7 +296,7 @@ class _OverviewTab extends StatelessWidget {
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.warningLight,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           c,
@@ -352,8 +351,7 @@ class _OverviewTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  const Icon(Icons.person_outline_rounded,
-                      size: 16, color: AppColors.mutedForeground),
+                  const User(width: 16, height: 16, color: AppColors.mutedForeground),
                   const SizedBox(width: 8),
                   Text(
                     patient.emergencyContact!.name.isNotEmpty
@@ -375,8 +373,7 @@ class _OverviewTab extends StatelessWidget {
                     patient.emergencyContact!.phone.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(children: [
-                    const Icon(Icons.phone_rounded,
-                        size: 14, color: AppColors.mutedForeground),
+                    const Phone(width: 14, height: 14, color: AppColors.mutedForeground),
                     const SizedBox(width: 6),
                     Text(
                       patient.emergencyContact!.phone,
@@ -481,11 +478,11 @@ class _AdherenceCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.doctorPrimary.withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.medication_rounded,
-                  color: AppColors.doctorPrimary, size: 20),
+                  color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -541,7 +538,7 @@ class _AdherenceCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                   color: AppColors.muted,
-                  borderRadius: BorderRadius.circular(6)),
+                  borderRadius: BorderRadius.circular(20)),
               child: const Text('As needed — no fixed schedule',
                   style: TextStyle(
                       fontSize: 11,
@@ -778,12 +775,12 @@ class _ActivityRow extends StatelessWidget {
             ),
             if (log.distanceKm != null)
               _MetaChip(
-                icon: const Icon(Icons.place_rounded, size: 11, color: AppColors.mutedForeground),
+                icon: const MapPin(width: 11, height: 11, color: AppColors.mutedForeground),
                 label: '${log.distanceKm!.toStringAsFixed(1)} km',
               ),
             if (log.steps != null)
               _MetaChip(
-                icon: const Icon(Icons.directions_walk_rounded, size: 11, color: AppColors.mutedForeground),
+                icon: const Walking(width: 11, height: 11, color: AppColors.mutedForeground),
                 label: '${log.steps} steps',
               ),
             if (log.caloriesBurned != null)
@@ -825,7 +822,7 @@ class _PrescriptionsTabState extends ConsumerState<_PrescriptionsTab> {
         // Write prescription CTA at top of tab
         GradientButton(
           label: 'Write New Prescription',
-          colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+          colors: const [AppColors.primary, Color(0xFF5B21B6)],
           onPressed: () => _showPrescribeSheet(context),
         ),
         const SizedBox(height: 20),
@@ -833,7 +830,7 @@ class _PrescriptionsTabState extends ConsumerState<_PrescriptionsTab> {
         _SectionHeader(
           icon: Icons.description_rounded,
           title: 'Prescription History',
-          color: AppColors.doctorPrimary,
+          color: AppColors.primary,
         ),
         const SizedBox(height: 10),
 
@@ -858,12 +855,9 @@ class _PrescriptionsTabState extends ConsumerState<_PrescriptionsTab> {
               if (rxList.length > pageSize)
                 TextButton.icon(
                   onPressed: () => setState(() => _showAll = !_showAll),
-                  icon: Icon(
-                    _showAll
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    size: 18,
-                  ),
+                  icon: _showAll
+                      ? const NavArrowUp(width: 18, height: 18)
+                      : const NavArrowDown(width: 18, height: 18),
                   label: Text(
                     _showAll
                         ? 'Show fewer'
@@ -907,11 +901,11 @@ class _RxCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: AppColors.doctorPrimary.withValues(alpha: 0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.description_rounded,
-                  size: 16, color: AppColors.doctorPrimary),
+                  size: 16, color: AppColors.primary),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1178,7 +1172,7 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
               : ElevatedButton(
                   onPressed: _addNote,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.doctorPrimary,
+                    backgroundColor: AppColors.primary,
                     minimumSize: const Size(42, 42),
                     padding: EdgeInsets.zero,
                   ),
@@ -1231,7 +1225,7 @@ class _NoteCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Icon(Icons.note_alt_rounded, size: 15, color: AppColors.doctorPrimary),
+          const Icon(Icons.note_alt_rounded, size: 15, color: AppColors.primary),
           const SizedBox(width: 6),
           Text(DateFormat('MMM d, y · h:mm a').format(note.createdAt),
               style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
@@ -1486,7 +1480,7 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
                 ? const Center(child: CircularProgressIndicator())
                 : GradientButton(
                     label: 'Save Prescription',
-                    colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                    colors: const [AppColors.primary, Color(0xFF5B21B6)],
                     onPressed: _save,
                   ),
           ],

@@ -131,7 +131,7 @@ class _DocProfileSetupScreenState
                       height: 56,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                          colors: [AppColors.primary, Color(0xFF5B21B6)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -262,8 +262,8 @@ class _DocProfileSetupScreenState
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
                     Switch(
                       value: _accepting,
-                      activeThumbColor: AppColors.doctorPrimary,
-                      activeTrackColor: AppColors.doctorPrimary.withValues(alpha: 0.4),
+                      activeThumbColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
                       onChanged: (v) => setState(() => _accepting = v),
                     ),
                   ]),
@@ -272,7 +272,7 @@ class _DocProfileSetupScreenState
 
                 GradientButton(
                   label: 'Complete Setup',
-                  colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                  colors: const [AppColors.primary, Color(0xFF5B21B6)],
                   onPressed: _save,
                   isLoading: _saving,
                 ),

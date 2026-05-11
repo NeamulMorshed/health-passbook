@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../models/appointment.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../models/medicine.dart';
@@ -241,8 +240,8 @@ class _VitalCard extends StatelessWidget {
                 .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.monitor_heart_rounded,
-              size: 18,
+          child: Activity(
+              width: 18, height: 18,
               color: normal ? AppColors.success : AppColors.warning),
         ),
         const SizedBox(width: 12),
@@ -429,8 +428,7 @@ class _PrescriptionsTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    const Icon(Icons.receipt_long_rounded,
-                        size: 18, color: AppColors.doctorPrimary),
+                    const Notes(width: 18, height: 18, color: AppColors.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -462,7 +460,7 @@ class _PrescriptionsTab extends ConsumerWidget {
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Row(children: [
                           const Icon(Icons.circle,
-                              size: 5, color: AppColors.doctorPrimary),
+                              size: 5, color: AppColors.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -568,7 +566,7 @@ class _ApptCard extends StatelessWidget {
       child: BentoCard(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
-          const Calendar(width: 18, height: 18, color: AppColors.doctorPrimary),
+          const Calendar(width: 18, height: 18, color: AppColors.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -699,8 +697,7 @@ class _LogsTab extends ConsumerWidget {
                           child: BentoCard(
                             padding: const EdgeInsets.all(12),
                             child: Row(children: [
-                              const Icon(Icons.directions_run_rounded,
-                                  size: 16, color: AppColors.success),
+                              const Running(width: 16, height: 16, color: AppColors.success),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
@@ -174,14 +173,14 @@ class _CareCircleBody extends ConsumerWidget {
               icon: Icons.medical_services_rounded,
               title: 'My Doctors',
               count: doctorsAsync.hasValue ? doctorCount : null,
-              color: AppColors.doctorPrimary,
+              color: AppColors.primary,
               action: TextButton.icon(
                 onPressed: () => context.push('/my-doctors'),
-                icon: const Icon(Icons.search_rounded, size: 14),
+                icon: const Search(width: 14, height: 14),
                 label: const Text('Find more',
                     style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
-                    foregroundColor: AppColors.doctorPrimary,
+                    foregroundColor: AppColors.primary,
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap),
@@ -350,7 +349,7 @@ class _DoctorCard extends ConsumerWidget {
                     style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.doctorPrimary),
+                        color: AppColors.primary),
                   )
                 : null,
           ),
@@ -366,8 +365,7 @@ class _DoctorCard extends ConsumerWidget {
                             fontWeight: FontWeight.w600)),
                     if (doctor.isVerified) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.verified_rounded,
-                          size: 14, color: AppColors.doctorPrimary),
+                      const ShieldCheck(width: 14, height: 14, color: AppColors.primary),
                     ],
                   ]),
                   if (doctor.specialty != null)
@@ -422,7 +420,7 @@ class _DoctorCard extends ConsumerWidget {
                           style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.doctorPrimary),
+                              color: AppColors.primary),
                         )
                       : null,
                 ),
@@ -438,8 +436,7 @@ class _DoctorCard extends ConsumerWidget {
                                   fontWeight: FontWeight.w700)),
                           if (doctor.isVerified) ...[
                             const SizedBox(width: 4),
-                            const Icon(Icons.verified_rounded,
-                                size: 15, color: AppColors.doctorPrimary),
+                            const ShieldCheck(width: 15, height: 15, color: AppColors.primary),
                           ],
                         ]),
                         if (doctor.specialty != null)
@@ -465,7 +462,7 @@ class _DoctorCard extends ConsumerWidget {
                     Navigator.pop(context);
                     context.push('/appointments');
                   },
-                  icon: const Icon(Icons.calendar_today_rounded, size: 16),
+                  icon: const Calendar(width: 16, height: 16),
                   label: const Text('Book Appointment'),
                 ),
               ),
@@ -477,8 +474,7 @@ class _DoctorCard extends ConsumerWidget {
                     Navigator.pop(context);
                     _confirmRemove(context, ref);
                   },
-                  icon: const Icon(Icons.link_off_rounded,
-                      size: 16, color: AppColors.destructive),
+                  icon: const LinkSlash(width: 16, height: 16, color: AppColors.destructive),
                   label: const Text('Remove Connection',
                       style: TextStyle(
                           color: AppColors.destructive)),
@@ -580,7 +576,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                         color: isLinked
                             ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
                             : AppColors.muted,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isLinked
                               ? const Color(0xFFF59E0B)
@@ -613,7 +609,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                         horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.muted,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
                       'View details →',
@@ -627,8 +623,7 @@ class _FamilyMemberCard extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Edit member',
-            icon: const Icon(Icons.edit_rounded,
-                size: 18, color: AppColors.mutedForeground),
+            icon: const EditPencil(width: 18, height: 18, color: AppColors.mutedForeground),
             onPressed: openEdit,
           ),
         ]),
@@ -736,7 +731,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     ),
                   );
                 },
-                icon: const Icon(Icons.edit_rounded, size: 16),
+                icon: const EditPencil(width: 16, height: 16),
                 label: const Text('Edit member details'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -841,8 +836,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.15)),
               ),
               child: Row(children: [
-                const Icon(Icons.info_outline_rounded,
-                    size: 16, color: AppColors.primary),
+                const InfoCircle(width: 16, height: 16, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

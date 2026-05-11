@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -108,7 +107,7 @@ class AppointmentsScreen extends ConsumerWidget {
                   if (hasMore)
                     TextButton.icon(
                       onPressed: () => ref.read(_apptLimitProvider.notifier).state += _pageSize,
-                      icon: const Icon(Icons.expand_more_rounded),
+                      icon: const NavArrowDown(width: 24, height: 24),
                       label: const Text('Load more'),
                     )
                   else
@@ -155,7 +154,7 @@ class _ApptCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              AppAvatar(name: appt.doctorName, size: 40, backgroundColor: AppColors.doctorPrimary),
+              AppAvatar(name: appt.doctorName, size: 40, backgroundColor: AppColors.primary),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Dr. ${appt.doctorName}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
@@ -170,7 +169,7 @@ class _ApptCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
                 child: Row(children: [
-                  const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
+                  const Clock(width: 16, height: 16, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Text(
                     DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
@@ -228,7 +227,7 @@ class _ApptCard extends ConsumerWidget {
                     ])
                   : OutlinedButton.icon(
                       onPressed: () => _showRateSheet(context),
-                      icon: const Icon(Icons.star_outline_rounded, size: 16),
+                      icon: const Star(width: 16, height: 16, color: AppColors.warning),
                       label: const Text('Rate this appointment'),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 40),

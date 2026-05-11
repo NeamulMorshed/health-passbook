@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 
 const _kBiometricPref = 'biometric_enabled';
@@ -97,8 +96,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           BentoCard(
             padding: EdgeInsets.zero,
             child: BentoSettingsTile(
-              icon: const Icon(Icons.fingerprint_rounded,
-                  color: AppColors.primary, size: 20),
+              icon: const Fingerprint(width: 20, height: 20, color: AppColors.primary),
               title: 'Biometric Login',
               subtitle: _biometricAvailable
                   ? 'Use Face ID or fingerprint to log in'

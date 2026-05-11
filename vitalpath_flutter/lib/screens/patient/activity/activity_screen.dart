@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:geolocator/geolocator.dart' hide ActivityType;
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer, Position;
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
@@ -324,7 +325,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                       color: sel
                                           ? Colors.white
                                           : AppColors.mutedForeground,
-                                      fontFamily: 'Inter',
                                     ),
                                   ),
                                 ],
@@ -391,8 +391,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                         style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight:
-                                                FontWeight.w600,
-                                            fontFamily: 'Inter')),
+                                                FontWeight.w600)),
                                     Text(
                                       isGps
                                           ? '${log.distanceKm?.toStringAsFixed(2) ?? 0} km · ${log.steps ?? 0} steps · ${log.formattedDuration}'
@@ -402,8 +401,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                       style: const TextStyle(
                                           fontSize: 12,
                                           color: AppColors
-                                              .mutedForeground,
-                                          fontFamily: 'Inter'),
+                                              .mutedForeground),
                                     ),
                                   ]),
                             ),
@@ -412,8 +410,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.warning,
-                                      fontFamily: 'Inter')),
+                                      color: AppColors.warning)),
                           ]),
                         );
                       }).toList(),
@@ -459,8 +456,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               Text('GPS $label Tracker',
                   style: const TextStyle(
                       color: Colors.white70,
-                      fontSize: 13,
-                      fontFamily: 'Inter')),
+                      fontSize: 13)),
               if (_isTracking && _pedometerAvailable) ...[
                 const SizedBox(width: 6),
                 Container(
@@ -473,8 +469,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   child: const Text('Step Sensor Active',
                       style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
-                          fontFamily: 'Inter')),
+                          fontSize: 10)),
                 ),
               ],
             ],
@@ -485,8 +480,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 56,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter'),
+                fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
           Row(
@@ -507,12 +501,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle),
-                  child: Icon(
-                      _isPaused
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                      color: Colors.white,
-                      size: 34),
+                  child: _isPaused
+                      ? const Play(width: 34, height: 34, color: Colors.white)
+                      : const Pause(width: 34, height: 34, color: Colors.white),
                 ),
               ),
               const SizedBox(width: 24),
@@ -538,8 +529,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle),
-                child: const Icon(Icons.play_arrow_rounded,
-                    color: Colors.white, size: 40),
+                child: const Play(width: 40, height: 40, color: Colors.white),
               ),
             ),
           const SizedBox(height: 12),
@@ -551,8 +541,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   : 'Start ${ActivityType.labelFor(_activityType)}',
               style: const TextStyle(
                   color: Colors.white70,
-                  fontSize: 13,
-                  fontFamily: 'Inter')),
+                  fontSize: 13)),
         ],
       ),
     );
@@ -577,8 +566,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               'Log ${ActivityType.labelFor(_activityType)}',
               style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter'),
+                  fontWeight: FontWeight.w600),
             ),
           ]),
           const SizedBox(height: 16),
@@ -608,7 +596,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             decoration: const InputDecoration(
               labelText: 'Notes (optional)',
               hintText: 'e.g. Felt great, outdoor session',
-              prefixIcon: Icon(Icons.notes_rounded),
+              prefixIcon: Notes(width: 24, height: 24),
             ),
           ),
           const SizedBox(height: 16),
@@ -631,11 +619,10 @@ class _WalkStat extends StatelessWidget {
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter')),
+                fontWeight: FontWeight.w700)),
         Text(label,
             style: const TextStyle(
-                color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
+                color: Colors.white70, fontSize: 12)),
       ]);
 }
 
@@ -695,8 +682,7 @@ class _WeeklyActivityChart extends StatelessWidget {
           const Text('Weekly Activity',
               style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 14),
           SizedBox(
             height: 120,
@@ -729,7 +715,6 @@ class _WeeklyActivityChart extends StatelessWidget {
                             label,
                             style: TextStyle(
                               fontSize: 10,
-                              fontFamily: 'Inter',
                               color: isToday
                                   ? AppColors.primary
                                   : AppColors.mutedForeground,
@@ -776,7 +761,6 @@ class _WeeklyActivityChart extends StatelessWidget {
                       const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
-                          fontFamily: 'Inter',
                           fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -802,7 +786,6 @@ class _WeeklyActivityChart extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
                   ),
                 ),
               ],

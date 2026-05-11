@@ -294,8 +294,7 @@ class _Step1 extends StatelessWidget {
                               : AppColors.foreground)),
                 ),
                 if (isSelected)
-                  const Icon(Icons.check_circle_rounded,
-                      color: AppColors.primary, size: 20),
+                  const CheckCircle(width: 20, height: 20, color: AppColors.primary),
               ]),
             ),
           );

@@ -5,7 +5,6 @@ import 'package:shimmer/shimmer.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/patient.dart';
@@ -69,7 +68,7 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
         actions: [
           PopupMenuButton<_SortOrder>(
             tooltip: 'Sort',
-            icon: const Icon(Icons.sort_rounded),
+            icon: const Sort(width: 24, height: 24),
             initialValue: _sort,
             onSelected: (v) => setState(() => _sort = v),
             itemBuilder: (_) => [
@@ -116,10 +115,10 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                     onChanged: (v) => setState(() => _query = v.trim()),
                     decoration: InputDecoration(
                       hintText: 'Search patients by name…',
-                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      prefixIcon: const Search(width: 20, height: 20),
                       suffixIcon: _query.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
+                              icon: const Xmark(width: 18, height: 18),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 setState(() => _query = '');
@@ -256,7 +255,7 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
+    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
     child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
   );
 }

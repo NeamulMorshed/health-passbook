@@ -7,7 +7,6 @@ import 'package:shimmer/shimmer.dart';
 import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -91,7 +90,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                     ),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.person_rounded, size: 15, color: AppColors.primary),
+                    const User(width: 15, height: 15, color: AppColors.primary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -181,8 +180,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.document_scanner_rounded,
-                      color: AppColors.primary, size: 22),
+                  child: const ScanBarcode(width: 22, height: 22, color: AppColors.primary),
                 ),
                 title: const Text('Scan Prescription',
                     style: TextStyle(
@@ -630,7 +628,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
             badge,
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
+              icon: const MoreVert(width: 20, height: 20, color: AppColors.mutedForeground),
               onSelected: (v) {
                 if (v == 'edit') {
                   showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
@@ -785,7 +783,7 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
       label = slot.shortTime;
-      icon = Icon(Icons.schedule_rounded, size: 13, color: fg);
+      icon = Clock(width: 13, height: 13, color: fg);
     }
 
     final chip = Container(
@@ -813,7 +811,7 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
+    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 12, color: AppColors.mutedForeground),
       const SizedBox(width: 4),
@@ -921,7 +919,7 @@ class _MealCard extends ConsumerWidget {
             StatusBadge.warning(meal.mealType),
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
+              icon: const MoreVert(width: 20, height: 20, color: AppColors.mutedForeground),
               onSelected: (v) {
                 if (v == 'edit') {
                   showLogMealSheet(context, uid, existing: meal);

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
-import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/gamification_provider.dart';
@@ -170,7 +170,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
+              InfoCircle(width: 16, height: 16, color: AppColors.warning),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -314,7 +314,7 @@ class _InsightCard extends StatelessWidget {
       case 'medication': return (Icons.medication_rounded, AppColors.primary);
       case 'nutrition':  return (Icons.restaurant_rounded, AppColors.warning);
       case 'activity':   return (Icons.directions_walk_rounded, AppColors.success);
-      case 'appointments': return (Icons.calendar_month_rounded, AppColors.doctorPrimary);
+      case 'appointments': return (Icons.calendar_month_rounded, AppColors.primary);
       default:           return (Icons.lightbulb_rounded, const Color(0xFF0EA5E9));
     }
   }
