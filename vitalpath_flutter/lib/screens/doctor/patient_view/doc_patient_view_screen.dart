@@ -148,12 +148,12 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                 indicatorColor: AppColors.primary,
                 labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
                 unselectedLabelStyle: const TextStyle(fontSize: 11),
-                tabs: const [
-                  Tab(icon: User(width: 18, height: 18), text: 'Overview'),
+                tabs: [
+                  Tab(icon: User(width: 18, height: 18, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground), text: 'Overview'),
                   Tab(icon: Icon(Icons.medication_outlined, size: 18), text: 'Medicines'),
-                  Tab(icon: Activity(width: 18, height: 18), text: 'Health Log'),
+                  Tab(icon: Activity(width: 18, height: 18, color: _tabCtrl.index == 2 ? AppColors.primary : AppColors.mutedForeground), text: 'Health Log'),
                   Tab(icon: Icon(Icons.description_rounded, size: 18), text: 'Rx History'),
-                  Tab(icon: Notes(width: 18, height: 18), text: 'Notes'),
+                  Tab(icon: Notes(width: 18, height: 18, color: _tabCtrl.index == 4 ? AppColors.primary : AppColors.mutedForeground), text: 'Notes'),
                 ],
               ),
             ),

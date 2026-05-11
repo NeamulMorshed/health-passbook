@@ -70,9 +70,9 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               unselectedLabelColor: AppColors.mutedForeground,
               indicatorColor: AppColors.primary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-              tabs: const [
-                Tab(icon: PharmacyCrossCircle(width: 20, height: 20), text: 'Medicines'),
-                Tab(icon: Apple(width: 20, height: 20), text: 'Food'),
+              tabs: [
+                Tab(icon: PharmacyCrossCircle(width: 20, height: 20, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground), text: 'Medicines'),
+                Tab(icon: Apple(width: 20, height: 20, color: _tabCtrl.index == 1 ? AppColors.primary : AppColors.mutedForeground), text: 'Food'),
               ],
             ),
           ),

@@ -7,11 +7,29 @@ class DoctorShell extends StatelessWidget {
   final Widget child;
   const DoctorShell({super.key, required this.child});
 
+  static const _kSize = 22.0;
+
   static final _tabs = [
-    _TabItem(icon: const StatsUpSquare(width: 22, height: 22), label: 'Dashboard',    route: '/doc/dashboard'),
-    _TabItem(icon: const Group(width: 22, height: 22),         label: 'Patients',     route: '/doc/patients'),
-    _TabItem(icon: const Calendar(width: 22, height: 22),      label: 'Appointments', route: '/doc/appointments'),
-    _TabItem(icon: const User(width: 22, height: 22),          label: 'Profile',      route: '/doc/profile'),
+    _TabItem(
+      icon:         StatsUpSquare(width: _kSize, height: _kSize, color: AppColors.textTertiary),
+      selectedIcon: StatsUpSquare(width: _kSize, height: _kSize, color: AppColors.primary),
+      label: 'Dashboard', route: '/doc/dashboard',
+    ),
+    _TabItem(
+      icon:         Group(width: _kSize, height: _kSize, color: AppColors.textTertiary),
+      selectedIcon: Group(width: _kSize, height: _kSize, color: AppColors.primary),
+      label: 'Patients', route: '/doc/patients',
+    ),
+    _TabItem(
+      icon:         Calendar(width: _kSize, height: _kSize, color: AppColors.textTertiary),
+      selectedIcon: Calendar(width: _kSize, height: _kSize, color: AppColors.primary),
+      label: 'Appointments', route: '/doc/appointments',
+    ),
+    _TabItem(
+      icon:         User(width: _kSize, height: _kSize, color: AppColors.textTertiary),
+      selectedIcon: User(width: _kSize, height: _kSize, color: AppColors.primary),
+      label: 'Profile', route: '/doc/profile',
+    ),
   ];
 
   int _currentIndex(BuildContext context) {
@@ -44,7 +62,7 @@ class DoctorShell extends StatelessWidget {
           elevation: 0,
           destinations: _tabs.map((t) => NavigationDestination(
             icon: t.icon,
-            selectedIcon: t.icon,
+            selectedIcon: t.selectedIcon,
             label: t.label,
           )).toList(),
         ),
@@ -55,7 +73,8 @@ class DoctorShell extends StatelessWidget {
 
 class _TabItem {
   final Widget icon;
+  final Widget selectedIcon;
   final String label;
   final String route;
-  const _TabItem({required this.icon, required this.label, required this.route});
+  const _TabItem({required this.icon, required this.selectedIcon, required this.label, required this.route});
 }
