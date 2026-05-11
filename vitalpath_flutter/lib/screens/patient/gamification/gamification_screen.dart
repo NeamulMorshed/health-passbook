@@ -46,7 +46,19 @@ class GamificationScreen extends ConsumerWidget {
           final gamAsync = ref.watch(gamificationProvider(user.uid));
           return gamAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.mutedForeground),
+                const SizedBox(height: 12),
+                const Text('Failed to load rewards',
+                    style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: AppColors.mutedForeground)),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => ref.invalidate(gamificationProvider(user.uid)),
+                  child: const Text('Retry'),
+                ),
+              ]),
+            ),
             data: (profile) => _GamificationContent(profile: profile),
           );
         },
@@ -105,7 +117,7 @@ class _LevelCard extends StatelessWidget {
           CircularPercentIndicator(
             radius: 52,
             lineWidth: 8,
-            percent: profile.levelProgress,
+            percent: profile.levelProgress.clamp(0.0, 1.0),
             backgroundColor: Colors.white.withValues(alpha: 0.2),
             progressColor: Colors.white,
             circularStrokeCap: CircularStrokeCap.round,
@@ -138,7 +150,7 @@ class _LevelCard extends StatelessWidget {
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
-                    widthFactor: profile.levelProgress,
+                    widthFactor: profile.levelProgress.clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(3)),
                     ),

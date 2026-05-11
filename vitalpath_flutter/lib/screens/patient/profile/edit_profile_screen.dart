@@ -24,7 +24,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   DateTime? _dob;
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
-  final _bloodTypeCtrl = TextEditingController();
   final _conditionsCtrl = TextEditingController();
   final _allergiesCtrl = TextEditingController();
   final _ecNameCtrl = TextEditingController();
@@ -34,6 +33,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   File? _pickedImage;
   bool _saving = false;
   bool _loaded = false;
+  bool _isDirty = false;
 
   static const _bloodTypes = ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'];
   String? _selectedBloodType;
@@ -47,7 +47,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       lastDate: now,
       helpText: 'Select date of birth',
     );
-    if (picked != null) setState(() => _dob = picked);
+    if (picked != null) setState(() { _dob = picked; _isDirty = true; });
   }
 
   @override
@@ -56,7 +56,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _phoneCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
-    _bloodTypeCtrl.dispose();
     _conditionsCtrl.dispose();
     _allergiesCtrl.dispose();
     _ecNameCtrl.dispose();
@@ -89,7 +88,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 512);
-    if (picked != null) setState(() => _pickedImage = File(picked.path));
+    if (picked != null) setState(() { _pickedImage = File(picked.path); _isDirty = true; });
   }
 
   Future<String?> _uploadPhoto(String uid) async {
@@ -139,6 +138,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ref.invalidate(patientProfileProvider(user.uid));
 
       if (mounted) {
+        setState(() => _isDirty = false);
         showAppSnack(context, 'Profile updated successfully');
         Navigator.pop(context);
       }
@@ -154,7 +154,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _prefill();
     final user = ref.watch(currentUserProvider).asData?.value;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Discard changes?'),
+            content: const Text('You have unsaved changes. Leave without saving?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep editing')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+            ],
+          ),
+        );
+        if (leave == true && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Edit Profile'),
@@ -215,10 +232,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
             _SectionLabel('Personal Information'),
             const SizedBox(height: 12),
-            _Field(controller: _nameCtrl, label: 'Full Name', icon: Icons.person_outline_rounded,
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null),
+            _Field(
+              controller: _nameCtrl,
+              label: 'Full Name',
+              icon: Icons.person_outline_rounded,
+              onChanged: (_) => setState(() => _isDirty = true),
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+            ),
             const SizedBox(height: 12),
-            _Field(controller: _phoneCtrl, label: 'Phone Number', icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+            _Field(
+              controller: _phoneCtrl,
+              label: 'Phone Number',
+              icon: Icons.phone_outlined,
+              keyboardType: TextInputType.phone,
+              onChanged: (_) => setState(() => _isDirty = true),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return null;
+                if (!RegExp(r'^\+?[\d\s\-\(\)]{7,15}$').hasMatch(v.trim())) return 'Enter a valid phone number';
+                return null;
+              },
+            ),
             const SizedBox(height: 24),
 
             _SectionLabel('Health Information'),
@@ -238,25 +271,49 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
                   items: _bloodTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontFamily: 'Inter')))).toList(),
-                  onChanged: (v) => setState(() => _selectedBloodType = v),
+                  onChanged: (v) => setState(() { _selectedBloodType = v; _isDirty = true; }),
                 ),
               ),
             ]),
             const SizedBox(height: 12),
             Row(children: [
-              Expanded(child: _Field(controller: _weightCtrl, label: 'Weight (kg)', icon: Icons.monitor_weight_outlined, keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+              Expanded(child: _Field(
+                controller: _weightCtrl,
+                label: 'Weight (kg)',
+                icon: Icons.monitor_weight_outlined,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() => _isDirty = true),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final w = double.tryParse(v.trim());
+                  if (w == null || w <= 0 || w > 500) return 'Enter a valid weight (1–500 kg)';
+                  return null;
+                },
+              )),
               const SizedBox(width: 12),
-              Expanded(child: _Field(controller: _heightCtrl, label: 'Height (cm)', icon: Icons.height_rounded, keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+              Expanded(child: _Field(
+                controller: _heightCtrl,
+                label: 'Height (cm)',
+                icon: Icons.height_rounded,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (_) => setState(() => _isDirty = true),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final h = double.tryParse(v.trim());
+                  if (h == null || h <= 0 || h > 300) return 'Enter a valid height (1–300 cm)';
+                  return null;
+                },
+              )),
             ]),
             const SizedBox(height: 12),
-            _Field(controller: _conditionsCtrl, label: 'Conditions (comma-separated)', icon: Icons.medical_information_outlined, maxLines: 2),
+            _Field(controller: _conditionsCtrl, label: 'Conditions (comma-separated)', icon: Icons.medical_information_outlined, maxLines: 2, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 12),
-            _Field(controller: _allergiesCtrl, label: 'Allergies', icon: Icons.warning_amber_rounded),
+            _Field(controller: _allergiesCtrl, label: 'Allergies', icon: Icons.warning_amber_rounded, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 24),
 
             _SectionLabel('Emergency Contact'),
             const SizedBox(height: 12),
-            _Field(controller: _ecNameCtrl, label: 'Contact Name', icon: Icons.person_outline_rounded),
+            _Field(controller: _ecNameCtrl, label: 'Contact Name', icon: Icons.person_outline_rounded, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 12),
             _Field(
               controller: _ecPhoneCtrl,
@@ -279,11 +336,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               },
             ),
             const SizedBox(height: 12),
-            _Field(controller: _ecRelCtrl, label: 'Relationship (e.g. Spouse)', icon: Icons.people_outline_rounded),
+            _Field(controller: _ecRelCtrl, label: 'Relationship (e.g. Spouse)', icon: Icons.people_outline_rounded, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 32),
           ],
         ),
       ),
+    ),
     );
   }
 }
@@ -334,6 +392,7 @@ class _Field extends StatelessWidget {
   final TextInputType? keyboardType;
   final int maxLines;
   final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
 
   const _Field({
     required this.controller,
@@ -342,6 +401,7 @@ class _Field extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.validator,
+    this.onChanged,
   });
 
   @override
@@ -350,6 +410,7 @@ class _Field extends StatelessWidget {
         keyboardType: keyboardType,
         maxLines: maxLines,
         validator: validator,
+        onChanged: onChanged,
         style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
         decoration: InputDecoration(
           labelText: label,

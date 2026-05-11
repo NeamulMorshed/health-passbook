@@ -112,14 +112,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       _onboardingShown = true;
     }
 
-    // Resolve auth state — poll briefly if still loading (max 2 s).
+    // Resolve auth state — wait for the stream's first emission, with a 3 s
+    // timeout so we never block the splash indefinitely.
     String? uid = ref.read(firebaseAuthStateProvider).asData?.value?.uid;
     if (uid == null) {
-      for (var i = 0; i < 10; i++) {
-        await Future<void>.delayed(const Duration(milliseconds: 200));
-        uid = ref.read(firebaseAuthStateProvider).asData?.value?.uid;
-        if (uid != null) break;
-      }
+      final streamFuture = ref
+          .read(firebaseAuthStateProvider.future)
+          .then((u) => u?.uid);
+      final timeoutFuture =
+          Future<String?>.delayed(const Duration(seconds: 3), () => null);
+      uid = await Future.any([streamFuture, timeoutFuture]);
     }
 
     if (!mounted) return;

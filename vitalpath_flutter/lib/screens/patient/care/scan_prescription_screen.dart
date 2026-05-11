@@ -113,14 +113,9 @@ class _ScanPrescriptionScreenState
   // ── AI + upload ───────────────────────────────────────────────────────────
 
   Future<void> _processImage(File file) async {
+    // C-SP1: do NOT upload to Storage here — upload happens in _save() after
+    // the user confirms they want to keep the result.
     try {
-      // Upload first so the URL is available regardless of scan result.
-      final ts  = DateTime.now().millisecondsSinceEpoch;
-      final ref = FirebaseStorage.instance
-          .ref('${AppConstants.storagePrescriptions}/${widget.uid}/scan_$ts.jpg');
-      await ref.putFile(file);
-      _uploadedPhotoUrl = await ref.getDownloadURL();
-
       // ── Primary: Claude Vision ─────────────────────────────────────────────
       final aiService = PrescriptionAiService();
       if (aiService.isConfigured) {
@@ -157,11 +152,17 @@ class _ScanPrescriptionScreenState
 
       // ── Fallback: MLKit OCR + regex ────────────────────────────────────────
       _usedAi = false;
+      // H-SP2: close TextRecognizer in a finally block
       final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
       final inputImage = InputImage.fromFile(file);
-      final ocrResult  = await recognizer.processImage(inputImage);
-      await recognizer.close();
-      final parsed = _parsePrescription(ocrResult.text);
+      String ocrText = '';
+      try {
+        final ocrResult = await recognizer.processImage(inputImage);
+        ocrText = ocrResult.text;
+      } finally {
+        await recognizer.close();
+      }
+      final parsed = _parsePrescription(ocrText);
 
       setState(() {
         _entries.clear();
@@ -266,7 +267,10 @@ class _ScanPrescriptionScreenState
   /// Runs in the background after scan completes — does not block the review UI.
   /// Checks new medicines against each other AND against existing saved medicines.
   Future<void> _checkInteractions() async {
-    final newNames = _entries
+    // C-SP3: snapshot the entry list so stale results from a prior scan can be discarded
+    final entriesSnapshot = List<_ScannedEntry>.from(_entries);
+
+    final newNames = entriesSnapshot
         .map((e) => e.name.text.trim())
         .where((n) => n.isNotEmpty)
         .toList();
@@ -288,20 +292,21 @@ class _ScanPrescriptionScreenState
       final result = await DrugInteractionService.instance
           .checkInteractions(allNames);
 
-      if (mounted) {
-        setState(() {
-          _interactions = result;
-          _checkingInteractions = false;
-          _interactionCheckDone = true;
-        });
-      }
+      if (!mounted) return;
+      // C-SP3: discard result if entries changed (user retook the photo)
+      if (_entries.length != entriesSnapshot.length) return;
+      setState(() {
+        _interactions = result;
+        _interactionCheckDone = true;
+      });
     } catch (_) {
       if (mounted) {
         setState(() {
-          _checkingInteractions = false;
           _interactionCheckDone = true;
         });
       }
+    } finally {
+      if (mounted) setState(() => _checkingInteractions = false);
     }
   }
 
@@ -331,23 +336,34 @@ class _ScanPrescriptionScreenState
     if (duplicateNames.isNotEmpty) {
       final proceed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Duplicate Medicines', style: TextStyle(fontFamily: 'Inter')),
           content: Text(
               '${duplicateNames.join(', ')} ${duplicateNames.length == 1 ? 'already exists' : 'already exist'} in your medicines. Add anyway?',
               style: const TextStyle(fontFamily: 'Inter')),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+            TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Add Anyway')),
           ],
         ),
       );
-      if (proceed != true) return;
+      if (proceed != true || !mounted) return;
     }
 
-    setState(() => _isSaving = true);
-    final fm = widget.familyMember;
+    // H-SP1: use try/catch/finally so _isSaving is always reset
     try {
+      setState(() => _isSaving = true);
+
+      // C-SP1: upload to Storage NOW (only on confirmed save), not during scan
+      if (_imageFile != null && _uploadedPhotoUrl == null) {
+        final ts = DateTime.now().millisecondsSinceEpoch;
+        final storageRef = FirebaseStorage.instance.ref(
+            '${AppConstants.storagePrescriptions}/${widget.uid}/scan_$ts.jpg');
+        await storageRef.putFile(_imageFile!);
+        _uploadedPhotoUrl = await storageRef.getDownloadURL();
+      }
+
+      final fm = widget.familyMember;
       for (final entry in _entries) {
         final name = entry.name.text.trim();
         if (name.isEmpty) continue;
@@ -382,11 +398,13 @@ class _ScanPrescriptionScreenState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(content: Text('Some medicines could not be saved: $e')),
         );
       }
+    } finally {
+      // H-SP1: always reset saving flag
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -671,6 +689,10 @@ class _ScanPrescriptionScreenState
                         }
                         _entries.clear();
                         _state = _ScanState.capture;
+                        // H-SP3: reset interaction state on retake
+                        _checkingInteractions = false;
+                        _interactionCheckDone = false;
+                        _interactions = [];
                       }),
               child: const Text('Retake',
                   style: TextStyle(

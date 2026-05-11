@@ -55,9 +55,11 @@ class _CareCircleBody extends ConsumerWidget {
     ref.invalidate(myDoctorsProvider(uid));
     ref.invalidate(familyMembersProvider(uid));
     ref.invalidate(patientCaregiverConnectionsProvider(uid));
+    // H-CC1: also await the caregiver connections future
     await Future.wait([
       ref.read(myDoctorsProvider(uid).future).catchError((_) => <DoctorProfile>[]),
       ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
+      ref.read(patientCaregiverConnectionsProvider(uid).future).catchError((_) => <CaregiverConnection>[]),
     ]);
   }
 
@@ -267,11 +269,14 @@ class _CareCircleBody extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ── Caregivers / family viewers section ─────────────────────────
+            // M-CC1: count only connected caregivers (not pending)
             _SectionHeader(
               icon: Icons.shield_rounded,
               title: 'Caregivers',
               count: caregiversAsync.hasValue
-                  ? caregiversAsync.asData!.value.length
+                  ? caregiversAsync.asData!.value
+                      .where((c) => c.isConnected)
+                      .length
                   : null,
               color: const Color(0xFF7C3AED),
               action: TextButton.icon(
@@ -1105,6 +1110,7 @@ class _CaregiverCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // H-CC2: null-safe fallback for caregiver name/email
     final name = connection.caregiverName ?? connection.caregiverEmail;
     final initials = _initials(name);
     final isPending = connection.isPending;
@@ -1189,12 +1195,12 @@ class _CaregiverCard extends ConsumerWidget {
     );
   }
 
+  // H-CC2: safe initials computation
   String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    if (name.contains('@')) return name[0].toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+    if (name.isEmpty) return '?';
+    final parts = name.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }
 }

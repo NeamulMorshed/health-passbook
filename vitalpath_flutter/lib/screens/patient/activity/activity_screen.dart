@@ -144,14 +144,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   Future<void> _stopGpsTracking() async {
     _timer?.cancel();
-    _stepSub?.resume();
-    _positionSub?.resume();
     await _positionSub?.cancel();
     await _stepSub?.cancel();
     setState(() => _isPaused = false);
 
-    final finalSteps =
-        _steps > 0 ? _steps : (_distanceKm * 1333).round();
+    final useStepEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    final finalSteps = _steps > 0 ? _steps : (useStepEstimate ? (_distanceKm * _kStepsPerKm).round() : 0);
     final kcal = _steps > 0
         ? (_steps * 0.04).round()
         : (_distanceKm * 60).round();
@@ -202,7 +200,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           steps: null,
           distanceKm: null,
           caloriesBurned: calories,
+          notes: _manualNotesCtrl.text.trim().isEmpty ? null : _manualNotesCtrl.text.trim(),
         );
+
+    if (!mounted) return;
 
     int hp = 0;
     try {
@@ -225,8 +226,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
   }
 
-  int get _displaySteps =>
-      _steps > 0 ? _steps : (_distanceKm * 1333).round();
+  static const _kStepsPerKm = 1333;
+  int get _displaySteps {
+    if (_steps > 0) return _steps;
+    final useEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    return useEstimate ? (_distanceKm * _kStepsPerKm).round() : 0;
+  }
   int get _displayKcal => _steps > 0
       ? (_steps * 0.04).round()
       : (_distanceKm * 60).round();

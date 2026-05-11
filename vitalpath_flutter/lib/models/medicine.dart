@@ -86,9 +86,12 @@ class Medicine {
 
   static const _gracePeriod = Duration(minutes: 30);
 
+  // M3: Use int.tryParse with fallbacks to avoid FormatException on malformed times.
   static (int, int) _parseHM(String t) {
     final p = t.split(':');
-    return (int.parse(p[0]), int.parse(p[1]));
+    final h = int.tryParse(p.isNotEmpty ? p[0] : '0') ?? 0;
+    final m = int.tryParse(p.length > 1 ? p[1] : '0') ?? 0;
+    return (h, m);
   }
 
   /// All dose slots for today, sorted by scheduled time.

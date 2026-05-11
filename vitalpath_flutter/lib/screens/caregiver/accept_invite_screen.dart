@@ -6,14 +6,25 @@ import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
 
-class AcceptInviteScreen extends ConsumerWidget {
+// C-6b: converted to StatefulWidget to hold _processing state
+class AcceptInviteScreen extends ConsumerStatefulWidget {
   final CaregiverConnection connection;
   const AcceptInviteScreen({super.key, required this.connection});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AcceptInviteScreen> createState() => _AcceptInviteScreenState();
+}
+
+class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
+  bool _processing = false;
+
+  @override
+  Widget build(BuildContext context) {
     final notifier = ref.read(inviteResponseNotifierProvider.notifier);
-    final state = ref.watch(inviteResponseNotifierProvider);
+    final connection = widget.connection;
+
+    // C-6: check invite status before allowing accept/decline
+    final isAlreadyActioned = connection.status != 'pending';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -110,21 +121,56 @@ class AcceptInviteScreen extends ConsumerWidget {
 
             const Spacer(),
 
-            if (state.isLoading)
+            // C-6: show status message if already actioned
+            if (isAlreadyActioned) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.muted,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  'This invite has already been ${connection.status}.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.mutedForeground,
+                      fontFamily: 'Inter'),
+                ),
+              ),
+            ] else if (_processing)
               const Center(child: CircularProgressIndicator())
             else ...[
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
+                  // C-6b: try/catch with error snackbar; navigate only on success
                   onPressed: () async {
-                    final user = await ref.read(currentUserProvider.future);
-                    if (user == null) return;
-                    await notifier.accept(
-                      connectionId: connection.id,
-                      caregiverUid: user.uid,
-                      caregiverName: user.name,
-                    );
-                    if (context.mounted) context.go('/home');
+                    setState(() => _processing = true);
+                    try {
+                      final user = await ref.read(currentUserProvider.future);
+                      if (user == null) {
+                        if (mounted) setState(() => _processing = false);
+                        return;
+                      }
+                      await notifier.accept(
+                        connectionId: connection.id,
+                        caregiverUid: user.uid,
+                        caregiverName: user.name,
+                      );
+                      if (context.mounted) context.go('/home');
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Failed to accept invite. Please try again.')));
+                      }
+                    } finally {
+                      if (mounted) setState(() => _processing = false);
+                    }
                   },
                   child: const Text('Accept Invite',
                       style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
@@ -134,9 +180,22 @@ class AcceptInviteScreen extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
+                  // C-6b: try/catch with error snackbar; navigate only on success
                   onPressed: () async {
-                    await notifier.decline(connection.id);
-                    if (context.mounted) context.go('/home');
+                    setState(() => _processing = true);
+                    try {
+                      await notifier.decline(connection.id);
+                      if (context.mounted) context.go('/home');
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Failed to decline invite. Please try again.')));
+                      }
+                    } finally {
+                      if (mounted) setState(() => _processing = false);
+                    }
                   },
                   style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.destructive,

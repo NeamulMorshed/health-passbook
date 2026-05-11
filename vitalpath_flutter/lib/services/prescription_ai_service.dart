@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
 import '../core/config/ai_config.dart';
 import '../core/constants/app_constants.dart';
@@ -77,6 +78,19 @@ class PrescriptionAiService {
 
   bool get isConfigured => kClaudeApiKey != 'YOUR_CLAUDE_API_KEY_HERE';
 
+  // PR1: Detect media type from file extension.
+  String _mediaType(File file) {
+    final ext = file.path.split('.').last.toLowerCase();
+    const map = {
+      'jpg':  'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png':  'image/png',
+      'webp': 'image/webp',
+      'heic': 'image/heic',
+    };
+    return map[ext] ?? 'image/jpeg';
+  }
+
   /// Sends [imageFile] to Claude Vision and returns structured prescription data.
   /// Throws on network / API error so the caller can decide on fallback behaviour.
   Future<PrescriptionScanResult> scan(File imageFile) async {
@@ -84,7 +98,21 @@ class PrescriptionAiService {
       throw Exception('Claude API key not configured.');
     }
 
-    final bytes  = await imageFile.readAsBytes();
+    // PR2: Check file size and compress if over 4 MB.
+    final fileSize = await imageFile.length();
+    File processFile = imageFile;
+    if (fileSize > 4 * 1024 * 1024) {
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        imageFile.path,
+        '${imageFile.parent.path}/compressed_${imageFile.uri.pathSegments.last}',
+        quality: 70,
+        minWidth: 1920,
+        minHeight: 1920,
+      );
+      if (compressed != null) processFile = File(compressed.path);
+    }
+
+    final bytes  = await processFile.readAsBytes();
     final b64    = base64Encode(bytes);
 
     final response = await http
@@ -106,7 +134,8 @@ class PrescriptionAiService {
                     'type': 'image',
                     'source': {
                       'type':       'base64',
-                      'media_type': 'image/jpeg',
+                      // PR1: Use dynamic media type instead of hardcoded 'image/jpeg'.
+                      'media_type': _mediaType(imageFile),
                       'data':        b64,
                     },
                   },

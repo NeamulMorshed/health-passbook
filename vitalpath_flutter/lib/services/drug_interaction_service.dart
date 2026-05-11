@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import '../core/config/drugbank_config.dart';
 import '../models/drug_interaction.dart';
@@ -354,10 +355,23 @@ class DrugInteractionService {
   }
 
   // ── Firestore cache ────────────────────────────────────────────────────────
+  // SEC1: Cache is scoped per user (users/{uid}/drug_interaction_cache/{key})
+  // so one user's data cannot be read or poisoned by another user.
+  // SECURITY: Firestore rules must restrict write access to authenticated users
+  // and reads to the owning user only.
+
+  String? get _currentUid => FirebaseAuth.instance.currentUser?.uid;
 
   Future<List<DrugInteraction>?> _readCachedInteractions(String key) async {
+    final uid = _currentUid;
+    if (uid == null) return null;
     try {
-      final snap = await _db.collection('drug_interaction_cache').doc(key).get();
+      final snap = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('drug_interaction_cache')
+          .doc(key)
+          .get();
       if (!snap.exists) return null;
       final list = snap.data()?['interactions'] as List?;
       if (list == null) return null;
@@ -371,8 +385,15 @@ class DrugInteractionService {
 
   Future<void> _writeCachedInteractions(
       String key, List<DrugInteraction> interactions) async {
+    final uid = _currentUid;
+    if (uid == null) return;
     try {
-      await _db.collection('drug_interaction_cache').doc(key).set({
+      await _db
+          .collection('users')
+          .doc(uid)
+          .collection('drug_interaction_cache')
+          .doc(key)
+          .set({
         'interactions': interactions.map((i) => i.toMap()).toList(),
         'cachedAt': FieldValue.serverTimestamp(),
       });

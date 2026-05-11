@@ -182,6 +182,7 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded, size: 18),
                       onPressed: () {
+                        _debounce?.cancel();
                         _searchCtrl.clear();
                         setState(() => _nameQuery = '');
                       },
@@ -444,7 +445,9 @@ class _DoctorCard extends ConsumerWidget {
               Row(children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _showBookSheet(context, doctor),
+                    onPressed: doctor.acceptingNewPatients != true
+                        ? null
+                        : () => _showBookSheet(context, doctor),
                     icon: const Icon(Icons.calendar_today_rounded, size: 16),
                     label: const Text('Book Appointment'),
                     style: OutlinedButton.styleFrom(
@@ -457,7 +460,7 @@ class _DoctorCard extends ConsumerWidget {
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: doctor.phone != null && doctor.phone!.isNotEmpty
-                      ? () => _callDoctor(doctor.phone!)
+                      ? () => _callDoctor(context, doctor.phone!)
                       : null,
                   icon: const Icon(Icons.phone_rounded, size: 16),
                   label: const Text('Call'),
@@ -502,9 +505,16 @@ class _DoctorCard extends ConsumerWidget {
     );
   }
 
-  void _callDoctor(String phone) async {
+  void _callDoctor(BuildContext context, String phone) async {
     final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to make calls on this device')));
+      }
+    }
   }
 
   void _confirmRemove(BuildContext context, WidgetRef ref) {
@@ -795,29 +805,39 @@ class _BookAppointmentSheetState
     super.dispose();
   }
 
-  void _book() async {
+  Future<void> _book() async {
+    if (_isBooking) return; // double-tap guard
     setState(() => _isBooking = true);
-    final user = await ref.read(currentUserProvider.future);
-    if (user == null) { setState(() => _isBooking = false); return; }
+    try {
+      final user = await ref.read(currentUserProvider.future);
+      if (user == null) return;
 
-    final parts = <String>[
-      if (_noteCtrl.text.trim().isNotEmpty) _noteCtrl.text.trim(),
-      if (_preferredDate != null)
-        'Preferred date: ${DateFormat('EEE, MMM d, y').format(_preferredDate!)}',
-      if (_preferredTime != null) 'Preferred time: $_preferredTime',
-    ];
-    await ref.read(appointmentNotifierProvider.notifier).book(
-          patientId: user.uid,
-          patientName: user.name,
-          doctorId: widget.doctor.uid,
-          doctorName: widget.doctor.name,
-          doctorSpecialty: widget.doctor.specialty,
-          note: parts.isEmpty ? null : parts.join('\n'),
-        );
-    if (mounted) {
-      Navigator.pop(context);
-      showAppSnack(context,
-          'Appointment request sent to Dr. ${widget.doctor.name}');
+      final parts = <String>[
+        if (_noteCtrl.text.trim().isNotEmpty) _noteCtrl.text.trim(),
+        if (_preferredDate != null)
+          'Preferred date: ${DateFormat('EEE, MMM d, y').format(_preferredDate!)}',
+        if (_preferredTime != null) 'Preferred time: $_preferredTime',
+      ];
+      await ref.read(appointmentNotifierProvider.notifier).book(
+            patientId: user.uid,
+            patientName: user.name,
+            doctorId: widget.doctor.uid,
+            doctorName: widget.doctor.name,
+            doctorSpecialty: widget.doctor.specialty,
+            note: parts.isEmpty ? null : parts.join('\n'),
+          );
+      if (mounted) {
+        Navigator.pop(context);
+        showAppSnack(context,
+            'Appointment request sent to Dr. ${widget.doctor.name}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to book appointment. Try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _isBooking = false);
     }
   }
 

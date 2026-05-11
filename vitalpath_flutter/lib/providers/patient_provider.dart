@@ -80,6 +80,7 @@ class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
     required String relationship,
     DateTime? dateOfBirth,
     String? photoUrl,
+    String? note,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -89,6 +90,7 @@ class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
         relationship: relationship,
         dateOfBirth: dateOfBirth,
         photoUrl: photoUrl,
+        note: note,
         createdAt: DateTime.now(),
       );
       await _db.addFamilyMember(uid, member);
@@ -286,9 +288,17 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  // P1: Wrap delete in try/catch with loading/error state.
   Future<void> delete(String patientId, String medicineId) async {
-    await _notif.cancelMedicineReminders(medicineId);
-    await _db.deleteMedicine(patientId, medicineId);
+    state = const AsyncValue.loading();
+    try {
+      await _notif.cancelMedicineReminders(medicineId);
+      await _db.deleteMedicine(patientId, medicineId);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+      rethrow;
+    }
   }
 }
 
@@ -420,11 +430,26 @@ class NotificationNotifier extends StateNotifier<void> {
   final FirestoreService _db;
   NotificationNotifier(this._db) : super(null);
 
-  Future<void> markRead(String patientId, String notifId) =>
-      _db.markNotificationRead(patientId, notifId);
+  // P3: Silent try/catch — notification mark-read failures must not crash the app.
+  Future<void> markRead(String patientId, String notifId) async {
+    try {
+      await _db.markNotificationRead(patientId, notifId);
+    } catch (e, s) {
+      // Intentionally silent — log for debugging but don't propagate.
+      // ignore: avoid_print
+      print('[NotificationNotifier] markRead failed: $e\n$s');
+    }
+  }
 
-  Future<void> markAllRead(String patientId) =>
-      _db.markAllNotificationsRead(patientId);
+  Future<void> markAllRead(String patientId) async {
+    try {
+      await _db.markAllNotificationsRead(patientId);
+    } catch (e, s) {
+      // Intentionally silent — log for debugging but don't propagate.
+      // ignore: avoid_print
+      print('[NotificationNotifier] markAllRead failed: $e\n$s');
+    }
+  }
 }
 
 final notificationNotifierProvider = StateNotifierProvider<NotificationNotifier, void>((ref) {
@@ -493,24 +518,34 @@ class ActivityNotifier extends StateNotifier<AsyncValue<void>> {
   final FirestoreService _db;
   ActivityNotifier(this._db) : super(const AsyncValue.data(null));
 
+  // P2: Added loading state and try/catch for proper error propagation.
   Future<void> save(String patientId, {
     required String type,
     required int durationSeconds,
     double? distanceKm,
     int? steps,
     int? caloriesBurned,
+    String? notes,
   }) async {
-    final log = ActivityLog(
-      id: _uuid.v4(),
-      patientId: patientId,
-      type: type,
-      durationSeconds: durationSeconds,
-      distanceKm: distanceKm,
-      steps: steps,
-      caloriesBurned: caloriesBurned,
-      loggedAt: DateTime.now(),
-    );
-    await _db.saveActivity(patientId, log);
+    state = const AsyncValue.loading();
+    try {
+      final log = ActivityLog(
+        id: _uuid.v4(),
+        patientId: patientId,
+        type: type,
+        durationSeconds: durationSeconds,
+        distanceKm: distanceKm,
+        steps: steps,
+        caloriesBurned: caloriesBurned,
+        notes: notes,
+        loggedAt: DateTime.now(),
+      );
+      await _db.saveActivity(patientId, log);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+      rethrow;
+    }
   }
 }
 

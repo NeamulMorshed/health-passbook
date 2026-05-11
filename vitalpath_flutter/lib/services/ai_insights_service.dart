@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/health_insight.dart';
@@ -32,21 +33,29 @@ class AiInsightsService {
       activityStreak: activityStreak,
     );
 
-    final response = await http.post(
-      Uri.parse(_endpoint),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': kClaudeApiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: jsonEncode({
-        'model': _model,
-        'max_tokens': 1024,
-        'messages': [
-          {'role': 'user', 'content': prompt}
-        ],
-      }),
-    );
+    // A2: Add HTTP timeout to prevent indefinite hanging.
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse(_endpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': kClaudeApiKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: jsonEncode({
+              'model': _model,
+              'max_tokens': 1024,
+              'messages': [
+                {'role': 'user', 'content': prompt}
+              ],
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+    } on TimeoutException {
+      throw Exception('AI service timed out after 30 seconds');
+    }
 
     if (response.statusCode != 200) {
       throw Exception('AI service error: ${response.statusCode}');
@@ -55,10 +64,15 @@ class AiInsightsService {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final text = (data['content'] as List).first['text'] as String;
 
-    final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(text);
-    if (jsonMatch == null) throw Exception('Invalid AI response format');
+    // A3: Robust JSON extraction using last { and last } indices.
+    final start = text.lastIndexOf('{');
+    final end = text.lastIndexOf('}');
+    if (start == -1 || end == -1 || end < start) {
+      throw Exception('No JSON in response');
+    }
+    final jsonStr = text.substring(start, end + 1);
 
-    final parsed = jsonDecode(jsonMatch.group(0)!) as Map<String, dynamic>;
+    final parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
     final insights = (parsed['insights'] as List<dynamic>)
         .map((e) => HealthInsight.fromMap(e as Map<String, dynamic>))
         .toList();

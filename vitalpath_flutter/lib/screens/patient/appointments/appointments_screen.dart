@@ -39,12 +39,15 @@ class AppointmentsScreen extends ConsumerWidget {
           }
 
           final limit      = ref.watch(_apptLimitProvider);
-          final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: limit)));
+          final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: limit + 1)));
 
           return apptsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const EmptyState(icon: Icons.wifi_off_rounded, title: "Can't load appointments", subtitle: 'Check your connection and pull to refresh.'),
-            data: (appts) {
+            data: (rawAppts) {
+              final hasMore = rawAppts.length > limit;
+              final appts   = hasMore ? rawAppts.take(limit).toList() : rawAppts;
+
               if (appts.isEmpty) {
                 return const EmptyState(
                   icon: Icons.calendar_month_outlined,
@@ -56,7 +59,6 @@ class AppointmentsScreen extends ConsumerWidget {
               final pending   = appts.where((a) => a.isPending).toList();
               final confirmed = appts.where((a) => a.isConfirmed).toList();
               final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
-              final hasMore   = appts.length == limit;
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -232,27 +234,42 @@ class _ApptCard extends ConsumerWidget {
   }
 
   void _confirmCancel(BuildContext context, WidgetRef ref) {
+    final isConfirmed = appt.isConfirmed;
+    final title   = isConfirmed ? 'Cancel Appointment' : 'Cancel Request';
+    final content = isConfirmed
+        ? 'Are you sure you want to cancel this confirmed appointment?'
+        : 'Are you sure you want to cancel this appointment request?';
+    final btnLabel = isConfirmed ? 'Cancel Appointment' : 'Cancel Request';
+
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Cancel Request', style: TextStyle(fontFamily: 'Inter')),
-        content: const Text('Are you sure you want to cancel this appointment request?', style: TextStyle(fontFamily: 'Inter')),
+        title: Text(title, style: const TextStyle(fontFamily: 'Inter')),
+        content: Text(content, style: const TextStyle(fontFamily: 'Inter')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
               Navigator.pop(dialogCtx);
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
               await ref.read(appointmentNotifierProvider.notifier).cancel(
                 appt.id,
                 patientId: appt.patientId,
                 doctorId: appt.doctorId,
               );
               if (context.mounted) {
-                showAppSnack(context, 'Appointment request cancelled.');
+                Navigator.of(context).pop(); // dismiss loading dialog
+                showAppSnack(context, isConfirmed
+                    ? 'Appointment cancelled.'
+                    : 'Appointment request cancelled.');
               }
             },
-            child: const Text('Cancel Request'),
+            child: Text(btnLabel),
           ),
         ],
       ),
@@ -339,7 +356,7 @@ class _RateAppointmentSheetState extends ConsumerState<_RateAppointmentSheet> {
                 : GradientButton(
                     label: 'Submit Rating',
                     colors: [AppColors.warning, const Color(0xFFB45309)],
-                    onPressed: _rating > 0 ? _submit : () {},
+                    onPressed: _rating > 0 ? _submit : null,
                   ),
             const SizedBox(height: 8),
           ],

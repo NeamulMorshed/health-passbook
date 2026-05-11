@@ -128,7 +128,21 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
             userType: parsedType,
             createdAt: DateTime.now(),
           );
-          await authRepo.createProfile(newUser);
+          try {
+            await authRepo.createProfile(newUser);
+          } catch (e) {
+            if (mounted) {
+              setState(() => _loading = false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Failed to set up your account. Please check your connection and try again.',
+                  ),
+                ),
+              );
+            }
+            return;
+          }
           if (!mounted) return;
           if (userType == 'doctor') {
             context.go('/doc/onboarding/profile');

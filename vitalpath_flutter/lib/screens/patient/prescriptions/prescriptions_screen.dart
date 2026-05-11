@@ -31,7 +31,8 @@ class PrescriptionsScreen extends ConsumerWidget {
             );
             return const SizedBox.shrink();
           }
-          final rxAsync = ref.watch(patientPrescriptionsProvider(user.uid));
+          final patientId = user.uid;
+          final rxAsync = ref.watch(patientPrescriptionsProvider(patientId));
           return rxAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const EmptyState(
@@ -40,17 +41,28 @@ class PrescriptionsScreen extends ConsumerWidget {
                 subtitle: 'Pull to refresh or try again.'),
             data: (rxList) {
               if (rxList.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.receipt_long_outlined,
-                  title: 'No Prescriptions Yet',
-                  subtitle: 'Prescriptions from your doctors will appear here.',
+                return RefreshIndicator(
+                  onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
+                  child: ListView(
+                    children: const [
+                      SizedBox(height: 200),
+                      EmptyState(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'No Prescriptions Yet',
+                        subtitle: 'Prescriptions from your doctors will appear here.',
+                      ),
+                    ],
+                  ),
                 );
               }
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: rxList.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, i) => _RxCard(rx: rxList[i]),
+              return RefreshIndicator(
+                onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: rxList.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) => _RxCard(rx: rxList[i]),
+                ),
               );
             },
           );
@@ -186,7 +198,7 @@ class _RxCard extends StatelessWidget {
                           color: AppColors.mutedForeground,
                           fontFamily: 'Inter')),
                   const SizedBox(height: 6),
-                  ...rx.medicines.map<Widget>((m) => Padding(
+                  ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Row(children: [
                           const Icon(Icons.circle,
@@ -330,7 +342,7 @@ class _RxDetailSheet extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Inter')),
             const SizedBox(height: 10),
-            ...rx.medicines.map<Widget>((m) => Container(
+            ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

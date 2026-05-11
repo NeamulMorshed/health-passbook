@@ -100,7 +100,9 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 5, vsync: this);
-    _tabCtrl.addListener(() => setState(() {}));
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) setState(() {});
+    });
   }
 
   @override
@@ -1183,18 +1185,28 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
     super.dispose();
   }
 
-  void _addNote() async {
+  Future<void> _addNote() async {
     final text = _noteCtrl.text.trim();
     if (text.isEmpty) return;
     setState(() => _saving = true);
-    await ref.read(consultationNoteNotifierProvider.notifier).add(
-          patientId: widget.patientId,
-          doctorId: widget.doctorId,
-          doctorName: widget.doctorName,
-          note: text,
-        );
-    _noteCtrl.clear();
-    if (mounted) setState(() => _saving = false);
+    try {
+      await ref.read(consultationNoteNotifierProvider.notifier).add(
+            patientId: widget.patientId,
+            doctorId: widget.doctorId,
+            doctorName: widget.doctorName,
+            note: text,
+          );
+      if (mounted) {
+        _noteCtrl.clear();
+        setState(() => _saving = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save note')));
+      }
+    }
   }
 
   @override
@@ -1332,6 +1344,7 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
   final _diagCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final List<_MedEntry> _meds = [_MedEntry()];
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -1348,7 +1361,9 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
     if (_meds.length > 1) setState(() => _meds.removeAt(i));
   }
 
-  void _save() async {
+  Future<void> _save() async {
+    if (_saving) return;
+
     final medicines = _meds
         .where((m) => m.nameCtrl.text.isNotEmpty)
         .map((m) => PrescribedMed(
@@ -1363,43 +1378,53 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
 
     if (medicines.isEmpty) return;
 
-    await ref.read(prescriptionNotifierProvider.notifier).add(
+    setState(() => _saving = true);
+    try {
+      await ref.read(prescriptionNotifierProvider.notifier).add(
+            patientId: widget.patientId,
+            doctorId: widget.doctorId,
+            doctorName: widget.doctorName,
+            medicines: medicines,
+            diagnosis: _diagCtrl.text.trim().isEmpty
+                ? null
+                : _diagCtrl.text.trim(),
+            notes: _notesCtrl.text.trim().isEmpty
+                ? null
+                : _notesCtrl.text.trim(),
+          );
+
+      // Mirror each medicine into the patient's Care screen
+      final fs = ref.read(firestoreServiceProvider);
+      for (final m in medicines) {
+        final med = Medicine(
+          id: _uuid.v4(),
           patientId: widget.patientId,
-          doctorId: widget.doctorId,
-          doctorName: widget.doctorName,
-          medicines: medicines,
-          diagnosis: _diagCtrl.text.trim().isEmpty
-              ? null
-              : _diagCtrl.text.trim(),
-          notes: _notesCtrl.text.trim().isEmpty
-              ? null
-              : _notesCtrl.text.trim(),
+          name: m.name,
+          dosage: m.dosage,
+          frequency: m.frequency,
+          notes: m.instructions,
+          startDate: DateTime.now(),
+          reminderTimes: const [],
+          reminderRepeat: 'daily',
+          prescribedBy: widget.doctorName,
         );
+        await fs.addMedicine(widget.patientId, med);
+      }
 
-    // Mirror each medicine into the patient's Care screen
-    final fs = ref.read(firestoreServiceProvider);
-    for (final m in medicines) {
-      final med = Medicine(
-        id: _uuid.v4(),
-        patientId: widget.patientId,
-        name: m.name,
-        dosage: m.dosage,
-        frequency: m.frequency,
-        notes: m.instructions,
-        startDate: DateTime.now(),
-        reminderTimes: const [],
-        reminderRepeat: 'daily',
-        prescribedBy: widget.doctorName,
-      );
-      await fs.addMedicine(widget.patientId, med);
-    }
-
-    if (mounted) {
-      Navigator.pop(context);
-      showAppSnack(
-        context,
-        'Prescription saved · ${medicines.length} medicine${medicines.length == 1 ? '' : 's'} added to patient\'s Care screen',
-      );
+      if (mounted) {
+        Navigator.pop(context);
+        showAppSnack(
+          context,
+          'Prescription saved · ${medicines.length} medicine${medicines.length == 1 ? '' : 's'} added to patient\'s Care screen',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save prescription. Try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -1527,11 +1552,13 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
                   labelText: 'Additional Notes (optional)'),
             ),
             const SizedBox(height: 20),
-            GradientButton(
-              label: 'Save Prescription',
-              colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
-              onPressed: _save,
-            ),
+            _saving
+                ? const Center(child: CircularProgressIndicator())
+                : GradientButton(
+                    label: 'Save Prescription',
+                    colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                    onPressed: _save,
+                  ),
           ],
         ),
       ),

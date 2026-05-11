@@ -1,8 +1,11 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../core/constants/app_constants.dart';
+import '../models/medicine.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -15,6 +18,10 @@ class NotificationService {
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
+    // N4: Initialize local timezone so scheduled notifications fire in the
+    // user's local time zone, not UTC.
+    final localTz = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(localTz));
 
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -131,16 +138,54 @@ class NotificationService {
   Future<void> scheduleOnceReminder({required int id, required String title, required String body, required int hour, required int minute, String channel = AppConstants.notifChannelGeneral}) =>
       scheduleReminder(id: id, title: title, body: body, hour: hour, minute: minute, repeat: 'once', channel: channel);
 
+  // ── Medicine reminders scheduling ─────────────────────────────────────────
+
+  Future<void> scheduleMedicineReminders(String uid, Medicine medicine) async {
+    for (int i = 0; i < medicine.reminderTimes.length; i++) {
+      final parts = medicine.reminderTimes[i].split(':');
+      if (parts.length != 2) continue;
+      final hour = int.tryParse(parts[0]) ?? 8;
+      final minute = int.tryParse(parts[1]) ?? 0;
+      await scheduleReminder(
+        id: medicineNotifId(medicine.id, i),
+        title: 'Time to take ${medicine.name}',
+        body: '${medicine.dosage} dose is due now.',
+        hour: hour,
+        minute: minute,
+        repeat: medicine.reminderRepeat,
+      );
+    }
+  }
+
   // ── Cancel helpers ────────────────────────────────────────────────────────
 
+  // N1: Cancel up to 8 slots to cover any realistic daily reminder count.
   Future<void> cancelMedicineReminders(String medicineId) async {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 8; i++) {
       await cancelNotification(medicineNotifId(medicineId, i));
     }
   }
 
   Future<void> cancelNotification(int id) => _local.cancel(id);
   Future<void> cancelAllNotifications() => _local.cancelAll();
+
+  // ── Startup reschedule ────────────────────────────────────────────────────
+  // N2: On fresh install or reinstall the OS clears all scheduled notifications.
+  // This method reschedules reminders for all active medicines on first run.
+
+  Future<void> rescheduleAllRemindersIfNeeded(String uid, List<Medicine> medicines) async {
+    final prefs = await SharedPreferences.getInstance();
+    final flagKey = 'reminders_scheduled_$uid';
+    final alreadyScheduled = prefs.getBool(flagKey) ?? false;
+    if (alreadyScheduled) return;
+
+    for (final medicine in medicines) {
+      if (medicine.isActive && medicine.reminderTimes.isNotEmpty) {
+        await scheduleMedicineReminders(uid, medicine);
+      }
+    }
+    await prefs.setBool(flagKey, true);
+  }
 
   // ── Stable ID helpers ─────────────────────────────────────────────────────
 

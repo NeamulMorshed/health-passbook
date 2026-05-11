@@ -203,9 +203,10 @@ class CaregiverConnection {
           : const CaregiverNotifSettings(),
       status: d['status'] as String? ?? 'pending',
       invitedAt: (d['invitedAt'] as Timestamp).toDate(),
+      // C4: Default to epoch when connectedAt is missing so orderBy never fails.
       connectedAt: d['connectedAt'] != null
           ? (d['connectedAt'] as Timestamp).toDate()
-          : null,
+          : DateTime.fromMillisecondsSinceEpoch(0),
       personalMessage: d['personalMessage'] as String?,
     );
   }

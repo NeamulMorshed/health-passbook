@@ -44,6 +44,7 @@ class ActivityLog {
   final double? distanceKm;
   final int? steps;
   final int? caloriesBurned;
+  final String? notes;
   final DateTime loggedAt;
 
   const ActivityLog({
@@ -54,6 +55,7 @@ class ActivityLog {
     this.distanceKm,
     this.steps,
     this.caloriesBurned,
+    this.notes,
     required this.loggedAt,
   });
 
@@ -72,6 +74,7 @@ class ActivityLog {
       distanceKm: (map['distanceKm'] as num?)?.toDouble(),
       steps: map['steps'],
       caloriesBurned: map['caloriesBurned'],
+      notes: map['notes'] as String?,
       loggedAt: (map['loggedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -83,6 +86,7 @@ class ActivityLog {
         'distanceKm': distanceKm,
         'steps': steps,
         'caloriesBurned': caloriesBurned,
+        'notes': notes,
         'loggedAt': Timestamp.fromDate(loggedAt),
       };
 }

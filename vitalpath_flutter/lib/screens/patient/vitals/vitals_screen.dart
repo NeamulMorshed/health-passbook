@@ -118,6 +118,21 @@ class _VitalsContent extends ConsumerWidget {
   }
 }
 
+// ─── Borderline helpers ───────────────────────────────────────────────────────
+double _borderlineLow(String type, double min) {
+  if (type == VitalType.temp) return min - 0.5;
+  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic) return min - 5;
+  if (type == VitalType.glucose) return min - 5;
+  return min * 0.9;
+}
+
+double _borderlineHigh(String type, double max) {
+  if (type == VitalType.temp) return max + 0.5;
+  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic) return max + 5;
+  if (type == VitalType.glucose) return max + 5;
+  return max * 1.1;
+}
+
 // ─── Vital Type Card ──────────────────────────────────────────────────────────
 class _VitalTypeCard extends StatelessWidget {
   final String type;
@@ -143,9 +158,8 @@ class _VitalTypeCard extends StatelessWidget {
     } else {
       final (min, max) = VitalType.normalRange(type);
       final val = latest!.value;
-      // borderline: within 10% outside range
-      final borderlineLow = min * 0.9;
-      final borderlineHigh = max * 1.1;
+      final borderlineLow = _borderlineLow(type, min);
+      final borderlineHigh = _borderlineHigh(type, max);
       dotColor = (val >= borderlineLow && val <= borderlineHigh)
           ? AppColors.warning
           : AppColors.destructive;
@@ -192,7 +206,7 @@ class _VitalTypeCard extends StatelessWidget {
               const Spacer(),
               if (hasReading) ...[
                 Text(
-                  latest!.value % 1 == 0
+                  latest!.value.truncateToDouble() == latest!.value
                       ? latest!.value.toInt().toString()
                       : latest!.value.toStringAsFixed(1),
                   style: TextStyle(
@@ -309,22 +323,54 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
       if (confirmed != true || !mounted) return;
     }
 
-    setState(() => _saving = true);
-    await ref.read(vitalsNotifierProvider.notifier).add(
-          patientId: widget.patientId,
-          type: _selectedType,
-          value: val,
-          note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-        );
-    if (mounted) {
-      Navigator.pop(context);
-      showAppSnack(context, '${VitalType.labelFor(_selectedType)} logged.');
+    try {
+      setState(() => _saving = true);
+      await ref.read(vitalsNotifierProvider.notifier).add(
+            patientId: widget.patientId,
+            type: _selectedType,
+            value: val,
+            note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+          );
+      if (mounted) {
+        Navigator.pop(context);
+        showAppSnack(context, '${VitalType.labelFor(_selectedType)} logged.');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save reading. Try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
+  bool get _hasInput => _valueCtrl.text.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return PopScope(
+      canPop: !_hasInput,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Discard reading?',
+                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Keep')),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Discard')),
+            ],
+          ),
+        );
+        if (confirmed == true && context.mounted) Navigator.pop(context);
+      },
+      child: Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -411,18 +457,18 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
           ),
         ),
       ),
-    );
+    )); // closes PopScope child Padding
   }
 }
 
 // ─── Vital History Sheet ──────────────────────────────────────────────────────
-class _VitalHistorySheet extends StatelessWidget {
+class _VitalHistorySheet extends ConsumerWidget {
   final String type;
   final List<VitalReading> readings;
   const _VitalHistorySheet({required this.type, required this.readings});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.6,
@@ -482,8 +528,8 @@ class _VitalHistorySheet extends StatelessWidget {
                         final isNormal = VitalType.isNormal(type, r.value);
                         final (min, max) = VitalType.normalRange(type);
                         final val = r.value;
-                        final borderlineLow = min * 0.9;
-                        final borderlineHigh = max * 1.1;
+                        final borderlineLow = _borderlineLow(type, min);
+                        final borderlineHigh = _borderlineHigh(type, max);
 
                         Color statusColor;
                         IconData statusIcon;
@@ -513,7 +559,7 @@ class _VitalHistorySheet extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${r.value % 1 == 0 ? r.value.toInt() : r.value.toStringAsFixed(1)} ${r.unit}',
+                                    '${r.value.truncateToDouble() == r.value ? r.value.toInt() : r.value.toStringAsFixed(1)} ${r.unit}',
                                     style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -537,6 +583,39 @@ class _VitalHistorySheet extends StatelessWidget {
                                     ),
                                 ],
                               ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              color: AppColors.mutedForeground,
+                              tooltip: 'Delete reading',
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Delete Reading?',
+                                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+                                    content: const Text('This reading will be permanently deleted.',
+                                        style: TextStyle(fontFamily: 'Inter')),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancel')),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.destructive),
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed == true) {
+                                  await ref
+                                      .read(vitalsNotifierProvider.notifier)
+                                      .delete(r.id);
+                                  if (context.mounted) Navigator.pop(context);
+                                }
+                              },
                             ),
                           ]),
                         );

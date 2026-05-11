@@ -211,7 +211,12 @@ class FirebaseAuthRepository implements AuthRepository {
       _auth.signOut(),
     ]);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConstants.prefUserType);
+    // Fix H6 — also clear biometric and onboarding-shown prefs on sign-out.
+    await Future.wait([
+      prefs.remove(AppConstants.prefUserType),
+      prefs.remove('biometric_enabled'),
+      prefs.remove('onboarding_shown'),
+    ]);
   }
 
   @override
@@ -220,10 +225,12 @@ class FirebaseAuthRepository implements AuthRepository {
     if (user == null) return;
     final uid = user.uid;
 
-    // Delete Firestore docs first while auth is still valid.
+    // Fix H5 — Delete all role-specific Firestore docs while auth is valid.
     await Future.wait([
       _db.collection(AppConstants.colUsers).doc(uid).delete(),
       _db.collection(AppConstants.colPatients).doc(uid).delete(),
+      _db.collection(AppConstants.colDoctors).doc(uid).delete(),
+      _db.collection('verificationRequests').doc(uid).delete(),
     ]);
 
     // Delete the Firebase Auth account.

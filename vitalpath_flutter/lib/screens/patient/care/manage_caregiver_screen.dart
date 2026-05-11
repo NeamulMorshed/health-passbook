@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/caregiver_provider.dart';
+
+final _db = FirebaseFirestore.instance;
 
 class ManageCaregiverScreen extends ConsumerStatefulWidget {
   final CaregiverConnection connection;
@@ -28,33 +31,47 @@ class _ManageCaregiverScreenState
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final notifier =
-        ref.read(caregiverConnectionNotifierProvider.notifier);
-    await notifier.updatePermissions(widget.connection.id, _permissions);
-    await notifier.updateNotifSettings(widget.connection.id, _notifSettings);
-    setState(() => _saving = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Settings saved')),
-      );
-      Navigator.pop(context);
+    try {
+      // C-MC3: single atomic Firestore update instead of two separate calls
+      await _db
+          .collection('caregiver_connections')
+          .doc(widget.connection.id)
+          .update({
+        'permissions': _permissions.toMap(),
+        'notifSettings': _notifSettings.toMap(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Settings saved')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   Future<void> _confirmRemove() async {
+    // C-MC1: use dialogCtx so Navigator.pop closes the dialog, not the screen
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text(
             'Remove ${widget.connection.caregiverName ?? widget.connection.caregiverEmail}?'),
         content: const Text(
             'They will immediately lose access to your health data and stop receiving notifications.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogCtx, false),
               child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Yes, Remove',
                   style: TextStyle(color: AppColors.destructive))),
         ],
@@ -72,7 +89,16 @@ class _ManageCaregiverScreenState
   Widget build(BuildContext context) {
     final name = widget.connection.caregiverName ??
         widget.connection.caregiverEmail;
-    return Scaffold(
+    // M-MC1: prevent navigation while saving
+    return PopScope(
+      canPop: !_saving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _saving) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please wait, saving changes...')));
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('${name.split(' ').first}\'s Access'),
@@ -205,12 +231,22 @@ class _ManageCaregiverScreenState
                         _notifSettings.copyWith(glucoseThreshold: v)),
                   ),
                 ),
+                // H-MC1: implement heart rate range tap
                 _ThresholdRow(
                   label: 'Heart rate outside',
                   value: null,
                   unit:
                       '${_notifSettings.heartRateMin.toInt()}–${_notifSettings.heartRateMax.toInt()} bpm',
-                  onTap: null,
+                  onTap: () => _pickThresholdRange(
+                    label: 'Heart rate range (bpm)',
+                    minLabel: 'Min BPM',
+                    maxLabel: 'Max BPM',
+                    currentMin: _notifSettings.heartRateMin,
+                    currentMax: _notifSettings.heartRateMax,
+                    onSave: (min, max) => setState(() => _notifSettings =
+                        _notifSettings.copyWith(
+                            heartRateMin: min, heartRateMax: max)),
+                  ),
                 ),
               ],
             ],
@@ -301,7 +337,8 @@ class _ManageCaregiverScreenState
           const SizedBox(height: 24),
         ],
       ),
-    );
+      ), // close Scaffold
+    ); // close PopScope
   }
 
   Future<void> _editThreshold({
@@ -311,9 +348,10 @@ class _ManageCaregiverScreenState
     required ValueChanged<double> onSave,
   }) async {
     final ctrl = TextEditingController(text: current.toInt().toString());
+    // C-MC2: use dialogCtx so Navigator.pop closes the dialog, not the screen
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text(label),
         content: TextField(
           controller: ctrl,
@@ -322,10 +360,10 @@ class _ManageCaregiverScreenState
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogCtx, false),
               child: const Text('Cancel')),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogCtx, true),
               child: const Text('Save')),
         ],
       ),
@@ -349,12 +387,87 @@ class _ManageCaregiverScreenState
       helpText: 'Quiet hours end',
     );
     if (end == null || !mounted) return;
+
+    // H-MC2: warn when end <= start (cross-midnight), but don't block it
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+    if (endMinutes <= startMinutes) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Quiet hours span midnight'),
+          content: Text(
+              'Quiet hours from ${start.format(context)} to ${end.format(context)} '
+              'will span midnight (e.g., 22:00–07:00). Is that correct?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, false),
+                child: const Text('Change')),
+            TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, true),
+                child: const Text('Confirm')),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
     setState(() {
       _notifSettings = _notifSettings.copyWith(
         quietHoursStart: start.format(context),
         quietHoursEnd: end.format(context),
       );
     });
+  }
+
+  /// H-MC1: dialog to pick a min/max range (used for heart rate)
+  Future<void> _pickThresholdRange({
+    required String label,
+    required String minLabel,
+    required String maxLabel,
+    required double currentMin,
+    required double currentMax,
+    required void Function(double min, double max) onSave,
+  }) async {
+    final minCtrl = TextEditingController(text: currentMin.toInt().toString());
+    final maxCtrl = TextEditingController(text: currentMax.toInt().toString());
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(label),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: minCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: minLabel),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: maxCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: maxLabel),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      final min = double.tryParse(minCtrl.text);
+      final max = double.tryParse(maxCtrl.text);
+      if (min != null && max != null) onSave(min, max);
+    }
+    minCtrl.dispose();
+    maxCtrl.dispose();
   }
 }
 

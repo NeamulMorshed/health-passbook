@@ -30,7 +30,8 @@ class InsightsNotifier extends StateNotifier<AsyncValue<List<HealthInsight>>> {
       final sevenDaysAgo = now.subtract(const Duration(days: 7));
 
       final recentMeds = medicines.where((m) => m.isActive).toList();
-      final totalDoses = recentMeds.length * 7;
+      // I1: Count expected doses per medicine based on actual reminder times count.
+      final totalDoses = recentMeds.fold<int>(0, (sum, m) => sum + m.reminderTimes.length * 7);
       final takenDoses = recentMeds.fold<int>(0, (sum, m) {
         return sum + m.loggedDoses.where((d) => d.isAfter(sevenDaysAgo)).length;
       });

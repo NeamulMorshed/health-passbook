@@ -7,6 +7,12 @@ import '../../../providers/patient_provider.dart';
 import '../../../providers/gamification_provider.dart';
 import '../../../providers/insights_provider.dart';
 import '../../../models/health_insight.dart';
+import '../../../models/medicine.dart';
+import '../../../models/meal.dart';
+import '../../../models/activity_log.dart';
+import '../../../models/patient.dart';
+import '../../../models/gamification.dart';
+import '../../../models/appointment.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -33,19 +39,53 @@ class InsightsScreen extends ConsumerWidget {
   }
 }
 
-class _InsightsContent extends ConsumerWidget {
+class _InsightsContent extends ConsumerStatefulWidget {
   final String uid;
   const _InsightsContent({required this.uid});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_InsightsContent> createState() => _InsightsContentState();
+}
+
+class _InsightsContentState extends ConsumerState<_InsightsContent> {
+  bool _generating = false;
+
+  void _generate({
+    required List<Medicine> meds,
+    required List<MealLog> meals,
+    required List<ActivityLog> activities,
+    required PatientProfile? patient,
+    required GamificationProfile? gamProfile,
+    required List<Appointment> appts,
+  }) {
+    setState(() => _generating = true);
+    ref.read(insightsNotifierProvider.notifier).generate(
+      medicines: meds,
+      meals: meals,
+      activities: activities,
+      patient: patient,
+      pendingAppointments: appts.where((a) => a.isPending).length,
+      medStreak: gamProfile?.medStreak ?? 0,
+      activityStreak: gamProfile?.activityStreak ?? 0,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final insightsState = ref.watch(insightsNotifierProvider);
-    final medsAsync = ref.watch(medicinesProvider(uid));
-    final mealsAsync = ref.watch(todayMealsProvider(uid));
-    final activityAsync = ref.watch(activityLogsProvider(uid));
-    final patientAsync = ref.watch(patientProfileProvider(uid));
-    final gamAsync = ref.watch(gamificationProvider(uid));
-    final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: uid, limit: 50)));
+    final medsAsync = ref.watch(medicinesProvider(widget.uid));
+    final mealsAsync = ref.watch(todayMealsProvider(widget.uid));
+    final activityAsync = ref.watch(activityLogsProvider(widget.uid));
+    final patientAsync = ref.watch(patientProfileProvider(widget.uid));
+    final gamAsync = ref.watch(gamificationProvider(widget.uid));
+    final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: widget.uid, limit: 50)));
+
+    // Reset _generating when provider stops loading
+    ref.listen(insightsNotifierProvider, (_, next) {
+      if (!next.isLoading && _generating) setState(() => _generating = false);
+    });
+
+    final allLoaded = medsAsync.hasValue && mealsAsync.hasValue && apptsAsync.hasValue;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -79,29 +119,27 @@ class _InsightsContent extends ConsumerWidget {
                 'Get AI-powered suggestions based on your medicine adherence, activity, and nutrition data.',
                 style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              if (!allLoaded)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text('Waiting for your health data...',
+                      style: TextStyle(color: Colors.white60, fontSize: 11, fontFamily: 'Inter')),
+                ),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: insightsState.isLoading
+                  onPressed: (!allLoaded || insightsState.isLoading || _generating)
                       ? null
-                      : () {
-                          final meds = medsAsync.asData?.value ?? [];
-                          final meals = mealsAsync.asData?.value ?? [];
-                          final activities = activityAsync.asData?.value ?? [];
-                          final patient = patientAsync.asData?.value;
-                          final gamProfile = gamAsync.asData?.value;
-                          final appts = apptsAsync.asData?.value ?? [];
-                          ref.read(insightsNotifierProvider.notifier).generate(
-                                medicines: meds,
-                                meals: meals,
-                                activities: activities,
-                                patient: patient,
-                                pendingAppointments: appts.where((a) => a.isPending).length,
-                                medStreak: gamProfile?.medStreak ?? 0,
-                                activityStreak: gamProfile?.activityStreak ?? 0,
-                              );
-                        },
+                      : () => _generate(
+                            meds: medsAsync.asData?.value ?? const <Medicine>[],
+                            meals: mealsAsync.asData?.value ?? const <MealLog>[],
+                            activities: activityAsync.asData?.value ?? const <ActivityLog>[],
+                            patient: patientAsync.asData?.value,
+                            gamProfile: gamAsync.asData?.value,
+                            appts: apptsAsync.asData?.value ?? const <Appointment>[],
+                          ),
                   icon: insightsState.isLoading
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                       : const Icon(Icons.auto_awesome_rounded, size: 18),
@@ -177,10 +215,24 @@ class _InsightsContent extends ConsumerWidget {
           error: (e, _) => Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AppColors.destructive.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3))),
-            child: Row(children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.destructive),
-              const SizedBox(width: 12),
-              Expanded(child: Text('Failed to generate insights. Check your connection and try again.', style: const TextStyle(fontSize: 13, fontFamily: 'Inter'))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.error_outline_rounded, color: AppColors.destructive),
+                const SizedBox(width: 12),
+                const Expanded(child: Text('Failed to generate insights. Check your connection and try again.', style: TextStyle(fontSize: 13, fontFamily: 'Inter'))),
+              ]),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => _generate(
+                  meds: medsAsync.asData?.value ?? const <Medicine>[],
+                  meals: mealsAsync.asData?.value ?? const <MealLog>[],
+                  activities: activityAsync.asData?.value ?? const <ActivityLog>[],
+                  patient: patientAsync.asData?.value,
+                  gamProfile: gamAsync.asData?.value,
+                  appts: apptsAsync.asData?.value ?? const <Appointment>[],
+                ),
+                child: const Text('Retry'),
+              ),
             ]),
           ),
         ),

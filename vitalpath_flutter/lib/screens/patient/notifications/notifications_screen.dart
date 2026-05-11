@@ -8,11 +8,18 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/app_notification.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  bool _markingAll = false;
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
@@ -36,8 +43,23 @@ class NotificationsScreen extends ConsumerWidget {
             actions: [
               if (unread > 0)
                 TextButton(
-                  onPressed: () => ref.read(notificationNotifierProvider.notifier).markAllRead(user.uid),
-                  child: const Text('Mark all read', style: TextStyle(fontFamily: 'Inter', fontSize: 13)),
+                  onPressed: _markingAll ? null : () async {
+                    setState(() => _markingAll = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    try {
+                      await ref.read(notificationNotifierProvider.notifier).markAllRead(user.uid);
+                    } catch (_) {
+                      if (mounted) {
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Failed to mark notifications read')));
+                      }
+                    } finally {
+                      if (mounted) setState(() => _markingAll = false);
+                    }
+                  },
+                  child: _markingAll
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Mark all read', style: TextStyle(fontFamily: 'Inter', fontSize: 13)),
                 ),
             ],
           ),
@@ -91,7 +113,7 @@ class _NotifCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: notif.isRead ? null : onTap,
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -151,12 +173,13 @@ class _NotifCard extends StatelessWidget {
   }
 
   String _formatTime(DateTime dt) {
+    final local = dt.toLocal();
     final now = DateTime.now();
-    final diff = now.difference(dt);
+    final diff = now.difference(local);
     if (diff.inMinutes < 1) return 'Just now';
     if (diff.inHours < 1) return '${diff.inMinutes}m ago';
     if (diff.inDays < 1) return '${diff.inHours}h ago';
     if (diff.inDays == 1) return 'Yesterday';
-    return DateFormat('MMM d').format(dt);
+    return DateFormat('MMM d').format(local);
   }
 }

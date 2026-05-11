@@ -366,8 +366,9 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
       return;
     }
 
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
-    showAppSnack(context, 'Appointment confirmed for ${widget.appt.patientName}');
+    messenger.showSnackBar(SnackBar(content: Text('Appointment confirmed for ${widget.appt.patientName}')));
   }
 
   @override

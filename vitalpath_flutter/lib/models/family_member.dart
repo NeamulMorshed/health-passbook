@@ -10,6 +10,8 @@ class FamilyMember {
   final DateTime createdAt;
   final String profileType; // 'dependent' | 'linked'
   final String? linkedUid;
+  /// Free-text note, e.g. a doctor name recorded during caregiver onboarding.
+  final String? note;
 
   const FamilyMember({
     required this.id,
@@ -21,6 +23,7 @@ class FamilyMember {
     required this.createdAt,
     this.profileType = 'dependent',
     this.linkedUid,
+    this.note,
   }) : _legacyAge = legacyAge;
 
   int? get age {
@@ -47,6 +50,7 @@ class FamilyMember {
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       profileType: map['profileType'] as String? ?? 'dependent',
       linkedUid: map['linkedUid'] as String?,
+      note: map['note'] as String?,
     );
   }
 
@@ -59,6 +63,7 @@ class FamilyMember {
         'createdAt': Timestamp.fromDate(createdAt),
         'profileType': profileType,
         if (linkedUid != null) 'linkedUid': linkedUid,
+        if (note != null && note!.isNotEmpty) 'note': note,
       };
 
   String get initials {

@@ -76,18 +76,28 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
       final uid = ref.read(authRepositoryProvider).currentUid;
       if (uid == null) return;
 
-      // Save the first family member
+      // Fix H — Save the first family member including the doctor note.
       await ref.read(familyMemberNotifierProvider.notifier).add(
         uid,
         name: _nameCtrl.text.trim(),
         relationship: _relationship,
         dateOfBirth: _dob,
+        note: _doctorNoteCtrl.text.trim(),
       );
 
       // Mark caregiver onboarding complete
       await ref.read(authRepositoryProvider).markOnboardingComplete(uid);
 
       if (mounted) context.go('/home');
+    } catch (e) {
+      // Fix H — surface Firestore errors to the user.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Failed to save your setup. Please check your connection and try again.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

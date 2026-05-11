@@ -50,19 +50,47 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
   Future<void> _sendInvite() async {
     if (!_formKey.currentState!.validate()) return;
     final user = await ref.read(currentUserProvider.future);
-    if (user == null) return;
+    if (user == null || !mounted) return;
+
+    final email = _emailCtrl.text.trim();
+
+    // H-IC2: check for an already-pending invite to this email
+    final pendingList =
+        ref.read(pendingInvitesForEmailProvider(email)).asData?.value ?? [];
+    final alreadyPending = pendingList.any((c) => c.status == 'pending');
+    if (alreadyPending && mounted) {
+      final resend = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Invite already sent'),
+          content: Text(
+              'An invite was already sent to $email. Send again?'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, false),
+                child: const Text('Cancel')),
+            TextButton(
+                onPressed: () => Navigator.pop(dialogCtx, true),
+                child: const Text('Send Anyway')),
+          ],
+        ),
+      );
+      if (resend != true || !mounted) return;
+    }
 
     setState(() => _sending = true);
     final notifier = ref.read(caregiverConnectionNotifierProvider.notifier);
     final id = await notifier.invite(
       patientId: user.uid,
       patientName: user.name,
-      caregiverEmail: _emailCtrl.text.trim(),
+      caregiverEmail: email,
       relationship: _relationship!,
       permissions: _permissions,
       notifSettings: const CaregiverNotifSettings(),
       personalMessage: _msgCtrl.text.trim().isEmpty ? null : _msgCtrl.text.trim(),
     );
+    // C-IC1: mounted check after async gap
+    if (!mounted) return;
     setState(() {
       _sending = false;
       if (id != null) _sent = true;
@@ -71,18 +99,26 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
-        leading: _step > 0 && !_sent
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                onPressed: () => setState(() => _step--),
-              )
-            : null,
+    // C-IC3: Android back button steps backward through the stepper
+    return PopScope(
+      canPop: _step == 0 || _sent,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_step > 0 && !_sent) setState(() => _step--);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
+          leading: _step > 0 && !_sent
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  onPressed: () => setState(() => _step--),
+                )
+              : null,
+        ),
+        body: _sent ? _ConfirmationView(email: _emailCtrl.text.trim()) : _stepBody(),
       ),
-      body: _sent ? _ConfirmationView(email: _emailCtrl.text.trim()) : _stepBody(),
     );
   }
 
@@ -508,7 +544,11 @@ class _Step3 extends StatelessWidget {
               if (v == null || v.trim().isEmpty) {
                 return 'Email is required';
               }
-              if (!v.contains('@')) return 'Enter a valid email';
+              // C-IC2: stricter email regex
+              if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$')
+                  .hasMatch(v.trim())) {
+                return 'Enter a valid email address';
+              }
               return null;
             },
           ),

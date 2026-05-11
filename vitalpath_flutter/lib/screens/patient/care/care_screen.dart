@@ -1437,6 +1437,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
   late List<TimeOfDay> _reminderTimes;
   late List<int> _reminderDays;
   final _formKey = GlobalKey<FormState>();
+  // C-C1: double-submit guard
+  bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -1495,9 +1497,20 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
       .toList();
 
   void _save() async {
+    // C-C1: prevent double-submit
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
+
     final count = _reminderCountFor(_freq);
     final times = count > 0 ? _reminderTimeStrings.take(count).toList() : <String>[];
+
+    // H-C4: validate at least one reminder day is selected (when reminders apply)
+    if (count > 0 && _reminderDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select at least one reminder day')));
+      return;
+    }
+
     final fm = widget.familyMember;
     final newName = _nameCtrl.text.trim().toLowerCase();
 
@@ -1529,48 +1542,55 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
       }
     }
 
-    if (fm != null) {
-      // Family member context — use patch provider
-      final patch = ref.read(familyMedicinePatchProvider);
-      if (_isEdit) {
-        await patch.update(widget.uid, fm.id, widget.existing!.id, {
-          'name': _nameCtrl.text.trim(),
-          'dosage': _dosageCtrl.text.trim(),
-          'frequency': _freq,
-          'reminderTimes': times,
-          'reminderRepeat': 'daily',
-          'reminderDays': _reminderDays,
-        });
+    // C-C1: set saving flag
+    setState(() => _saving = true);
+    try {
+      if (fm != null) {
+        // Family member context — use patch provider
+        final patch = ref.read(familyMedicinePatchProvider);
+        if (_isEdit) {
+          await patch.update(widget.uid, fm.id, widget.existing!.id, {
+            'name': _nameCtrl.text.trim(),
+            'dosage': _dosageCtrl.text.trim(),
+            'frequency': _freq,
+            'reminderTimes': times,
+            'reminderRepeat': 'daily',
+            'reminderDays': _reminderDays,
+          });
+        } else {
+          await patch.add(
+            widget.uid, fm.id,
+            name: _nameCtrl.text.trim(),
+            dosage: _dosageCtrl.text.trim(),
+            frequency: _freq,
+            reminderTimes: times,
+            reminderRepeat: 'daily',
+            reminderDays: _reminderDays,
+          );
+        }
       } else {
-        await patch.add(
-          widget.uid, fm.id,
-          name: _nameCtrl.text.trim(),
-          dosage: _dosageCtrl.text.trim(),
-          frequency: _freq,
-          reminderTimes: times,
-          reminderRepeat: 'daily',
-          reminderDays: _reminderDays,
-        );
+        // Primary user
+        if (_isEdit) {
+          await ref.read(medicineNotifierProvider.notifier).update(
+            widget.uid, widget.existing!.id,
+            name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
+            frequency: _freq, reminderTimes: times,
+            reminderRepeat: 'daily', reminderDays: _reminderDays,
+          );
+        } else {
+          await ref.read(medicineNotifierProvider.notifier).add(
+            widget.uid,
+            name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
+            frequency: _freq, reminderTimes: times,
+            reminderRepeat: 'daily', reminderDays: _reminderDays,
+          );
+        }
       }
-    } else {
-      // Primary user
-      if (_isEdit) {
-        await ref.read(medicineNotifierProvider.notifier).update(
-          widget.uid, widget.existing!.id,
-          name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-          frequency: _freq, reminderTimes: times,
-          reminderRepeat: 'daily', reminderDays: _reminderDays,
-        );
-      } else {
-        await ref.read(medicineNotifierProvider.notifier).add(
-          widget.uid,
-          name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-          frequency: _freq, reminderTimes: times,
-          reminderRepeat: 'daily', reminderDays: _reminderDays,
-        );
-      }
+      if (mounted) Navigator.pop(context);
+    } finally {
+      // C-C1: always clear saving flag
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -1641,7 +1661,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                GradientButton(label: _isEdit ? 'Save Changes' : 'Add Medicine', onPressed: _save),
+                // C-C1: disable button while saving
+                GradientButton(label: _isEdit ? 'Save Changes' : 'Add Medicine', onPressed: _saving ? null : _save),
                 const SizedBox(height: 8),
               ],
             ),

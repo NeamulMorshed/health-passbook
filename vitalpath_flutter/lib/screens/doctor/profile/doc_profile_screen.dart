@@ -154,7 +154,7 @@ class DocProfileScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _EditProfileSheet(uid: uid, doc: doc, ref: ref),
+      builder: (_) => _EditProfileSheet(uid: uid, doc: doc),
     );
   }
 
@@ -203,16 +203,15 @@ class DocProfileScreen extends ConsumerWidget {
 }
 
 // ─── Edit Profile Sheet ────────────────────────────────────────────────────────
-class _EditProfileSheet extends StatefulWidget {
+class _EditProfileSheet extends ConsumerStatefulWidget {
   final String uid;
   final DoctorProfile? doc;
-  final WidgetRef ref;
-  const _EditProfileSheet({required this.uid, required this.doc, required this.ref});
+  const _EditProfileSheet({required this.uid, required this.doc});
   @override
-  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+  ConsumerState<_EditProfileSheet> createState() => _EditProfileSheetState();
 }
 
-class _EditProfileSheetState extends State<_EditProfileSheet> {
+class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   late final TextEditingController _specialtyCtrl;
   late final TextEditingController _hospitalCtrl;
   late final TextEditingController _licenseCtrl;
@@ -291,8 +290,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               if (_licenseCtrl.text.isNotEmpty)   data['licenseNo'] = _licenseCtrl.text.trim();
               data['availableHours']  = _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim();
               data['consultationFee'] = _feeCtrl.text.trim().isEmpty  ? null : _feeCtrl.text.trim();
-              await widget.ref.read(firestoreServiceProvider).updateDoctorProfile(widget.uid, data);
-              widget.ref.invalidate(doctorProfileProvider(widget.uid));
+              await ref.read(firestoreServiceProvider).updateDoctorProfile(widget.uid, data);
+              ref.invalidate(doctorProfileProvider(widget.uid));
               if (context.mounted) Navigator.pop(context);
             },
           ),

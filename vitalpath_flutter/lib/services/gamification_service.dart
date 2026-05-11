@@ -17,112 +17,142 @@ class GamificationService {
   // Called once per slot taken. Awards +10 HP up to a daily cap of 5 doses (50 HP/day).
   // Streak and weekly counter only advance on the first dose of each calendar day.
   Future<int> awardMedicineDose(String uid) async {
-    final profile = await _getOrCreate(uid);
-    final now = DateTime.now();
+    // G1: Wrap in Firestore transaction to prevent race conditions.
+    return await _db.runTransaction<int>((tx) async {
+      final ref = _db.collection(_col).doc(uid);
+      final snap = await tx.get(ref);
+      final profile = (snap.exists && snap.data() != null)
+          ? GamificationProfile.fromMap(snap.data()!)
+          : const GamificationProfile();
 
-    const hpGain = 10;
-    const dailyCap = 5;
+      // G3: Use UTC for stored timestamps.
+      final now = DateTime.now().toUtc();
 
-    final isNewDay = !_isToday(profile.lastMedDate);
-    final currentDailyCount = isNewDay ? 0 : profile.dailyMedDoses;
-    if (currentDailyCount >= dailyCap) return 0;
+      const hpGain = 10;
+      const dailyCap = 5;
 
-    final weekReset = _resetWeekIfNeeded(profile, now);
+      final isNewDay = !_isToday(profile.lastMedDate);
+      final currentDailyCount = isNewDay ? 0 : profile.dailyMedDoses;
+      if (currentDailyCount >= dailyCap) return 0;
 
-    var updated = weekReset.copyWith(
-      hp: weekReset.hp + hpGain,
-      dailyMedDoses: currentDailyCount + 1,
-      medStreak: isNewDay
-          ? (_isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1)
-          : weekReset.medStreak,
-      lastMedDate: isNewDay ? now : weekReset.lastMedDate,
-      weeklyMedDays: isNewDay
-          ? weekReset.weeklyMedDays + 1
-          : weekReset.weeklyMedDays,
-    );
+      final weekReset = _resetWeekIfNeeded(profile, now);
 
-    updated = _applyBadges(updated, 'med');
-    await _save(uid, updated);
-    return hpGain;
+      var updated = weekReset.copyWith(
+        hp: weekReset.hp + hpGain,
+        dailyMedDoses: currentDailyCount + 1,
+        medStreak: isNewDay
+            ? (_isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1)
+            : weekReset.medStreak,
+        lastMedDate: isNewDay ? now : weekReset.lastMedDate,
+        weeklyMedDays: isNewDay
+            ? weekReset.weeklyMedDays + 1
+            : weekReset.weeklyMedDays,
+      );
+
+      updated = _applyBadges(updated, 'med');
+      tx.set(ref, updated.toMap(), SetOptions(merge: false));
+      return hpGain;
+    });
   }
 
   Future<int> awardMealLog(String uid) async {
-    final profile = await _getOrCreate(uid);
-    final now = DateTime.now();
+    // G1: Wrap in Firestore transaction to prevent race conditions.
+    return await _db.runTransaction<int>((tx) async {
+      final ref = _db.collection(_col).doc(uid);
+      final snap = await tx.get(ref);
+      final profile = (snap.exists && snap.data() != null)
+          ? GamificationProfile.fromMap(snap.data()!)
+          : const GamificationProfile();
 
-    if (_isToday(profile.lastMealDate)) return 0;
+      if (_isToday(profile.lastMealDate)) return 0;
 
-    const hpGain = 8;
-    final newStreak = _isYesterday(profile.lastMealDate) ? profile.mealStreak + 1 : 1;
-    final weekReset = _resetWeekIfNeeded(profile, now);
-    final newWeeklyMeal = weekReset.weeklyMealDays + 1;
+      // G3: Use UTC for stored timestamps.
+      final now = DateTime.now().toUtc();
 
-    var updated = weekReset.copyWith(
-      hp: profile.hp + hpGain,
-      mealStreak: newStreak,
-      lastMealDate: now,
-      weeklyMealDays: newWeeklyMeal,
-    );
+      const hpGain = 8;
+      final newStreak = _isYesterday(profile.lastMealDate) ? profile.mealStreak + 1 : 1;
+      final weekReset = _resetWeekIfNeeded(profile, now);
+      final newWeeklyMeal = weekReset.weeklyMealDays + 1;
 
-    updated = _applyBadges(updated, 'meal');
-    await _save(uid, updated);
-    return hpGain;
+      var updated = weekReset.copyWith(
+        hp: profile.hp + hpGain,
+        mealStreak: newStreak,
+        lastMealDate: now,
+        weeklyMealDays: newWeeklyMeal,
+      );
+
+      updated = _applyBadges(updated, 'meal');
+      tx.set(ref, updated.toMap(), SetOptions(merge: false));
+      return hpGain;
+    });
   }
 
   Future<int> awardActivity(String uid, {required int steps, required String type}) async {
-    final profile = await _getOrCreate(uid);
-    final now = DateTime.now();
+    // G1: Wrap in Firestore transaction to prevent race conditions.
+    return await _db.runTransaction<int>((tx) async {
+      final ref = _db.collection(_col).doc(uid);
+      final snap = await tx.get(ref);
+      final profile = (snap.exists && snap.data() != null)
+          ? GamificationProfile.fromMap(snap.data()!)
+          : const GamificationProfile();
 
-    if (_isToday(profile.lastActivityDate)) return 0;
+      if (_isToday(profile.lastActivityDate)) return 0;
 
-    final hpGain = steps >= 5000 ? 25 : 15;
-    final newStreak = _isYesterday(profile.lastActivityDate) ? profile.activityStreak + 1 : 1;
-    final weekReset = _resetWeekIfNeeded(profile, now);
-    final newWeeklyActivity = weekReset.weeklyActivityDays + 1;
+      // G3: Use UTC for stored timestamps.
+      final now = DateTime.now().toUtc();
 
-    var updated = weekReset.copyWith(
-      hp: profile.hp + hpGain,
-      activityStreak: newStreak,
-      lastActivityDate: now,
-      weeklyActivityDays: newWeeklyActivity,
-    );
+      final hpGain = steps >= 5000 ? 25 : 15;
+      final newStreak = _isYesterday(profile.lastActivityDate) ? profile.activityStreak + 1 : 1;
+      final weekReset = _resetWeekIfNeeded(profile, now);
+      final newWeeklyActivity = weekReset.weeklyActivityDays + 1;
 
-    updated = _applyBadges(updated, 'activity');
-    await _save(uid, updated);
-    return hpGain;
-  }
+      var updated = weekReset.copyWith(
+        hp: profile.hp + hpGain,
+        activityStreak: newStreak,
+        lastActivityDate: now,
+        weeklyActivityDays: newWeeklyActivity,
+      );
 
-  Future<GamificationProfile> _getOrCreate(String uid) async {
-    final snap = await _db.collection(_col).doc(uid).get();
-    if (!snap.exists || snap.data() == null) return const GamificationProfile();
-    return GamificationProfile.fromMap(snap.data()!);
-  }
-
-  Future<void> _save(String uid, GamificationProfile profile) async {
-    await _db.collection(_col).doc(uid).set(profile.toMap(), SetOptions(merge: false));
+      updated = _applyBadges(updated, 'activity');
+      tx.set(ref, updated.toMap(), SetOptions(merge: false));
+      return hpGain;
+    });
   }
 
   bool _isToday(DateTime? date) {
     if (date == null) return false;
+    // G3: Convert stored UTC date to local before comparing.
+    final local = date.toLocal();
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return local.year == now.year && local.month == now.month && local.day == now.day;
   }
 
   bool _isYesterday(DateTime? date) {
     if (date == null) return false;
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return date.year == yesterday.year && date.month == yesterday.month && date.day == yesterday.day;
+    // G3: Convert stored UTC date to local before comparing.
+    final local = date.toLocal();
+    // G2: DST-safe yesterday using calendar arithmetic.
+    final n = DateTime.now();
+    final yesterday = DateTime(n.year, n.month, n.day - 1);
+    return local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day;
   }
 
   GamificationProfile _resetWeekIfNeeded(GamificationProfile profile, DateTime now) {
     final weekStart = profile.weekStartDate;
-    if (weekStart == null || now.difference(weekStart).inDays >= 7) {
-      final monday = now.subtract(Duration(days: now.weekday - 1));
+    // G5: Calendar-based week reset — compare calendar dates, not raw duration.
+    final today = DateTime(now.year, now.month, now.day);
+    final storedDay = weekStart != null
+        ? DateTime(weekStart.year, weekStart.month, weekStart.day)
+        : null;
+    if (storedDay == null || today.difference(storedDay).inDays >= 7) {
+      // G3: Use UTC for weekStart.
+      final nowLocal = now.toLocal();
+      final monday = nowLocal.subtract(Duration(days: nowLocal.weekday - 1));
       return profile.copyWith(
         weeklyMedDays: 0,
         weeklyMealDays: 0,
         weeklyActivityDays: 0,
-        weekStartDate: DateTime(monday.year, monday.month, monday.day),
+        weekStartDate: DateTime.utc(monday.year, monday.month, monday.day),
       );
     }
     return profile;

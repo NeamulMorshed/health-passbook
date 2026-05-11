@@ -116,26 +116,44 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
     try {
       final uid = ref.read(authRepositoryProvider).currentUid;
       if (uid == null) return;
-      await ref.read(firestoreServiceProvider).updatePatientProfile(uid, {
+
+      // Fix M — Build the profile map without including dateOfBirth when null
+      // (omitting the key entirely avoids writing null to Firestore).
+      final profileData = <String, dynamic>{
         'name':             _nameCtrl.text.trim(),
-        'dateOfBirth':      _dob != null ? Timestamp.fromDate(_dob!) : null,
         'weight':           double.tryParse(_weightCtrl.text),
         'height':           double.tryParse(_heightCtrl.text),
         'bloodType':        _selectedBlood,
         'conditions':       _selectedConditions,
-        'allergies':        _allergiesCtrl.text.trim().isEmpty ? null : _allergiesCtrl.text.trim(),
-        'emergencyContact': _ecNameCtrl.text.trim().isEmpty && _ecPhoneCtrl.text.trim().isEmpty
+        'allergies':        _allergiesCtrl.text.trim().isEmpty
+            ? null
+            : _allergiesCtrl.text.trim(),
+        'emergencyContact': _ecNameCtrl.text.trim().isEmpty &&
+                _ecPhoneCtrl.text.trim().isEmpty
             ? null
             : EmergencyContact(
                 name: _ecNameCtrl.text.trim(),
                 phone: _ecPhoneCtrl.text.trim(),
               ).toMap(),
-      });
+      };
+      if (_dob != null) {
+        profileData['dateOfBirth'] = Timestamp.fromDate(_dob!);
+      }
+
+      await ref.read(firestoreServiceProvider).updatePatientProfile(uid, profileData);
       await ref.read(firestoreServiceProvider).updateUserProfile(uid, {
         'name': _nameCtrl.text.trim(),
       });
       await ref.read(authRepositoryProvider).markOnboardingComplete(uid);
       if (mounted) context.go('/home');
+    } catch (e) {
+      // Fix H — surface Firestore errors to the user.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Failed to save profile. Please try again.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -88,25 +88,49 @@ class CaregiverConnectionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Patient updates permissions for an existing connection.
+  // C2: Added try/catch — surfaces errors via AsyncError state.
   Future<void> updatePermissions(
       String connectionId, CaregiverPermissions permissions) async {
-    await _db.collection('caregiver_connections').doc(connectionId).update(
-        {'permissions': permissions.toMap()});
+    state = const AsyncLoading();
+    try {
+      await _db.collection('caregiver_connections').doc(connectionId).update(
+          {'permissions': permissions.toMap()});
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 
   /// Patient updates notification settings for an existing connection.
+  // C2: Added try/catch — surfaces errors via AsyncError state.
   Future<void> updateNotifSettings(
       String connectionId, CaregiverNotifSettings settings) async {
-    await _db.collection('caregiver_connections').doc(connectionId).update(
-        {'notifSettings': settings.toMap()});
+    state = const AsyncLoading();
+    try {
+      await _db.collection('caregiver_connections').doc(connectionId).update(
+          {'notifSettings': settings.toMap()});
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 
   /// Patient removes a caregiver (soft-delete).
+  // C2: Added try/catch — surfaces errors via AsyncError state.
   Future<void> remove(String connectionId) async {
-    await _db
-        .collection('caregiver_connections')
-        .doc(connectionId)
-        .update({'status': 'removed'});
+    state = const AsyncLoading();
+    try {
+      await _db
+          .collection('caregiver_connections')
+          .doc(connectionId)
+          .update({'status': 'removed'});
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 }
 

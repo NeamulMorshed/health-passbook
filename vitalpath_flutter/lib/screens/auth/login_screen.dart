@@ -31,10 +31,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
 
+  // Fix Low — TapGestureRecognizer lifecycle management.
+  late final TapGestureRecognizer _termsTap;
+  late final TapGestureRecognizer _privacyTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsTap = TapGestureRecognizer()
+      ..onTap = () async {
+        final uri = Uri.parse('https://vitalpath.health/terms');
+        if (await canLaunchUrl(uri)) {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      };
+    _privacyTap = TapGestureRecognizer()
+      ..onTap = () async {
+        final uri = Uri.parse('https://vitalpath.health/privacy');
+        if (await canLaunchUrl(uri)) {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      };
+  }
+
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _termsTap.dispose();
+    _privacyTap.dispose();
     super.dispose();
   }
 
@@ -121,6 +146,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _navigateForUser(AppUser user) async {
+    // Fix H7 — clear loading before navigating so the overlay is removed.
+    if (mounted) setState(() => _loading = false);
+
     if (user.userType == UserType.doctor) {
       if (!user.onboardingComplete) {
         if (mounted) context.go('/doc/onboarding/profile');
@@ -456,15 +484,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: AppColors.primary,
                             decoration: TextDecoration.underline,
                           ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () async {
-                              final uri =
-                                  Uri.parse('https://vitalpath.health/terms');
-                              if (await canLaunchUrl(uri)) {
-                                launchUrl(uri,
-                                    mode: LaunchMode.externalApplication);
-                              }
-                            },
+                          recognizer: _termsTap,
                         ),
                         const TextSpan(text: ' & '),
                         TextSpan(
@@ -473,15 +493,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: AppColors.primary,
                             decoration: TextDecoration.underline,
                           ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () async {
-                              final uri =
-                                  Uri.parse('https://vitalpath.health/privacy');
-                              if (await canLaunchUrl(uri)) {
-                                launchUrl(uri,
-                                    mode: LaunchMode.externalApplication);
-                              }
-                            },
+                          recognizer: _privacyTap,
                         ),
                       ],
                     ),

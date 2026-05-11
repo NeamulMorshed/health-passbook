@@ -21,7 +21,6 @@ import '../../../models/appointment.dart';
 import '../../../core/constants/app_constants.dart';
 import '../care/care_screen.dart';
 import '../../../providers/vitals_provider.dart';
-import '../../../models/vital_reading.dart';
 import '../../../core/widgets/onboarding_tour.dart';
 import '../../../providers/caregiver_provider.dart';
 import '../../../models/caregiver_connection.dart';
@@ -171,7 +170,7 @@ class _HomeContent extends ConsumerWidget {
     final mealsAsync = ref.watch(todayMealsProvider(user.uid));
     ref.watch(activityLogsProvider(user.uid));
     final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
-    final vitalsAsync = ref.watch(vitalsProvider(user.uid));
+    ref.watch(vitalsProvider(user.uid));
     final gamAsync = ref.watch(gamificationProvider(user.uid));
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
@@ -207,6 +206,7 @@ class _HomeContent extends ConsumerWidget {
           ref.invalidate(activityLogsProvider(user.uid));
           ref.invalidate(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
           ref.invalidate(vitalsProvider(user.uid));
+          ref.invalidate(gamificationProvider(user.uid));
         },
         child: CustomScrollView(
           slivers: [
@@ -226,7 +226,6 @@ class _HomeContent extends ConsumerWidget {
                   // ── TIER 0: ALERTS ─────────────────────────────────────────
                   const _NotifPermBanner(),
                   _PendingInviteBanner(email: user.email ?? ''),
-                  _AbnormalVitalAlerts(vitalsAsync: vitalsAsync),
 
                   // ── TIER 1: NICHE HIGH-VALUE SECTIONS ─────────────────────
                   // Morning check-in (6am–10am only, once per day)
@@ -292,10 +291,9 @@ class _HomeContent extends ConsumerWidget {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 5) return 'Good Night';
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    if (h < 21) return 'Good Evening';
+    if (h >= 5 && h < 12) return 'Good Morning';
+    if (h >= 12 && h < 17) return 'Good Afternoon';
+    if (h >= 17 && h < 23) return 'Good Evening';
     return 'Good Night';
   }
 }
@@ -537,79 +535,6 @@ class _HydrationTracker extends ConsumerWidget {
   }
 }
 
-
-// ── TIER 0: Abnormal vital alerts ─────────────────────────────────────────────
-class _AbnormalVitalAlerts extends StatelessWidget {
-  final AsyncValue<List<VitalReading>> vitalsAsync;
-  const _AbnormalVitalAlerts({required this.vitalsAsync});
-
-  @override
-  Widget build(BuildContext context) {
-    final readings = vitalsAsync.asData?.value ?? [];
-    if (readings.isEmpty) return const SizedBox.shrink();
-
-    final latestByType = <String, VitalReading>{};
-    for (final r in readings) {
-      latestByType.putIfAbsent(r.type, () => r);
-    }
-
-    final alerts = latestByType.values
-        .where((r) => !VitalType.isNormal(r.type, r.value))
-        .toList()
-      ..sort((a, b) => _severity(b).compareTo(_severity(a)));
-
-    if (alerts.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: alerts.map((r) {
-        final tier = _severity(r);
-        final Color alertColor = tier >= 3 ? AppColors.destructive : tier >= 2 ? AppColors.warning : AppColors.primary;
-        final IconData alertIcon = tier >= 3 ? Icons.error_rounded : tier >= 2 ? Icons.warning_rounded : Icons.info_rounded;
-        final String tierLabel = tier >= 3 ? 'Critical' : tier >= 2 ? 'Elevated' : 'Monitor';
-        final (min, _) = VitalType.normalRange(r.type);
-        final val = r.type == VitalType.temp ? r.value.toStringAsFixed(1) : r.value.toInt().toString();
-        final dir = r.value < min ? 'below normal' : 'above normal';
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () => context.go('/vitals'),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: alertColor.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: alertColor.withValues(alpha: 0.3)),
-              ),
-              child: Row(children: [
-                Icon(alertIcon, size: 20, color: alertColor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('$tierLabel: ${VitalType.labelFor(r.type)} ($val ${VitalType.unitFor(r.type)})',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: alertColor, fontFamily: 'Inter')),
-                    Text('${VitalType.labelFor(r.type)} is $dir — tap to review',
-                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                  ]),
-                ),
-                Icon(Icons.chevron_right_rounded, size: 18, color: alertColor.withValues(alpha: 0.7)),
-              ]),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  int _severity(VitalReading r) {
-    final (min, max) = VitalType.normalRange(r.type);
-    final d = r.value < min ? (min - r.value) / min : (r.value - max) / max;
-    if (d > 0.30) return 3;
-    if (d > 0.15) return 2;
-    return 1;
-  }
-}
-
 // ── TIER 3: Zone 1 Health Status Card ─────────────────────────────────────────
 // ── TIER 3: Caregiver active banner ──────────────────────────────────────────
 class _CaregiversActiveBanner extends ConsumerWidget {
@@ -659,7 +584,37 @@ class _AppointmentSection extends StatelessWidget {
         .toList()
       ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
 
-    if (upcoming.isEmpty) return const SizedBox.shrink();
+    if (upcoming.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.muted,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(children: [
+            const Icon(Icons.event_outlined, size: 18, color: AppColors.mutedForeground),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text('No upcoming appointments',
+                  style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            ),
+            TextButton(
+              onPressed: () => context.go('/my-doctors'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text('Book an appointment',
+                  style: TextStyle(fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+            ),
+          ]),
+        ),
+      );
+    }
 
     final next = upcoming.first;
     final apptDay = DateTime(next.scheduledAt!.year, next.scheduledAt!.month, next.scheduledAt!.day);
@@ -1598,10 +1553,9 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 5) return 'Good Night';
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    if (h < 21) return 'Good Evening';
+    if (h >= 5 && h < 12) return 'Good Morning';
+    if (h >= 12 && h < 17) return 'Good Afternoon';
+    if (h >= 17 && h < 23) return 'Good Evening';
     return 'Good Night';
   }
 
