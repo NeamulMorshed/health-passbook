@@ -1,3 +1,6 @@
+// ignore: unused_import
+import 'package:google_fonts/google_fonts.dart';
+export 'bento_card.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
@@ -29,7 +32,7 @@ class StatCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: color.withValues(alpha:0.08),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: color.withValues(alpha:0.2)),
         ),
         child: Column(
@@ -42,17 +45,17 @@ class StatCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: value,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter'),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color),
                   ),
                   TextSpan(
                     text: ' $unit',
-                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
           ],
         ),
       ),
@@ -73,11 +76,11 @@ class SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.foreground, fontFamily: 'Inter')),
+        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.foreground)),
         if (action != null)
           TextButton(
             onPressed: onAction,
-            child: Text(action!, style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter')),
+            child: Text(action!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ),
       ],
     );
@@ -122,9 +125,9 @@ class StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textColor, fontFamily: 'Inter')),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textColor)),
     );
   }
 }
@@ -155,7 +158,7 @@ class LoadingOverlay extends StatelessWidget {
                     const CircularProgressIndicator(color: AppColors.primary),
                     if (message != null) ...[
                       const SizedBox(height: 14),
-                      Text(message!, style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
+                      Text(message!, style: const TextStyle(fontSize: 14)),
                     ],
                   ],
                 ),
@@ -195,7 +198,7 @@ class AppAvatar extends StatelessWidget {
           ? Center(
               child: Text(
                 initials,
-                style: TextStyle(fontSize: size * 0.35, fontWeight: FontWeight.w700, color: bgColor, fontFamily: 'Inter'),
+                style: TextStyle(fontSize: size * 0.35, fontWeight: FontWeight.w700, color: bgColor),
               ),
             )
           : null,
@@ -232,14 +235,14 @@ class EmptyState extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.muted,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(icon, size: 40, color: AppColors.mutedForeground),
             ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
             if (actionLabel != null) ...[
               const SizedBox(height: 20),
               ElevatedButton(onPressed: onAction, child: Text(actionLabel!)),
@@ -255,7 +258,7 @@ class EmptyState extends StatelessWidget {
 void showAppSnack(BuildContext context, String msg, {bool isError = false}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(msg, style: const TextStyle(fontFamily: 'Inter')),
+      content: Text(msg),
       backgroundColor: isError ? AppColors.destructive : AppColors.foreground,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -275,7 +278,7 @@ class GradientButton extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
-    this.colors = const [AppColors.primary, AppColors.primaryDark],
+    this.colors = const [Color(0xFF0F9D77), Color(0xFF0B7A5E)],
     this.isLoading = false,
   });
 
@@ -288,12 +291,12 @@ class GradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: colors),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: colors.first.withValues(alpha:0.3), blurRadius: 12, offset: const Offset(0, 4))],
+          boxShadow: [BoxShadow(color: colors.first.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Center(
           child: isLoading
               ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              : Text(label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
         ),
       ),
     );

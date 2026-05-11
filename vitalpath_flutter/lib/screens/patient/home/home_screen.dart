@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' as iconoir;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -73,42 +74,40 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
     final granted = ref.watch(notifPermGrantedProvider).asData?.value ?? true;
     if (granted) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BentoCard(
+        color: AppColors.warningLight,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(children: [
+          const iconoir.WarningTriangle(width: 18, height: 18, color: AppColors.warning),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Notifications off',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const SizedBox(height: 2),
+              const Text('Enable to receive medicine reminders.',
+                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () async {
+                  await openAppSettings();
+                  ref.invalidate(notifPermGrantedProvider);
+                },
+                child: const Text('Open Settings',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, decoration: TextDecoration.underline)),
+              ),
+            ]),
+          ),
+          IconButton(
+            icon: const iconoir.Xmark(width: 16, height: 16, color: AppColors.textTertiary),
+            onPressed: () => setState(() => _dismissed = true),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            padding: EdgeInsets.zero,
+          ),
+        ]),
       ),
-      child: Row(children: [
-        const Icon(Icons.notifications_off_outlined, color: AppColors.warning, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Notifications off',
-                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13)),
-            const SizedBox(height: 2),
-            const Text('Enable to receive medicine reminders.',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.mutedForeground)),
-            const SizedBox(height: 6),
-            GestureDetector(
-              onTap: () async {
-                await openAppSettings();
-                ref.invalidate(notifPermGrantedProvider);
-              },
-              child: const Text('Open Settings',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, decoration: TextDecoration.underline)),
-            ),
-          ]),
-        ),
-        IconButton(
-          icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.mutedForeground),
-          onPressed: () => setState(() => _dismissed = true),
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          padding: EdgeInsets.zero,
-        ),
-      ]),
     );
   }
 }
@@ -125,29 +124,25 @@ class _PendingInviteBanner extends ConsumerWidget {
     if (invites.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      children: invites.map((inv) => GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
+      children: invites.map((inv) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: BentoCard(
+          color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3)),
-          ),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
           child: Row(children: [
-            const Icon(Icons.shield_rounded, color: Color(0xFF7C3AED), size: 20),
+            const iconoir.Shield(width: 20, height: 20, color: Color(0xFF7C3AED)),
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('${inv.patientName} invited you to their Care Circle',
-                    style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13)),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 2),
                 const Text('Tap to view and accept or decline',
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: AppColors.mutedForeground)),
+                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
               ]),
             ),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF7C3AED)),
+            const iconoir.NavArrowRight(width: 16, height: 16, color: Color(0xFF7C3AED)),
           ]),
         ),
       )).toList(),
@@ -173,16 +168,17 @@ class _HomeContent extends ConsumerWidget {
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.surface,
-        surfaceTintColor: AppColors.surface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+          Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
           Text(
             user.name.isNotEmpty ? user.name : 'Patient',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground),
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground),
           ),
         ]),
         bottom: PreferredSize(
@@ -191,7 +187,7 @@ class _HomeContent extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
             ),
           ),
         ),
@@ -209,45 +205,45 @@ class _HomeContent extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
 
-                  // ── AWARENESS CARD (top, dynamic, hides when resolved) ────
+                  // ── AWARENESS CARD ────────────────────────────────────────
                   _DailyAwarenessCard(uid: user.uid),
 
-                  // ── SNAPSHOT: TODAY'S HEALTH AT A GLANCE ──────────────────
+                  // ── SNAPSHOT ──────────────────────────────────────────────
                   _DailySnapshotRow(
                     medsAsync: medsAsync,
                     medStreak: gamAsync.asData?.value.medStreak,
                     apptsAsync: apptsAsync,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
-                  // ── TIER 0: ALERTS ─────────────────────────────────────────
+                  // ── ALERTS ────────────────────────────────────────────────
                   const _NotifPermBanner(),
                   _PendingInviteBanner(email: user.email ?? ''),
 
-                  // ── TIER 2: TODAY'S ACTIONS ────────────────────────────────
+                  // ── TODAY'S ACTIONS ───────────────────────────────────────
                   _UpcomingTasksCard(uid: user.uid),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
 
-                  // ── TIER 3: DAILY STATUS ───────────────────────────────────
+                  // ── DAILY STATUS ──────────────────────────────────────────
                   _CaregiversActiveBanner(uid: user.uid),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
 
-                  // ── TIER 4: CONTEXT ────────────────────────────────────────
+                  // ── CONTEXT ───────────────────────────────────────────────
                   _TimeContextualCard(uid: user.uid, medsAsync: medsAsync, mealsAsync: mealsAsync),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   _RefillCountdownCard(medsAsync: medsAsync),
 
-                  // ── TIER 5: NUMBERS & EXPLORATION ─────────────────────────
-                  const SizedBox(height: 4),
+                  // ── NUMBERS ───────────────────────────────────────────────
+                  const SizedBox(height: 12),
                   _AdherenceRingCard(uid: user.uid),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   _FamilyStatusBar(uid: user.uid),
 
-                  // AI Insights — below the fold
+                  // ── AI INSIGHTS ───────────────────────────────────────────
                   GestureDetector(
                     onTap: () => context.push('/insights'),
                     child: Container(
@@ -256,22 +252,20 @@ class _HomeContent extends ConsumerWidget {
                         gradient: LinearGradient(
                           colors: [const Color(0xFF0EA5E9).withValues(alpha: 0.85), const Color(0xFF6366F1).withValues(alpha: 0.85)],
                         ),
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Row(children: [
-                        Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
-                        SizedBox(width: 14),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('AI Health Insights', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                          Text('Personalised suggestions from Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
+                      child: Row(children: [
+                        const iconoir.Sparks(width: 24, height: 24, color: Colors.white),
+                        const SizedBox(width: 14),
+                        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('AI Health Insights', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text('Personalised suggestions from Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12)),
                         ])),
-                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 14),
+                        const iconoir.NavArrowRight(width: 14, height: 14, color: Colors.white70),
                       ]),
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ]),
               ),
             ),
@@ -290,9 +284,6 @@ class _HomeContent extends ConsumerWidget {
   }
 }
 
-// ── TIER 1: Morning check-in ──────────────────────────────────────────────────
-
-// ── TIER 3: Zone 1 Health Status Card ─────────────────────────────────────────
 // ── TIER 3: Caregiver active banner ──────────────────────────────────────────
 class _CaregiversActiveBanner extends ConsumerWidget {
   final String uid;
@@ -310,15 +301,15 @@ class _CaregiversActiveBanner extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: Row(children: [
-        const Icon(Icons.shield_rounded, size: 13, color: Color(0xFF7C3AED)),
+        const iconoir.Shield(width: 13, height: 13, color: Color(0xFF7C3AED)),
         const SizedBox(width: 6),
         Expanded(
           child: Text('$names $verb in your care circle',
-              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
         ),
         GestureDetector(
           onTap: () => context.push('/care-circle'),
-          child: const Text('Manage', style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED), fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+          child: const Text('Manage', style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED), fontWeight: FontWeight.w600)),
         ),
       ]),
     );
@@ -341,39 +332,58 @@ class _TimeContextualCard extends StatelessWidget {
 
     if (h >= 5 && h < 11) {
       final dueMeds = meds.where((m) => m.isActive && m.hasDueSlot).toList();
-      return _ContextCard(icon: Icons.wb_sunny_rounded, color: const Color(0xFFF59E0B),
-        heading: 'Morning routine', actionLabel: dueMeds.isNotEmpty ? 'View Medicines' : 'Log Breakfast',
+      return _ContextCard(
+        icon: const iconoir.SunLight(width: 18, height: 18, color: Color(0xFFF59E0B)),
+        color: const Color(0xFFF59E0B),
+        heading: 'Morning routine',
+        actionLabel: dueMeds.isNotEmpty ? 'View Medicines' : 'Log Breakfast',
         body: dueMeds.isNotEmpty ? 'You have ${dueMeds.length} medicine${dueMeds.length == 1 ? '' : 's'} to take this morning.' : loggedTypes.contains(AppConstants.mealBreakfast) ? 'Breakfast done! Morning medicines all taken.' : 'Start your day — take your medicines and log breakfast.',
-        onAction: () => dueMeds.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealBreakfast));
+        onAction: () => dueMeds.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealBreakfast),
+      );
     } else if (h >= 11 && h < 14) {
-      return _ContextCard(icon: Icons.light_mode_rounded, color: AppColors.primary,
-        heading: 'Midday check-in', actionLabel: loggedTypes.contains(AppConstants.mealLunch) ? 'Log Vitals' : 'Log Lunch',
+      return _ContextCard(
+        icon: iconoir.SunLight(width: 18, height: 18, color: AppColors.primary),
+        color: AppColors.primary,
+        heading: 'Midday check-in',
+        actionLabel: loggedTypes.contains(AppConstants.mealLunch) ? 'Log Vitals' : 'Log Lunch',
         body: loggedTypes.contains(AppConstants.mealLunch) ? 'Lunch logged! A good time to check your blood pressure.' : 'Lunchtime — logging meals helps track your daily nutrition.',
-        onAction: () => loggedTypes.contains(AppConstants.mealLunch) ? context.go('/vitals') : showLogMealSheet(context, uid, initialType: AppConstants.mealLunch));
+        onAction: () => loggedTypes.contains(AppConstants.mealLunch) ? context.go('/vitals') : showLogMealSheet(context, uid, initialType: AppConstants.mealLunch),
+      );
     } else if (h >= 14 && h < 17) {
-      return _ContextCard(icon: Icons.directions_run_rounded, color: AppColors.success,
-        heading: 'Afternoon boost', actionLabel: 'Log Activity',
+      return _ContextCard(
+        icon: iconoir.Running(width: 18, height: 18, color: AppColors.success),
+        color: AppColors.success,
+        heading: 'Afternoon boost',
+        actionLabel: 'Log Activity',
         body: 'Good time for a walk or light activity. Logging steps keeps you on track.',
-        onAction: () => context.push('/activity'));
+        onAction: () => context.push('/activity'),
+      );
     } else if (h >= 17 && h < 21) {
       final eveningDue = meds.where((m) => m.isActive && m.hasDueSlot).toList();
-      return _ContextCard(icon: Icons.nights_stay_rounded, color: const Color(0xFF7C3AED),
-        heading: 'Evening routine', actionLabel: eveningDue.isNotEmpty ? 'View Medicines' : 'Log Dinner',
+      return _ContextCard(
+        icon: const iconoir.HalfMoon(width: 18, height: 18, color: Color(0xFF7C3AED)),
+        color: const Color(0xFF7C3AED),
+        heading: 'Evening routine',
+        actionLabel: eveningDue.isNotEmpty ? 'View Medicines' : 'Log Dinner',
         body: eveningDue.isNotEmpty ? '${eveningDue.length} evening medicine${eveningDue.length == 1 ? '' : 's'} still due.' : loggedTypes.contains(AppConstants.mealDinner) ? 'Evening all done — great health day!' : 'Log dinner to complete your daily record.',
-        onAction: () => eveningDue.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealDinner));
+        onAction: () => eveningDue.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealDinner),
+      );
     } else {
       final allDone = meds.where((m) => m.isActive).every((m) => m.takenToday);
-      return _ContextCard(icon: Icons.bedtime_rounded, color: AppColors.mutedForeground,
+      return _ContextCard(
+        icon: iconoir.Bed(width: 18, height: 18, color: AppColors.mutedForeground),
+        color: AppColors.mutedForeground,
         heading: 'End of day',
         body: allDone ? 'All medicines taken today — excellent health day!' : 'Check your medicines before bed to complete today\'s log.',
         actionLabel: 'View Summary',
-        onAction: () => context.go('/care'));
+        onAction: () => context.go('/care'),
+      );
     }
   }
 }
 
 class _ContextCard extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final String heading, body, actionLabel;
   final VoidCallback onAction;
@@ -381,25 +391,20 @@ class _ContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+    return BentoCard(
+      color: color.withValues(alpha: 0.06),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           width: 38, height: 38,
           decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 18, color: color),
+          child: Center(child: icon),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(heading, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
+          Text(heading, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
           const SizedBox(height: 4),
-          Text(body, style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter', height: 1.4)),
+          Text(body, style: const TextStyle(fontSize: 12, color: AppColors.foreground, height: 1.4)),
           const SizedBox(height: 10),
           SizedBox(
             height: 36,
@@ -410,7 +415,7 @@ class _ContextCard extends StatelessWidget {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 minimumSize: const Size(0, 36),
               ),
               child: Text(actionLabel),
@@ -447,20 +452,15 @@ class _RefillCountdownCard extends StatelessWidget {
     final urgent = low.first.daysLeft <= 3;
     final cardColor = urgent ? AppColors.destructive : AppColors.warning;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+    return BentoCard(
+      color: cardColor.withValues(alpha: 0.07),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardColor.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cardColor.withValues(alpha: 0.3)),
-      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.medication_rounded, size: 15, color: cardColor),
+          iconoir.PharmacyCrossCircle(width: 15, height: 15, color: cardColor),
           const SizedBox(width: 6),
           Text(urgent ? 'Refill urgently needed' : 'Medicine refill needed',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cardColor, fontFamily: 'Inter')),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cardColor)),
         ]),
         const SizedBox(height: 8),
         ...low.take(3).map((med) {
@@ -468,13 +468,13 @@ class _RefillCountdownCard extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(children: [
-              Expanded(child: Text(med.name, style: const TextStyle(fontSize: 12, fontFamily: 'Inter'))),
+              Expanded(child: Text(med.name, style: const TextStyle(fontSize: 12))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                 child: Text(
                   med.daysLeft == 0 ? 'Out today' : '~${med.daysLeft} day${med.daysLeft == 1 ? '' : 's'} left',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: c, fontFamily: 'Inter'),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: c),
                 ),
               ),
             ]),
@@ -485,7 +485,7 @@ class _RefillCountdownCard extends StatelessWidget {
   }
 }
 
-// ── TIER 5: Daily snapshot row (replaces 2×2 grid) ───────────────────────────
+// ── Daily snapshot row ────────────────────────────────────────────────────────
 class _DailySnapshotRow extends StatelessWidget {
   final AsyncValue<List<Medicine>> medsAsync;
   final int? medStreak;
@@ -541,36 +541,29 @@ class _SnapshotChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BentoCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(
             child: Text(label,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.mutedForeground),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ),
           Container(
-            width: 8,
-            height: 8,
+            width: 8, height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ]),
         const SizedBox(height: 10),
-        Text(value,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
       ]),
     );
   }
 }
 
-// ── TIER 5: Medicine Adherence Ring ──────────────────────────────────────────
+// ── Medicine Adherence Ring ───────────────────────────────────────────────────
 class _AdherenceRingCard extends ConsumerWidget {
   final String uid;
   const _AdherenceRingCard({required this.uid});
@@ -597,21 +590,15 @@ class _AdherenceRingCard extends ConsumerWidget {
       message = 'Start your streak — every dose counts.';
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+    return BentoCard(
       child: Row(children: [
         CircularPercentIndicator(
           radius: 38.0,
           lineWidth: 7.0,
           percent: percent,
           center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('$weeklyMedDays', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
-            const Text('/7', style: TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            Text('$weeklyMedDays', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color)),
+            Text('/7', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
           ]),
           progressColor: color,
           backgroundColor: color.withValues(alpha: 0.12),
@@ -621,9 +608,9 @@ class _AdherenceRingCard extends ConsumerWidget {
         ),
         const SizedBox(width: 16),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Weekly Adherence', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+          const Text('Weekly Adherence', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text(message, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.4)),
+          Text(message, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, height: 1.4)),
           const SizedBox(height: 10),
           Row(mainAxisSize: MainAxisSize.min, children: List.generate(7, (i) {
             final filled = i < weeklyMedDays;
@@ -637,7 +624,7 @@ class _AdherenceRingCard extends ConsumerWidget {
                 border: Border.all(color: filled ? color.withValues(alpha: 0.4) : AppColors.border),
               ),
               child: Center(
-                child: Text(days[i], style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: filled ? color : AppColors.mutedForeground, fontFamily: 'Inter')),
+                child: Text(days[i], style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: filled ? color : AppColors.mutedForeground)),
               ),
             );
           })),
@@ -647,7 +634,7 @@ class _AdherenceRingCard extends ConsumerWidget {
   }
 }
 
-// ── TIER 5: Family Status Bar ─────────────────────────────────────────────────
+// ── Family Status Bar ─────────────────────────────────────────────────────────
 class _FamilyStatusBar extends ConsumerWidget {
   final String uid;
   const _FamilyStatusBar({required this.uid});
@@ -658,7 +645,7 @@ class _FamilyStatusBar extends ConsumerWidget {
     if (members.isEmpty) return const SizedBox.shrink();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Your Family', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+      const Text('Your Family', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
       const SizedBox(height: 10),
       SizedBox(
         height: 84,
@@ -669,7 +656,7 @@ class _FamilyStatusBar extends ConsumerWidget {
           itemBuilder: (_, i) => _FamilyStatusChip(uid: uid, member: members[i]),
         ),
       ),
-      const SizedBox(height: 14),
+      const SizedBox(height: 12),
     ]);
   }
 }
@@ -686,14 +673,8 @@ class _FamilyStatusChip extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => context.go('/care'),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+      child: BentoCard(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Stack(clipBehavior: Clip.none, children: [
             CircleAvatar(
@@ -701,7 +682,7 @@ class _FamilyStatusChip extends ConsumerWidget {
               backgroundColor: AppColors.primary.withValues(alpha: 0.12),
               backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
               child: member.photoUrl == null
-                  ? Text(member.initials, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Inter'))
+                  ? Text(member.initials, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary))
                   : null,
             ),
             Positioned(
@@ -716,7 +697,7 @@ class _FamilyStatusChip extends ConsumerWidget {
           SizedBox(
             width: 52,
             child: Text(member.name.split(' ').first, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
           ),
         ]),
       ),
@@ -735,7 +716,7 @@ class _FamilyStatusChip extends ConsumerWidget {
   }
 }
 
-// ── Daily Awareness Card (dynamic, hides when resolved) ───────────────────────
+// ── Daily Awareness Card ──────────────────────────────────────────────────────
 class _DailyAwarenessCard extends ConsumerWidget {
   final String uid;
   const _DailyAwarenessCard({required this.uid});
@@ -764,50 +745,48 @@ class _DailyAwarenessCard extends ConsumerWidget {
       message = "You haven't logged a meal on time. Keeping track of your meals helps you stay on top of your health.";
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-      ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.warning),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Stay on track',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning, fontFamily: 'Inter')),
-            const SizedBox(height: 4),
-            Text(message,
-                style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter', height: 1.4)),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 34,
-              child: ElevatedButton(
-                onPressed: () => context.go('/care'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.warning,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
-                  minimumSize: const Size(0, 34),
-                ),
-                child: const Text('Go to Medicines & Meals'),
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: BentoCard(
+        color: AppColors.warningLight,
+        padding: const EdgeInsets.all(16),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ]),
-        ),
-      ]),
+            child: const iconoir.WarningTriangle(width: 20, height: 20, color: AppColors.warning),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Stay on track',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning)),
+              const SizedBox(height: 4),
+              Text(message,
+                  style: const TextStyle(fontSize: 12, color: AppColors.foreground, height: 1.4)),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 34,
+                child: ElevatedButton(
+                  onPressed: () => context.go('/care'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.warning,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    minimumSize: const Size(0, 34),
+                  ),
+                  child: const Text('Go to Medicines & Meals'),
+                ),
+              ),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -850,21 +829,21 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     final totalPending = actionableMeds.length + (hasActionableMeal ? 1 : 0);
 
     final header = Row(children: [
-      const Expanded(child: Text('What needs to be done now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
+      const Expanded(child: Text('What needs to be done now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
       if (totalPending > 0)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text('$totalPending left', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+          child: Text('$totalPending left', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
         )
       else
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
           child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.check_rounded, size: 12, color: AppColors.success),
+            iconoir.Check(width: 12, height: 12, color: AppColors.success),
             SizedBox(width: 4),
-            Text('All done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.success, fontFamily: 'Inter')),
+            Text('All done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.success)),
           ]),
         ),
     ]);
@@ -873,16 +852,15 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         header,
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+        BentoCard(
           child: const Column(children: [
-            Icon(Icons.celebration_rounded, size: 32, color: AppColors.success),
             SizedBox(height: 8),
-            Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            iconoir.Trophy(width: 32, height: 32, color: AppColors.success),
+            SizedBox(height: 8),
+            Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             SizedBox(height: 2),
-            Text('Great job keeping up with your health today.', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            Text('Great job keeping up with your health today.', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            SizedBox(height: 8),
           ]),
         ),
       ]);
@@ -900,7 +878,7 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         currentMeal: currentMeal,
         onLogMeal: (type) => showLogMealSheet(context, widget.uid, initialType: type),
       ),
-      const SizedBox(height: 20),
+      const SizedBox(height: 12),
     ]);
   }
 
@@ -924,12 +902,8 @@ class _MedsGroupCard extends ConsumerWidget {
     final display = meds.take(3).toList();
     final overflow = meds.length - 3;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+    return BentoCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           for (int i = 0; i < display.length; i++) ...[
@@ -944,7 +918,7 @@ class _MedsGroupCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 child: Center(
                   child: Text('+$overflow more — see all in Medicines',
-                      style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+                      style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500)),
                 ),
               ),
             ),
@@ -980,21 +954,21 @@ class _MedRow extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(Icons.medication_rounded, color: iconColor, size: 20),
+          child: iconoir.PharmacyCrossCircle(width: 20, height: 20, color: iconColor),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
+            Expanded(child: Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
             if (totalSlots > 1)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
-                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
+                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
               ),
           ]),
           const SizedBox(height: 2),
-          Text(subtitle, style: TextStyle(fontSize: 12, color: isMissed ? AppColors.warning : AppColors.mutedForeground, fontFamily: 'Inter')),
+          Text(subtitle, style: TextStyle(fontSize: 12, color: isMissed ? AppColors.warning : AppColors.mutedForeground)),
         ])),
         const SizedBox(width: 10),
         GestureDetector(
@@ -1014,7 +988,7 @@ class _MedRow extends ConsumerWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(color: iconColor, borderRadius: BorderRadius.circular(10)),
             child: Text(isMissed ? 'Log' : 'Take',
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         ),
       ]),
@@ -1030,34 +1004,31 @@ class _MealStatusCard extends StatelessWidget {
   const _MealStatusCard({required this.meals, required this.currentMeal, required this.onLogMeal});
 
   static const _allMeals = [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner];
-  static const _mealIcons = {
-    'Breakfast': Icons.wb_sunny_rounded,
-    'Lunch': Icons.light_mode_rounded,
-    'Dinner': Icons.nights_stay_rounded,
-  };
+
+  static Widget _mealIcon(String meal, Color color) {
+    if (meal == AppConstants.mealBreakfast) return iconoir.SunLight(width: 18, height: 18, color: color);
+    if (meal == AppConstants.mealLunch) return iconoir.SunLight(width: 18, height: 18, color: color);
+    return iconoir.MoonSat(width: 18, height: 18, color: color);
+  }
 
   @override
   Widget build(BuildContext context) {
     final loggedTypes = meals.map((m) => m.mealType).toSet();
     final h = DateTime.now().hour;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+    return BentoCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           for (int i = 0; i < _allMeals.length; i++) ...[
             if (i > 0) const Divider(height: 1, color: AppColors.border),
             _MealRow(
               mealType: _allMeals[i],
-              icon: _mealIcons[_allMeals[i]] ?? Icons.restaurant_rounded,
               isCurrent: _allMeals[i] == currentMeal,
               isLogged: loggedTypes.contains(_allMeals[i]),
               isPast: _isPast(_allMeals[i], h),
               onLog: () => onLogMeal(_allMeals[i]),
+              iconBuilder: _mealIcon,
             ),
           ],
         ],
@@ -1076,16 +1047,17 @@ class _MealStatusCard extends StatelessWidget {
 // ── Meal Row ──────────────────────────────────────────────────────────────────
 class _MealRow extends StatelessWidget {
   final String mealType;
-  final IconData icon;
   final bool isCurrent, isLogged, isPast;
   final VoidCallback onLog;
+  final Widget Function(String meal, Color color) iconBuilder;
+
   const _MealRow({
     required this.mealType,
-    required this.icon,
     required this.isCurrent,
     required this.isLogged,
     required this.isPast,
     required this.onLog,
+    required this.iconBuilder,
   });
 
   @override
@@ -1097,12 +1069,12 @@ class _MealRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: AppColors.success, size: 20),
+            child: iconBuilder(mealType, AppColors.success),
           ),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(mealType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            const Text("Haven't logged yet", style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+            Text(mealType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            const Text("Haven't logged yet", style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
           ])),
           const SizedBox(width: 10),
           GestureDetector(
@@ -1112,7 +1084,7 @@ class _MealRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 18),
               alignment: Alignment.center,
               decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(10)),
-              child: const Text('Log', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              child: const Text('Log', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
             ),
           ),
         ]),
@@ -1135,13 +1107,13 @@ class _MealRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(children: [
-        Icon(icon, size: 16, color: AppColors.mutedForeground),
+        iconBuilder(mealType, AppColors.mutedForeground),
         const SizedBox(width: 10),
-        Expanded(child: Text(mealType, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', color: AppColors.foreground))),
+        Expanded(child: Text(mealType, style: const TextStyle(fontSize: 13, color: AppColors.foreground))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text(statusLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Inter')),
+          child: Text(statusLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),
         ),
       ]),
     );
@@ -1149,7 +1121,7 @@ class _MealRow extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Caregiver Home Content (unchanged logic, improved labels)
+// Caregiver Home Content
 // ══════════════════════════════════════════════════════════════════════════════
 class _CaregiverHomeContent extends ConsumerStatefulWidget {
   final AppUser user;
@@ -1192,18 +1164,26 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
         final selectedMember = members.where((m) => m.id == _selectedMemberId).firstOrNull;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             backgroundColor: AppColors.surface,
-            surfaceTintColor: AppColors.surface,
+            elevation: 0,
+            scrolledUnderElevation: 0,
             title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              Text(widget.user.name.isNotEmpty ? widget.user.name : 'Caregiver', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
+              Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+              Text(widget.user.name.isNotEmpty ? widget.user.name : 'Caregiver',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground)),
             ]),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(24),
-              child: Align(alignment: Alignment.centerLeft, child: Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')))),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                ),
+              ),
             ),
             actions: const [NotifBell()],
           ),
@@ -1214,45 +1194,54 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
             },
             child: CustomScrollView(slivers: [
               SliverPadding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
                 sliver: SliverList(delegate: SliverChildListDelegate([
-                  ...((pendingInvitesAsync.asData?.value ?? []).map((inv) => GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
+
+                  // Pending invites
+                  ...((pendingInvitesAsync.asData?.value ?? []).map((inv) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: BentoCard(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(color: const Color(0xFF7C3AED).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.3))),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
                       child: Row(children: [
-                        const Icon(Icons.shield_rounded, color: Color(0xFF7C3AED), size: 20),
+                        const iconoir.Shield(width: 20, height: 20, color: Color(0xFF7C3AED)),
                         const SizedBox(width: 10),
-                        Expanded(child: Text('${inv.patientName} invited you to their Care Circle', style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13))),
-                        const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF7C3AED)),
+                        Expanded(child: Text('${inv.patientName} invited you to their Care Circle',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
+                        const iconoir.NavArrowRight(width: 16, height: 16, color: Color(0xFF7C3AED)),
                       ]),
                     ),
                   ))),
+
+                  // My patients
                   ...((connectedPatientsAsync.asData?.value ?? []).isNotEmpty ? [
-                    const Text('My Patients', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    const Text('My Patients', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
                     const SizedBox(height: 10),
-                    ...((connectedPatientsAsync.asData?.value ?? []).map((conn) => GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CaregiverPatientProfileScreen(connection: conn))),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+                    ...((connectedPatientsAsync.asData?.value ?? []).map((conn) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: BentoCard(
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CaregiverPatientProfileScreen(connection: conn))),
                         child: Row(children: [
-                          CircleAvatar(radius: 22, backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12), child: Text(_initials(conn.patientName), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF7C3AED), fontFamily: 'Inter'))),
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                            child: Text(_initials(conn.patientName),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF7C3AED))),
+                          ),
                           const SizedBox(width: 12),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(conn.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                            Text(conn.relationship.relationshipLabel, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                            Text(conn.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                            Text(conn.relationship.relationshipLabel, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
                           ])),
-                          const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.mutedForeground),
+                          const iconoir.NavArrowRight(width: 16, height: 16, color: AppColors.textTertiary),
                         ]),
                       ),
                     ))),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                   ] : []),
-                  const Text('Who are you checking on today?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+
+                  const Text('Who are you checking on today?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
                   const SizedBox(height: 10),
                   if (members.isEmpty)
                     _EmptyMembersCard(caregiverUid: widget.user.uid)
@@ -1271,33 +1260,38 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
                             child: Column(children: [
                               Container(
                                 width: 48, height: 48,
-                                decoration: BoxDecoration(shape: BoxShape.circle, color: selected ? const Color(0xFFF59E0B) : const Color(0xFFF59E0B).withValues(alpha: 0.15), border: Border.all(color: selected ? const Color(0xFFF59E0B) : AppColors.border, width: selected ? 2.5 : 1)),
-                                child: Center(child: Text(m.initials, style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 16, color: selected ? Colors.white : const Color(0xFFF59E0B)))),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: selected ? const Color(0xFFF59E0B) : const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                  border: Border.all(color: selected ? const Color(0xFFF59E0B) : AppColors.border, width: selected ? 2.5 : 1),
+                                ),
+                                child: Center(child: Text(m.initials,
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: selected ? Colors.white : const Color(0xFFF59E0B)))),
                               ),
                               const SizedBox(height: 6),
-                              SizedBox(width: 60, child: Text(m.name.split(' ').first, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontFamily: 'Inter', fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground))),
+                              SizedBox(width: 60, child: Text(m.name.split(' ').first,
+                                  textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground))),
                             ]),
                           );
                         },
                       ),
                     ),
                   const SizedBox(height: 24),
+
                   if (selectedMember != null) ...[
-                    Row(children: [
-                      Container(width: 6, height: 20, decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(3))),
-                      const SizedBox(width: 10),
-                      Text("${selectedMember.name}'s Overview", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                      if (selectedMember.age != null) ...[
-                        const SizedBox(width: 6),
-                        Text('· ${selectedMember.age} yrs · ${selectedMember.relationship}', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                      ],
-                    ]),
-                    const SizedBox(height: 16),
+                    BentoSectionHeader(title: "${selectedMember.name}'s Overview"),
+                    if (selectedMember.age != null) ...[
+                      const SizedBox(height: 4),
+                      Text('${selectedMember.age} yrs · ${selectedMember.relationship}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                    ],
+                    const SizedBox(height: 12),
                     _CaregiverMedSection(caregiverUid: widget.user.uid, memberId: selectedMember.id, memberName: selectedMember.name),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     _CaregiverQuickActions(caregiverUid: widget.user.uid, memberId: selectedMember.id),
                   ] else if (members.isNotEmpty) const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                 ])),
               ),
             ]),
@@ -1311,18 +1305,24 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
 class _EmptyMembersCard extends StatelessWidget {
   final String caregiverUid;
   const _EmptyMembersCard({required this.caregiverUid});
+
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3))),
+  Widget build(BuildContext context) => BentoCard(
     child: Column(children: [
-      const Icon(Icons.family_restroom_rounded, size: 36, color: Color(0xFFF59E0B)),
-      const SizedBox(height: 10),
-      const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
       const SizedBox(height: 4),
-      const Text('Go to Care to add the people you care for.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+      const iconoir.Group(width: 36, height: 36, color: Color(0xFFF59E0B)),
+      const SizedBox(height: 10),
+      const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      const SizedBox(height: 4),
+      const Text('Go to Care to add the people you care for.',
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
       const SizedBox(height: 14),
-      OutlinedButton(onPressed: () => context.go('/care'), style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFF59E0B)), foregroundColor: const Color(0xFFF59E0B)), child: const Text('Go to Medicines', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600))),
+      OutlinedButton(
+        onPressed: () => context.go('/care'),
+        style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFF59E0B)), foregroundColor: const Color(0xFFF59E0B)),
+        child: const Text('Go to Medicines', style: TextStyle(fontWeight: FontWeight.w600)),
+      ),
+      const SizedBox(height: 4),
     ]),
   );
 }
@@ -1343,52 +1343,59 @@ class _CaregiverMedSection extends ConsumerWidget {
         final dueMeds = activeMeds.where((m) => m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot).toList();
 
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primary.withValues(alpha: 0.2))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.medication_rounded, color: AppColors.primary, size: 20),
-                const SizedBox(height: 6),
-                Text('$takenToday/${activeMeds.length}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Inter')),
-                const Text('taken today', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
-            )),
-            const SizedBox(width: 10),
-            Expanded(child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(color: dueMeds.isNotEmpty ? AppColors.warning.withValues(alpha: 0.07) : AppColors.success.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(12), border: Border.all(color: dueMeds.isNotEmpty ? AppColors.warning.withValues(alpha: 0.2) : AppColors.success.withValues(alpha: 0.2))),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(dueMeds.isNotEmpty ? Icons.alarm_rounded : Icons.check_circle_rounded, color: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success, size: 20),
-                const SizedBox(height: 6),
-                Text('${dueMeds.length}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success, fontFamily: 'Inter')),
-                Text(dueMeds.isNotEmpty ? 'due now' : 'all done', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
-            )),
-          ]),
+          BentoRow(
+            left: BentoStatCard(
+              label: 'taken today',
+              value: '$takenToday/${activeMeds.length}',
+              icon: const iconoir.PharmacyCrossCircle(width: 18, height: 18, color: AppColors.primary),
+              iconBgColor: AppColors.primaryTint,
+              iconColor: AppColors.primary,
+            ),
+            right: BentoStatCard(
+              label: dueMeds.isNotEmpty ? 'due now' : 'all done',
+              value: '${dueMeds.length}',
+              icon: dueMeds.isNotEmpty
+                  ? const iconoir.Alarm(width: 18, height: 18, color: AppColors.warning)
+                  : const iconoir.CheckCircle(width: 18, height: 18, color: AppColors.success),
+              iconBgColor: dueMeds.isNotEmpty ? AppColors.warningLight : AppColors.successLight,
+              iconColor: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success,
+            ),
+          ),
           if (activeMeds.isEmpty) ...[
-            const SizedBox(height: 16),
-            Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 20), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+            const SizedBox(height: 12),
+            BentoCard(
               child: Column(children: [
-                const Icon(Icons.medication_outlined, size: 28, color: AppColors.mutedForeground),
                 const SizedBox(height: 8),
-                Text('No medicines for $memberName yet', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                const iconoir.PharmacyCrossCircle(width: 28, height: 28, color: AppColors.mutedForeground),
+                const SizedBox(height: 8),
+                Text('No medicines for $memberName yet', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+                const SizedBox(height: 8),
               ]),
             ),
           ] else if (dueMeds.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text('Due now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            const SizedBox(height: 12),
+            const Text('Due now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            ...dueMeds.take(3).map((m) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _CaregiverMedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId))),
+            ...dueMeds.take(3).map((m) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _CaregiverMedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId),
+            )),
             if (dueMeds.length > 3)
-              GestureDetector(onTap: () => context.go('/care'), child: Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 13), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)), child: Center(child: Text('+${dueMeds.length - 3} more — see all in Medicines', style: const TextStyle(fontSize: 13, color: AppColors.primary, fontFamily: 'Inter', fontWeight: FontWeight.w500))))),
+              BentoCard(
+                onTap: () => context.go('/care'),
+                child: Center(child: Text('+${dueMeds.length - 3} more — see all in Medicines',
+                    style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500))),
+              ),
           ] else ...[
             const SizedBox(height: 12),
-            Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 18), decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.success.withValues(alpha: 0.2))),
+            BentoCard(
+              color: AppColors.successLight,
               child: const Column(children: [
-                Icon(Icons.celebration_rounded, size: 28, color: AppColors.success),
+                SizedBox(height: 4),
+                iconoir.CheckCircle(width: 28, height: 28, color: AppColors.success),
                 SizedBox(height: 6),
-                Text('All medicines taken!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.success)),
+                Text('All medicines taken!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.success)),
+                SizedBox(height: 4),
               ]),
             ),
           ],
@@ -1408,26 +1415,30 @@ class _CaregiverMedTile extends ConsumerWidget {
     final slot = medicine.nextPendingSlot;
     final subtitle = slot != null ? '${medicine.dosage} · Due at ${slot.displayTime}' : '${medicine.dosage} · ${medicine.frequency}';
 
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-        child: Row(children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 22)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-          ])),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () async { await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id); },
-            child: Container(constraints: const BoxConstraints(minWidth: 48, minHeight: 48), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)), child: const Text('Give', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter'))),
+    return BentoCard(
+      padding: const EdgeInsets.all(14),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+          child: const iconoir.PharmacyCrossCircle(width: 22, height: 22, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+        ])),
+        const SizedBox(width: 10),
+        GestureDetector(
+          onTap: () async { await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id); },
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+            child: const Text('Give', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
           ),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 }
@@ -1438,20 +1449,29 @@ class _CaregiverQuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    const Text('Quick Actions', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+    const BentoSectionHeader(title: 'Quick Actions'),
     const SizedBox(height: 12),
     Row(children: [
-      Expanded(child: _ActionBtn(icon: Icons.medication_rounded, label: 'Add Medicine', color: AppColors.primary, onTap: () => context.go('/care'))),
+      Expanded(child: _ActionBtn(
+        icon: const iconoir.PharmacyCrossCircle(width: 22, height: 22, color: AppColors.primary),
+        label: 'Add Medicine', color: AppColors.primary, onTap: () => context.go('/care'),
+      )),
       const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(icon: Icons.calendar_month_rounded, label: 'Appointments', color: const Color(0xFFF59E0B), onTap: () => context.go('/appointments'))),
+      Expanded(child: _ActionBtn(
+        icon: const iconoir.Calendar(width: 22, height: 22, color: Color(0xFFF59E0B)),
+        label: 'Appointments', color: const Color(0xFFF59E0B), onTap: () => context.go('/appointments'),
+      )),
       const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(icon: Icons.person_add_rounded, label: 'Add Member', color: AppColors.success, onTap: () => context.go('/care'))),
+      Expanded(child: _ActionBtn(
+        icon: const iconoir.UserPlus(width: 22, height: 22, color: AppColors.success),
+        label: 'Add Member', color: AppColors.success, onTap: () => context.go('/care'),
+      )),
     ]),
   ]);
 }
 
 class _ActionBtn extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -1463,11 +1483,15 @@ class _ActionBtn extends StatelessWidget {
     child: Container(
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.2))),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
       child: Column(children: [
-        Icon(icon, color: color, size: 22),
+        icon,
         const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter')),
+        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
       ]),
     ),
   );
