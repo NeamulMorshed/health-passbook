@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
+import '../../core/widgets/bento_card.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
@@ -108,7 +110,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
     const steps = ['Who you care for', 'Their Doctor', 'All Set'];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Caregiver Setup'),
         automaticallyImplyLeading: false,
@@ -144,8 +146,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                 'Step ${_page + 1} of 3 — ${steps[_page]}',
                 style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter'),
+                    color: AppColors.mutedForeground),
               ),
             ]),
           ),
@@ -190,8 +191,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                   child: Text(
                     _page < 2 ? 'Skip this step' : 'Skip',
                     style: const TextStyle(
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'),
+                        color: AppColors.mutedForeground),
                   ),
                 ),
               ],
@@ -265,7 +265,6 @@ class _Step1 extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: selected ? Colors.white : AppColors.foreground,
-                    fontFamily: 'Inter',
                   ),
                 ),
               ),
@@ -300,7 +299,6 @@ class _Step1 extends StatelessWidget {
                         ? DateFormat('d MMM yyyy').format(dob!)
                         : 'Tap to select',
                     style: TextStyle(
-                      fontFamily: 'Inter',
                       fontSize: 14,
                       color: dob != null
                           ? AppColors.foreground
@@ -338,13 +336,8 @@ class _Step2 extends StatelessWidget {
           const Color(0xFFF59E0B),
         ),
         const SizedBox(height: 28),
-        Container(
+        BentoCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Icon(Icons.local_hospital_rounded,
                 color: Color(0xFFF59E0B), size: 28),
@@ -354,7 +347,6 @@ class _Step2 extends StatelessWidget {
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter',
                   color: AppColors.foreground),
             ),
             const SizedBox(height: 6),
@@ -363,7 +355,6 @@ class _Step2 extends StatelessWidget {
               style: TextStyle(
                   fontSize: 13,
                   color: AppColors.mutedForeground,
-                  fontFamily: 'Inter',
                   height: 1.5),
             ),
           ]),
@@ -415,13 +406,11 @@ class _Step2 extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
                     color: AppColors.foreground)),
             Text(subtitle,
                 style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter')),
+                    color: AppColors.mutedForeground)),
           ]),
         ),
       ]);
@@ -467,8 +456,9 @@ class _Step3State extends State<_Step3> {
               color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.favorite_rounded,
-                size: 44, color: Color(0xFFF59E0B)),
+            child: const Center(
+              child: Heart(width: 44, height: 44, color: Color(0xFFF59E0B)),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -478,7 +468,6 @@ class _Step3State extends State<_Step3> {
             style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Inter',
                 color: AppColors.foreground),
           ),
         ),
@@ -490,12 +479,11 @@ class _Step3State extends State<_Step3> {
             style: TextStyle(
                 fontSize: 14,
                 color: AppColors.mutedForeground,
-                fontFamily: 'Inter',
                 height: 1.5),
           ),
         ),
         const SizedBox(height: 32),
-        // Notifications block
+        // Notifications block — kept as Container (custom color border)
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -510,12 +498,10 @@ class _Step3State extends State<_Step3> {
             ),
           ),
           child: Row(children: [
-            Icon(
-              _notifGranted
-                  ? Icons.notifications_active_rounded
-                  : Icons.notifications_outlined,
+            Bell(
+              width: 24,
+              height: 24,
               color: _notifGranted ? AppColors.success : const Color(0xFFF59E0B),
-              size: 24,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -527,7 +513,6 @@ class _Step3State extends State<_Step3> {
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter',
                       color: _notifGranted
                           ? AppColors.success
                           : const Color(0xFFF59E0B)),
@@ -539,8 +524,7 @@ class _Step3State extends State<_Step3> {
                       : 'Get alerted when it\'s time for their medicine.',
                   style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
               ]),
             ),
@@ -559,7 +543,6 @@ class _Step3State extends State<_Step3> {
                 child: const Text('Allow',
                     style: TextStyle(
                         fontSize: 13,
-                        fontFamily: 'Inter',
                         color: Color(0xFFF59E0B),
                         fontWeight: FontWeight.w600)),
               ),
@@ -567,7 +550,7 @@ class _Step3State extends State<_Step3> {
           ]),
         ),
         const SizedBox(height: 20),
-        // Feature summary cards
+        // Feature summary tiles — kept as Container (custom color border)
         _summaryTile(Icons.medication_rounded, AppColors.primary,
             'Medicine Tracker', 'Log and schedule their daily medications'),
         const SizedBox(height: 10),
@@ -598,13 +581,11 @@ class _Step3State extends State<_Step3> {
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter',
                       color: color)),
               Text(subtitle,
                   style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+                      color: AppColors.mutedForeground)),
             ]),
           ),
         ]),
@@ -618,8 +599,7 @@ Widget _label(String t) => Padding(
           style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.foreground,
-              fontFamily: 'Inter')),
+              color: AppColors.foreground)),
     );
 
 Widget _infoBox(String text, Color color) => Container(
@@ -632,7 +612,6 @@ Widget _infoBox(String text, Color color) => Container(
         const SizedBox(width: 10),
         Expanded(
             child: Text(text,
-                style: TextStyle(
-                    fontSize: 13, color: color, fontFamily: 'Inter'))),
+                style: TextStyle(fontSize: 13, color: color))),
       ]),
     );

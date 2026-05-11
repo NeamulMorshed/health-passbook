@@ -2,8 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../models/appointment.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../models/medicine.dart';
@@ -20,7 +22,7 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
     return DefaultTabController(
       length: _tabCount(connection.permissions),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.pageBackground,
         body: NestedScrollView(
           headerSliverBuilder: (_, __) => [
             SliverAppBar(
@@ -36,29 +38,16 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
                         style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter',
                             color: Colors.white)),
                     Text(
                       connection.relationship.relationshipLabel,
                       style: const TextStyle(
                           fontSize: 11,
-                          color: Colors.white70,
-                          fontFamily: 'Inter'),
+                          color: Colors.white70),
                     ),
                   ],
                 ),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primary,
-                        AppColors.primary.withValues(alpha: 0.7),
-                      ],
-                    ),
-                  ),
-                ),
+                background: Container(color: AppColors.primary),
               ),
               bottom: TabBar(
                 isScrollable: true,
@@ -67,7 +56,6 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
                 unselectedLabelColor: Colors.white60,
                 indicatorColor: Colors.white,
                 labelStyle: const TextStyle(
-                    fontFamily: 'Inter',
                     fontWeight: FontWeight.w600,
                     fontSize: 13),
                 tabs: _tabs(connection.permissions),
@@ -83,7 +71,7 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
   }
 
   int _tabCount(CaregiverPermissions p) {
-    int count = 1; // Overview always shown
+    int count = 1;
     if (p.vitals) count++;
     if (p.medicines) count++;
     if (p.prescriptions) count++;
@@ -147,7 +135,7 @@ class _OverviewTab extends ConsumerWidget {
               subtitle: '');
         }
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           children: [
             _InfoCard(children: [
               _InfoRow('Blood Type', profile.bloodType ?? '—'),
@@ -173,8 +161,7 @@ class _OverviewTab extends ConsumerWidget {
                 children: profile.conditions
                     .map((c) => Chip(
                           label: Text(c,
-                              style: const TextStyle(
-                                  fontSize: 12, fontFamily: 'Inter')),
+                              style: const TextStyle(fontSize: 12)),
                           backgroundColor:
                               AppColors.primary.withValues(alpha: 0.08),
                           side: BorderSide.none,
@@ -191,7 +178,6 @@ class _OverviewTab extends ConsumerWidget {
                 Text(profile.allergies!,
                     style: const TextStyle(
                         fontSize: 14,
-                        fontFamily: 'Inter',
                         color: AppColors.destructive)),
               ]),
             ],
@@ -226,7 +212,7 @@ class _VitalsTab extends ConsumerWidget {
               subtitle: '');
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           itemCount: readings.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (_, i) => _VitalCard(reading: readings[i]),
@@ -245,14 +231,8 @@ class _VitalCard extends StatelessWidget {
     final label = VitalType.labelFor(reading.type);
     final unit = VitalType.unitFor(reading.type);
     final normal = VitalType.isNormal(reading.type, reading.value);
-    return Container(
+    return BentoCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: normal ? AppColors.border : AppColors.warning),
-      ),
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(8),
@@ -273,15 +253,12 @@ class _VitalCard extends StatelessWidget {
               Text(label,
                   style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+                      fontWeight: FontWeight.w600)),
               Text(
-                  DateFormat('MMM d, y · h:mm a')
-                      .format(reading.recordedAt),
+                  DateFormat('MMM d, y · h:mm a').format(reading.recordedAt),
                   style: const TextStyle(
                       fontSize: 11,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+                      color: AppColors.mutedForeground)),
             ],
           ),
         ),
@@ -289,14 +266,12 @@ class _VitalCard extends StatelessWidget {
           Text('${reading.value} $unit',
               style: const TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w700)),
           if (!normal)
             const Text('⚠️ Abnormal',
                 style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.warning,
-                    fontFamily: 'Inter')),
+                    color: AppColors.warning)),
         ]),
       ]),
     );
@@ -328,7 +303,7 @@ class _MedicinesTab extends ConsumerWidget {
               subtitle: '');
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           itemCount: active.length,
           separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (_, i) => _MedCard(medicine: active[i]),
@@ -355,13 +330,8 @@ class _MedCard extends StatelessWidget {
         ? 1
         : medicine.reminderTimes.length;
 
-    return Container(
+    return BentoCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -383,19 +353,16 @@ class _MedCard extends StatelessWidget {
                   Text(medicine.name,
                       style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter')),
+                          fontWeight: FontWeight.w600)),
                   Text('${medicine.dosage}  •  ${medicine.frequency}',
                       style: const TextStyle(
                           fontSize: 12,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
+                          color: AppColors.mutedForeground)),
                 ],
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: takenCount >= totalSlots
                     ? AppColors.success.withValues(alpha: 0.1)
@@ -407,7 +374,6 @@ class _MedCard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
                     color: takenCount >= totalSlots
                         ? AppColors.success
                         : AppColors.warning),
@@ -420,7 +386,6 @@ class _MedCard extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
                     fontStyle: FontStyle.italic)),
           ],
         ],
@@ -453,18 +418,13 @@ class _PrescriptionsTab extends ConsumerWidget {
               subtitle: '');
         }
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           itemCount: list.length,
           separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (_, i) {
             final rx = list[i];
-            return Container(
+            return BentoCard(
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -479,27 +439,23 @@ class _PrescriptionsTab extends ConsumerWidget {
                           Text('Dr. ${rx.doctorName}',
                               style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter')),
+                                  fontWeight: FontWeight.w600)),
                           Text(
                               DateFormat('MMM d, y').format(rx.issuedAt),
                               style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.mutedForeground,
-                                  fontFamily: 'Inter')),
+                                  color: AppColors.mutedForeground)),
                         ],
                       ),
                     ),
                   ]),
-                  if (rx.diagnosis != null &&
-                      rx.diagnosis!.isNotEmpty) ...[
+                  if (rx.diagnosis != null && rx.diagnosis!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(rx.diagnosis!,
                         style: const TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter')),
+                            color: AppColors.mutedForeground)),
                   ],
                   const SizedBox(height: 10),
                   ...rx.medicines.map((m) => Padding(
@@ -511,14 +467,12 @@ class _PrescriptionsTab extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               '${m.name}  ${m.dosage}  •  ${m.frequency}',
-                              style: const TextStyle(
-                                  fontSize: 13, fontFamily: 'Inter'),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         ]),
                       )),
-                  if (rx.documentUrl != null &&
-                      rx.documentUrl!.isNotEmpty) ...[
+                  if (rx.documentUrl != null && rx.documentUrl!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
@@ -527,8 +481,8 @@ class _PrescriptionsTab extends ConsumerWidget {
                         height: 120,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                            height: 120, color: AppColors.muted),
+                        placeholder: (_, __) =>
+                            Container(height: 120, color: AppColors.muted),
                         errorWidget: (_, __, ___) => const SizedBox(),
                       ),
                     ),
@@ -561,12 +515,10 @@ class _AppointmentsTab extends ConsumerWidget {
           title: 'Could not load appointments',
           subtitle: ''),
       data: (list) {
-        final upcoming = list
-            .where((a) => a.isConfirmed || a.isPending)
-            .toList();
-        final past = list
-            .where((a) => a.isCompleted || a.isCancelled)
-            .toList();
+        final upcoming =
+            list.where((a) => a.isConfirmed || a.isPending).toList();
+        final past =
+            list.where((a) => a.isCompleted || a.isCancelled).toList();
 
         if (list.isEmpty) {
           return const EmptyState(
@@ -575,7 +527,7 @@ class _AppointmentsTab extends ConsumerWidget {
               subtitle: '');
         }
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           children: [
             if (upcoming.isNotEmpty) ...[
               _SubTitle('Upcoming'),
@@ -608,59 +560,51 @@ class _ApptCard extends StatelessWidget {
             : appt.isCancelled
                 ? AppColors.destructive
                 : AppColors.mutedForeground;
-    final statusLabel = appt.status.value[0].toUpperCase() +
-        appt.status.value.substring(1);
+    final statusLabel =
+        appt.status.value[0].toUpperCase() + appt.status.value.substring(1);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: BentoCard(
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          const Calendar(width: 18, height: 18, color: AppColors.doctorPrimary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Dr. ${appt.doctorName}',
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                Text(
+                    appt.scheduledAt != null
+                        ? DateFormat('MMM d, y · h:mm a')
+                            .format(appt.scheduledAt!)
+                        : 'Date TBD',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mutedForeground)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              statusLabel,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor),
+            ),
+          ),
+        ]),
       ),
-      child: Row(children: [
-        const Icon(Icons.calendar_today_rounded,
-            size: 18, color: AppColors.doctorPrimary),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Dr. ${appt.doctorName}',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
-              Text(
-                  appt.scheduledAt != null
-                      ? DateFormat('MMM d, y · h:mm a')
-                          .format(appt.scheduledAt!)
-                      : 'Date TBD',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
-            ],
-          ),
-        ),
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            statusLabel,
-            style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
-                fontFamily: 'Inter'),
-          ),
-        ),
-      ]),
     );
   }
 }
@@ -686,16 +630,14 @@ class _LogsTab extends ConsumerWidget {
         showActivity ? ref.watch(activityLogsProvider(patientId)) : null;
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
       children: [
         if (showMeals && mealsAsync != null) ...[
           _SubTitle('Today\'s Meals'),
           const SizedBox(height: 8),
           mealsAsync.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (_, __) =>
-                const Text('Could not load meals'),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const Text('Could not load meals'),
             data: (meals) {
               if (meals.isEmpty) {
                 return const Padding(
@@ -703,40 +645,32 @@ class _LogsTab extends ConsumerWidget {
                   child: Text('No meals logged today',
                       style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
+                          color: AppColors.mutedForeground)),
                 );
               }
               return Column(
                 children: meals
-                    .map((m) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.restaurant_rounded,
-                                size: 16,
-                                color: AppColors.warning),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                '${m.mealType}: ${m.description.isNotEmpty ? m.description : "Logged"}',
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontFamily: 'Inter'),
+                    .map((m) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: BentoCard(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(children: [
+                              const Icon(Icons.restaurant_rounded,
+                                  size: 16, color: AppColors.warning),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${m.mealType}: ${m.description.isNotEmpty ? m.description : "Logged"}',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               ),
-                            ),
-                            if (m.calories != null)
-                              Text('${m.calories} kcal',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.mutedForeground,
-                                      fontFamily: 'Inter')),
-                          ]),
+                              if (m.calories != null)
+                                Text('${m.calories} kcal',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.mutedForeground)),
+                            ]),
+                          ),
                         ))
                     .toList(),
               );
@@ -748,48 +682,39 @@ class _LogsTab extends ConsumerWidget {
           _SubTitle('Recent Activity'),
           const SizedBox(height: 8),
           activityAsync.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
-            error: (_, __) =>
-                const Text('Could not load activity'),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const Text('Could not load activity'),
             data: (logs) {
               final recent = logs.take(5).toList();
               if (recent.isEmpty) {
                 return const Text('No activity logged recently',
                     style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'));
+                        color: AppColors.mutedForeground));
               }
               return Column(
                 children: recent
-                    .map((l) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.directions_run_rounded,
-                                size: 16, color: AppColors.success),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                l.type,
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontFamily: 'Inter'),
+                    .map((l) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: BentoCard(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(children: [
+                              const Icon(Icons.directions_run_rounded,
+                                  size: 16, color: AppColors.success),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l.type,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
                               ),
-                            ),
-                            if (l.steps != null)
-                              Text('${l.steps} steps',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.mutedForeground,
-                                      fontFamily: 'Inter')),
-                          ]),
+                              if (l.steps != null)
+                                Text('${l.steps} steps',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.mutedForeground)),
+                            ]),
+                          ),
                         ))
                     .toList(),
               );
@@ -809,13 +734,8 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BentoCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
       child: Column(children: children),
     );
   }
@@ -835,14 +755,12 @@ class _InfoRow extends StatelessWidget {
           child: Text(label,
               style: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.mutedForeground,
-                  fontFamily: 'Inter')),
+                  color: AppColors.mutedForeground)),
         ),
         Text(value,
             style: const TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Inter')),
+                fontWeight: FontWeight.w600)),
       ]),
     );
   }
@@ -857,7 +775,6 @@ class _SubTitle extends StatelessWidget {
     return Text(text,
         style: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Inter'));
+            fontWeight: FontWeight.w700));
   }
 }

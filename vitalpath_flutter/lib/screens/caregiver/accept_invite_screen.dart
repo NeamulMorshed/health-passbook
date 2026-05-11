@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -27,7 +28,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
     final isAlreadyActioned = connection.status != 'pending';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('Care Circle Invite')),
       body: Padding(
         padding: const EdgeInsets.all(28),
@@ -49,8 +50,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                        fontFamily: 'Inter'),
+                        color: AppColors.primary),
                   ),
                 ),
               ),
@@ -62,14 +62,12 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     Text(connection.patientName,
                         style: const TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter')),
+                            fontWeight: FontWeight.w700)),
                     Text(
                         'Invites you as ${connection.relationship.relationshipLabel}',
                         style: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter')),
+                            color: AppColors.mutedForeground)),
                   ],
                 ),
               ),
@@ -77,19 +75,14 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
             if (connection.personalMessage != null) ...[
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.muted,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              BentoCard(
+                color: AppColors.muted,
                 child: Text(
                   '"${connection.personalMessage}"',
                   style: const TextStyle(
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
               ),
             ],
@@ -98,24 +91,18 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             const Text('If you accept, you will be able to see:',
                 style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter')),
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             _permissionList(connection.permissions),
 
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.muted,
-                borderRadius: BorderRadius.circular(10),
-              ),
+            BentoCard(
+              color: AppColors.muted,
               child: const Text(
                 'You will not be able to edit any health data.',
                 style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter'),
+                    color: AppColors.mutedForeground),
               ),
             ),
 
@@ -123,21 +110,13 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
             // C-6: show status message if already actioned
             if (isAlreadyActioned) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.muted,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
+              BentoCard(
                 child: Text(
                   'This invite has already been ${connection.status}.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 14,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
               ),
             ] else if (_processing)
@@ -173,7 +152,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     }
                   },
                   child: const Text('Accept Invite',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
+                      style: TextStyle(fontSize: 15)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -201,7 +180,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                       foregroundColor: AppColors.destructive,
                       side: const BorderSide(color: AppColors.destructive)),
                   child: const Text('Decline',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
+                      style: TextStyle(fontSize: 15)),
                 ),
               ),
             ],
@@ -230,9 +209,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
               child: Row(children: [
                 Icon(i.$2, size: 18, color: AppColors.primary),
                 const SizedBox(width: 12),
-                Text(i.$3,
-                    style: const TextStyle(
-                        fontSize: 14, fontFamily: 'Inter')),
+                Text(i.$3, style: const TextStyle(fontSize: 14)),
               ]),
             ),
           )
