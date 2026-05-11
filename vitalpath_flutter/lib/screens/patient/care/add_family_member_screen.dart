@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/family_member.dart';
@@ -65,24 +66,28 @@ class _AddFamilyMemberScreenState
   Future<void> _pickPhoto() async {
     final choice = await showModalBottomSheet<ImageSource>(
       context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded),
-              title: const Text('Take a photo', style: TextStyle(fontFamily: 'Inter')),
+              leading: const Camera(width: 20, height: 20),
+              title: const Text('Take a photo'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded),
-              title: const Text('Choose from gallery', style: TextStyle(fontFamily: 'Inter')),
+              title: const Text('Choose from gallery'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             if (_photoFile != null || (_photoUrl != null && !_photoRemoved))
               ListTile(
-                leading: const Icon(Icons.delete_outline_rounded, color: AppColors.destructive),
-                title: const Text('Remove photo', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive)),
+                leading: const Trash(
+                    width: 18, height: 18, color: AppColors.destructive),
+                title: const Text('Remove photo',
+                    style: TextStyle(color: AppColors.destructive)),
                 onTap: () => Navigator.pop(ctx, null),
               ),
           ],
@@ -93,7 +98,6 @@ class _AddFamilyMemberScreenState
     if (!mounted) return;
 
     if (choice == null) {
-      // User tapped Remove
       if (_photoFile != null || (_photoUrl != null && !_photoRemoved)) {
         setState(() {
           _photoFile = null;
@@ -172,7 +176,7 @@ class _AddFamilyMemberScreenState
     final hasPhoto = _photoFile != null || (_photoUrl != null && !_photoRemoved);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit Member' : 'Add Family Member'),
       ),
@@ -199,8 +203,10 @@ class _AddFamilyMemberScreenState
                                 ? NetworkImage(_photoUrl!)
                                 : null) as ImageProvider?,
                         child: !hasPhoto
-                            ? const Icon(Icons.person_rounded,
-                                size: 40, color: AppColors.primary)
+                            ? const User(
+                                width: 40,
+                                height: 40,
+                                color: AppColors.primary)
                             : null,
                       ),
                       Positioned(
@@ -212,8 +218,10 @@ class _AddFamilyMemberScreenState
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.camera_alt_rounded,
-                              size: 14, color: Colors.white),
+                          child: const Camera(
+                              width: 14,
+                              height: 14,
+                              color: Colors.white),
                         ),
                       ),
                     ],
@@ -226,8 +234,7 @@ class _AddFamilyMemberScreenState
                   hasPhoto ? 'Tap to change or remove' : 'Add photo (optional)',
                   style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
               ),
               const SizedBox(height: 28),
@@ -263,7 +270,6 @@ class _AddFamilyMemberScreenState
                               ? DateFormat('d MMM yyyy').format(_dob!)
                               : 'Tap to select',
                           style: TextStyle(
-                            fontFamily: 'Inter',
                             fontSize: 14,
                             color: _dob != null
                                 ? AppColors.foreground
@@ -290,13 +296,11 @@ class _AddFamilyMemberScreenState
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
+                          color: AppColors.mutedForeground)),
                   const Text(' *',
                       style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.destructive,
-                          fontFamily: 'Inter')),
+                          color: AppColors.destructive)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -314,9 +318,7 @@ class _AddFamilyMemberScreenState
                         color: sel ? AppColors.primary : AppColors.muted,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: sel
-                              ? AppColors.primary
-                              : AppColors.border,
+                          color: sel ? AppColors.primary : AppColors.border,
                         ),
                       ),
                       child: Text(r,
@@ -325,8 +327,7 @@ class _AddFamilyMemberScreenState
                               fontWeight: FontWeight.w500,
                               color: sel
                                   ? Colors.white
-                                  : AppColors.foreground,
-                              fontFamily: 'Inter')),
+                                  : AppColors.foreground)),
                     ),
                   );
                 }).toList(),
@@ -347,7 +348,6 @@ class _AddFamilyMemberScreenState
                         )
                       : Text(_isEdit ? 'Save Changes' : 'Add Member',
                           style: const TextStyle(
-                              fontFamily: 'Inter',
                               fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -360,9 +360,7 @@ class _AddFamilyMemberScreenState
                   child: TextButton(
                     onPressed: () => _confirmDelete(context),
                     child: const Text('Remove this member',
-                        style: TextStyle(
-                            color: AppColors.destructive,
-                            fontFamily: 'Inter')),
+                        style: TextStyle(color: AppColors.destructive)),
                   ),
                 ),
               ],
@@ -377,16 +375,14 @@ class _AddFamilyMemberScreenState
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
                 const SizedBox(height: 2),
                 const Text(
                   'Link their account so you can both see each other\'s care circle.',
                   style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -399,9 +395,7 @@ class _AddFamilyMemberScreenState
                         padding: EdgeInsets.zero),
                     child: const Text(
                       'Invite as a linked account →',
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500),
+                      style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -417,11 +411,9 @@ class _AddFamilyMemberScreenState
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete Member Permanently',
-            style: TextStyle(fontFamily: 'Inter')),
+        title: const Text('Delete Member Permanently'),
         content: Text(
-            'This will permanently delete ${widget.existing!.name} and all their health data, including medicines and history. This action cannot be undone.',
-            style: const TextStyle(fontFamily: 'Inter')),
+            'This will permanently delete ${widget.existing!.name} and all their health data, including medicines and history. This action cannot be undone.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogCtx),

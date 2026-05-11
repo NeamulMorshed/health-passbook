@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/auth_provider.dart';
 
@@ -82,7 +84,7 @@ class _InviteFamilyMemberScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('Invite Family Member')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -131,63 +133,52 @@ class _FormView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            width: double.infinity,
+          // Header card (was gradient Container)
+          BentoCard(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.person_add_rounded,
-                    color: Colors.white, size: 32),
+                const UserPlus(
+                    width: 32, height: 32, color: AppColors.primary),
                 const SizedBox(height: 10),
                 const Text(
                   'Invite a linked account',
                   style: TextStyle(
-                      color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Inter'),
+                      fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                const Text(
                   'A linked account means they log in with their own Omra account and you both appear in each other\'s care circle.',
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 13,
-                      fontFamily: 'Inter'),
+                      color: AppColors.mutedForeground),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
 
-          // How it works note
+          // How it works note — custom primary border, keep as Container
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+              border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.15)),
             ),
             child: const Row(children: [
-              Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primary),
+              Icon(Icons.info_outline_rounded,
+                  size: 16, color: AppColors.primary),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'When they sign up with this email, the accounts link automatically. No email is sent — share the app link manually.',
                   style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.primary,
-                      fontFamily: 'Inter'),
+                      color: AppColors.primary),
                 ),
               ),
             ]),
@@ -222,14 +213,12 @@ class _FormView extends StatelessWidget {
               style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.mutedForeground,
-                  fontFamily: 'Inter'),
+                  color: AppColors.mutedForeground),
             ),
             const Text(' *',
                 style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.destructive,
-                    fontFamily: 'Inter')),
+                    color: AppColors.destructive)),
           ]),
           const SizedBox(height: 10),
           Wrap(
@@ -257,8 +246,7 @@ class _FormView extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         color: selected
                             ? Colors.white
-                            : AppColors.foreground,
-                        fontFamily: 'Inter'),
+                            : AppColors.foreground),
                   ),
                 ),
               );
@@ -279,11 +267,10 @@ class _FormView extends StatelessWidget {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Icon(Icons.link_rounded, size: 18),
+                  : const Link(width: 18, height: 18),
               label: Text(
                 isSending ? 'Saving…' : 'Save Invite',
-                style: const TextStyle(
-                    fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -311,8 +298,8 @@ class _SuccessView extends StatelessWidget {
             color: AppColors.success.withValues(alpha: 0.08),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.check_circle_rounded,
-              size: 56, color: AppColors.success),
+          child: const CheckCircle(
+              width: 48, height: 48, color: AppColors.success),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -320,7 +307,6 @@ class _SuccessView extends StatelessWidget {
           style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Inter',
               color: AppColors.foreground),
         ),
         const SizedBox(height: 8),
@@ -329,18 +315,11 @@ class _SuccessView extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
               fontSize: 14,
-              color: AppColors.mutedForeground,
-              fontFamily: 'Inter'),
+              color: AppColors.mutedForeground),
         ),
         const SizedBox(height: 32),
-        Container(
-          width: double.infinity,
+        BentoCard(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.muted,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -348,25 +327,22 @@ class _SuccessView extends StatelessWidget {
                 'Share the app with them',
                 style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter'),
+                    fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               const Text(
                 'Copy a message to send them directly.',
                 style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter'),
+                    color: AppColors.mutedForeground),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onCopyMessage,
-                  icon: const Icon(Icons.copy_rounded, size: 16),
-                  label: const Text('Copy invite message',
-                      style: TextStyle(fontFamily: 'Inter')),
+                  icon: const Copy(width: 18, height: 18),
+                  label: const Text('Copy invite message'),
                 ),
               ),
             ],
@@ -378,8 +354,7 @@ class _SuccessView extends StatelessWidget {
           child: TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Back to Care Circle',
-                style:
-                    TextStyle(fontFamily: 'Inter', color: AppColors.primary)),
+                style: TextStyle(color: AppColors.primary)),
           ),
         ),
       ],

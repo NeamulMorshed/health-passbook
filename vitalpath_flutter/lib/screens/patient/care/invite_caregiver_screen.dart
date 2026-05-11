@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -107,12 +109,12 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
         if (_step > 0 && !_sent) setState(() => _step--);
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.pageBackground,
         appBar: AppBar(
           title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
           leading: _step > 0 && !_sent
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  icon: const NavArrowLeft(width: 18, height: 18),
                   onPressed: () => setState(() => _step--),
                 )
               : null,
@@ -189,14 +191,12 @@ class _StepIndicator extends StatelessWidget {
                   ),
                   child: Center(
                     child: done
-                        ? const Icon(Icons.check_rounded,
-                            size: 14, color: Colors.white)
+                        ? const Check(width: 14, height: 14, color: Colors.white)
                         : Text(
                             '${i + 1}',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter',
                               color: active
                                   ? AppColors.primary
                                   : AppColors.mutedForeground,
@@ -249,14 +249,12 @@ class _Step1 extends StatelessWidget {
         const Text('Who are you inviting?',
             style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter')),
+                fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         const Text('Choose the relationship so we can set smart defaults.',
             style: TextStyle(
                 fontSize: 14,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter')),
+                color: AppColors.mutedForeground)),
         const SizedBox(height: 24),
         ..._options.map((o) {
           final (value, icon, label) = o;
@@ -291,7 +289,6 @@ class _Step1 extends StatelessWidget {
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.w400,
-                          fontFamily: 'Inter',
                           color: isSelected
                               ? AppColors.primary
                               : AppColors.foreground)),
@@ -309,7 +306,7 @@ class _Step1 extends StatelessWidget {
           child: FilledButton(
             onPressed: onNext,
             child: const Text('Next',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
+                style: TextStyle(fontSize: 15)),
           ),
         ),
       ],
@@ -337,14 +334,12 @@ class _Step2 extends StatelessWidget {
         const Text('What can they see?',
             style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter')),
+                fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         const Text('You can change this anytime.',
             style: TextStyle(
                 fontSize: 14,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter')),
+                color: AppColors.mutedForeground)),
         const SizedBox(height: 24),
 
         _PermRow(
@@ -391,20 +386,16 @@ class _Step2 extends StatelessWidget {
         ),
 
         const SizedBox(height: 20),
-        Container(
+        BentoCard(
+          color: AppColors.muted,
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.muted,
-            borderRadius: BorderRadius.circular(10),
-          ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('They will NOT be able to:',
                   style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+                      fontWeight: FontWeight.w600)),
               SizedBox(height: 6),
               _CantDoRow('Edit your health data'),
               _CantDoRow('Book appointments for you'),
@@ -419,7 +410,7 @@ class _Step2 extends StatelessWidget {
           child: FilledButton(
             onPressed: onNext,
             child: const Text('Next',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
+                style: TextStyle(fontSize: 15)),
           ),
         ),
       ],
@@ -442,22 +433,20 @@ class _PermRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SwitchListTile(
-        value: value,
-        onChanged: onChanged,
-        secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
-        title: Text(label,
-            style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
-        activeThumbColor: AppColors.primary,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-        dense: true,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: BentoCard(
+        padding: EdgeInsets.zero,
+        child: SwitchListTile(
+          value: value,
+          onChanged: onChanged,
+          secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
+          title: Text(label,
+              style: const TextStyle(fontSize: 14)),
+          activeThumbColor: AppColors.primary,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+          dense: true,
+        ),
       ),
     );
   }
@@ -478,8 +467,7 @@ class _CantDoRow extends StatelessWidget {
         Text(text,
             style: const TextStyle(
                 fontSize: 12,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter')),
+                color: AppColors.mutedForeground)),
       ]),
     );
   }
@@ -512,22 +500,19 @@ class _Step3 extends StatelessWidget {
           const Text('How do you want to invite them?',
               style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
               'Enter the email they use (or will use) to register on VitalPath.',
               style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.mutedForeground,
-                  fontFamily: 'Inter')),
+                  color: AppColors.mutedForeground)),
           const SizedBox(height: 24),
 
           const Text('Email address',
               style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: emailCtrl,
@@ -557,8 +542,7 @@ class _Step3 extends StatelessWidget {
           const Text('Personal message (optional)',
               style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: msgCtrl,
@@ -584,7 +568,7 @@ class _Step3 extends StatelessWidget {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
                   : const Text('Send Invite',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 15)),
+                      style: TextStyle(fontSize: 15)),
             ),
           ),
         ],
@@ -613,37 +597,34 @@ class _ConfirmationView extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle_rounded,
-                size: 48, color: AppColors.primary),
+            child: const Center(
+              child: CheckCircle(width: 48, height: 48, color: AppColors.primary),
+            ),
           ),
           const SizedBox(height: 24),
           const Text('Invite Sent!',
               style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter')),
+                  fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Text(
             'Once $email accepts, they\'ll appear in your Care Circle.',
             textAlign: TextAlign.center,
             style: const TextStyle(
                 fontSize: 14,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter'),
+                color: AppColors.mutedForeground),
           ),
           const SizedBox(height: 6),
           const Text(
             'Invite expires in 7 days.',
             style: TextStyle(
                 fontSize: 12,
-                color: AppColors.mutedForeground,
-                fontFamily: 'Inter'),
+                color: AppColors.mutedForeground),
           ),
           const SizedBox(height: 32),
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Back to Care Circle',
-                style: TextStyle(fontFamily: 'Inter')),
+            child: const Text('Back to Care Circle'),
           ),
         ],
       ),

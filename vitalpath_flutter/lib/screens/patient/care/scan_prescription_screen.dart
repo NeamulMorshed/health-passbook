@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/drug_interaction.dart';
@@ -337,10 +339,9 @@ class _ScanPrescriptionScreenState
       final proceed = await showDialog<bool>(
         context: context,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('Duplicate Medicines', style: TextStyle(fontFamily: 'Inter')),
+          title: const Text('Duplicate Medicines'),
           content: Text(
-              '${duplicateNames.join(', ')} ${duplicateNames.length == 1 ? 'already exists' : 'already exist'} in your medicines. Add anyway?',
-              style: const TextStyle(fontFamily: 'Inter')),
+              '${duplicateNames.join(', ')} ${duplicateNames.length == 1 ? 'already exists' : 'already exist'} in your medicines. Add anyway?'),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
             ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Add Anyway')),
@@ -432,8 +433,7 @@ class _ScanPrescriptionScreenState
               'Scan your prescription',
               style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Inter'),
+                  fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -441,15 +441,14 @@ class _ScanPrescriptionScreenState
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.mutedForeground,
-                  fontFamily: 'Inter'),
+                  color: AppColors.mutedForeground),
             ),
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _pickImage(ImageSource.camera),
-                icon: const Icon(Icons.camera_alt_rounded),
+                icon: const Camera(width: 20, height: 20),
                 label: const Text('Take a Photo'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
@@ -476,8 +475,7 @@ class _ScanPrescriptionScreenState
                 child: Text('or',
                     style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                        color: AppColors.mutedForeground)),
               ),
               Expanded(child: Divider()),
             ]),
@@ -487,7 +485,6 @@ class _ScanPrescriptionScreenState
               child: const Text('Add medicine manually instead',
                   style: TextStyle(
                       color: AppColors.mutedForeground,
-                      fontFamily: 'Inter',
                       fontSize: 13)),
             ),
           ],
@@ -518,16 +515,14 @@ class _ScanPrescriptionScreenState
                 'Reading prescription…',
                 style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter'),
+                    fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 8),
               Text(
                 'This usually takes a few seconds.',
                 style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter'),
+                    color: AppColors.mutedForeground),
               ),
             ],
           ),
@@ -568,7 +563,6 @@ class _ScanPrescriptionScreenState
                 style: TextStyle(
                   fontSize: 12,
                   color: hasOcrData ? AppColors.success : AppColors.warning,
-                  fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -615,8 +609,7 @@ class _ScanPrescriptionScreenState
                         child: const Text('Tap to view full',
                             style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.white,
-                                fontFamily: 'Inter')),
+                                color: Colors.white)),
                       ),
                     ),
                   ),
@@ -641,9 +634,8 @@ class _ScanPrescriptionScreenState
               OutlinedButton.icon(
                 onPressed: () =>
                     setState(() => _entries.add(_ScannedEntry())),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Add another medicine',
-                    style: TextStyle(fontFamily: 'Inter')),
+                icon: const Plus(width: 18, height: 18),
+                label: const Text('Add another medicine'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 44),
                 ),
@@ -673,7 +665,7 @@ class _ScanPrescriptionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Scan Prescription'),
         actions: [
@@ -695,8 +687,7 @@ class _ScanPrescriptionScreenState
                         _interactions = [];
                       }),
               child: const Text('Retake',
-                  style: TextStyle(
-                      color: AppColors.primary, fontFamily: 'Inter')),
+                  style: TextStyle(color: AppColors.primary)),
             ),
         ],
       ),
@@ -716,11 +707,10 @@ class _ScanPrescriptionScreenState
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Icon(Icons.check_rounded, color: Colors.white),
+                  : const Check(width: 16, height: 16, color: Colors.white),
               label: Text(
                 _isSaving ? 'Saving…' : 'Save Medicines',
-                style: const TextStyle(
-                    color: Colors.white, fontFamily: 'Inter'),
+                style: const TextStyle(color: Colors.white),
               ),
             )
           : null,
@@ -756,16 +746,9 @@ class _EntryCardState extends State<_EntryCard> {
     final entry = widget.entry;
     final uncertain = entry.isUncertain;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: uncertain ? AppColors.warning.withValues(alpha: 0.5) : AppColors.border,
-        ),
-      ),
-      child: Padding(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: BentoCard(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,8 +768,7 @@ class _EntryCardState extends State<_EntryCard> {
               Text('Medicine ${widget.index + 1}',
                   style: const TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+                      fontWeight: FontWeight.w600)),
               if (uncertain) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -800,16 +782,14 @@ class _EntryCardState extends State<_EntryCard> {
                       style: TextStyle(
                           fontSize: 10,
                           color: AppColors.warning,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter')),
+                          fontWeight: FontWeight.w600)),
                 ),
               ],
               const Spacer(),
               if (widget.canRemove)
                 GestureDetector(
                   onTap: widget.onRemove,
-                  child: const Icon(Icons.close_rounded,
-                      size: 18, color: AppColors.mutedForeground),
+                  child: const Xmark(width: 18, height: 18, color: AppColors.mutedForeground),
                 ),
             ]),
             const SizedBox(height: 14),
@@ -857,8 +837,7 @@ class _EntryCardState extends State<_EntryCard> {
               ]
                   .map((f) => DropdownMenuItem(
                       value: f,
-                      child: Text(f,
-                          style: const TextStyle(fontFamily: 'Inter'))))
+                      child: Text(f)))
                   .toList(),
               onChanged: (v) {
                 if (v != null) {

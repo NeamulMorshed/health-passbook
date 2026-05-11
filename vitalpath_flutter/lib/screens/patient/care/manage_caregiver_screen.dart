@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/caregiver_provider.dart';
 
@@ -99,7 +100,7 @@ class _ManageCaregiverScreenState
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: Text('${name.split(' ').first}\'s Access'),
         actions: [
@@ -115,8 +116,7 @@ class _ManageCaregiverScreenState
             TextButton(
                 onPressed: _save,
                 child: const Text('Save',
-                    style: TextStyle(
-                        fontFamily: 'Inter', fontWeight: FontWeight.w600))),
+                    style: TextStyle(fontWeight: FontWeight.w600))),
         ],
       ),
       body: ListView(
@@ -300,8 +300,7 @@ class _ManageCaregiverScreenState
                     Expanded(
                       child: Text(
                         '${_notifSettings.quietHoursStart} – ${_notifSettings.quietHoursEnd}',
-                        style: const TextStyle(
-                            fontSize: 14, fontFamily: 'Inter'),
+                        style: const TextStyle(fontSize: 14),
                       ),
                     ),
                     TextButton(
@@ -481,8 +480,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Text(text,
       style: const TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'Inter'));
+          fontWeight: FontWeight.w700));
 }
 
 class _PermSwitch extends StatelessWidget {
@@ -500,22 +498,19 @@ class _PermSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SwitchListTile(
-        value: value,
-        onChanged: onChanged,
-        secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
-        title:
-            Text(label, style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
-        activeThumbColor: AppColors.primary,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-        dense: true,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: BentoCard(
+        padding: EdgeInsets.zero,
+        child: SwitchListTile(
+          value: value,
+          onChanged: onChanged,
+          secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
+          title: Text(label, style: const TextStyle(fontSize: 14)),
+          activeThumbColor: AppColors.primary,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+          dense: true,
+        ),
       ),
     );
   }
@@ -529,12 +524,8 @@ class _NotifGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
+    return BentoCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -545,7 +536,6 @@ class _NotifGroup extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
                     letterSpacing: 0.5)),
           ),
           ...children,
@@ -569,7 +559,7 @@ class _NotifSwitch extends StatelessWidget {
     return SwitchListTile(
       value: value,
       onChanged: onChanged,
-      title: Text(label, style: const TextStyle(fontSize: 14, fontFamily: 'Inter')),
+      title: Text(label, style: const TextStyle(fontSize: 14)),
       activeThumbColor: AppColors.primary,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14),
       dense: true,
@@ -599,8 +589,7 @@ class _ThresholdRow extends StatelessWidget {
           child: Text(label,
               style: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.mutedForeground,
-                  fontFamily: 'Inter')),
+                  color: AppColors.mutedForeground)),
         ),
         GestureDetector(
           onTap: onTap,
@@ -616,8 +605,7 @@ class _ThresholdRow extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                  fontFamily: 'Inter'),
+                  color: AppColors.primary),
             ),
           ),
         ),

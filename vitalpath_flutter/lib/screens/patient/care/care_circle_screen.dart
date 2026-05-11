@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/doctor_provider.dart';
@@ -89,7 +91,7 @@ class _CareCircleBody extends ConsumerWidget {
     final isLoading = doctorsAsync.isLoading || membersAsync.isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Care Circle'),
         actions: [
@@ -109,8 +111,7 @@ class _CareCircleBody extends ConsumerWidget {
                     style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                        fontFamily: 'Inter'),
+                        color: AppColors.primary),
                   ),
                 ),
               ),
@@ -123,19 +124,10 @@ class _CareCircleBody extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             // ── Intro banner ────────────────────────────────────────────────
-            Container(
+            BentoCard(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
               child: Row(children: [
-                const Icon(Icons.people_rounded,
-                    color: Colors.white, size: 32),
+                const Group(width: 32, height: 32, color: AppColors.primary),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -145,8 +137,7 @@ class _CareCircleBody extends ConsumerWidget {
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                fontFamily: 'Inter')),
+                                color: AppColors.foreground)),
                         Text(
                           isLoading
                               ? 'Everyone involved in your health journey.'
@@ -167,11 +158,9 @@ class _CareCircleBody extends ConsumerWidget {
                                       if (caregiverCount > 0)
                                         '$caregiverCount ${caregiverCount == 1 ? 'caregiver' : 'caregivers'}',
                                     ].join(' · '),
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 12,
-                              color:
-                                  Colors.white.withValues(alpha: 0.85),
-                              fontFamily: 'Inter'),
+                              color: AppColors.mutedForeground),
                         ),
                       ]),
                 ),
@@ -190,7 +179,7 @@ class _CareCircleBody extends ConsumerWidget {
                 onPressed: () => context.push('/my-doctors'),
                 icon: const Icon(Icons.search_rounded, size: 14),
                 label: const Text('Find more',
-                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                    style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
                     foregroundColor: AppColors.doctorPrimary,
                     padding: EdgeInsets.zero,
@@ -232,9 +221,9 @@ class _CareCircleBody extends ConsumerWidget {
               color: AppColors.primary,
               action: TextButton.icon(
                 onPressed: () => _openAddMember(context, ref),
-                icon: const Icon(Icons.add_rounded, size: 14),
+                icon: const Plus(width: 14, height: 14),
                 label: const Text('Add',
-                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                    style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: EdgeInsets.zero,
@@ -285,9 +274,9 @@ class _CareCircleBody extends ConsumerWidget {
                   MaterialPageRoute(
                       builder: (_) => const InviteCaregiverScreen()),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 14),
+                icon: const Plus(width: 14, height: 14),
                 label: const Text('Invite',
-                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
+                    style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF7C3AED),
                     padding: EdgeInsets.zero,
@@ -341,77 +330,61 @@ class _DoctorCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => _showDoctorDetail(context, ref),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: AppColors.doctorLight,
-                backgroundImage: doctor.photoUrl != null
-                    ? NetworkImage(doctor.photoUrl!)
-                    : null,
-                child: doctor.photoUrl == null
-                    ? Text(
-                        doctor.name.isNotEmpty
-                            ? doctor.name[0].toUpperCase()
-                            : 'D',
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.doctorPrimary,
-                            fontFamily: 'Inter'),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Text('Dr. ${doctor.name}',
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Inter')),
-                        if (doctor.isVerified) ...[
-                          const SizedBox(width: 4),
-                          const Icon(Icons.verified_rounded,
-                              size: 14, color: AppColors.doctorPrimary),
-                        ],
-                      ]),
-                      if (doctor.specialty != null)
-                        Text(doctor.specialty!,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter')),
-                      if (doctor.hospital != null)
-                        Text(doctor.hospital!,
-                            style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter')),
-                    ]),
-              ),
-              const Icon(Icons.chevron_right_rounded,
-                  size: 20, color: AppColors.mutedForeground),
-            ]),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: BentoCard(
+        onTap: () => _showDoctorDetail(context, ref),
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.doctorLight,
+            backgroundImage: doctor.photoUrl != null
+                ? NetworkImage(doctor.photoUrl!)
+                : null,
+            child: doctor.photoUrl == null
+                ? Text(
+                    doctor.name.isNotEmpty
+                        ? doctor.name[0].toUpperCase()
+                        : 'D',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.doctorPrimary),
+                  )
+                : null,
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Text('Dr. ${doctor.name}',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    if (doctor.isVerified) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.verified_rounded,
+                          size: 14, color: AppColors.doctorPrimary),
+                    ],
+                  ]),
+                  if (doctor.specialty != null)
+                    Text(doctor.specialty!,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedForeground)),
+                  if (doctor.hospital != null)
+                    Text(doctor.hospital!,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.mutedForeground)),
+                ]),
+          ),
+          const NavArrowRight(
+              width: 14, height: 14, color: AppColors.mutedForeground),
+        ]),
       ),
     );
   }
@@ -449,8 +422,7 @@ class _DoctorCard extends ConsumerWidget {
                           style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.doctorPrimary,
-                              fontFamily: 'Inter'),
+                              color: AppColors.doctorPrimary),
                         )
                       : null,
                 ),
@@ -463,8 +435,7 @@ class _DoctorCard extends ConsumerWidget {
                           Text('Dr. ${doctor.name}',
                               style: const TextStyle(
                                   fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Inter')),
+                                  fontWeight: FontWeight.w700)),
                           if (doctor.isVerified) ...[
                             const SizedBox(width: 4),
                             const Icon(Icons.verified_rounded,
@@ -475,14 +446,12 @@ class _DoctorCard extends ConsumerWidget {
                           Text(doctor.specialty!,
                               style: const TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.mutedForeground,
-                                  fontFamily: 'Inter')),
+                                  color: AppColors.mutedForeground)),
                         if (doctor.hospital != null)
                           Text(doctor.hospital!,
                               style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.mutedForeground,
-                                  fontFamily: 'Inter')),
+                                  color: AppColors.mutedForeground)),
                       ]),
                 ),
               ]),
@@ -497,8 +466,7 @@ class _DoctorCard extends ConsumerWidget {
                     context.push('/appointments');
                   },
                   icon: const Icon(Icons.calendar_today_rounded, size: 16),
-                  label: const Text('Book Appointment',
-                      style: TextStyle(fontFamily: 'Inter')),
+                  label: const Text('Book Appointment'),
                 ),
               ),
               const SizedBox(height: 10),
@@ -513,7 +481,6 @@ class _DoctorCard extends ConsumerWidget {
                       size: 16, color: AppColors.destructive),
                   label: const Text('Remove Connection',
                       style: TextStyle(
-                          fontFamily: 'Inter',
                           color: AppColors.destructive)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.destructive),
@@ -531,11 +498,9 @@ class _DoctorCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Doctor',
-            style: TextStyle(fontFamily: 'Inter')),
+        title: const Text('Remove Doctor'),
         content: Text(
           'Remove Dr. ${doctor.name} from your care circle? You will lose access to their prescriptions.',
-          style: const TextStyle(fontFamily: 'Inter'),
         ),
         actions: [
           TextButton(
@@ -575,16 +540,11 @@ class _FamilyMemberCard extends ConsumerWidget {
                   AddFamilyMemberScreen(uid: uid, existing: member)),
         );
 
-    return GestureDetector(
-      onTap: () => _showMemberDetail(context),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: BentoCard(
+        onTap: () => _showMemberDetail(context),
         padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
         child: Row(children: [
           CircleAvatar(
             radius: 24,
@@ -597,8 +557,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                     style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                        fontFamily: 'Inter'))
+                        color: AppColors.primary))
                 : null,
           ),
           const SizedBox(width: 12),
@@ -611,8 +570,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                       child: Text(member.name,
                           style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter')),
+                              fontWeight: FontWeight.w600)),
                     ),
                     const SizedBox(width: 6),
                     Container(
@@ -636,8 +594,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                             fontWeight: FontWeight.w600,
                             color: isLinked
                                 ? const Color(0xFFF59E0B)
-                                : AppColors.mutedForeground,
-                            fontFamily: 'Inter'),
+                                : AppColors.mutedForeground),
                       ),
                     ),
                   ]),
@@ -648,8 +605,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                     ].join(' · '),
                     style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'),
+                        color: AppColors.mutedForeground),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -664,8 +620,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter'),
+                          color: AppColors.mutedForeground),
                     ),
                   ),
                 ]),
@@ -740,8 +695,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                         style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                            fontFamily: 'Inter'))
+                            color: AppColors.primary))
                     : null,
               ),
               const SizedBox(width: 14),
@@ -752,8 +706,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                       Text(member.name,
                           style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter')),
+                              fontWeight: FontWeight.w700)),
                       Text(
                         [
                           member.relationship,
@@ -762,8 +715,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                         ].join(' · '),
                         style: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter'),
+                            color: AppColors.mutedForeground),
                       ),
                     ]),
               ),
@@ -785,8 +737,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                   );
                 },
                 icon: const Icon(Icons.edit_rounded, size: 16),
-                label: const Text('Edit member details',
-                    style: TextStyle(fontFamily: 'Inter')),
+                label: const Text('Edit member details'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
@@ -802,89 +753,77 @@ class _MemberDetailSheet extends ConsumerWidget {
             const Text('Medicines',
                 style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter')),
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
 
             medsAsync.when(
               loading: () =>
                   const Center(child: CircularProgressIndicator()),
-              error: (_, __) => Container(
+              error: (_, __) => BentoCard(
+                color: AppColors.muted,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.muted,
-                  borderRadius: BorderRadius.circular(10),
-                ),
                 child: const Text('Could not load medicines.',
                     style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                        color: AppColors.mutedForeground)),
               ),
               data: (meds) {
                 if (meds.isEmpty) {
-                  return Container(
+                  return BentoCard(
+                    color: AppColors.muted,
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.muted,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
                     child: const Text('No medicines recorded yet.',
                         style: TextStyle(
                             fontSize: 13,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter')),
+                            color: AppColors.mutedForeground)),
                   );
                 }
                 return Column(
                   children: meds
-                      .map((med) => Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
+                      .map((med) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: BentoCard(
                               color: AppColors.muted,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
+                              padding: const EdgeInsets.all(12),
+                              child: Row(children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(
+                                      Icons.medication_rounded,
+                                      size: 14,
+                                      color: AppColors.primary),
                                 ),
-                                child: const Icon(
-                                    Icons.medication_rounded,
-                                    size: 14,
-                                    color: AppColors.primary),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(med.name,
-                                          style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              fontFamily: 'Inter')),
-                                      Text(
-                                          '${med.dosage} · ${med.frequency}',
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              color:
-                                                  AppColors.mutedForeground,
-                                              fontFamily: 'Inter')),
-                                    ]),
-                              ),
-                              if (med.takenToday)
-                                StatusBadge.success('Taken')
-                              else if (med.hasDueSlot)
-                                StatusBadge.warning('Due')
-                              else
-                                StatusBadge.info('Upcoming'),
-                            ]),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(med.name,
+                                            style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600)),
+                                        Text(
+                                            '${med.dosage} · ${med.frequency}',
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color:
+                                                    AppColors.mutedForeground)),
+                                      ]),
+                                ),
+                                if (med.takenToday)
+                                  StatusBadge.success('Taken')
+                                else if (med.hasDueSlot)
+                                  StatusBadge.warning('Due')
+                                else
+                                  StatusBadge.info('Upcoming'),
+                              ]),
+                            ),
                           ))
                       .toList(),
                 );
@@ -910,8 +849,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     'To log doses or add medicines, open the Care tab and select ${member.name.split(' ').first} from the profile switcher.',
                     style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.primary,
-                        fontFamily: 'Inter'),
+                        color: AppColors.primary),
                   ),
                 ),
               ]),
@@ -948,8 +886,7 @@ class _SectionHeader extends StatelessWidget {
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: color,
-                fontFamily: 'Inter')),
+                color: color)),
         if (count != null) ...[
           const SizedBox(width: 6),
           Container(
@@ -963,8 +900,7 @@ class _SectionHeader extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: color,
-                    fontFamily: 'Inter')),
+                    color: color)),
           ),
         ],
         const Spacer(),
@@ -986,13 +922,8 @@ class _EmptyCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => BentoCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
         child: Row(children: [
           Icon(icon, size: 20, color: AppColors.mutedForeground),
           const SizedBox(width: 12),
@@ -1000,8 +931,7 @@ class _EmptyCard extends StatelessWidget {
               child: Text(message,
                   style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'))),
+                      color: AppColors.mutedForeground))),
           TextButton(
             onPressed: onAction,
             style: TextButton.styleFrom(
@@ -1011,7 +941,6 @@ class _EmptyCard extends StatelessWidget {
             child: Text(actionLabel,
                 style: const TextStyle(
                     fontSize: 12,
-                    fontFamily: 'Inter',
                     color: AppColors.primary)),
           ),
         ]),
@@ -1025,13 +954,8 @@ class _ErrorCard extends StatelessWidget {
   const _ErrorCard({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => BentoCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3)),
-        ),
         child: Row(children: [
           const Icon(Icons.error_outline_rounded,
               size: 20, color: AppColors.destructive),
@@ -1040,8 +964,7 @@ class _ErrorCard extends StatelessWidget {
               child: Text(message,
                   style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter'))),
+                      color: AppColors.mutedForeground))),
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
@@ -1051,7 +974,6 @@ class _ErrorCard extends StatelessWidget {
             child: const Text('Retry',
                 style: TextStyle(
                     fontSize: 12,
-                    fontFamily: 'Inter',
                     color: AppColors.primary)),
           ),
         ]),
@@ -1115,27 +1037,19 @@ class _CaregiverCard extends ConsumerWidget {
     final initials = _initials(name);
     final isPending = connection.isPending;
 
-    return GestureDetector(
-      onTap: isPending
-          ? null
-          : () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ManageCaregiverScreen(connection: connection),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: BentoCard(
+        onTap: isPending
+            ? null
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ManageCaregiverScreen(connection: connection),
+                  ),
                 ),
-              ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-              color: isPending
-                  ? AppColors.warning.withValues(alpha: 0.4)
-                  : AppColors.border),
-        ),
         child: Row(children: [
           CircleAvatar(
             radius: 24,
@@ -1144,8 +1058,7 @@ class _CaregiverCard extends ConsumerWidget {
                 style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: _purple,
-                    fontFamily: 'Inter')),
+                    color: _purple)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1155,20 +1068,17 @@ class _CaregiverCard extends ConsumerWidget {
                   Text(name,
                       style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter')),
+                          fontWeight: FontWeight.w600)),
                   Text(connection.relationship.relationshipLabel,
                       style: const TextStyle(
                           fontSize: 12,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
+                          color: AppColors.mutedForeground)),
                   if (!isPending)
                     Text(
                       'Connected ${connection.connectedAt != null ? DateFormat('MMM d, y').format(connection.connectedAt!) : ''}',
                       style: const TextStyle(
                           fontSize: 11,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter'),
+                          color: AppColors.mutedForeground),
                     ),
                 ]),
           ),
@@ -1184,12 +1094,11 @@ class _CaregiverCard extends ConsumerWidget {
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.warning,
-                      fontFamily: 'Inter')),
-            )
+                      color: AppColors.warning)),
+          )
           else
-            const Icon(Icons.chevron_right_rounded,
-                size: 20, color: AppColors.mutedForeground),
+            const NavArrowRight(
+                width: 14, height: 14, color: AppColors.mutedForeground),
         ]),
       ),
     );
