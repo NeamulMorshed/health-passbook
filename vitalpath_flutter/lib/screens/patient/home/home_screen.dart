@@ -165,8 +165,6 @@ class _HomeContent extends ConsumerWidget {
     final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
     ref.watch(vitalsProvider(user.uid));
     final gamAsync = ref.watch(gamificationProvider(user.uid));
-    final today = DateFormat('EEEE, MMM d').format(DateTime.now());
-
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
@@ -174,22 +172,18 @@ class _HomeContent extends ConsumerWidget {
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
-          Text(
-            user.name.isNotEmpty ? user.name : 'Patient',
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground),
-          ),
-        ]),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(24),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+        toolbarHeight: 56,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+            const SizedBox(height: 1),
+            Text(
+              user.name.isNotEmpty ? user.name : 'Patient',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground),
             ),
-          ),
+          ],
         ),
         actions: const [NotifBell()],
       ),
