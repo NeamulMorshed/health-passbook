@@ -334,7 +334,7 @@ class _HeaderStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
   ]);
 }
 
@@ -358,7 +358,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text.toUpperCase(),
     style: const TextStyle(
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: FontWeight.w600,
       color: AppColors.textTertiary,
       letterSpacing: 0.8,

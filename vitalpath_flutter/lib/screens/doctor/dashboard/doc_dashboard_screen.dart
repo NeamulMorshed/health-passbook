@@ -210,7 +210,7 @@ class _ActionTile extends StatelessWidget {
         child: Column(children: [
           icon,
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
         ]),
       ),
     );

@@ -520,14 +520,14 @@ class _VitalHistorySheet extends ConsumerWidget {
                                   Text(
                                     DateFormat('MMM d, h:mm a').format(r.recordedAt),
                                     style: const TextStyle(
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         color: AppColors.mutedForeground),
                                   ),
                                   if (r.note != null && r.note!.isNotEmpty)
                                     Text(
                                       r.note!,
                                       style: const TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 12,
                                           color: AppColors.mutedForeground),
                                     ),
                                 ],
@@ -733,7 +733,7 @@ class _VitalChip extends StatelessWidget {
         const SizedBox(width: 5),
         Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
         const SizedBox(width: 3),
-        Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+        Text(unit, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
         const SizedBox(width: 5),
         isNormal
             ? CheckCircle(width: 11, height: 11, color: color)

@@ -41,7 +41,7 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
                     Text(
                       connection.relationship.relationshipLabel,
                       style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: Colors.white70),
                     ),
                   ],
@@ -52,7 +52,7 @@ class CaregiverPatientProfileScreen extends ConsumerWidget {
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 labelColor: Colors.white,
-                unselectedLabelColor: Colors.white60,
+                unselectedLabelColor: Colors.white70,
                 indicatorColor: Colors.white,
                 labelStyle: const TextStyle(
                     fontWeight: FontWeight.w600,
@@ -256,7 +256,7 @@ class _VitalCard extends StatelessWidget {
               Text(
                   DateFormat('MMM d, y · h:mm a').format(reading.recordedAt),
                   style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppColors.mutedForeground)),
             ],
           ),
@@ -269,7 +269,7 @@ class _VitalCard extends StatelessWidget {
           if (!normal)
             const Text('⚠️ Abnormal',
                 style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: AppColors.warning)),
         ]),
       ]),
@@ -371,7 +371,7 @@ class _MedCard extends StatelessWidget {
               child: Text(
                 '$takenCount/$totalSlots today',
                 style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: takenCount >= totalSlots
                         ? AppColors.success
@@ -596,7 +596,7 @@ class _ApptCard extends StatelessWidget {
             child: Text(
               statusLabel,
               style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: statusColor),
             ),

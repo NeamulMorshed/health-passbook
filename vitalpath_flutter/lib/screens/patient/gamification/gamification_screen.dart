@@ -160,7 +160,7 @@ class _LevelCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   '${profile.hpToNextLevel} HP to next level',
-                  style: const TextStyle(color: Colors.white60, fontSize: 11),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
@@ -222,9 +222,9 @@ class _StreakTile extends StatelessWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isActive ? color : AppColors.mutedForeground),
           ),
         ]),
-        Text('days', style: TextStyle(fontSize: 10, color: isActive ? color : AppColors.mutedForeground)),
+        Text('days', style: TextStyle(fontSize: 12, color: isActive ? color : AppColors.mutedForeground)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground), textAlign: TextAlign.center),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground), textAlign: TextAlign.center),
       ]),
     );
   }
@@ -335,7 +335,7 @@ class _BadgesSection extends StatelessWidget {
                     badge.name,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: earned ? AppColors.foreground : AppColors.mutedForeground,
                     ),
@@ -347,7 +347,7 @@ class _BadgesSection extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 12,
                       color: earned ? AppColors.mutedForeground : AppColors.mutedForeground.withValues(alpha: 0.5),
                     ),
                   ),

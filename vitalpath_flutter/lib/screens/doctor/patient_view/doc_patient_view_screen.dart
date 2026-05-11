@@ -146,8 +146,8 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.mutedForeground,
                 indicatorColor: AppColors.primary,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-                unselectedLabelStyle: const TextStyle(fontSize: 11),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                unselectedLabelStyle: const TextStyle(fontSize: 12),
                 tabs: [
                   Tab(icon: User(width: 18, height: 18, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground), text: 'Overview'),
                   Tab(icon: Icon(Icons.medication_outlined, size: 18), text: 'Medicines'),
@@ -508,18 +508,18 @@ class _AdherenceCard extends StatelessWidget {
             Row(children: [
               const Text('7-day adherence',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppColors.mutedForeground)),
               const Spacer(),
               Text('$taken / $expected doses',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: adherenceColor)),
               const SizedBox(width: 6),
               Text('($adherencePct%)',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: adherenceColor)),
             ]),
             const SizedBox(height: 6),
@@ -541,7 +541,7 @@ class _AdherenceCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20)),
               child: const Text('As needed — no fixed schedule',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppColors.mutedForeground)),
             ),
           ],
@@ -559,7 +559,7 @@ class _AdherenceCard extends StatelessWidget {
               label: 'Since ${med.startDate.day}/${med.startDate.month}/${med.startDate.year}',
             ),
             _MetaChip(
-              icon: const Icon(Icons.history_rounded, size: 11, color: AppColors.mutedForeground),
+              icon: const Icon(Icons.history_rounded, size: 14, color: AppColors.mutedForeground),
               label: '${med.loggedDoses.length} total dose${med.loggedDoses.length == 1 ? '' : 's'}',
             ),
           ]),
@@ -705,7 +705,7 @@ class _MealRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis),
                   Text(meal.mealType,
                       style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.mutedForeground)),
                 ]),
           ),
@@ -764,13 +764,13 @@ class _ActivityRow extends StatelessWidget {
                   Text(
                       '${log.loggedAt.day}/${log.loggedAt.month}/${log.loggedAt.year}',
                       style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.mutedForeground)),
                 ]),
           ),
           Wrap(spacing: 8, runSpacing: 4, children: [
             _MetaChip(
-              icon: const Icon(Icons.timer_rounded, size: 11, color: AppColors.mutedForeground),
+              icon: const Icon(Icons.timer_rounded, size: 14, color: AppColors.mutedForeground),
               label: '${mins}m',
             ),
             if (log.distanceKm != null)
@@ -785,7 +785,7 @@ class _ActivityRow extends StatelessWidget {
               ),
             if (log.caloriesBurned != null)
               _MetaChip(
-                icon: const Icon(Icons.local_fire_department_rounded, size: 11, color: AppColors.mutedForeground),
+                icon: const Icon(Icons.local_fire_department_rounded, size: 14, color: AppColors.mutedForeground),
                 label: '${log.caloriesBurned} cal',
               ),
           ]),
@@ -917,7 +917,7 @@ class _RxCard extends StatelessWidget {
             Text(
                 '${rx.issuedAt.day}/${rx.issuedAt.month}/${rx.issuedAt.year}',
                 style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: AppColors.mutedForeground)),
           ]),
           if (rx.diagnosis != null && rx.diagnosis!.isNotEmpty) ...[
@@ -962,11 +962,11 @@ class _VitalStat extends StatelessWidget {
         if (unit.isNotEmpty)
           Text(unit,
               style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: AppColors.mutedForeground)),
         Text(label,
             style: const TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: AppColors.mutedForeground)),
       ]);
 }
@@ -1001,12 +1001,12 @@ class _InsightChip extends StatelessWidget {
                   color: color)),
           Text(subtitle,
               style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: AppColors.mutedForeground)),
           const SizedBox(height: 2),
           Text(label,
               style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   color: AppColors.mutedForeground)),
         ]),
       );
@@ -1072,7 +1072,7 @@ class _MetaChip extends StatelessWidget {
         const SizedBox(width: 3),
         Text(label,
             style: const TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: AppColors.mutedForeground)),
       ]);
 }
@@ -1091,11 +1091,11 @@ class _MacroStat extends StatelessWidget {
                 color: color)),
         Text(unit,
             style: TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 color: color.withValues(alpha: 0.7))),
         Text(label,
             style: const TextStyle(
-                fontSize: 10,
+                fontSize: 12,
                 color: AppColors.mutedForeground)),
       ]);
 }
@@ -1228,7 +1228,7 @@ class _NoteCard extends StatelessWidget {
           const Icon(Icons.note_alt_rounded, size: 15, color: AppColors.primary),
           const SizedBox(width: 6),
           Text(DateFormat('MMM d, y · h:mm a').format(note.createdAt),
-              style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
           const Spacer(),
           GestureDetector(
             onTap: () => showDialog(

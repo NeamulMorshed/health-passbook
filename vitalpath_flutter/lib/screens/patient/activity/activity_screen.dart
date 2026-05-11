@@ -469,7 +469,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                   child: const Text('Step Sensor Active',
                       style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10)),
+                          fontSize: 12)),
                 ),
               ],
             ],
@@ -714,7 +714,7 @@ class _WeeklyActivityChart extends StatelessWidget {
                           child: Text(
                             label,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 12,
                               color: isToday
                                   ? AppColors.primary
                                   : AppColors.mutedForeground,
@@ -760,7 +760,7 @@ class _WeeklyActivityChart extends StatelessWidget {
                       '${steps[groupIndex]}',
                       const TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -783,7 +783,7 @@ class _WeeklyActivityChart extends StatelessWidget {
                 Text(
                   'This week: $weeklySteps steps  ·  ${weeklyKm.toStringAsFixed(1)} km  ·  $activeDays active day${activeDays == 1 ? '' : 's'}',
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: AppColors.mutedForeground,
                   ),

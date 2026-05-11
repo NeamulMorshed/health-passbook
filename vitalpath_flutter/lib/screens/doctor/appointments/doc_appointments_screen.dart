@@ -161,7 +161,7 @@ class _DocApptCard extends ConsumerWidget {
                 child: Text(
                   'For ${appt.familyMemberName}',
                   style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary),
                 ),

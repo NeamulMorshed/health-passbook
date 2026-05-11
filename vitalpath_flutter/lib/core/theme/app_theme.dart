@@ -65,14 +65,14 @@ class AppTheme {
         displayMedium:  GoogleFonts.openSans(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         displaySmall:   GoogleFonts.openSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         headlineMedium: GoogleFonts.openSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        headlineSmall:  GoogleFonts.openSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        titleLarge:     GoogleFonts.openSans(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        titleMedium:    GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        bodyLarge:      GoogleFonts.openSans(fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
-        bodyMedium:     GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
-        bodySmall:      GoogleFonts.openSans(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.textSecondary),
-        labelLarge:     GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        labelSmall:     GoogleFonts.openSans(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textTertiary),
+        headlineSmall:  GoogleFonts.openSans(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        titleLarge:     GoogleFonts.openSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        titleMedium:    GoogleFonts.openSans(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        bodyLarge:      GoogleFonts.openSans(fontSize: 16, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
+        bodyMedium:     GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
+        bodySmall:      GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textSecondary),
+        labelLarge:     GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+        labelSmall:     GoogleFonts.openSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textTertiary),
       ),
 
       appBarTheme: AppBarTheme(
@@ -82,7 +82,7 @@ class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: GoogleFonts.openSans(
-          fontSize: 17,
+          fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
@@ -104,12 +104,12 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.openSans(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -119,12 +119,12 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          minimumSize: const Size(double.infinity, 50),
+          minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           textStyle: GoogleFonts.openSans(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -134,7 +134,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
           textStyle: GoogleFonts.openSans(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -153,7 +153,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2.0),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -161,30 +161,30 @@ class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.destructive, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.destructive, width: 2.0),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: GoogleFonts.openSans(fontSize: 14, color: AppColors.textTertiary),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        hintStyle: GoogleFonts.openSans(fontSize: 15, color: AppColors.textTertiary),
       ),
 
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        height: 68,
+        height: 72,
         indicatorColor: Colors.transparent,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
             color: selected ? AppColors.primary : AppColors.textTertiary,
-            size: 22,
+            size: 24,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return GoogleFonts.openSans(
-            fontSize: 11,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             color: selected ? AppColors.primary : AppColors.textTertiary,
           );
         }),
@@ -195,8 +195,8 @@ class AppTheme {
         unselectedLabelColor: AppColors.textTertiary,
         indicatorColor: AppColors.primary,
         dividerColor: AppColors.border,
-        labelStyle: GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w400),
+        labelStyle: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w400),
       ),
 
       chipTheme: ChipThemeData(

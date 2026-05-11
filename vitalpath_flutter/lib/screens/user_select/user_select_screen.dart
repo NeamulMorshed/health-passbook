@@ -76,7 +76,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
               const Center(
                 child: Text('By continuing you agree to our Terms & Privacy Policy',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],

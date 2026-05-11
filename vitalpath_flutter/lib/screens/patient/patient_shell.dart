@@ -7,7 +7,7 @@ class PatientShell extends StatelessWidget {
   final Widget child;
   const PatientShell({super.key, required this.child});
 
-  static const _kSize = 22.0;
+  static const _kSize = 24.0;
 
   static final _tabs = [
     _TabItem(

@@ -380,7 +380,7 @@ class _DoctorCard extends ConsumerWidget {
                 ]),
                 Text('${doctor.reviewCount} reviews',
                     style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: AppColors.mutedForeground)),
               ])
             else
@@ -392,7 +392,7 @@ class _DoctorCard extends ConsumerWidget {
                 ),
                 child: const Text('New',
                     style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: AppColors.mutedForeground)),
               ),
           ]),
@@ -407,7 +407,7 @@ class _DoctorCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text('Not accepting patients',
-                    style: TextStyle(fontSize: 11, color: AppColors.destructive, fontWeight: FontWeight.w500)),
+                    style: TextStyle(fontSize: 12, color: AppColors.destructive, fontWeight: FontWeight.w500)),
               )
             else
               Container(
@@ -417,7 +417,7 @@ class _DoctorCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text('Accepting patients',
-                    style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w500)),
+                    style: TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w500)),
               ),
             if (doctor.consultationFee != null && doctor.consultationFee!.isNotEmpty) ...[
               const SizedBox(width: 8),

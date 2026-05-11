@@ -343,7 +343,6 @@ class _MedicineTab extends ConsumerWidget {
               return const SizedBox.shrink();
             }
             return Container(
-              color: AppColors.surface,
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -464,7 +463,7 @@ class _SwitcherChip extends StatelessWidget {
       onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary
@@ -490,7 +489,7 @@ class _SwitcherChip extends StatelessWidget {
                     : AppColors.border,
                 child: Text(initials,
                     style: TextStyle(
-                        fontSize: 8,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: isSelected ? Colors.white : AppColors.foreground)),
               ),
@@ -815,7 +814,7 @@ class _InfoChip extends StatelessWidget {
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 12, color: AppColors.mutedForeground),
       const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+      Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
     ]),
   );
 }
@@ -878,8 +877,8 @@ class _NutrientStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
-    Text(unit, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+    Text(unit, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
   ]);
 }
 
@@ -1120,7 +1119,7 @@ class _MedDetailSheet extends ConsumerWidget {
               const SizedBox(height: 4),
               const Text('Tap to view full size',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppColors.mutedForeground)),
             ],
 
@@ -1369,9 +1368,9 @@ class _NutritionTile extends StatelessWidget {
       ),
       child: Column(children: [
         Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        Text(unit, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7))),
+        Text(unit, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.7))),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
       ]),
     ),
   );

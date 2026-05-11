@@ -177,7 +177,7 @@ class _HomeContent extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+            Text(_greeting(), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
             const SizedBox(height: 1),
             Text(
               user.name.isNotEmpty ? user.name : 'Patient',
@@ -468,7 +468,7 @@ class _RefillCountdownCard extends StatelessWidget {
                 decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                 child: Text(
                   med.daysLeft == 0 ? 'Out today' : '~${med.daysLeft} day${med.daysLeft == 1 ? '' : 's'} left',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: c),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c),
                 ),
               ),
             ]),
@@ -592,7 +592,7 @@ class _AdherenceRingCard extends ConsumerWidget {
           percent: percent,
           center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text('$weeklyMedDays', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color)),
-            Text('/7', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
+            Text('/7', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
           ]),
           progressColor: color,
           backgroundColor: color.withValues(alpha: 0.12),
@@ -618,7 +618,7 @@ class _AdherenceRingCard extends ConsumerWidget {
                 border: Border.all(color: filled ? color.withValues(alpha: 0.4) : AppColors.border),
               ),
               child: Center(
-                child: Text(days[i], style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: filled ? color : AppColors.mutedForeground)),
+                child: Text(days[i], style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: filled ? color : AppColors.mutedForeground)),
               ),
             );
           })),
@@ -691,7 +691,7 @@ class _FamilyStatusChip extends ConsumerWidget {
           SizedBox(
             width: 52,
             child: Text(member.name.split(' ').first, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           ),
         ]),
       ),
@@ -828,7 +828,7 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text('$totalPending left', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          child: Text('$totalPending left', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
         )
       else
         Container(
@@ -837,7 +837,7 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
           child: const Row(mainAxisSize: MainAxisSize.min, children: [
             iconoir.Check(width: 12, height: 12, color: AppColors.success),
             SizedBox(width: 4),
-            Text('All done', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.success)),
+            Text('All done', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
           ]),
         ),
     ]);
@@ -958,7 +958,7 @@ class _MedRow extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
-                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
+                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
               ),
           ]),
           const SizedBox(height: 2),
@@ -1107,7 +1107,7 @@ class _MealRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text(statusLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),
+          child: Text(statusLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
         ),
       ]),
     );
@@ -1165,7 +1165,7 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
             elevation: 0,
             scrolledUnderElevation: 0,
             title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(), style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+              Text(_greeting(), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
               Text(widget.user.name.isNotEmpty ? widget.user.name : 'Caregiver',
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground)),
             ]),
@@ -1265,7 +1265,7 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
                               const SizedBox(height: 6),
                               SizedBox(width: 60, child: Text(m.name.split(' ').first,
                                   textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 11, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground))),
+                                  style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground))),
                             ]),
                           );
                         },
@@ -1485,7 +1485,7 @@ class _ActionBtn extends StatelessWidget {
       child: Column(children: [
         icon,
         const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
       ]),
     ),
   );

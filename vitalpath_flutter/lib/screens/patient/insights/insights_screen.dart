@@ -125,7 +125,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
                 const Padding(
                   padding: EdgeInsets.only(bottom: 8),
                   child: Text('Waiting for your health data...',
-                      style: TextStyle(color: Colors.white60, fontSize: 11)),
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
                 ),
               const SizedBox(height: 8),
               SizedBox(
@@ -175,7 +175,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               Expanded(
                 child: Text(
                   'These insights are informational only and not medical advice. Always consult your doctor before making health decisions.',
-                  style: TextStyle(fontSize: 11, color: AppColors.mutedForeground),
+                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                 ),
               ),
             ],
@@ -282,7 +282,7 @@ class _InsightCard extends StatelessWidget {
               decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
               child: Text(
                 _categoryLabel(insight.category),
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
               ),
             ),
           ]),

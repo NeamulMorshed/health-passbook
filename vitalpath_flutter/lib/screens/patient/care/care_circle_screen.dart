@@ -376,7 +376,7 @@ class _DoctorCard extends ConsumerWidget {
                   if (doctor.hospital != null)
                     Text(doctor.hospital!,
                         style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: AppColors.mutedForeground)),
                 ]),
           ),
@@ -586,7 +586,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                       child: Text(
                         isLinked ? 'Linked' : 'Dependent',
                         style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isLinked
                                 ? const Color(0xFFF59E0B)
@@ -614,7 +614,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                     child: const Text(
                       'View details →',
                       style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: AppColors.mutedForeground),
                     ),
@@ -806,7 +806,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                                         Text(
                                             '${med.dosage} · ${med.frequency}',
                                             style: const TextStyle(
-                                                fontSize: 11,
+                                                fontSize: 12,
                                                 color:
                                                     AppColors.mutedForeground)),
                                       ]),
@@ -892,7 +892,7 @@ class _SectionHeader extends StatelessWidget {
             ),
             child: Text('$count',
                 style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: color)),
           ),
@@ -1071,7 +1071,7 @@ class _CaregiverCard extends ConsumerWidget {
                     Text(
                       'Connected ${connection.connectedAt != null ? DateFormat('MMM d, y').format(connection.connectedAt!) : ''}',
                       style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: AppColors.mutedForeground),
                     ),
                 ]),
@@ -1086,7 +1086,7 @@ class _CaregiverCard extends ConsumerWidget {
               ),
               child: const Text('Pending',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.warning)),
           )

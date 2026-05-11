@@ -256,7 +256,7 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
-    child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
+    child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
   );
 }
 

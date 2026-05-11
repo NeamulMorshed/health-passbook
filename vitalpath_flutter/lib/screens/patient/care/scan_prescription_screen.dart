@@ -607,7 +607,7 @@ class _ScanPrescriptionScreenState
                         ),
                         child: const Text('Tap to view full',
                             style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: Colors.white)),
                       ),
                     ),
@@ -779,7 +779,7 @@ class _EntryCardState extends State<_EntryCard> {
                   ),
                   child: const Text('Check this',
                       style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: AppColors.warning,
                           fontWeight: FontWeight.w600)),
                 ),

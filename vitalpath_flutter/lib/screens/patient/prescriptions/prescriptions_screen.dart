@@ -216,7 +216,7 @@ class _RxCard extends StatelessWidget {
                     SizedBox(width: 4),
                     Text('Tap to view prescription photo',
                         style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: AppColors.primary)),
                   ]),
                 ],
@@ -430,7 +430,7 @@ class _RxDetailSheet extends StatelessWidget {
               const SizedBox(height: 4),
               const Text('Tap to view full size',
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppColors.mutedForeground)),
             ],
           ],
