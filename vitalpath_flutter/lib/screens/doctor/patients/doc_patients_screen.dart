@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/patient.dart';
@@ -60,7 +62,7 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('My Patients'),
         automaticallyImplyLeading: false,
@@ -139,11 +141,15 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(children: [
-                    Text('${visible.length} patient${visible.length == 1 ? '' : 's'}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    Text(
+                      '${visible.length} patient${visible.length == 1 ? '' : 's'}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                    ),
                     const Spacer(),
-                    Text('Sorted: $_sortLabel',
-                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    Text(
+                      'Sorted: $_sortLabel',
+                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                    ),
                   ]),
                 ),
                 const SizedBox(height: 8),
@@ -157,7 +163,7 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                           subtitle: 'Try a different name.',
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
                           itemCount: visible.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
                           itemBuilder: (_, i) =>
@@ -180,48 +186,38 @@ class _PatientCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
+    return BentoCard(
       onTap: () => context.push('/doc/patient/${patient.uid}'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(children: [
-          AppAvatar(name: patient.name, size: 48),
-          const SizedBox(width: 14),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(patient.name,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
-                const SizedBox(height: 4),
-                Row(children: [
-                  if (patient.age != null) _InfoChip('${patient.age} yrs'),
-                  if (patient.age != null) const SizedBox(width: 6),
-                  if (patient.bloodType != null)
-                    _InfoChip(patient.bloodType!),
-                  if (patient.bloodType != null) const SizedBox(width: 6),
-                  if (patient.conditions.isNotEmpty)
-                    _InfoChip(patient.conditions.first),
-                ]),
-              ])),
-          IconButton(
-            tooltip: 'Remove patient',
-            icon: const Icon(Icons.person_remove_rounded,
-                size: 18, color: AppColors.destructive),
-            onPressed: () => _confirmRemove(context, ref),
+      child: Row(children: [
+        AppAvatar(name: patient.name, size: 48),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(patient.name,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Row(children: [
+                if (patient.age != null) _InfoChip('${patient.age} yrs'),
+                if (patient.age != null) const SizedBox(width: 6),
+                if (patient.bloodType != null)
+                  _InfoChip(patient.bloodType!),
+                if (patient.bloodType != null) const SizedBox(width: 6),
+                if (patient.conditions.isNotEmpty)
+                  _InfoChip(patient.conditions.first),
+              ]),
+            ],
           ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 14, color: AppColors.mutedForeground),
-        ]),
-      ),
+        ),
+        IconButton(
+          tooltip: 'Remove patient',
+          icon: const Icon(Icons.person_remove_rounded,
+              size: 18, color: AppColors.destructive),
+          onPressed: () => _confirmRemove(context, ref),
+        ),
+        const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+      ]),
     );
   }
 
@@ -229,25 +225,21 @@ class _PatientCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Patient',
-            style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Remove ${patient.name} from your patients list?',
-            style: const TextStyle(fontFamily: 'Inter')),
+        title: const Text('Remove Patient'),
+        content: Text('Remove ${patient.name} from your patients list?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
               child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.destructive),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
             onPressed: () async {
               Navigator.pop(dialogCtx);
               await ref
                   .read(connectionNotifierProvider.notifier)
                   .remove(patient.uid, doctorId);
               if (context.mounted) {
-                showAppSnack(
-                    context, '${patient.name} removed from your list.');
+                showAppSnack(context, '${patient.name} removed from your list.');
               }
             },
             child: const Text('Remove'),
@@ -265,7 +257,7 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
-    child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+    child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
   );
 }
 

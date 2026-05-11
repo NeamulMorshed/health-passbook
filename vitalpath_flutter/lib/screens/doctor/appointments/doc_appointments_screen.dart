@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/appointment.dart';
@@ -38,7 +40,7 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('Appointment Management'), automaticallyImplyLeading: false),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -75,8 +77,6 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
               final confirmed = appts.where((a) => a.isConfirmed).toList();
               final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
 
-              // TabBar and TabBarView both reference _tabController which is stable.
-              // Only the tab labels (counts) and list contents update on each stream emit.
               return Column(children: [
                 Container(
                   color: AppColors.surface,
@@ -126,7 +126,7 @@ class _ApptList extends StatelessWidget {
           subtitle: emptySubtitle);
     }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
       itemCount: appts.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) => _DocApptCard(appt: appts[i]),
@@ -140,22 +140,16 @@ class _DocApptCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: appt.isPending ? AppColors.warningLight : AppColors.border),
-      ),
+    return BentoCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           AppAvatar(name: appt.patientName, size: 44),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(appt.patientName,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             Text('Requested ${DateFormat('MMM d, h:mm a').format(appt.createdAt)}',
-                style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
             if (appt.familyMemberId != null && appt.familyMemberName != null) ...[
               const SizedBox(height: 4),
               Container(
@@ -170,8 +164,7 @@ class _DocApptCard extends ConsumerWidget {
                   style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                      fontFamily: 'Inter'),
+                      color: AppColors.primary),
                 ),
               ),
             ],
@@ -185,7 +178,7 @@ class _DocApptCard extends ConsumerWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(8)),
             child: Text('"${appt.patientNote}"',
-                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, fontFamily: 'Inter', color: AppColors.foreground)),
+                style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.foreground)),
           ),
         ],
         if (appt.scheduledAt != null) ...[
@@ -196,12 +189,12 @@ class _DocApptCard extends ConsumerWidget {
                 color: AppColors.doctorPrimary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8)),
             child: Row(children: [
-              const Icon(Icons.schedule_rounded, size: 16, color: AppColors.doctorPrimary),
+              const Clock(width: 16, height: 16, color: AppColors.doctorPrimary),
               const SizedBox(width: 8),
               Text(DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w600,
-                      color: AppColors.doctorPrimary, fontFamily: 'Inter')),
+                      color: AppColors.doctorPrimary)),
             ]),
           ),
         ],
@@ -211,7 +204,7 @@ class _DocApptCard extends ConsumerWidget {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _showConfirmSheet(context, ref),
-                icon: const Icon(Icons.check_rounded, size: 16),
+                icon: const Check(width: 16, height: 16),
                 label: const Text('Set Date & Confirm'),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success, minimumSize: const Size(0, 42)),
@@ -224,7 +217,7 @@ class _DocApptCard extends ConsumerWidget {
                   minimumSize: const Size(42, 42),
                   foregroundColor: AppColors.destructive,
                   side: const BorderSide(color: AppColors.destructive)),
-              child: const Icon(Icons.close_rounded, size: 18),
+              child: const Xmark(width: 16, height: 16),
             ),
           ]),
         ],
@@ -234,7 +227,7 @@ class _DocApptCard extends ConsumerWidget {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _confirmComplete(context, ref),
-                icon: const Icon(Icons.check_circle_rounded, size: 16),
+                icon: const CheckCircle(width: 16, height: 16),
                 label: const Text('Mark Completed'),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary, minimumSize: const Size(0, 42)),
@@ -267,9 +260,8 @@ class _DocApptCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Cancel Appointment', style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Cancel ${appt.patientName}\'s appointment request?',
-            style: const TextStyle(fontFamily: 'Inter')),
+        title: const Text('Cancel Appointment'),
+        content: Text('Cancel ${appt.patientName}\'s appointment request?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
           ElevatedButton(
@@ -298,9 +290,8 @@ class _DocApptCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Mark Completed', style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Mark ${appt.patientName}\'s appointment as completed?',
-            style: const TextStyle(fontFamily: 'Inter')),
+        title: const Text('Mark Completed'),
+        content: Text('Mark ${appt.patientName}\'s appointment as completed?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Not yet')),
           ElevatedButton(
@@ -386,7 +377,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                 decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
             Text('Confirm: ${widget.appt.patientName}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 20),
 
             GestureDetector(
@@ -405,10 +396,10 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.doctorPrimary),
+                  const Calendar(width: 18, height: 18, color: AppColors.doctorPrimary),
                   const SizedBox(width: 10),
                   Text(DateFormat('EEEE, MMM d, y').format(_selectedDate),
-                      style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+                      style: const TextStyle(fontWeight: FontWeight.w500)),
                 ]),
               ),
             ),
@@ -426,10 +417,10 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Icon(Icons.access_time_rounded, size: 18, color: AppColors.doctorPrimary),
+                  const Clock(width: 18, height: 18, color: AppColors.doctorPrimary),
                   const SizedBox(width: 10),
                   Text(_selectedTime.format(context),
-                      style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+                      style: const TextStyle(fontWeight: FontWeight.w500)),
                 ]),
               ),
             ),
