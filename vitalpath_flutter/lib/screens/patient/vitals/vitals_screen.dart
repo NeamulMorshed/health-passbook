@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -42,7 +44,7 @@ class _VitalsContent extends ConsumerWidget {
     final vitalsAsync = ref.watch(vitalsProvider(patientId));
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Vitals'),
         automaticallyImplyLeading: true,
@@ -50,9 +52,8 @@ class _VitalsContent extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showLogVitalSheet(context, ref, patientId),
         backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('Log a Vital',
-            style: TextStyle(color: Colors.white, fontFamily: 'Inter')),
+        icon: const Plus(width: 20, height: 20, color: Colors.white),
+        label: const Text('Log a Vital', style: TextStyle(color: Colors.white)),
       ),
       body: vitalsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -62,30 +63,92 @@ class _VitalsContent extends ConsumerWidget {
           subtitle: 'Check your connection and try again.',
         ),
         data: (readings) {
+          final latestBpSys   = readings.where((r) => r.type == VitalType.bpSystolic).firstOrNull;
+          final latestBpDia   = readings.where((r) => r.type == VitalType.bpDiastolic).firstOrNull;
+          final latestPulse   = readings.where((r) => r.type == VitalType.pulse).firstOrNull;
+          final latestSpo2    = readings.where((r) => r.type == VitalType.spo2).firstOrNull;
+          final latestTemp    = readings.where((r) => r.type == VitalType.temp).firstOrNull;
+          final latestGlucose = readings.where((r) => r.type == VitalType.glucose).firstOrNull;
+
+          String fmt(VitalReading? r) {
+            if (r == null) return '--';
+            return r.value.truncateToDouble() == r.value
+                ? r.value.toInt().toString()
+                : r.value.toStringAsFixed(1);
+          }
+
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _VitalStatusCard(patientId: patientId, readings: readings),
                 const SizedBox(height: 20),
-                const SectionHeader(title: 'Current Readings'),
+                BentoSectionHeader(title: 'Current Readings'),
                 const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.4,
-                  children: VitalType.allTypes.map((type) {
-                    final latest = readings.where((r) => r.type == type).firstOrNull;
-                    return _VitalTypeCard(
-                      type: type,
-                      latest: latest,
-                      onTap: () => _showHistorySheet(context, type, readings),
-                    );
-                  }).toList(),
+                BentoRow(
+                  left: BentoStatCard(
+                    label: 'Blood Pressure',
+                    value: latestBpSys != null
+                        ? '${latestBpSys.value.toInt()}/${latestBpDia?.value.toInt() ?? '-'}'
+                        : '--',
+                    unit: 'mmHg',
+                    icon: const Droplet(width: 20, height: 20, color: Color(0xFF3B82F6)),
+                    iconBgColor: const Color(0xFFEFF6FF),
+                    iconColor: const Color(0xFF3B82F6),
+                    onTap: () => _showHistorySheet(context, VitalType.bpSystolic, readings),
+                  ),
+                  right: BentoStatCard(
+                    label: 'Heart Rate',
+                    value: fmt(latestPulse),
+                    unit: VitalType.unitFor(VitalType.pulse),
+                    icon: const Activity(width: 20, height: 20, color: AppColors.destructive),
+                    iconBgColor: AppColors.destructiveLight,
+                    iconColor: AppColors.destructive,
+                    onTap: () => _showHistorySheet(context, VitalType.pulse, readings),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                BentoRow(
+                  left: BentoStatCard(
+                    label: 'SpO₂',
+                    value: fmt(latestSpo2),
+                    unit: VitalType.unitFor(VitalType.spo2),
+                    icon: const Activity(width: 20, height: 20, color: AppColors.success),
+                    iconBgColor: AppColors.successLight,
+                    iconColor: AppColors.success,
+                    onTap: () => _showHistorySheet(context, VitalType.spo2, readings),
+                  ),
+                  right: BentoStatCard(
+                    label: 'Temperature',
+                    value: fmt(latestTemp),
+                    unit: VitalType.unitFor(VitalType.temp),
+                    icon: const TemperatureHigh(width: 20, height: 20, color: AppColors.warning),
+                    iconBgColor: AppColors.warningLight,
+                    iconColor: AppColors.warning,
+                    onTap: () => _showHistorySheet(context, VitalType.temp, readings),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                BentoRow(
+                  left: BentoStatCard(
+                    label: 'Glucose',
+                    value: fmt(latestGlucose),
+                    unit: VitalType.unitFor(VitalType.glucose),
+                    icon: const Droplet(width: 20, height: 20, color: AppColors.warning),
+                    iconBgColor: AppColors.warningLight,
+                    iconColor: AppColors.warning,
+                    onTap: () => _showHistorySheet(context, VitalType.glucose, readings),
+                  ),
+                  right: BentoStatCard(
+                    label: 'BP Diastolic',
+                    value: fmt(latestBpDia),
+                    unit: VitalType.unitFor(VitalType.bpDiastolic),
+                    icon: const Droplet(width: 20, height: 20, color: Color(0xFF3B82F6)),
+                    iconBgColor: const Color(0xFFEFF6FF),
+                    iconColor: const Color(0xFF3B82F6),
+                    onTap: () => _showHistorySheet(context, VitalType.bpDiastolic, readings),
+                  ),
                 ),
               ],
             ),
@@ -131,126 +194,6 @@ double _borderlineHigh(String type, double max) {
   if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic) return max + 5;
   if (type == VitalType.glucose) return max + 5;
   return max * 1.1;
-}
-
-// ─── Vital Type Card ──────────────────────────────────────────────────────────
-class _VitalTypeCard extends StatelessWidget {
-  final String type;
-  final VitalReading? latest;
-  final VoidCallback onTap;
-
-  const _VitalTypeCard({
-    required this.type,
-    required this.latest,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isNormal = latest != null && VitalType.isNormal(type, latest!.value);
-    final hasReading = latest != null;
-
-    Color dotColor;
-    if (!hasReading) {
-      dotColor = AppColors.mutedForeground;
-    } else if (isNormal) {
-      dotColor = AppColors.success;
-    } else {
-      final (min, max) = VitalType.normalRange(type);
-      final val = latest!.value;
-      final borderlineLow = _borderlineLow(type, min);
-      final borderlineHigh = _borderlineHigh(type, max);
-      dotColor = (val >= borderlineLow && val <= borderlineHigh)
-          ? AppColors.warning
-          : AppColors.destructive;
-    }
-
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Expanded(
-                  child: Text(
-                    VitalType.labelFor(type),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter',
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ]),
-              const Spacer(),
-              if (hasReading) ...[
-                Text(
-                  latest!.value.truncateToDouble() == latest!.value
-                      ? latest!.value.toInt().toString()
-                      : latest!.value.toStringAsFixed(1),
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: dotColor == AppColors.mutedForeground
-                        ? AppColors.foreground
-                        : dotColor,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                Text(
-                  VitalType.unitFor(type),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-              ] else ...[
-                const Text(
-                  '--',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                const Text(
-                  'No readings yet',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: AppColors.mutedForeground,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ─── Log Vital Sheet ──────────────────────────────────────────────────────────
@@ -308,11 +251,10 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Unusual Reading', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+          title: const Text('Unusual Reading', style: TextStyle(fontWeight: FontWeight.w600)),
           content: Text(
             '${VitalType.labelFor(_selectedType)} of $val $unit is outside the normal range ($minN–$maxN $unit). '
             'Please double-check the value. Log anyway?',
-            style: const TextStyle(fontFamily: 'Inter'),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Edit')),
@@ -357,7 +299,7 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Discard reading?',
-                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+                style: TextStyle(fontWeight: FontWeight.w600)),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -389,8 +331,7 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
               ),
               const SizedBox(height: 20),
               const Text('Log a Vital',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 16),
 
               // Type selector
@@ -417,7 +358,6 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: sel ? Colors.white : AppColors.mutedForeground,
-                          fontFamily: 'Inter',
                         ),
                       ),
                     ),
@@ -496,13 +436,11 @@ class _VitalHistorySheet extends ConsumerWidget {
                   const SizedBox(height: 16),
                   Text(
                     VitalType.labelFor(type),
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   Text(
                     'Unit: ${VitalType.unitFor(type)}',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                   ),
                   const SizedBox(height: 12),
                   const Divider(height: 1, color: AppColors.border),
@@ -511,11 +449,31 @@ class _VitalHistorySheet extends ConsumerWidget {
             ),
             Expanded(
               child: readings.isEmpty
-                  ? const Center(
-                      child: EmptyState(
-                        icon: Icons.monitor_heart_outlined,
-                        title: 'No Readings Yet',
-                        subtitle: 'Log your first reading using the button below.',
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: AppColors.muted,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Activity(width: 48, height: 48, color: AppColors.mutedForeground),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('No Readings Yet',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Log your first reading using the button below.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.separated(
@@ -531,28 +489,23 @@ class _VitalHistorySheet extends ConsumerWidget {
                         final borderlineLow = _borderlineLow(type, min);
                         final borderlineHigh = _borderlineHigh(type, max);
 
-                        Color statusColor;
-                        IconData statusIcon;
+                        final Color statusColor;
+                        final Widget statusIcon;
                         if (isNormal) {
                           statusColor = AppColors.success;
-                          statusIcon = Icons.check_circle_rounded;
+                          statusIcon = Icon(Icons.check_circle_rounded, size: 16, color: AppColors.success);
                         } else if (val >= borderlineLow && val <= borderlineHigh) {
                           statusColor = AppColors.warning;
-                          statusIcon = Icons.warning_amber_rounded;
+                          statusIcon = WarningTriangle(width: 16, height: 16, color: AppColors.warning);
                         } else {
                           statusColor = AppColors.destructive;
-                          statusIcon = Icons.error_rounded;
+                          statusIcon = Icon(Icons.error_rounded, size: 16, color: AppColors.destructive);
                         }
 
-                        return Container(
+                        return BentoCard(
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.border),
-                          ),
                           child: Row(children: [
-                            Icon(statusIcon, size: 16, color: statusColor),
+                            statusIcon,
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -563,23 +516,20 @@ class _VitalHistorySheet extends ConsumerWidget {
                                     style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: statusColor,
-                                        fontFamily: 'Inter'),
+                                        color: statusColor),
                                   ),
                                   Text(
                                     DateFormat('MMM d, h:mm a').format(r.recordedAt),
                                     style: const TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.mutedForeground,
-                                        fontFamily: 'Inter'),
+                                        color: AppColors.mutedForeground),
                                   ),
                                   if (r.note != null && r.note!.isNotEmpty)
                                     Text(
                                       r.note!,
                                       style: const TextStyle(
                                           fontSize: 11,
-                                          color: AppColors.mutedForeground,
-                                          fontFamily: 'Inter'),
+                                          color: AppColors.mutedForeground),
                                     ),
                                 ],
                               ),
@@ -593,9 +543,8 @@ class _VitalHistorySheet extends ConsumerWidget {
                                   context: context,
                                   builder: (_) => AlertDialog(
                                     title: const Text('Delete Reading?',
-                                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-                                    content: const Text('This reading will be permanently deleted.',
-                                        style: TextStyle(fontFamily: 'Inter')),
+                                        style: TextStyle(fontWeight: FontWeight.w600)),
+                                    content: const Text('This reading will be permanently deleted.'),
                                     actions: [
                                       TextButton(
                                           onPressed: () => Navigator.pop(context, false),
@@ -646,24 +595,24 @@ class _VitalStatusCard extends ConsumerWidget {
 
     final Color statusColor;
     final String statusText;
-    final IconData statusIcon;
+    final Widget statusIcon;
 
     if (missedMeds.isNotEmpty && abnormalReadings.isNotEmpty) {
       statusColor = AppColors.destructive;
       statusText = 'Needs attention';
-      statusIcon = Icons.warning_rounded;
+      statusIcon = WarningTriangle(width: 13, height: 13, color: AppColors.destructive);
     } else if (missedMeds.isNotEmpty || abnormalReadings.isNotEmpty) {
       statusColor = AppColors.warning;
       statusText = 'Check in today';
-      statusIcon = Icons.info_rounded;
+      statusIcon = Icon(Icons.info_rounded, size: 13, color: AppColors.warning);
     } else if (activeMeds.isNotEmpty && activeMeds.every((m) => m.takenToday)) {
       statusColor = AppColors.success;
       statusText = 'On track';
-      statusIcon = Icons.check_circle_rounded;
+      statusIcon = Icon(Icons.check_circle_rounded, size: 13, color: AppColors.success);
     } else {
       statusColor = AppColors.primary;
       statusText = 'Good day';
-      statusIcon = Icons.wb_sunny_rounded;
+      statusIcon = Icon(Icons.wb_sunny_rounded, size: 13, color: AppColors.primary);
     }
 
     final medStreak = gamProfile?.medStreak ?? 0;
@@ -690,9 +639,9 @@ class _VitalStatusCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(statusIcon, size: 13, color: statusColor),
+              statusIcon,
               const SizedBox(width: 5),
-              Text(statusText, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor, fontFamily: 'Inter')),
+              Text(statusText, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
             ]),
           ),
           const Spacer(),
@@ -703,12 +652,12 @@ class _VitalStatusCard extends ConsumerWidget {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.local_fire_department_rounded, size: 13, color: Color(0xFFF59E0B)),
                 const SizedBox(width: 4),
-                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B), fontFamily: 'Inter')),
+                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B))),
               ]),
             ),
         ]),
         const SizedBox(height: 12),
-        Text(vitalSummary, style: const TextStyle(fontSize: 13, fontFamily: 'Inter', color: AppColors.foreground, height: 1.4)),
+        Text(vitalSummary, style: const TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4)),
         if (latestBpSys != null || latestPulse != null || latestGlucose != null) ...[
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -716,14 +665,24 @@ class _VitalStatusCard extends ConsumerWidget {
               _VitalChip(
                 label: '${latestBpSys.value.toInt()}/${latestBpDia.value.toInt()}',
                 unit: 'mmHg',
-                icon: Icons.favorite_rounded,
+                iconBuilder: (c) => Heart(width: 12, height: 12, color: c),
                 isNormal: VitalType.isNormal(VitalType.bpSystolic, latestBpSys.value) &&
                     VitalType.isNormal(VitalType.bpDiastolic, latestBpDia.value),
               ),
             if (latestPulse != null)
-              _VitalChip(label: '${latestPulse.value.toInt()}', unit: 'bpm', icon: Icons.show_chart_rounded, isNormal: VitalType.isNormal(VitalType.pulse, latestPulse.value)),
+              _VitalChip(
+                label: '${latestPulse.value.toInt()}',
+                unit: 'bpm',
+                iconBuilder: (c) => StatsUpSquare(width: 12, height: 12, color: c),
+                isNormal: VitalType.isNormal(VitalType.pulse, latestPulse.value),
+              ),
             if (latestGlucose != null)
-              _VitalChip(label: '${latestGlucose.value.toInt()}', unit: 'mg/dL', icon: Icons.water_drop_rounded, isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value)),
+              _VitalChip(
+                label: '${latestGlucose.value.toInt()}',
+                unit: 'mg/dL',
+                iconBuilder: (c) => Icon(Icons.water_drop_rounded, size: 12, color: c),
+                isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value),
+              ),
           ]),
         ],
       ]),
@@ -756,9 +715,9 @@ class _VitalStatusCard extends ConsumerWidget {
 // ── Vital Chip ────────────────────────────────────────────────────────────────
 class _VitalChip extends StatelessWidget {
   final String label, unit;
-  final IconData icon;
+  final Widget Function(Color color) iconBuilder;
   final bool isNormal;
-  const _VitalChip({required this.label, required this.unit, required this.icon, required this.isNormal});
+  const _VitalChip({required this.label, required this.unit, required this.iconBuilder, required this.isNormal});
 
   @override
   Widget build(BuildContext context) {
@@ -771,13 +730,15 @@ class _VitalChip extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: color),
+        iconBuilder(color),
         const SizedBox(width: 5),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
         const SizedBox(width: 3),
-        Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+        Text(unit, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
         const SizedBox(width: 5),
-        Icon(isNormal ? Icons.check_circle_rounded : Icons.warning_amber_rounded, size: 11, color: color),
+        isNormal
+            ? Icon(Icons.check_circle_rounded, size: 11, color: color)
+            : WarningTriangle(width: 11, height: 11, color: color),
       ]),
     );
   }

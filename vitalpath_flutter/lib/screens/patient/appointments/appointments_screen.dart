@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -21,7 +23,7 @@ class AppointmentsScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('My Appointments'),
         automaticallyImplyLeading: false,
@@ -49,10 +51,32 @@ class AppointmentsScreen extends ConsumerWidget {
               final appts   = hasMore ? rawAppts.take(limit).toList() : rawAppts;
 
               if (appts.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.calendar_month_outlined,
-                  title: 'No Appointments',
-                  subtitle: 'Book an appointment with a doctor from the My Doctors page.',
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.muted,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Calendar(width: 48, height: 48, color: AppColors.mutedForeground),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('No Appointments',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Book an appointment with a doctor from the My Doctors page.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }
 
@@ -61,22 +85,22 @@ class AppointmentsScreen extends ConsumerWidget {
               final past      = appts.where((a) => a.isCompleted || a.isCancelled).toList();
 
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 children: [
                   if (pending.isNotEmpty) ...[
-                    const SectionHeader(title: 'Awaiting Confirmation'),
+                    BentoSectionHeader(title: 'Awaiting Confirmation'),
                     const SizedBox(height: 10),
                     ...pending.map((a) => _ApptCard(appt: a)),
                     const SizedBox(height: 20),
                   ],
                   if (confirmed.isNotEmpty) ...[
-                    const SectionHeader(title: 'Confirmed'),
+                    BentoSectionHeader(title: 'Confirmed'),
                     const SizedBox(height: 10),
                     ...confirmed.map((a) => _ApptCard(appt: a)),
                     const SizedBox(height: 20),
                   ],
                   if (past.isNotEmpty) ...[
-                    const SectionHeader(title: 'Past'),
+                    BentoSectionHeader(title: 'Past'),
                     const SizedBox(height: 10),
                     ...past.map((a) => _ApptCard(appt: a)),
                     const SizedBox(height: 12),
@@ -85,7 +109,7 @@ class AppointmentsScreen extends ConsumerWidget {
                     TextButton.icon(
                       onPressed: () => ref.read(_apptLimitProvider.notifier).state += _pageSize,
                       icon: const Icon(Icons.expand_more_rounded),
-                      label: const Text('Load more', style: TextStyle(fontFamily: 'Inter')),
+                      label: const Text('Load more'),
                     )
                   else
                     Padding(
@@ -93,7 +117,7 @@ class AppointmentsScreen extends ConsumerWidget {
                       child: Text(
                         'Showing all ${appts.length} appointment${appts.length == 1 ? '' : 's'}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                        style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -124,101 +148,97 @@ class _ApptCard extends ConsumerWidget {
       badge = StatusBadge.danger('Cancelled');
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            AppAvatar(name: appt.doctorName, size: 40, backgroundColor: AppColors.doctorPrimary),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Dr. ${appt.doctorName}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-              if (appt.doctorSpecialty != null)
-                Text(appt.doctorSpecialty!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ])),
-            badge,
-          ]),
-          if (appt.scheduledAt != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
-              child: Row(children: [
-                const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter'),
-                ),
-              ]),
-            ),
-          ],
-          if (appt.patientNote != null && appt.patientNote!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text('Your note: ${appt.patientNote}', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontStyle: FontStyle.italic, fontFamily: 'Inter')),
-          ],
-          if (appt.notes != null && appt.notes!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text('Doctor note: ${appt.notes}', style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter')),
-          ],
-          if (appt.isPending) ...[
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _confirmCancel(context, ref),
-              icon: const Icon(Icons.cancel_outlined, size: 16),
-              label: const Text('Cancel Request'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 40),
-                foregroundColor: AppColors.destructive,
-                side: const BorderSide(color: AppColors.destructive),
-              ),
-            ),
-          ],
-          if (appt.isConfirmed && appt.scheduledAt != null &&
-              appt.scheduledAt!.difference(DateTime.now()).inHours > 24) ...[
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => _confirmCancel(context, ref),
-              icon: const Icon(Icons.cancel_outlined, size: 16),
-              label: const Text('Cancel Appointment'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 40),
-                foregroundColor: AppColors.destructive,
-                side: const BorderSide(color: AppColors.destructive),
-              ),
-            ),
-          ],
-          if (appt.isCompleted) ...[
-            const SizedBox(height: 12),
-            appt.patientRating != null
-                ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    ...List.generate(5, (i) => Icon(
-                      i < appt.patientRating! ? Icons.star_rounded : Icons.star_outline_rounded,
-                      size: 18,
-                      color: AppColors.warning,
-                    )),
-                    const SizedBox(width: 8),
-                    Text('Your rating', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                  ])
-                : OutlinedButton.icon(
-                    onPressed: () => _showRateSheet(context),
-                    icon: const Icon(Icons.star_outline_rounded, size: 16),
-                    label: const Text('Rate this appointment'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 40),
-                      foregroundColor: AppColors.warning,
-                      side: const BorderSide(color: AppColors.warning),
-                    ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BentoCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              AppAvatar(name: appt.doctorName, size: 40, backgroundColor: AppColors.doctorPrimary),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Dr. ${appt.doctorName}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                if (appt.doctorSpecialty != null)
+                  Text(appt.doctorSpecialty!, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              ])),
+              badge,
+            ]),
+            if (appt.scheduledAt != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
+                child: Row(children: [
+                  const Icon(Icons.schedule_rounded, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary),
                   ),
+                ]),
+              ),
+            ],
+            if (appt.patientNote != null && appt.patientNote!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text('Your note: ${appt.patientNote}', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontStyle: FontStyle.italic)),
+            ],
+            if (appt.notes != null && appt.notes!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text('Doctor note: ${appt.notes}', style: const TextStyle(fontSize: 12, color: AppColors.foreground)),
+            ],
+            if (appt.isPending) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _confirmCancel(context, ref),
+                icon: const XmarkCircle(width: 16, height: 16),
+                label: const Text('Cancel Request'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 40),
+                  foregroundColor: AppColors.destructive,
+                  side: const BorderSide(color: AppColors.destructive),
+                ),
+              ),
+            ],
+            if (appt.isConfirmed && appt.scheduledAt != null &&
+                appt.scheduledAt!.difference(DateTime.now()).inHours > 24) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _confirmCancel(context, ref),
+                icon: const XmarkCircle(width: 16, height: 16),
+                label: const Text('Cancel Appointment'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 40),
+                  foregroundColor: AppColors.destructive,
+                  side: const BorderSide(color: AppColors.destructive),
+                ),
+              ),
+            ],
+            if (appt.isCompleted) ...[
+              const SizedBox(height: 12),
+              appt.patientRating != null
+                  ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      ...List.generate(5, (i) => Icon(
+                        i < appt.patientRating! ? Icons.star_rounded : Icons.star_outline_rounded,
+                        size: 18,
+                        color: AppColors.warning,
+                      )),
+                      const SizedBox(width: 8),
+                      const Text('Your rating', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                    ])
+                  : OutlinedButton.icon(
+                      onPressed: () => _showRateSheet(context),
+                      icon: const Icon(Icons.star_outline_rounded, size: 16),
+                      label: const Text('Rate this appointment'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 40),
+                        foregroundColor: AppColors.warning,
+                        side: const BorderSide(color: AppColors.warning),
+                      ),
+                    ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -244,8 +264,8 @@ class _ApptCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: Text(title, style: const TextStyle(fontFamily: 'Inter')),
-        content: Text(content, style: const TextStyle(fontFamily: 'Inter')),
+        title: Text(title),
+        content: Text(content),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
           ElevatedButton(
@@ -321,11 +341,11 @@ class _RateAppointmentSheetState extends ConsumerState<_RateAppointmentSheet> {
                 decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             Text('Rate Dr. ${widget.appt.doctorName}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             const Text('How was your appointment experience?',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
             const SizedBox(height: 24),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(5, (i) {
               final star = i + 1;
@@ -347,8 +367,7 @@ class _RateAppointmentSheetState extends ConsumerState<_RateAppointmentSheet> {
               style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _rating == 0 ? AppColors.mutedForeground : AppColors.warning,
-                  fontFamily: 'Inter'),
+                  color: _rating == 0 ? AppColors.mutedForeground : AppColors.warning),
             ),
             const SizedBox(height: 24),
             _submitting

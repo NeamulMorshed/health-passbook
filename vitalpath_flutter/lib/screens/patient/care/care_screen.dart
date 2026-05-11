@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -55,7 +58,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           return const Scaffold(body: SizedBox.shrink());
         }
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
             title: const Text('Care'),
             automaticallyImplyLeading: false,
@@ -67,10 +70,10 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.mutedForeground,
               indicatorColor: AppColors.primary,
-              labelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
+              labelStyle: const TextStyle(fontWeight: FontWeight.w600),
               tabs: const [
-                Tab(icon: Icon(Icons.medication_rounded), text: 'Medicines'),
-                Tab(icon: Icon(Icons.restaurant_rounded), text: 'Food'),
+                Tab(icon: PharmacyCrossCircle(width: 20, height: 20), text: 'Medicines'),
+                Tab(icon: Apple(width: 20, height: 20), text: 'Food'),
               ],
             ),
           ),
@@ -96,8 +99,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.primary,
-                            fontFamily: 'Inter'),
+                            color: AppColors.primary),
                       ),
                     ),
                     GestureDetector(
@@ -106,8 +108,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              fontFamily: 'Inter')),
+                              color: AppColors.primary)),
                     ),
                   ]),
                 ),
@@ -135,8 +136,8 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               }
             },
             backgroundColor: AppColors.primary,
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: Text(_tabCtrl.index == 0 ? 'Add Medicine' : 'Log Meal', style: const TextStyle(color: Colors.white, fontFamily: 'Inter')),
+            icon: const Plus(width: 20, height: 20, color: Colors.white),
+            label: Text(_tabCtrl.index == 0 ? 'Add Medicine' : 'Log Meal', style: const TextStyle(color: Colors.white)),
           ),
         );
       },
@@ -164,14 +165,12 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               const Text('Add Medicine',
                   style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+                      fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               const Text('How would you like to add a medicine?',
                   style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+                      color: AppColors.mutedForeground)),
               const SizedBox(height: 20),
               ListTile(
                 shape: RoundedRectangleBorder(
@@ -188,12 +187,10 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                 title: const Text('Scan Prescription',
                     style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
+                        fontWeight: FontWeight.w600)),
                 subtitle: const Text('Take a photo and we\'ll read it for you',
-                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: AppColors.mutedForeground),
+                    style: TextStyle(fontSize: 12)),
+                trailing: const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -217,18 +214,15 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.border,
                       borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.edit_rounded,
-                      color: AppColors.mutedForeground, size: 22),
+                  child: const EditPencil(width: 18, height: 18, color: AppColors.mutedForeground),
                 ),
                 title: const Text('Add Manually',
                     style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
+                        fontWeight: FontWeight.w600)),
                 subtitle: const Text('Enter medicine details yourself',
-                    style: TextStyle(fontSize: 12, fontFamily: 'Inter')),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 14, color: AppColors.mutedForeground),
+                    style: TextStyle(fontSize: 12)),
+                trailing: const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
                 onTap: () {
                   Navigator.pop(context);
                   _showMedicineSheet(context, uid, activeMember: activeMember);
@@ -263,8 +257,8 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
   showDialog(
     context: context,
     builder: (dialogCtx) => AlertDialog(
-      title: const Text('Delete Meal', style: TextStyle(fontFamily: 'Inter')),
-      content: const Text('Remove this meal log from today?', style: TextStyle(fontFamily: 'Inter')),
+      title: const Text('Delete Meal'),
+      content: const Text('Remove this meal log from today?'),
       actions: [
         TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
         ElevatedButton(
@@ -407,7 +401,7 @@ class _MedicineTab extends ConsumerWidget {
                 );
               }
               return ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 itemCount: meds.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (_, i) => _MedCard(
@@ -500,16 +494,14 @@ class _SwitcherChip extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 8,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : AppColors.foreground,
-                        fontFamily: 'Inter')),
+                        color: isSelected ? Colors.white : AppColors.foreground)),
               ),
             const SizedBox(width: 6),
             Text(label,
                 style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppColors.foreground,
-                    fontFamily: 'Inter')),
+                    color: isSelected ? Colors.white : AppColors.foreground)),
           ],
         ),
       ),
@@ -537,16 +529,13 @@ class _AddMemberChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.add_rounded,
-                size: 14,
-                color: AppColors.primary.withValues(alpha: 0.8)),
+            Plus(width: 14, height: 14, color: AppColors.primary.withValues(alpha: 0.8)),
             const SizedBox(width: 4),
             Text('Add member',
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.primary.withValues(alpha: 0.8),
-                    fontFamily: 'Inter')),
+                    color: AppColors.primary.withValues(alpha: 0.8))),
           ],
         ),
       ),
@@ -615,25 +604,8 @@ class _MedCardState extends ConsumerState<_MedCard> {
       badge = StatusBadge.info('Upcoming');
     }
 
-    // Border colour driven by urgency
-    final borderColor = fullyTaken
-        ? AppColors.success.withValues(alpha: 0.3)
-        : hasMissed
-            ? AppColors.warning.withValues(alpha: 0.4)
-            : AppColors.border;
-
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-      ),
+    return BentoCard(
+      onTap: widget.onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -644,15 +616,15 @@ class _MedCardState extends ConsumerState<_MedCard> {
               decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 22),
+              child: const PharmacyCrossCircle(width: 20, height: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(med.name,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 Text(med.dosage,
-                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
               ]),
             ),
             badge,
@@ -667,9 +639,9 @@ class _MedCardState extends ConsumerState<_MedCard> {
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
+                const PopupMenuItem(value: 'edit', child: Row(children: [EditPencil(width: 18, height: 18), SizedBox(width: 8), Text('Edit')])),
                 if (widget.med.prescribedBy == null)
-                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Remove', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
+                  const PopupMenuItem(value: 'delete', child: Row(children: [Trash(width: 18, height: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Remove', style: TextStyle(color: AppColors.destructive))])),
               ],
             ),
           ]),
@@ -705,14 +677,12 @@ class _MedCardState extends ConsumerState<_MedCard> {
               onPressed: _isTaking ? null : _logDose,
               icon: _isTaking
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.check_rounded, size: 16),
+                  : const Check(width: 16, height: 16),
               label: const Text('Mark as Taken'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
             ),
           ],
         ],
-      ),
-        ),
       ),
     );
   }
@@ -724,10 +694,9 @@ class _MedCardState extends ConsumerState<_MedCard> {
         bool removing = false;
         return StatefulBuilder(
           builder: (_, setDialogState) => AlertDialog(
-            title: const Text('Remove Medicine', style: TextStyle(fontFamily: 'Inter')),
+            title: const Text('Remove Medicine'),
             content: Text(
               'Are you sure you want to remove ${widget.med.name} from your medicines? This action cannot be undone.',
-              style: const TextStyle(fontFamily: 'Inter'),
             ),
             actions: [
               TextButton(
@@ -794,39 +763,39 @@ class _SlotChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color bg;
     final Color fg;
-    final IconData icon;
+    final Widget icon;
     final String label;
 
     if (slot.isTaken) {
       bg = AppColors.success.withValues(alpha: 0.1);
       fg = AppColors.success;
-      icon = Icons.check_circle_rounded;
       label = slot.shortTime;
+      icon = CheckCircle(width: 14, height: 14, color: fg);
     } else if (slot.isMissed) {
       bg = AppColors.warning.withValues(alpha: 0.1);
       fg = AppColors.warning;
-      icon = Icons.warning_amber_rounded;
       label = 'Missed · ${slot.shortTime}';
+      icon = WarningTriangle(width: 14, height: 14, color: fg);
     } else if (slot.isDue) {
       bg = AppColors.primary;
       fg = Colors.white;
-      icon = Icons.medication_rounded;
       label = 'Take · ${slot.shortTime}';
+      icon = PharmacyCrossCircle(width: 14, height: 14, color: fg);
     } else {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
-      icon = Icons.schedule_rounded;
       label = slot.shortTime;
+      icon = Icon(Icons.schedule_rounded, size: 13, color: fg);
     }
 
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 13, color: fg),
+        icon,
         const SizedBox(width: 5),
         Text(label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg, fontFamily: 'Inter')),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
       ]),
     );
 
@@ -848,7 +817,7 @@ class _InfoChip extends StatelessWidget {
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 12, color: AppColors.mutedForeground),
       const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+      Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
     ]),
   );
 }
@@ -887,7 +856,7 @@ class _FoodTab extends ConsumerWidget {
             else
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                   itemCount: meals.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) => _MealCard(
@@ -910,9 +879,9 @@ class _NutrientStat extends StatelessWidget {
   const _NutrientStat(this.label, this.value, this.unit, this.color);
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
-    Text(unit, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+    Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+    Text(unit, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
+    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
   ]);
 }
 
@@ -931,54 +900,46 @@ class _MealCard extends ConsumerWidget {
       'Snack': Icons.cookie_rounded,
     };
     final icon = mealIcons[meal.mealType] ?? Icons.restaurant_rounded;
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                  child: Icon(icon, color: AppColors.warning, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(meal.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                  if (meal.calories != null)
-                    Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-                ])),
-                StatusBadge.warning(meal.mealType),
-                const SizedBox(width: 4),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
-                  onSelected: (v) {
-                    if (v == 'edit') {
-                      showLogMealSheet(context, uid, existing: meal);
-                    } else {
-                      _confirmDeleteMeal(context, ref, uid, meal.id);
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit', style: TextStyle(fontFamily: 'Inter'))])),
-                    PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Delete', style: TextStyle(fontFamily: 'Inter', color: AppColors.destructive))])),
-                  ],
-                ),
-              ]),
-              if (meal.reminderTime != null) ...[
-                const SizedBox(height: 8),
-                _InfoChip(Icons.alarm_rounded, '${meal.reminderTime} (${meal.reminderRepeat})'),
+    return BentoCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: AppColors.warning, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(meal.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              if (meal.calories != null)
+                Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            ])),
+            StatusBadge.warning(meal.mealType),
+            const SizedBox(width: 4),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppColors.mutedForeground),
+              onSelected: (v) {
+                if (v == 'edit') {
+                  showLogMealSheet(context, uid, existing: meal);
+                } else {
+                  _confirmDeleteMeal(context, ref, uid, meal.id);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Row(children: [EditPencil(width: 18, height: 18), SizedBox(width: 8), Text('Edit')])),
+                PopupMenuItem(value: 'delete', child: Row(children: [Trash(width: 18, height: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.destructive))])),
               ],
-            ],
-          ),
-        ),
+            ),
+          ]),
+          if (meal.reminderTime != null) ...[
+            const SizedBox(height: 8),
+            _InfoChip(Icons.alarm_rounded, '${meal.reminderTime} (${meal.reminderRepeat})'),
+          ],
+        ],
       ),
     );
   }
@@ -1043,12 +1004,12 @@ class _MedDetailSheet extends ConsumerWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 28),
+                child: const PharmacyCrossCircle(width: 20, height: 20, color: AppColors.primary),
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(med.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
-                Text(med.dosage, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                Text(med.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(med.dosage, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
               ])),
               badge,
             ]),
@@ -1095,11 +1056,7 @@ class _MedDetailSheet extends ConsumerWidget {
               const SizedBox(height: 16),
               const Divider(height: 1, color: AppColors.border),
               const SizedBox(height: 16),
-              const Text('Prescription Photo',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+              BentoSectionHeader(title: 'Prescription Photo'),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () => showDialog(
@@ -1154,8 +1111,7 @@ class _MedDetailSheet extends ConsumerWidget {
                             Text('Could not load image',
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.mutedForeground,
-                                    fontFamily: 'Inter')),
+                                    color: AppColors.mutedForeground)),
                           ],
                         ),
                       ),
@@ -1167,43 +1123,46 @@ class _MedDetailSheet extends ConsumerWidget {
               const Text('Tap to view full size',
                   style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+                      color: AppColors.mutedForeground)),
             ],
 
             // Today's doses
             if (slots.isNotEmpty) ...[
               const SizedBox(height: 20),
-              const Text("Today's Doses", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+              BentoSectionHeader(title: "Today's Doses"),
               const SizedBox(height: 10),
               ...slots.map((slot) {
                 final Color bg;
                 final Color fg;
-                final IconData icon;
+                final Widget icon;
                 final String label;
                 if (slot.isTaken) {
                   bg = AppColors.success.withValues(alpha: 0.08); fg = AppColors.success;
-                  icon = Icons.check_circle_rounded; label = 'Taken';
+                  label = 'Taken';
+                  icon = CheckCircle(width: 16, height: 16, color: fg);
                 } else if (slot.isMissed) {
                   bg = AppColors.warning.withValues(alpha: 0.08); fg = AppColors.warning;
-                  icon = Icons.warning_amber_rounded; label = 'Missed';
+                  label = 'Missed';
+                  icon = WarningTriangle(width: 16, height: 16, color: fg);
                 } else if (slot.isDue) {
                   bg = AppColors.primary.withValues(alpha: 0.08); fg = AppColors.primary;
-                  icon = Icons.alarm_rounded; label = 'Due now';
+                  label = 'Due now';
+                  icon = Icon(Icons.alarm_rounded, size: 16, color: fg);
                 } else {
                   bg = AppColors.muted; fg = AppColors.mutedForeground;
-                  icon = Icons.schedule_rounded; label = 'Upcoming';
+                  label = 'Upcoming';
+                  icon = Icon(Icons.schedule_rounded, size: 16, color: fg);
                 }
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
                   child: Row(children: [
-                    Icon(icon, size: 16, color: fg),
+                    icon,
                     const SizedBox(width: 10),
-                    Text(slot.displayTime, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg, fontFamily: 'Inter')),
+                    Text(slot.displayTime, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
                     const Spacer(),
-                    Text(label, style: TextStyle(fontSize: 12, color: fg, fontFamily: 'Inter')),
+                    Text(label, style: TextStyle(fontSize: 12, color: fg)),
                   ]),
                 );
               }),
@@ -1227,8 +1186,8 @@ class _MedDetailSheet extends ConsumerWidget {
                     Navigator.pop(context);
                     showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
                   },
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Edit', style: TextStyle(fontFamily: 'Inter')),
+                  icon: const EditPencil(width: 16, height: 16),
+                  label: const Text('Edit'),
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
               ),
@@ -1251,8 +1210,8 @@ class _MedDetailSheet extends ConsumerWidget {
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.check_rounded, size: 16),
-                    label: const Text('Mark as Taken', style: TextStyle(fontFamily: 'Inter')),
+                    icon: const Check(width: 16, height: 16),
+                    label: const Text('Mark as Taken'),
                     style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
                   ),
                 ),
@@ -1317,8 +1276,8 @@ class _MealDetailSheet extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(meal.description, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
-                Text('Logged as ${meal.mealType}', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                Text(meal.description, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                Text('Logged as ${meal.mealType}', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
               ])),
               StatusBadge.warning(meal.mealType),
             ]),
@@ -1328,7 +1287,7 @@ class _MealDetailSheet extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Nutrition breakdown
-            const Text('Nutrition', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+            BentoSectionHeader(title: 'Nutrition'),
             const SizedBox(height: 12),
             Row(children: [
               _NutritionTile('Calories', meal.calories != null ? '${meal.calories}' : '--', 'kcal', AppColors.warning),
@@ -1361,8 +1320,8 @@ class _MealDetailSheet extends StatelessWidget {
                 Navigator.pop(context);
                 showLogMealSheet(context, uid, existing: meal);
               },
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text('Edit Meal', style: TextStyle(fontFamily: 'Inter')),
+              icon: const EditPencil(width: 16, height: 16),
+              label: const Text('Edit Meal'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
             ),
           ],
@@ -1387,10 +1346,10 @@ class _DetailRow extends StatelessWidget {
       const SizedBox(width: 10),
       SizedBox(
         width: 110,
-        child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+        child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
       ),
       Expanded(
-        child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+        child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
       ),
     ]),
   );
@@ -1411,10 +1370,10 @@ class _NutritionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(children: [
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color, fontFamily: 'Inter')),
-        Text(unit, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7), fontFamily: 'Inter')),
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+        Text(unit, style: TextStyle(fontSize: 10, color: color.withValues(alpha: 0.7))),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.mutedForeground)),
       ]),
     ),
   );
@@ -1527,10 +1486,9 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
         final addAnyway = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Duplicate Medicine', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+            title: const Text('Duplicate Medicine', style: TextStyle(fontWeight: FontWeight.w600)),
             content: Text(
               '${_nameCtrl.text.trim()} is already in the medicines list. Add it again?',
-              style: const TextStyle(fontFamily: 'Inter'),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
@@ -1609,7 +1567,7 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
               children: [
                 Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 20),
-                Text(_isEdit ? 'Edit Medicine' : 'Add Medicine', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                Text(_isEdit ? 'Edit Medicine' : 'Add Medicine', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 20),
                 TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
@@ -1619,7 +1577,7 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                   initialValue: _freq,
                   decoration: const InputDecoration(labelText: 'Frequency'),
                   items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
-                      .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontFamily: 'Inter'))))
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                       .toList(),
                   onChanged: (v) => _onFreqChanged(v!),
                 ),
@@ -1628,7 +1586,7 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                   Row(children: [
                     const Icon(Icons.alarm_rounded, size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
-                    Text('Reminder${count > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                    Text('Reminder${count > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ]),
                   const SizedBox(height: 8),
                   ...List.generate(count, (i) => Padding(
@@ -1645,9 +1603,9 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                         child: Row(children: [
                           const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
                           const SizedBox(width: 10),
-                          Text(count > 1 ? 'Dose ${i + 1}' : 'Reminder time', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                          Text(count > 1 ? 'Dose ${i + 1}' : 'Reminder time', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
                           const Spacer(),
-                          Text(_reminderTimes[i].format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+                          Text(_reminderTimes[i].format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
                           const SizedBox(width: 4),
                           const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
                         ]),
@@ -1794,7 +1752,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
               children: [
                 Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 20),
-                Text(_isEdit ? 'Edit Meal' : 'Log Meal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                Text(_isEdit ? 'Edit Meal' : 'Log Meal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 // Meal type selector
                 Wrap(
@@ -1806,7 +1764,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(color: sel ? AppColors.primary : AppColors.muted, borderRadius: BorderRadius.circular(8)),
-                        child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground, fontFamily: 'Inter')),
+                        child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground)),
                       ),
                     );
                   }).toList(),
@@ -1833,7 +1791,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   child: Row(children: [
                     const Icon(Icons.alarm_rounded, size: 18, color: AppColors.mutedForeground),
                     const SizedBox(width: 10),
-                    const Expanded(child: Text('Set meal reminder', style: TextStyle(fontSize: 13, fontFamily: 'Inter'))),
+                    const Expanded(child: Text('Set meal reminder', style: TextStyle(fontSize: 13))),
                     Switch(value: _setReminder, onChanged: (v) => setState(() => _setReminder = v), activeThumbColor: AppColors.primary),
                   ]),
                 ),
@@ -1847,9 +1805,9 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                       child: Row(children: [
                         const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
                         const SizedBox(width: 10),
-                        const Text('Remind me at', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                        const Text('Remind me at', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
                         const Spacer(),
-                        Text(_reminderTime.format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
+                        Text(_reminderTime.format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
                         const SizedBox(width: 4),
                         const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
                       ]),
@@ -1860,7 +1818,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   Row(children: [
                     const Icon(Icons.repeat_rounded, size: 16, color: AppColors.mutedForeground),
                     const SizedBox(width: 6),
-                    const Text('Repeat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                    const Text('Repeat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 12),
                     ...[('once', 'Once'), ('daily', 'Recurring')].map(((String, String) opt) {
                       final sel = _reminderRepeat == opt.$1;
@@ -1870,7 +1828,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                           margin: const EdgeInsets.only(right: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(color: sel ? AppColors.primary : AppColors.muted, borderRadius: BorderRadius.circular(8)),
-                          child: Text(opt.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground, fontFamily: 'Inter')),
+                          child: Text(opt.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground)),
                         ),
                       );
                     }),
@@ -1950,7 +1908,6 @@ class _DayPickerWidget extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: selectedDays.isEmpty ? AppColors.mutedForeground : AppColors.foreground,
-                  fontFamily: 'Inter',
                 ),
               ),
             ),
@@ -1982,7 +1939,6 @@ class _DayPickerWidget extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: selected ? Colors.white : AppColors.mutedForeground,
-                        fontFamily: 'Inter',
                       ),
                     ),
                   ),
