@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/gamification_provider.dart';
 import '../../../models/gamification.dart';
@@ -24,7 +25,7 @@ class GamificationScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Health Rewards'),
         actions: [
@@ -51,7 +52,7 @@ class GamificationScreen extends ConsumerWidget {
                 const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.mutedForeground),
                 const SizedBox(height: 12),
                 const Text('Failed to load rewards',
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: AppColors.mutedForeground)),
+                    style: TextStyle(fontSize: 15, color: AppColors.mutedForeground)),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => ref.invalidate(gamificationProvider(user.uid)),
@@ -74,7 +75,7 @@ class _GamificationContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
       children: [
         _LevelCard(profile: profile),
         const SizedBox(height: 20),
@@ -83,7 +84,6 @@ class _GamificationContent extends StatelessWidget {
         _WeeklyChallenge(profile: profile),
         const SizedBox(height: 20),
         _BadgesSection(profile: profile),
-        const SizedBox(height: 20),
       ],
     );
   }
@@ -95,6 +95,7 @@ class _LevelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gradient card — kept as Container
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -124,7 +125,7 @@ class _LevelCard extends StatelessWidget {
             center: Text(
               'Lv\n${profile.level}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, fontFamily: 'Inter'),
+              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
             ),
           ),
           const SizedBox(width: 20),
@@ -134,12 +135,12 @@ class _LevelCard extends StatelessWidget {
               children: [
                 Text(
                   profile.levelTitle,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${profile.hp} HP total',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'Inter'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -159,7 +160,7 @@ class _LevelCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   '${profile.hpToNextLevel} HP to next level',
-                  style: const TextStyle(color: Colors.white60, fontSize: 11, fontFamily: 'Inter'),
+                  style: const TextStyle(color: Colors.white60, fontSize: 11),
                 ),
               ],
             ),
@@ -179,7 +180,7 @@ class _StreakSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Active Streaks'),
+        const BentoSectionHeader(title: 'Active Streaks'),
         const SizedBox(height: 12),
         Row(children: [
           Expanded(child: _StreakTile(label: 'Medicine', streak: profile.medStreak, color: AppColors.primary, icon: Icons.medication_rounded)),
@@ -203,6 +204,7 @@ class _StreakTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = streak > 0;
+    // State-dependent border + bg color — kept as Container
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -217,12 +219,12 @@ class _StreakTile extends StatelessWidget {
           if (isActive) const Text('🔥', style: TextStyle(fontSize: 12)),
           Text(
             '$streak',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isActive ? color : AppColors.mutedForeground, fontFamily: 'Inter'),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isActive ? color : AppColors.mutedForeground),
           ),
         ]),
-        Text('days', style: TextStyle(fontSize: 10, color: isActive ? color : AppColors.mutedForeground, fontFamily: 'Inter')),
+        Text('days', style: TextStyle(fontSize: 10, color: isActive ? color : AppColors.mutedForeground)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter'), textAlign: TextAlign.center),
+        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground), textAlign: TextAlign.center),
       ]),
     );
   }
@@ -237,11 +239,10 @@ class _WeeklyChallenge extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Weekly Challenges'),
+        const BentoSectionHeader(title: 'Weekly Challenges'),
         const SizedBox(height: 12),
-        Container(
+        BentoCard(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
           child: Column(children: [
             _ChallengeRow(label: 'Take medicine 5 days', current: profile.weeklyMedDays, target: 5, color: AppColors.primary),
             const SizedBox(height: 14),
@@ -271,8 +272,8 @@ class _ChallengeRow extends StatelessWidget {
       children: [
         Row(children: [
           if (done) const Text('✅ ', style: TextStyle(fontSize: 14)),
-          Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: done ? AppColors.success : AppColors.foreground, fontFamily: 'Inter'))),
-          Text('$current/$target', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter')),
+          Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: done ? AppColors.success : AppColors.foreground))),
+          Text('$current/$target', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
         ]),
         const SizedBox(height: 6),
         ClipRRect(
@@ -298,7 +299,7 @@ class _BadgesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(title: 'Badges (${profile.badgeIds.length}/${kAllBadges.length})'),
+        BentoSectionHeader(title: 'Badges (${profile.badgeIds.length}/${kAllBadges.length})'),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -313,6 +314,7 @@ class _BadgesSection extends StatelessWidget {
           itemBuilder: (_, i) {
             final badge = kAllBadges[i];
             final earned = profile.badgeIds.contains(badge.id);
+            // Earned conditional colors — kept as Container
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -336,7 +338,6 @@ class _BadgesSection extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: earned ? AppColors.foreground : AppColors.mutedForeground,
-                      fontFamily: 'Inter',
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -348,7 +349,6 @@ class _BadgesSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 9,
                       color: earned ? AppColors.mutedForeground : AppColors.mutedForeground.withValues(alpha: 0.5),
-                      fontFamily: 'Inter',
                     ),
                   ),
                 ],
@@ -381,7 +381,7 @@ class _HowToEarnSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.pageBackground,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
@@ -408,13 +408,13 @@ class _HowToEarnSheet extends StatelessWidget {
             const SizedBox(width: 12),
             const Text(
               'How to Earn HP',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
           ]),
           const SizedBox(height: 6),
           const Text(
             'Health Points (HP) level you up and unlock badges.',
-            style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+            style: TextStyle(fontSize: 13, color: AppColors.mutedForeground),
           ),
           const SizedBox(height: 20),
           ..._items.map((item) => _EarnRow(item: item)),
@@ -422,7 +422,7 @@ class _HowToEarnSheet extends StatelessWidget {
           Center(
             child: TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Got it', style: TextStyle(fontFamily: 'Inter')),
+              child: const Text('Got it'),
             ),
           ),
         ],
@@ -451,7 +451,7 @@ class _EarnRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(item.action,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -460,7 +460,7 @@ class _EarnRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(item.hp,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Inter')),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
         ),
       ]),
     );

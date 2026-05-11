@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../models/patient.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -172,7 +174,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (leave == true && context.mounted) Navigator.pop(context);
       },
       child: Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('Edit Profile'),
         actions: [
@@ -180,14 +182,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Save', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600)),
+                : const Text('Save', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           children: [
             // Photo picker
             Center(
@@ -211,7 +213,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ? Center(
                               child: Text(
                                 (user?.name ?? 'P').split(' ').take(2).map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join(),
-                                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'Inter'),
+                                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.primary),
                               ),
                             )
                           : null,
@@ -221,7 +223,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14),
+                        child: const Camera(width: 14, height: 14, color: Colors.white),
                       ),
                     ),
                   ],
@@ -230,7 +232,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            _SectionLabel('Personal Information'),
+            const BentoSectionHeader(title: 'Personal Information'),
             const SizedBox(height: 12),
             _Field(
               controller: _nameCtrl,
@@ -254,7 +256,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            _SectionLabel('Health Information'),
+            const BentoSectionHeader(title: 'Health Information'),
             const SizedBox(height: 12),
             Row(children: [
               Expanded(child: _DobPicker(dob: _dob, onTap: _pickDob)),
@@ -270,7 +272,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     filled: true, fillColor: AppColors.muted,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
-                  items: _bloodTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontFamily: 'Inter')))).toList(),
+                  items: _bloodTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                   onChanged: (v) => setState(() { _selectedBloodType = v; _isDirty = true; }),
                 ),
               ),
@@ -311,7 +313,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             _Field(controller: _allergiesCtrl, label: 'Allergies', icon: Icons.warning_amber_rounded, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 24),
 
-            _SectionLabel('Emergency Contact'),
+            const BentoSectionHeader(title: 'Emergency Contact'),
             const SizedBox(height: 12),
             _Field(controller: _ecNameCtrl, label: 'Contact Name', icon: Icons.person_outline_rounded, onChanged: (_) => setState(() => _isDirty = true)),
             const SizedBox(height: 12),
@@ -337,21 +339,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             const SizedBox(height: 12),
             _Field(controller: _ecRelCtrl, label: 'Relationship (e.g. Spouse)', icon: Icons.people_outline_rounded, onChanged: (_) => setState(() => _isDirty = true)),
-            const SizedBox(height: 32),
           ],
         ),
       ),
     ),
     );
   }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-  @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter', letterSpacing: 0.5));
 }
 
 class _DobPicker extends StatelessWidget {
@@ -376,7 +369,7 @@ class _DobPicker extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontFamily: 'Inter', fontSize: 14,
+            fontSize: 14,
             color: dob != null ? AppColors.foreground : AppColors.mutedForeground,
           ),
         ),
@@ -411,7 +404,7 @@ class _Field extends StatelessWidget {
         maxLines: maxLines,
         validator: validator,
         onChanged: onChanged,
-        style: const TextStyle(fontFamily: 'Inter', fontSize: 14),
+        style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, size: 20),

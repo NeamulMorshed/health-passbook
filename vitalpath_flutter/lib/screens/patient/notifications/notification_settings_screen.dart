@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -48,178 +51,100 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('Notification Settings')),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
               children: [
-                const SizedBox(height: 12),
-
-                _SettingsSection(
-                  title: 'Reminders',
-                  children: [
-                    _ToggleTile(
-                      icon: Icons.medication_rounded,
-                      color: AppColors.primary,
+                BentoSectionHeader(title: 'Reminders'),
+                const SizedBox(height: 8),
+                BentoCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(children: [
+                    BentoSettingsTile(
+                      icon: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 20),
                       title: 'Medicine Reminders',
-                      subtitle: 'Notify when it\'s time to take your medicine',
-                      value: _medicines,
-                      onChanged: (v) {
-                        setState(() => _medicines = v);
-                        _save(_keyMeds, v);
-                      },
+                      subtitle: "Notify when it's time to take your medicine",
+                      trailing: Switch(
+                        value: _medicines,
+                        onChanged: (v) {
+                          setState(() => _medicines = v);
+                          _save(_keyMeds, v);
+                        },
+                        activeThumbColor: AppColors.primary,
+                      ),
+                      showDivider: true,
                     ),
-                    _ToggleTile(
-                      icon: Icons.restaurant_rounded,
-                      color: AppColors.success,
+                    BentoSettingsTile(
+                      icon: const Icon(Icons.restaurant_rounded,
+                          color: AppColors.success, size: 20),
                       title: 'Meal Reminders',
                       subtitle: 'Reminders to log breakfast, lunch and dinner',
-                      value: _meals,
-                      onChanged: (v) {
-                        setState(() => _meals = v);
-                        _save(_keyMeals, v);
-                      },
+                      trailing: Switch(
+                        value: _meals,
+                        onChanged: (v) {
+                          setState(() => _meals = v);
+                          _save(_keyMeals, v);
+                        },
+                        activeThumbColor: AppColors.success,
+                      ),
+                      showDivider: false,
                     ),
-                  ],
+                  ]),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                _SettingsSection(
-                  title: 'Health Updates',
-                  children: [
-                    _ToggleTile(
-                      icon: Icons.calendar_month_rounded,
-                      color: AppColors.doctorPrimary,
+                BentoSectionHeader(title: 'Health Updates'),
+                const SizedBox(height: 8),
+                BentoCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(children: [
+                    BentoSettingsTile(
+                      icon: const Icon(Icons.calendar_month_rounded,
+                          color: AppColors.doctorPrimary, size: 20),
                       title: 'Appointment Alerts',
-                      subtitle:
-                          'When a doctor confirms, reschedules or cancels',
-                      value: _appointments,
-                      onChanged: (v) {
-                        setState(() => _appointments = v);
-                        _save(_keyAppts, v);
-                      },
+                      subtitle: 'When a doctor confirms, reschedules or cancels',
+                      trailing: Switch(
+                        value: _appointments,
+                        onChanged: (v) {
+                          setState(() => _appointments = v);
+                          _save(_keyAppts, v);
+                        },
+                        activeThumbColor: AppColors.doctorPrimary,
+                      ),
+                      showDivider: true,
                     ),
-                    _ToggleTile(
-                      icon: Icons.people_rounded,
-                      color: AppColors.doctorPrimary,
+                    BentoSettingsTile(
+                      icon: const Group(width: 20, height: 20, color: AppColors.doctorPrimary),
                       title: 'Doctor Updates',
                       subtitle: 'New prescriptions and updates from your doctors',
-                      value: _doctors,
-                      onChanged: (v) {
-                        setState(() => _doctors = v);
-                        _save(_keyDoctors, v);
-                      },
+                      trailing: Switch(
+                        value: _doctors,
+                        onChanged: (v) {
+                          setState(() => _doctors = v);
+                          _save(_keyDoctors, v);
+                        },
+                        activeThumbColor: AppColors.doctorPrimary,
+                      ),
+                      showDivider: false,
                     ),
-                  ],
+                  ]),
                 ),
 
                 const SizedBox(height: 24),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'Changes take effect immediately. Disabling a category '
-                    'cancels any scheduled reminders for that type.',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter'),
-                  ),
+                const Text(
+                  'Changes take effect immediately. Disabling a category '
+                  'cancels any scheduled reminders for that type.',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.mutedForeground),
                 ),
-
-                const SizedBox(height: 32),
               ],
             ),
-    );
-  }
-}
-
-class _SettingsSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-  const _SettingsSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-          child: Text(
-            title,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedForeground,
-                letterSpacing: 0.5,
-                fontFamily: 'Inter'),
-          ),
-        ),
-        Container(
-          color: AppColors.surface,
-          child: Column(
-            children: List.generate(children.length, (i) {
-              return Column(
-                children: [
-                  children[i],
-                  if (i < children.length - 1)
-                    const Divider(height: 1, indent: 60, color: AppColors.border),
-                ],
-              );
-            }),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ToggleTile extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _ToggleTile({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, color: color, size: 20),
-      ),
-      title: Text(title,
-          style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Inter')),
-      subtitle: Text(subtitle,
-          style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.mutedForeground,
-              fontFamily: 'Inter')),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeThumbColor: color,
-      ),
     );
   }
 }

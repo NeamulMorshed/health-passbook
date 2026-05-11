@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/gamification_provider.dart';
@@ -22,7 +23,7 @@ class InsightsScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('AI Health Insights')),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -88,9 +89,9 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
     final allLoaded = medsAsync.hasValue && mealsAsync.hasValue && apptsAsync.hasValue;
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
       children: [
-        // Header card
+        // Header card — gradient kept
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -107,24 +108,24 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               const Row(children: [
                 Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
                 SizedBox(width: 10),
-                Text('Powered by Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
+                Text('Powered by Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12)),
               ]),
               const SizedBox(height: 10),
               const Text(
                 'Personalised Health\nInsights',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'Inter'),
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Get AI-powered suggestions based on your medicine adherence, activity, and nutrition data.',
-                style: TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'Inter'),
+                style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
               const SizedBox(height: 8),
               if (!allLoaded)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 8),
                   child: Text('Waiting for your health data...',
-                      style: TextStyle(color: Colors.white60, fontSize: 11, fontFamily: 'Inter')),
+                      style: TextStyle(color: Colors.white60, fontSize: 11)),
                 ),
               const SizedBox(height: 8),
               SizedBox(
@@ -143,7 +144,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
                   icon: insightsState.isLoading
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                       : const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: Text(insightsState.isLoading ? 'Analysing your data...' : 'Generate Insights', style: const TextStyle(fontWeight: FontWeight.w600, fontFamily: 'Inter')),
+                  label: Text(insightsState.isLoading ? 'Analysing your data...' : 'Generate Insights', style: const TextStyle(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
@@ -158,7 +159,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
 
         const SizedBox(height: 20),
 
-        // Disclaimer
+        // Disclaimer — dynamic warning border kept as Container
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -174,7 +175,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               Expanded(
                 child: Text(
                   'These insights are informational only and not medical advice. Always consult your doctor before making health decisions.',
-                  style: TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                  style: TextStyle(fontSize: 11, color: AppColors.mutedForeground),
                 ),
               ),
             ],
@@ -196,7 +197,7 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(title: 'Your Insights'),
+                const BentoSectionHeader(title: 'Your Insights'),
                 const SizedBox(height: 12),
                 ...insights.map((insight) => _InsightCard(insight: insight)),
               ],
@@ -208,18 +209,21 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               child: Column(children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Analysing your health data...', style: TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                Text('Analysing your health data...', style: TextStyle(color: AppColors.mutedForeground)),
               ]),
             ),
           ),
           error: (e, _) => Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.destructive.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3))),
+            decoration: BoxDecoration(
+                color: AppColors.destructive.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Icon(Icons.error_outline_rounded, color: AppColors.destructive),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('Failed to generate insights. Check your connection and try again.', style: TextStyle(fontSize: 13, fontFamily: 'Inter'))),
+              const Row(children: [
+                Icon(Icons.error_outline_rounded, color: AppColors.destructive),
+                SizedBox(width: 12),
+                Expanded(child: Text('Failed to generate insights. Check your connection and try again.', style: TextStyle(fontSize: 13))),
               ]),
               const SizedBox(height: 8),
               TextButton(
@@ -248,6 +252,7 @@ class _InsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, color) = _categoryStyle(insight.category);
+    // Dynamic border color — kept as Container
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -269,7 +274,7 @@ class _InsightCard extends StatelessWidget {
             Expanded(
               child: Text(
                 insight.title,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
             Container(
@@ -277,13 +282,14 @@ class _InsightCard extends StatelessWidget {
               decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
               child: Text(
                 _categoryLabel(insight.category),
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter'),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
               ),
             ),
           ]),
           const SizedBox(height: 12),
-          Text(insight.body, style: const TextStyle(fontSize: 13, color: AppColors.foreground, fontFamily: 'Inter', height: 1.4)),
+          Text(insight.body, style: const TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4)),
           const SizedBox(height: 10),
+          // Dynamic suggestion bg color — kept as Container
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
@@ -293,7 +299,7 @@ class _InsightCard extends StatelessWidget {
                 Icon(Icons.tips_and_updates_rounded, color: color, size: 14),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(insight.suggestion, style: TextStyle(fontSize: 12, color: color, fontFamily: 'Inter', fontWeight: FontWeight.w500)),
+                  child: Text(insight.suggestion, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
                 ),
               ],
             ),

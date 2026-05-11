@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 
@@ -16,7 +18,7 @@ class PrescriptionsScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('My Prescriptions')),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -44,6 +46,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
                   child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                     children: const [
                       SizedBox(height: 200),
                       EmptyState(
@@ -58,7 +61,7 @@ class PrescriptionsScreen extends ConsumerWidget {
               return RefreshIndicator(
                 onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
                 child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                   itemCount: rxList.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (_, i) => _RxCard(rx: rxList[i]),
@@ -89,159 +92,139 @@ class _RxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPhoto = rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
-    return GestureDetector(
+    return BentoCard(
       onTap: () => _showDetail(context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Prescription photo thumbnail
-            if (hasPhoto)
-              CachedNetworkImage(
-                imageUrl: rx.documentUrl as String,
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Prescription photo thumbnail
+          if (hasPhoto)
+            CachedNetworkImage(
+              imageUrl: rx.documentUrl as String,
+              height: 140,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(
                 height: 140,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  height: 140,
-                  color: AppColors.muted,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  height: 60,
-                  color: AppColors.muted,
-                  child: const Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.broken_image_rounded,
-                            size: 16, color: AppColors.mutedForeground),
-                        SizedBox(width: 6),
-                        Text('Could not load image',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter')),
-                      ],
-                    ),
+                color: AppColors.muted,
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (_, __, ___) => Container(
+                height: 60,
+                color: AppColors.muted,
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.broken_image_rounded,
+                          size: 16, color: AppColors.mutedForeground),
+                      SizedBox(width: 6),
+                      Text('Could not load image',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.mutedForeground)),
+                    ],
                   ),
                 ),
               ),
+            ),
 
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.doctorPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.medication_rounded,
-                          color: AppColors.doctorPrimary, size: 20),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.doctorPrimary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Dr. ${rx.doctorName}',
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Inter')),
-                            Text(
-                              DateFormat('MMM d, y').format(rx.issuedAt),
+                    child: const Icon(Icons.medication_rounded, color: AppColors.doctorPrimary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Dr. ${rx.doctorName}',
                               style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.mutedForeground,
-                                  fontFamily: 'Inter'),
-                            ),
-                          ]),
-                    ),
-                    const Icon(Icons.chevron_right_rounded,
-                        size: 18, color: AppColors.mutedForeground),
-                  ]),
-
-                  if (rx.diagnosis != null &&
-                      (rx.diagnosis as String).isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          color: AppColors.muted,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(rx.diagnosis as String,
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.mutedForeground,
-                              fontFamily: 'Inter')),
-                    ),
-                  ],
-
-                  const SizedBox(height: 12),
-                  const Text('Medicines',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.mutedForeground,
-                          fontFamily: 'Inter')),
-                  const SizedBox(height: 6),
-                  ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(children: [
-                          const Icon(Icons.circle,
-                              size: 5, color: AppColors.doctorPrimary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${m.name}  ${m.dosage}  •  ${m.frequency}',
-                              style: const TextStyle(
-                                  fontSize: 13, fontFamily: 'Inter'),
-                            ),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                          Text(
+                            DateFormat('MMM d, y').format(rx.issuedAt),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mutedForeground),
                           ),
                         ]),
-                      )),
+                  ),
+                  const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+                ]),
 
-                  if (rx.notes != null &&
-                      (rx.notes as String).isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text('Note: ${rx.notes}',
+                if (rx.diagnosis != null &&
+                    (rx.diagnosis as String).isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  BentoCard(
+                    color: AppColors.muted,
+                    padding: const EdgeInsets.all(10),
+                    child: Text(rx.diagnosis as String,
                         style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter')),
-                  ],
-
-                  if (hasPhoto) ...[
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      const Icon(Icons.image_rounded,
-                          size: 13, color: AppColors.primary),
-                      const SizedBox(width: 4),
-                      const Text('Tap to view prescription photo',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.primary,
-                              fontFamily: 'Inter')),
-                    ]),
-                  ],
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.mutedForeground)),
+                  ),
                 ],
-              ),
+
+                const SizedBox(height: 12),
+                const Text('Medicines',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.mutedForeground)),
+                const SizedBox(height: 6),
+                ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(children: [
+                        const Icon(Icons.circle,
+                            size: 5, color: AppColors.doctorPrimary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${m.name}  ${m.dosage}  •  ${m.frequency}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ]),
+                    )),
+
+                if (rx.notes != null &&
+                    (rx.notes as String).isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('Note: ${rx.notes}',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.mutedForeground)),
+                ],
+
+                if (hasPhoto) ...[
+                  const SizedBox(height: 10),
+                  const Row(children: [
+                    Icon(Icons.image_rounded,
+                        size: 13, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text('Tap to view prescription photo',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primary)),
+                  ]),
+                ],
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -290,8 +273,8 @@ class _RxDetailSheet extends StatelessWidget {
                   color: AppColors.doctorPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.receipt_long_rounded,
-                    color: AppColors.doctorPrimary, size: 24),
+                child: const Notes(
+                    color: AppColors.doctorPrimary, width: 24, height: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -301,14 +284,12 @@ class _RxDetailSheet extends StatelessWidget {
                       Text('Dr. ${rx.doctorName}',
                           style: const TextStyle(
                               fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Inter')),
+                              fontWeight: FontWeight.w700)),
                       Text(
                         DateFormat('MMMM d, y').format(rx.issuedAt),
                         style: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.mutedForeground,
-                            fontFamily: 'Inter'),
+                            color: AppColors.mutedForeground),
                       ),
                     ]),
               ),
@@ -317,18 +298,14 @@ class _RxDetailSheet extends StatelessWidget {
             if (rx.diagnosis != null &&
                 (rx.diagnosis as String).isNotEmpty) ...[
               const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
+              BentoCard(
+                color: AppColors.muted,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: AppColors.muted,
-                    borderRadius: BorderRadius.circular(10)),
                 child: Text(rx.diagnosis as String,
                     style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                        color: AppColors.mutedForeground)),
               ),
             ],
 
@@ -339,62 +316,51 @@ class _RxDetailSheet extends StatelessWidget {
             const Text('Medicines',
                 style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter')),
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-            ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(m.name,
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Inter')),
-                        if ((m.dosage as String).isNotEmpty ||
-                            (m.frequency as String).isNotEmpty)
-                          Text(
-                            [
-                              if ((m.dosage as String).isNotEmpty) m.dosage,
-                              if ((m.frequency as String).isNotEmpty)
-                                m.frequency,
-                            ].join('  •  '),
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter'),
-                          ),
-                        if (m.instructions != null &&
-                            (m.instructions as String).isNotEmpty)
-                          Text(m.instructions as String,
+            ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: BentoCard(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(m.name,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                          if ((m.dosage as String).isNotEmpty ||
+                              (m.frequency as String).isNotEmpty)
+                            Text(
+                              [
+                                if ((m.dosage as String).isNotEmpty) m.dosage,
+                                if ((m.frequency as String).isNotEmpty)
+                                  m.frequency,
+                              ].join('  •  '),
                               style: const TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.mutedForeground,
-                                  fontFamily: 'Inter',
-                                  fontStyle: FontStyle.italic)),
-                      ]),
+                                  color: AppColors.mutedForeground),
+                            ),
+                          if (m.instructions != null &&
+                              (m.instructions as String).isNotEmpty)
+                            Text(m.instructions as String,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.mutedForeground,
+                                    fontStyle: FontStyle.italic)),
+                        ]),
+                  ),
                 )),
 
             if (rx.notes != null && (rx.notes as String).isNotEmpty) ...[
               const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
+              BentoCard(
+                color: AppColors.muted,
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: AppColors.muted,
-                    borderRadius: BorderRadius.circular(10)),
                 child: Text('Note: ${rx.notes}',
                     style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.mutedForeground,
-                        fontFamily: 'Inter')),
+                        color: AppColors.mutedForeground)),
               ),
             ],
 
@@ -406,8 +372,7 @@ class _RxDetailSheet extends StatelessWidget {
               const Text('Prescription Photo',
                   style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter')),
+                      fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () => showDialog(
@@ -455,8 +420,7 @@ class _RxDetailSheet extends StatelessWidget {
                             Text('Could not load image',
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color: AppColors.mutedForeground,
-                                    fontFamily: 'Inter')),
+                                    color: AppColors.mutedForeground)),
                           ],
                         ),
                       ),
@@ -468,8 +432,7 @@ class _RxDetailSheet extends StatelessWidget {
               const Text('Tap to view full size',
                   style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.mutedForeground,
-                      fontFamily: 'Inter')),
+                      color: AppColors.mutedForeground)),
             ],
           ],
         ),

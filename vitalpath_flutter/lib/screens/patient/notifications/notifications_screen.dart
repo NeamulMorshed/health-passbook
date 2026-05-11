@@ -37,7 +37,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         final unread = notifsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
             title: const Text('Notifications'),
             actions: [
@@ -59,7 +59,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   },
                   child: _markingAll
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Mark all read', style: TextStyle(fontFamily: 'Inter', fontSize: 13)),
+                      : const Text('Mark all read', style: TextStyle(fontSize: 13)),
                 ),
             ],
           ),
@@ -75,7 +75,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 );
               }
               return ListView.separated(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                 itemCount: notifs.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (_, i) => _NotifCard(
@@ -146,7 +146,6 @@ class _NotifCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: notif.isRead ? FontWeight.w500 : FontWeight.w700,
-                          fontFamily: 'Inter',
                         ),
                       ),
                     ),
@@ -157,11 +156,11 @@ class _NotifCard extends StatelessWidget {
                       ),
                   ]),
                   const SizedBox(height: 3),
-                  Text(notif.body, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  Text(notif.body, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
                   const SizedBox(height: 6),
                   Text(
                     _formatTime(notif.createdAt),
-                    style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter'),
+                    style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground),
                   ),
                 ],
               ),

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/bento_card.dart';
 import '../../../providers/auth_provider.dart';
 
 const _kBiometricPref = 'biometric_enabled';
@@ -54,8 +56,8 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete Account', style: TextStyle(fontFamily: 'Inter')),
-        content: const Text('This will permanently delete your account and all health data. This cannot be undone.', style: TextStyle(fontFamily: 'Inter')),
+        title: const Text('Delete Account'),
+        content: const Text('This will permanently delete your account and all health data. This cannot be undone.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           ElevatedButton(
@@ -85,62 +87,70 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
     final biometricEnabled = ref.watch(_biometricPrefProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(title: const Text('Privacy & Security')),
       body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
         children: [
-          // Biometric section
-          const SizedBox(height: 12),
-          _SectionHeader('Authentication'),
-          Container(
-            color: AppColors.surface,
-            child: Column(children: [
-              SwitchListTile(
+          const BentoSectionHeader(title: 'Authentication'),
+          const SizedBox(height: 8),
+          BentoCard(
+            padding: EdgeInsets.zero,
+            child: BentoSettingsTile(
+              icon: const Icon(Icons.fingerprint_rounded,
+                  color: AppColors.primary, size: 20),
+              title: 'Biometric Login',
+              subtitle: _biometricAvailable
+                  ? 'Use Face ID or fingerprint to log in'
+                  : 'Not available on this device',
+              trailing: Switch(
                 value: biometricEnabled,
                 onChanged: _biometricAvailable ? _toggleBiometric : null,
-                secondary: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.fingerprint_rounded, color: AppColors.primary, size: 20),
-                ),
-                title: const Text('Biometric Login', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
-                subtitle: Text(
-                  _biometricAvailable ? 'Use Face ID or fingerprint to log in' : 'Not available on this device',
-                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter'),
-                ),
                 activeThumbColor: AppColors.primary,
               ),
-            ]),
+              showDivider: false,
+            ),
           ),
 
-          const SizedBox(height: 12),
-          _SectionHeader('Your Data'),
-          Container(
-            color: AppColors.surface,
+          const SizedBox(height: 16),
+
+          const BentoSectionHeader(title: 'Your Data'),
+          const SizedBox(height: 8),
+          BentoCard(
             padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _InfoRow(Icons.lock_outline_rounded, 'Data Encryption', 'All your health data is encrypted in transit and at rest via Firebase.'),
+              _InfoRow(
+                const Lock(width: 18, height: 18, color: AppColors.mutedForeground),
+                'Data Encryption',
+                'All your health data is encrypted in transit and at rest via Firebase.',
+              ),
               const SizedBox(height: 12),
-              _InfoRow(Icons.storage_rounded, 'Data Storage', 'Your data is stored securely in Google Cloud Firestore.'),
+              _InfoRow(
+                const Icon(Icons.storage_rounded, size: 18, color: AppColors.mutedForeground),
+                'Data Storage',
+                'Your data is stored securely in Google Cloud Firestore.',
+              ),
               const SizedBox(height: 12),
-              _InfoRow(Icons.share_outlined, 'Data Sharing', 'Your data is only shared with doctors you connect with.'),
+              _InfoRow(
+                const ShareIos(width: 18, height: 18, color: AppColors.mutedForeground),
+                'Data Sharing',
+                'Your data is only shared with doctors you connect with.',
+              ),
             ]),
           ),
 
-          const SizedBox(height: 12),
-          _SectionHeader('Account'),
-          Container(
-            color: AppColors.surface,
-            child: ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.destructive.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.delete_outline_rounded, color: AppColors.destructive, size: 20),
-              ),
-              title: const Text('Delete Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.destructive, fontFamily: 'Inter')),
-              subtitle: const Text('Permanently delete your account and data', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
+          const SizedBox(height: 16),
+
+          const BentoSectionHeader(title: 'Account'),
+          const SizedBox(height: 8),
+          BentoCard(
+            padding: EdgeInsets.zero,
+            child: BentoSettingsTile(
+              icon: const Trash(width: 20, height: 20, color: AppColors.destructive),
+              title: 'Delete Account',
+              subtitle: 'Permanently delete your account and data',
               onTap: _showDeleteDialog,
+              showDivider: false,
             ),
           ),
 
@@ -148,7 +158,8 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text('Omra v2.0.0', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+              child: Text('Omra v2.0.0',
+                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
             ),
           ),
         ],
@@ -157,29 +168,24 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String text;
-  const _SectionHeader(this.text);
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-        child: Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.mutedForeground, fontFamily: 'Inter', letterSpacing: 0.5)),
-      );
-}
-
 class _InfoRow extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String subtitle;
   const _InfoRow(this.icon, this.title, this.subtitle);
   @override
-  Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, size: 18, color: AppColors.mutedForeground),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          const SizedBox(height: 2),
-          Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        ])),
-      ]);
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            ]),
+          ),
+        ],
+      );
 }
