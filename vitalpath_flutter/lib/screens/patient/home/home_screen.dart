@@ -11,8 +11,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/gamification_provider.dart';
-import '../../../providers/checkin_provider.dart';
-import '../../../providers/hydration_provider.dart';
 import '../../../models/app_user.dart';
 import '../../../models/family_member.dart';
 import '../../../models/medicine.dart';
@@ -215,6 +213,9 @@ class _HomeContent extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
 
+                  // ── AWARENESS CARD (top, dynamic, hides when resolved) ────
+                  _DailyAwarenessCard(uid: user.uid),
+
                   // ── SNAPSHOT: TODAY'S HEALTH AT A GLANCE ──────────────────
                   _DailySnapshotRow(
                     medsAsync: medsAsync,
@@ -227,15 +228,7 @@ class _HomeContent extends ConsumerWidget {
                   const _NotifPermBanner(),
                   _PendingInviteBanner(email: user.email ?? ''),
 
-                  // ── TIER 1: NICHE HIGH-VALUE SECTIONS ─────────────────────
-                  // Morning check-in (6am–10am only, once per day)
-                  _MorningCheckinCard(uid: user.uid),
-                  // Hydration tracker (11am onwards)
-                  _HydrationTracker(),
-                  const SizedBox(height: 6),
-
                   // ── TIER 2: TODAY'S ACTIONS ────────────────────────────────
-                  _EndOfDayAwarenessCard(uid: user.uid),
                   _UpcomingTasksCard(uid: user.uid),
                   const SizedBox(height: 20),
 
@@ -244,7 +237,6 @@ class _HomeContent extends ConsumerWidget {
                   const SizedBox(height: 14),
 
                   // ── TIER 4: CONTEXT ────────────────────────────────────────
-                  _AppointmentSection(apptsAsync: apptsAsync),
                   _TimeContextualCard(uid: user.uid, medsAsync: medsAsync, mealsAsync: mealsAsync),
                   const SizedBox(height: 10),
                   _RefillCountdownCard(medsAsync: medsAsync),
@@ -299,241 +291,6 @@ class _HomeContent extends ConsumerWidget {
 }
 
 // ── TIER 1: Morning check-in ──────────────────────────────────────────────────
-class _MorningCheckinCard extends ConsumerStatefulWidget {
-  final String uid;
-  const _MorningCheckinCard({required this.uid});
-  @override
-  ConsumerState<_MorningCheckinCard> createState() => _MorningCheckinCardState();
-}
-
-class _MorningCheckinCardState extends ConsumerState<_MorningCheckinCard> {
-  String? _sleep;
-  String? _feeling;
-  bool _submitted = false;
-  Timer? _dismissTimer;
-
-  @override
-  void dispose() {
-    _dismissTimer?.cancel();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_sleep == null || _feeling == null) return;
-    ref.read(checkinProvider.notifier).checkIn(sleepQuality: _sleep!, feeling: _feeling!);
-    setState(() => _submitted = true);
-    _dismissTimer = Timer(const Duration(milliseconds: 2000), () {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final h = DateTime.now().hour;
-    if (h < 6 || h >= 10) return const SizedBox.shrink();
-
-    final checkinState = ref.watch(checkinProvider);
-    if (checkinState.isCheckedInToday) return const SizedBox.shrink();
-
-    if (_submitted) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.success.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
-        ),
-        child: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
-          SizedBox(width: 10),
-          Text('Morning logged — have a great day!',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.success, fontFamily: 'Inter')),
-        ]),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.35)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.wb_sunny_rounded, size: 16, color: Color(0xFFF59E0B)),
-          const SizedBox(width: 8),
-          const Text('Morning check-in',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          const Spacer(),
-          Text(DateFormat('EEE d MMM').format(DateTime.now()),
-              style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        ]),
-        const SizedBox(height: 14),
-
-        // Sleep question
-        const Text('How did you sleep?',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        const SizedBox(height: 8),
-        Row(children: [
-          _CheckinOption('Well', Icons.bedtime_rounded, AppColors.success, _sleep == 'well', () => setState(() => _sleep = 'well')),
-          const SizedBox(width: 8),
-          _CheckinOption('Okay', Icons.bedtime_outlined, AppColors.warning, _sleep == 'okay', () => setState(() => _sleep = 'okay')),
-          const SizedBox(width: 8),
-          _CheckinOption('Poorly', Icons.nightlight_rounded, AppColors.destructive, _sleep == 'poorly', () => setState(() => _sleep = 'poorly')),
-        ]),
-
-        const SizedBox(height: 14),
-
-        // Feeling question
-        const Text('How are you feeling?',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        const SizedBox(height: 8),
-        Row(children: [
-          _CheckinOption('Great', Icons.sentiment_very_satisfied_rounded, AppColors.success, _feeling == 'great', () => setState(() => _feeling = 'great')),
-          const SizedBox(width: 6),
-          _CheckinOption('Good', Icons.sentiment_satisfied_rounded, AppColors.primary, _feeling == 'good', () => setState(() => _feeling = 'good')),
-          const SizedBox(width: 6),
-          _CheckinOption('Off', Icons.sentiment_neutral_rounded, AppColors.warning, _feeling == 'off', () => setState(() => _feeling = 'off')),
-          const SizedBox(width: 6),
-          _CheckinOption('Unwell', Icons.sentiment_dissatisfied_rounded, AppColors.destructive, _feeling == 'unwell', () => setState(() => _feeling = 'unwell')),
-        ]),
-
-        if (_sleep != null && _feeling != null) ...[
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF59E0B),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
-              ),
-              child: const Text('Log Morning Check-in'),
-            ),
-          ),
-        ],
-      ]),
-    );
-  }
-}
-
-class _CheckinOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _CheckinOption(this.label, this.icon, this.color, this.selected, this.onTap);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.12) : AppColors.muted,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: selected ? color : AppColors.border, width: selected ? 1.5 : 1),
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, color: selected ? color : AppColors.mutedForeground, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(fontSize: 10, fontWeight: selected ? FontWeight.w700 : FontWeight.w400, color: selected ? color : AppColors.mutedForeground, fontFamily: 'Inter'),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-// ── TIER 1: Hydration tracker ─────────────────────────────────────────────────
-class _HydrationTracker extends ConsumerWidget {
-  const _HydrationTracker();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (DateTime.now().hour < 11) return const SizedBox.shrink();
-
-    final cups = ref.watch(hydrationProvider);
-    final notifier = ref.read(hydrationProvider.notifier);
-
-    final Color color;
-    final String message;
-    if (cups >= 8) {
-      color = AppColors.success;
-      message = 'Daily goal reached! Great hydration today.';
-    } else if (cups >= 5) {
-      color = AppColors.primary;
-      message = 'Good progress — keep it going!';
-    } else if (cups >= 3) {
-      color = AppColors.warning;
-      message = 'Halfway there — try to drink more.';
-    } else {
-      color = AppColors.destructive;
-      message = cups == 0 ? 'Don\'t forget to drink water today.' : 'Stay hydrated — $cups of 8 cups logged.';
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.water_drop_rounded, size: 15, color: Color(0xFF0EA5E9)),
-          const SizedBox(width: 7),
-          const Text('Hydration', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-          const Spacer(),
-          Text('$cups / 8 cups', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter')),
-        ]),
-        const SizedBox(height: 10),
-        Row(
-          children: List.generate(8, (i) {
-            final filled = i < cups;
-            return GestureDetector(
-              onTap: filled
-                  ? () => notifier.removeCup()
-                  : () => notifier.addCup(),
-              child: Container(
-                width: 32,
-                height: 32,
-                margin: const EdgeInsets.only(right: 4),
-                decoration: BoxDecoration(
-                  color: filled ? const Color(0xFF0EA5E9).withValues(alpha: 0.15) : AppColors.muted,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: filled ? const Color(0xFF0EA5E9) : AppColors.border),
-                ),
-                child: Icon(
-                  Icons.water_drop_rounded,
-                  size: 15,
-                  color: filled ? const Color(0xFF0EA5E9) : AppColors.mutedForeground.withValues(alpha: 0.35),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        Text(message, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-      ]),
-    );
-  }
-}
 
 // ── TIER 3: Zone 1 Health Status Card ─────────────────────────────────────────
 // ── TIER 3: Caregiver active banner ──────────────────────────────────────────
@@ -562,155 +319,6 @@ class _CaregiversActiveBanner extends ConsumerWidget {
         GestureDetector(
           onTap: () => context.push('/care-circle'),
           child: const Text('Manage', style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED), fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-        ),
-      ]),
-    );
-  }
-}
-
-// ── TIER 4: Appointment section (countdown / prep card) ───────────────────────
-class _AppointmentSection extends StatelessWidget {
-  final AsyncValue<List<Appointment>> apptsAsync;
-  const _AppointmentSection({required this.apptsAsync});
-
-  @override
-  Widget build(BuildContext context) {
-    final appts = apptsAsync.asData?.value ?? [];
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    final upcoming = appts
-        .where((a) => (a.isConfirmed || a.isPending) && a.scheduledAt != null && a.scheduledAt!.isAfter(now))
-        .toList()
-      ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
-
-    if (upcoming.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.muted,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(children: [
-            const Icon(Icons.event_outlined, size: 18, color: AppColors.mutedForeground),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text('No upcoming appointments',
-                  style: TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ),
-            TextButton(
-              onPressed: () => context.go('/my-doctors'),
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text('Book an appointment',
-                  style: TextStyle(fontSize: 12, fontFamily: 'Inter', fontWeight: FontWeight.w600)),
-            ),
-          ]),
-        ),
-      );
-    }
-
-    final next = upcoming.first;
-    final apptDay = DateTime(next.scheduledAt!.year, next.scheduledAt!.month, next.scheduledAt!.day);
-    final daysUntil = apptDay.difference(today).inDays;
-
-    if (daysUntil <= 3) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _AppointmentPrepCard(appointment: next, daysUntil: daysUntil),
-      );
-    }
-
-    final color = daysUntil <= 6 ? AppColors.warning : AppColors.primary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
-        onTap: () => context.go('/appointments'),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
-          ),
-          child: Row(children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-              child: Icon(Icons.event_rounded, size: 19, color: color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Next visit in $daysUntil day${daysUntil == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter')),
-              Text('Dr. ${next.doctorName}${next.doctorSpecialty != null ? " · ${next.doctorSpecialty}" : ""}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-            ])),
-            Icon(Icons.chevron_right_rounded, size: 18, color: color.withValues(alpha: 0.6)),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class _AppointmentPrepCard extends StatelessWidget {
-  final Appointment appointment;
-  final int daysUntil;
-  const _AppointmentPrepCard({required this.appointment, required this.daysUntil});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = daysUntil == 0 ? AppColors.success : AppColors.warning;
-    final timeStr = appointment.scheduledAt != null ? DateFormat('h:mm a').format(appointment.scheduledAt!) : '';
-    const checklist = ['Bring your medicines list', 'Bring your BP and vitals log', 'Note any new symptoms', 'Bring prescription documents'];
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(Icons.event_available_rounded, color: color, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              daysUntil == 0 ? 'Doctor visit today — prepare now' : 'Visit in $daysUntil day${daysUntil == 1 ? '' : 's'} — get ready',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color, fontFamily: 'Inter'),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 4),
-        Text('Dr. ${appointment.doctorName}${timeStr.isNotEmpty ? " · $timeStr" : ""}',
-            style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-        const SizedBox(height: 12),
-        const Text('What to bring:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.foreground, fontFamily: 'Inter')),
-        const SizedBox(height: 6),
-        ...checklist.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Row(children: [
-            Icon(Icons.check_box_outline_blank_rounded, size: 13, color: color),
-            const SizedBox(width: 8),
-            Text(item, style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter')),
-          ]),
-        )),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () => context.go('/appointments'),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text('View appointment', style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_forward_rounded, size: 13, color: color),
-          ]),
         ),
       ]),
     );
@@ -1127,12 +735,10 @@ class _FamilyStatusChip extends ConsumerWidget {
   }
 }
 
-// ── FOOTER: Emergency contacts strip ─────────────────────────────────────────
-
-// ── End of Day Awareness Card ─────────────────────────────────────────────────
-class _EndOfDayAwarenessCard extends ConsumerWidget {
+// ── Daily Awareness Card (dynamic, hides when resolved) ───────────────────────
+class _DailyAwarenessCard extends ConsumerWidget {
   final String uid;
-  const _EndOfDayAwarenessCard({required this.uid});
+  const _DailyAwarenessCard({required this.uid});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1142,7 +748,8 @@ class _EndOfDayAwarenessCard extends ConsumerWidget {
     final hasMissedMed = meds.any((m) => m.isActive && m.hasMissedSlot);
     final loggedTypes = meals.map((m) => m.mealType).toSet();
     final h = DateTime.now().hour;
-    final hasMissedMeal = (h >= 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) ||
+    final hasMissedMeal =
+        (h >= 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) ||
         (h >= 16 && !loggedTypes.contains(AppConstants.mealLunch)) ||
         (h >= 23 && !loggedTypes.contains(AppConstants.mealDinner));
 
@@ -1150,52 +757,55 @@ class _EndOfDayAwarenessCard extends ConsumerWidget {
 
     final String message;
     if (hasMissedMed && hasMissedMeal) {
-      message = "You haven't taken your medicine or logged your meals on time. It is important to stay on schedule.";
+      message = 'You missed your medicine and a meal — please ensure you take them on time to stay on track.';
     } else if (hasMissedMed) {
-      message = 'You have missed one or more scheduled medication doses today. Try to take them as soon as possible.';
+      message = 'You missed one or more scheduled medicine doses. Please take them as soon as possible to stay on track.';
     } else {
-      message = "You haven't logged some meals today. Keeping track helps you stay on top of your health.";
+      message = "You haven't logged a meal on time. Keeping track of your meals helps you stay on top of your health.";
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.warning.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.mutedForeground.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.bedtime_rounded, size: 18, color: AppColors.mutedForeground),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(width: 10),
-          const Text('End of day',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
-        ]),
-        const SizedBox(height: 10),
-        Text(message,
-            style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.45)),
-        const SizedBox(height: 14),
-        GestureDetector(
-          onTap: () => context.go('/care'),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.mutedForeground.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+          child: const Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.warning),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Stay on track',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning, fontFamily: 'Inter')),
+            const SizedBox(height: 4),
+            Text(message,
+                style: const TextStyle(fontSize: 12, color: AppColors.foreground, fontFamily: 'Inter', height: 1.4)),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 34,
+              child: ElevatedButton(
+                onPressed: () => context.go('/care'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warning,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Inter'),
+                  minimumSize: const Size(0, 34),
+                ),
+                child: const Text('Go to Medicines & Meals'),
+              ),
             ),
-            alignment: Alignment.center,
-            child: const Text('View Summary',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Inter', color: AppColors.foreground)),
-          ),
+          ]),
         ),
       ]),
     );

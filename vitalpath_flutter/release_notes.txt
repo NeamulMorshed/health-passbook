@@ -1,53 +1,9 @@
-VitalPath v2.5.0+18 — Comprehensive QA Hardening (115 fixes)
+VitalPath v2.5.1+19 — Home Screen UX Polish
 
-Critical Security & Stability:
-- Role-based route guards: patients can no longer access doctor screens and vice versa
-- Fixed crash when accepting/managing caregiver invites via deep-link
-- Fixed ManageCaregiverScreen confirm dialogs dismissing the whole screen instead of the dialog
-- All gamification award functions now use Firestore transactions (prevents data corruption)
-- Drug interaction cache now scoped per user (was globally writable)
-- Prescription scan: image upload now only happens on save, not on OCR failure
-- Vitals log: Save button no longer permanently disabled after any error
-- Notification reminders now fire at correct local time (was always UTC)
-- InviteCaregiverScreen: fixed setState crash after async invite send
-
-Authentication & Onboarding:
-- Authenticated users can no longer access /user-select to swap roles
-- Onboarding routes gated by role and onboardingComplete status
-- Splash screen auth polling replaced with stream-based wait (more reliable)
-- FaceID Skip no longer permanently disables biometrics for existing users
-- FaceID now shows feedback when biometric authentication fails
-- Account deletion now removes doctor profile and verification request documents
-- Sign-out now clears biometric and onboarding SharedPreferences
-
-Data Layer:
-- cancelMedicineReminders now cancels all slots (was only first 3)
-- Prescription history query now has a limit (was unbounded)
-- deleteFamilyMember batch split into chunks of 499 (Firestore limit)
-- Doctor rating now verifies appointment ownership before submitting
-- Medicine._parseHM uses safe int.tryParse (no more crash on malformed times)
-- Pill count cannot go below 0
-- AI insights: 30s timeout, robust JSON extraction from response
-- Prescription scan: detects actual image media type; compresses images >4 MB
-- Adherence % now correctly accounts for multi-dose medicine regimens
-- Gamification: DST-safe streak logic; UTC timestamp storage; calendar-based week reset
-
-Patient Screens:
-- Greeting shows "Good Evening" 17–23h (was "Good Night" from 21h)
-- Pull-to-refresh now also reloads gamification data
-- Empty appointments state shows "Book an appointment" prompt
-- Vitals: history readings are now deletable; discard confirmation on sheet dismiss
-- Vitals: borderline thresholds use absolute margins (not % of range)
-- Appointments: pagination "Load more" no longer shows false positive; cancel dialog matches status
-- Activity: fixed GPS stop flow; manual notes field now saved; step estimation disabled for cycling/swimming
-- Gamification: error state shows retry button (was infinite spinner); level progress clamped
-- Notifications: all notifications are tappable; markAllRead has loading state
-- Insights: double-tap guard; disabled until all data loaded; inline retry on error
-- Prescriptions: null-safe medicines field access; pull-to-refresh added
-- Edit profile: phone/weight/height validators; unsaved-changes warning on back
-- My Doctors: book() error handling; disabled when doctor not accepting patients
-- Manage caregiver: single atomic save; heart rate threshold now editable
-- Care Circle: refresh awaits caregiver connections; consistent count badge
-- Care screen: medicine sheet double-submit guard; empty reminder-days validation
-- Scan prescription: TextRecognizer properly closed; stale interactions discarded on retake
-- Profile: signOut error handled; patient profile error state shows retry
+Home Screen:
+- Replaced three separate awareness cards (Morning check-in, Midday check-in, End of day)
+  with a single dynamic "Stay on track" card at the very top of the home page
+- Awareness card appears only when a medicine dose or meal is overdue; hides automatically
+  the moment the user takes their medicine or logs a meal (fully reactive)
+- Dynamic message adapts: both missed / only medicine / only meal
+- Removed appointment section from home page — appointments are accessible via the nav bar tab
