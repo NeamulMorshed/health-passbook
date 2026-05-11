@@ -80,7 +80,7 @@ class AppTheme {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: GoogleFonts.openSans(
           fontSize: 17,
           fontWeight: FontWeight.w600,
