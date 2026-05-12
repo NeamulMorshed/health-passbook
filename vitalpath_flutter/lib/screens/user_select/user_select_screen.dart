@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../models/app_user.dart';
@@ -39,7 +39,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                   color: AppColors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Heart(width: 32, height: 32, color: AppColors.primary),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 32),
               ),
               const SizedBox(height: 28),
               const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.foreground, height: 1.2)),
@@ -47,7 +47,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
               const Text('How are you using Omra today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground)),
               const SizedBox(height: 48),
               _RoleCard(
-                icon: const User(width: 28, height: 28, color: AppColors.primary),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 28),
                 color: AppColors.primary,
                 title: 'I\'m a Patient',
                 subtitle: 'Track medicines, meals, activity\nand connect with your doctor',
@@ -56,7 +56,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                icon: const HealthShield(width: 28, height: 28, color: AppColors.primary),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: AppColors.primary, size: 28),
                 color: AppColors.primary,
                 title: 'I\'m a Doctor',
                 subtitle: 'Manage patients, appointments\nand write prescriptions',
@@ -222,7 +222,7 @@ class _RoleCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                NavArrowRight(width: 20, height: 20, color: color),
+                HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: color, size: 20),
               ],
             ),
           ),
@@ -232,7 +232,7 @@ class _RoleCard extends StatelessWidget {
               right: 12,
               child: Container(
                 decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                child: const CheckCircle(width: 20, height: 20, color: AppColors.primary),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 20),
               ),
             ),
         ],

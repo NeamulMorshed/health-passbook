@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -68,7 +68,7 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
         actions: [
           PopupMenuButton<_SortOrder>(
             tooltip: 'Sort',
-            icon: const Sort(width: 24, height: 24),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedSortByDown01, color: Colors.black, size: 24),
             initialValue: _sort,
             onSelected: (v) => setState(() => _sort = v),
             itemBuilder: (_) => [
@@ -115,10 +115,10 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                     onChanged: (v) => setState(() => _query = v.trim()),
                     decoration: InputDecoration(
                       hintText: 'Search patients by name…',
-                      prefixIcon: const Search(width: 20, height: 20),
+                      prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.black, size: 20),
                       suffixIcon: _query.isNotEmpty
                           ? IconButton(
-                              icon: const Xmark(width: 18, height: 18),
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.black, size: 18),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 setState(() => _query = '');
@@ -215,7 +215,7 @@ class _PatientCard extends ConsumerWidget {
               size: 18, color: AppColors.destructive),
           onPressed: () => _confirmRemove(context, ref),
         ),
-        const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
       ]),
     );
   }

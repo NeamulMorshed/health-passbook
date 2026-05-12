@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
@@ -434,7 +434,7 @@ class _ScanPrescriptionScreenState
                 color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const ScanBarcode(width: 56, height: 56, color: AppColors.primary),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedBarcodeScan, color: AppColors.primary, size: 56),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -456,7 +456,7 @@ class _ScanPrescriptionScreenState
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _pickImage(ImageSource.camera),
-                icon: const Camera(width: 20, height: 20),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: Colors.black, size: 20),
                 label: const Text('Take a Photo'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
@@ -642,7 +642,7 @@ class _ScanPrescriptionScreenState
               OutlinedButton.icon(
                 onPressed: () =>
                     setState(() => _entries.add(_ScannedEntry())),
-                icon: const Plus(width: 18, height: 18),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 18),
                 label: const Text('Add another medicine'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 44),
@@ -715,7 +715,7 @@ class _ScanPrescriptionScreenState
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Check(width: 16, height: 16, color: Colors.white),
+                  : HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
               label: Text(
                 _isSaving ? 'Saving…' : 'Save Medicines',
                 style: const TextStyle(color: Colors.white),
@@ -797,7 +797,7 @@ class _EntryCardState extends State<_EntryCard> {
               if (widget.canRemove)
                 GestureDetector(
                   onTap: widget.onRemove,
-                  child: const Xmark(width: 18, height: 18, color: AppColors.mutedForeground),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 18),
                 ),
             ]),
             const SizedBox(height: 14),

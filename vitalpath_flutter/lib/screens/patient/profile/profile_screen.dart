@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -75,7 +75,7 @@ class ProfileScreen extends ConsumerWidget {
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Medal(width: 14, height: 14, color: AppColors.primary),
+                          HugeIcon(icon: HugeIcons.strokeRoundedMedal01, color: AppColors.primary, size: 14),
                           const SizedBox(width: 5),
                           Text(
                             'Lv ${g.level} • ${g.hp} HP',
@@ -209,7 +209,7 @@ class ProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: const Group(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textPrimary, size: 18),
                     title: 'Care Circle',
                     subtitle: 'Manage caregivers & family',
                     showDivider: false,
@@ -233,22 +233,22 @@ class ProfileScreen extends ConsumerWidget {
                   //   onTap: () => context.push('/onboarding/health-profile'),
                   // ),
                   BentoSettingsTile(
-                    icon: const Calendar(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textPrimary, size: 18),
                     title: 'Appointments',
                     onTap: () => context.go('/appointments'),
                   ),
                   BentoSettingsTile(
-                    icon: const Notes(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textPrimary, size: 18),
                     title: 'Prescriptions',
                     onTap: () => context.push('/prescriptions'),
                   ),
                   BentoSettingsTile(
-                    icon: const Trophy(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedAward01, color: AppColors.textPrimary, size: 18),
                     title: 'Achievements',
                     onTap: () => context.push('/gamification'),
                   ),
                   BentoSettingsTile(
-                    icon: const StatsUpSquare(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.textPrimary, size: 18),
                     title: 'Insights',
                     showDivider: false,
                     onTap: () => context.push('/insights'),
@@ -265,17 +265,17 @@ class ProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: const EditPencil(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.textPrimary, size: 18),
                     title: 'Edit Profile',
                     onTap: () => context.push('/edit-profile'),
                   ),
                   BentoSettingsTile(
-                    icon: const Bell(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: AppColors.textPrimary, size: 18),
                     title: 'Notifications',
                     onTap: () => context.push('/notification-settings'),
                   ),
                   BentoSettingsTile(
-                    icon: const Lock(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.textPrimary, size: 18),
                     title: 'Privacy',
                     showDivider: false,
                     onTap: () => context.push('/privacy-security'),
@@ -292,7 +292,7 @@ class ProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: const QuestionMark(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedQuestion, color: AppColors.textPrimary, size: 18),
                     title: 'Help & Support',
                     showDivider: false,
                     onTap: () {},
@@ -306,7 +306,7 @@ class ProfileScreen extends ConsumerWidget {
               Center(
                 child: TextButton.icon(
                   onPressed: () => _signOut(context, ref),
-                  icon: const LogOut(width: 18, height: 18, color: AppColors.destructive),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLogout01, color: AppColors.destructive, size: 18),
                   label: const Text(
                     'Sign Out',
                     style: TextStyle(color: AppColors.destructive, fontSize: 15, fontWeight: FontWeight.w500),

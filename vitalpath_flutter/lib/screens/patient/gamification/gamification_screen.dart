@@ -6,7 +6,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/gamification_provider.dart';
 import '../../../models/gamification.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 
 void _showHowToEarn(BuildContext context) {
   showModalBottomSheet(
@@ -30,7 +30,7 @@ class GamificationScreen extends ConsumerWidget {
         title: const Text('Health Rewards'),
         actions: [
           IconButton(
-            icon: const InfoCircle(width: 24, height: 24),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.textPrimary, size: 24),
             tooltip: 'How to earn HP',
             onPressed: () => _showHowToEarn(context),
           ),
@@ -403,7 +403,7 @@ class _HowToEarnSheet extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Flash(width: 20, height: 20, color: AppColors.primary),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedFlash, color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
             const Text(

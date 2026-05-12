@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
@@ -139,8 +139,7 @@ class _FormView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const UserPlus(
-                    width: 32, height: 32, color: AppColors.primary),
+                HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.primary, size: 32),
                 const SizedBox(height: 10),
                 const Text(
                   'Invite a linked account',
@@ -169,8 +168,8 @@ class _FormView extends StatelessWidget {
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.15)),
             ),
-            child: const Row(children: [
-              InfoCircle(width: 16, height: 16, color: AppColors.primary),
+            child: Row(children: [
+              HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.primary, size: 16),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -266,7 +265,7 @@ class _FormView extends StatelessWidget {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : const Link(width: 18, height: 18),
+                  : HugeIcon(icon: HugeIcons.strokeRoundedLink01, color: Colors.white, size: 18),
               label: Text(
                 isSending ? 'Saving…' : 'Save Invite',
                 style: const TextStyle(fontWeight: FontWeight.w600),
@@ -297,8 +296,7 @@ class _SuccessView extends StatelessWidget {
             color: AppColors.success.withValues(alpha: 0.08),
             shape: BoxShape.circle,
           ),
-          child: const CheckCircle(
-              width: 48, height: 48, color: AppColors.success),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 48),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -340,7 +338,7 @@ class _SuccessView extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onCopyMessage,
-                  icon: const Copy(width: 18, height: 18),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCopy, color: AppColors.primary, size: 18),
                   label: const Text('Copy invite message'),
                 ),
               ),

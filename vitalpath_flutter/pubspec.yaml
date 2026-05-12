@@ -36,7 +36,7 @@ dependencies:
   flutter_animate: ^4.5.0
   flutter_svg: ^2.0.10+1
   google_fonts: ^6.2.1
-  iconoir_flutter: ^7.11.0
+  hugeicons: ^1.1.4
 
   # ── Utilities ────────────────────────────────────────────────────────────
   intl: ^0.19.0

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/family_member.dart';
@@ -73,7 +73,7 @@ class _AddFamilyMemberScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Camera(width: 20, height: 20),
+              leading: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: AppColors.textPrimary, size: 20),
               title: const Text('Take a photo'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
@@ -84,8 +84,7 @@ class _AddFamilyMemberScreenState
             ),
             if (_photoFile != null || (_photoUrl != null && !_photoRemoved))
               ListTile(
-                leading: const Trash(
-                    width: 18, height: 18, color: AppColors.destructive),
+                leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18),
                 title: const Text('Remove photo',
                     style: TextStyle(color: AppColors.destructive)),
                 onTap: () => Navigator.pop(ctx, null),
@@ -203,10 +202,7 @@ class _AddFamilyMemberScreenState
                                 ? NetworkImage(_photoUrl!)
                                 : null) as ImageProvider?,
                         child: !hasPhoto
-                            ? const User(
-                                width: 40,
-                                height: 40,
-                                color: AppColors.primary)
+                            ? HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 40)
                             : null,
                       ),
                       Positioned(
@@ -218,10 +214,7 @@ class _AddFamilyMemberScreenState
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Camera(
-                              width: 14,
-                              height: 14,
-                              color: Colors.white),
+                          child: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: Colors.white, size: 14),
                         ),
                       ),
                     ],
@@ -246,7 +239,7 @@ class _AddFamilyMemberScreenState
                 decoration: const InputDecoration(
                   labelText: 'Full Name *',
                   hintText: 'e.g. Aryan Ahmed',
-                  prefixIcon: User(width: 24, height: 24),
+                  prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textSecondary, size: 24),
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Name is required' : null,
@@ -280,7 +273,7 @@ class _AddFamilyMemberScreenState
                       if (_dob != null)
                         GestureDetector(
                           onTap: () => setState(() => _dob = null),
-                          child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
+                          child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
                         ),
                     ],
                   ),

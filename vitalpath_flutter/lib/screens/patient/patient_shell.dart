@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 
 class PatientShell extends StatelessWidget {
@@ -11,28 +11,28 @@ class PatientShell extends StatelessWidget {
 
   static final _tabs = [
     _TabItem(
-      icon:         Home(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: Home(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.primary, size: _kSize),
       label: 'Home', route: '/home',
     ),
     _TabItem(
-      icon:         PharmacyCrossCircle(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: PharmacyCrossCircle(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.primary, size: _kSize),
       label: 'Medicines', route: '/care',
     ),
     _TabItem(
-      icon:         Activity(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: Activity(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.primary, size: _kSize),
       label: 'Vitals', route: '/vitals',
     ),
     _TabItem(
-      icon:         Calendar(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: Calendar(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: _kSize),
       label: 'Visits', route: '/appointments',
     ),
     _TabItem(
-      icon:         User(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: User(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: _kSize),
       label: 'Profile', route: '/profile',
     ),
   ];

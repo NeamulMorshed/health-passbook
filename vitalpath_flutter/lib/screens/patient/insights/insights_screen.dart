@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -167,10 +167,10 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InfoCircle(width: 16, height: 16, color: AppColors.warning),
+              HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.warning, size: 16),
               SizedBox(width: 8),
               Expanded(
                 child: Text(

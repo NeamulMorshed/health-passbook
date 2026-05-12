@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../core/theme/app_theme.dart';
 import '../models/drug_interaction.dart';
 
@@ -76,8 +76,8 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
         color: AppColors.successLight,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Row(children: [
-        CheckCircle(width: 15, height: 15, color: AppColors.success),
+      child: Row(children: [
+        HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 15),
         SizedBox(width: 8),
         Text(
           'No known drug interactions detected.',
@@ -232,8 +232,8 @@ class _InteractionRowState extends State<_InteractionRow> {
                 ),
               ),
               _showDetail
-                  ? const NavArrowUp(width: 16, height: 16, color: AppColors.mutedForeground)
-                  : const NavArrowDown(width: 16, height: 16, color: AppColors.mutedForeground),
+                  ? HugeIcon(icon: HugeIcons.strokeRoundedArrowUp01, color: AppColors.mutedForeground, size: 16)
+                  : HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, color: AppColors.mutedForeground, size: 16),
             ]),
             if (_showDetail) ...[
               const SizedBox(height: 6),

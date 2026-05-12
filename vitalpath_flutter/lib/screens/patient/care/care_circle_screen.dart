@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -126,7 +126,7 @@ class _CareCircleBody extends ConsumerWidget {
             BentoCard(
               padding: const EdgeInsets.all(16),
               child: Row(children: [
-                const Group(width: 32, height: 32, color: AppColors.primary),
+                HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 32),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -176,7 +176,7 @@ class _CareCircleBody extends ConsumerWidget {
               color: AppColors.primary,
               action: TextButton.icon(
                 onPressed: () => context.push('/my-doctors'),
-                icon: const Search(width: 14, height: 14),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.black, size: 14),
                 label: const Text('Find more',
                     style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
@@ -220,7 +220,7 @@ class _CareCircleBody extends ConsumerWidget {
               color: AppColors.primary,
               action: TextButton.icon(
                 onPressed: () => _openAddMember(context, ref),
-                icon: const Plus(width: 14, height: 14),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 14),
                 label: const Text('Add',
                     style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
@@ -273,7 +273,7 @@ class _CareCircleBody extends ConsumerWidget {
                   MaterialPageRoute(
                       builder: (_) => const InviteCaregiverScreen()),
                 ),
-                icon: const Plus(width: 14, height: 14),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 14),
                 label: const Text('Invite',
                     style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
@@ -365,7 +365,7 @@ class _DoctorCard extends ConsumerWidget {
                             fontWeight: FontWeight.w600)),
                     if (doctor.isVerified) ...[
                       const SizedBox(width: 4),
-                      const ShieldCheck(width: 14, height: 14, color: AppColors.primary),
+                      HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 14),
                     ],
                   ]),
                   if (doctor.specialty != null)
@@ -380,8 +380,7 @@ class _DoctorCard extends ConsumerWidget {
                             color: AppColors.mutedForeground)),
                 ]),
           ),
-          const NavArrowRight(
-              width: 14, height: 14, color: AppColors.mutedForeground),
+          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
         ]),
       ),
     );
@@ -436,7 +435,7 @@ class _DoctorCard extends ConsumerWidget {
                                   fontWeight: FontWeight.w700)),
                           if (doctor.isVerified) ...[
                             const SizedBox(width: 4),
-                            const ShieldCheck(width: 15, height: 15, color: AppColors.primary),
+                            HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 15),
                           ],
                         ]),
                         if (doctor.specialty != null)
@@ -462,7 +461,7 @@ class _DoctorCard extends ConsumerWidget {
                     Navigator.pop(context);
                     context.push('/appointments');
                   },
-                  icon: const Calendar(width: 16, height: 16),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: Colors.black, size: 16),
                   label: const Text('Book Appointment'),
                 ),
               ),
@@ -474,7 +473,7 @@ class _DoctorCard extends ConsumerWidget {
                     Navigator.pop(context);
                     _confirmRemove(context, ref);
                   },
-                  icon: const LinkSlash(width: 16, height: 16, color: AppColors.destructive),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedUnlink01, color: AppColors.destructive, size: 16),
                   label: const Text('Remove Connection',
                       style: TextStyle(
                           color: AppColors.destructive)),
@@ -647,7 +646,7 @@ class _FamilyMemberCard extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Edit member',
-            icon: const EditPencil(width: 18, height: 18, color: AppColors.mutedForeground),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.mutedForeground, size: 18),
             onPressed: openEdit,
           ),
         ]),
@@ -755,7 +754,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     ),
                   );
                 },
-                icon: const EditPencil(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
                 label: const Text('Edit member details'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -860,7 +859,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.15)),
               ),
               child: Row(children: [
-                const InfoCircle(width: 16, height: 16, color: AppColors.primary),
+                HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.primary, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -1115,8 +1114,7 @@ class _CaregiverCard extends ConsumerWidget {
                       color: AppColors.warning)),
           )
           else
-            const NavArrowRight(
-                width: 14, height: 14, color: AppColors.mutedForeground),
+            HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
         ]),
       ),
     );

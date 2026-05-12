@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
@@ -178,10 +178,10 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
               },
             decoration: InputDecoration(
               hintText: 'Search by name, specialty or hospital…',
-              prefixIcon: const Search(width: 20, height: 20),
+              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.textSecondary, size: 20),
               suffixIcon: _nameQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Xmark(width: 18, height: 18),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.textSecondary, size: 18),
                       onPressed: () {
                         _debounce?.cancel();
                         _searchCtrl.clear();
@@ -350,7 +350,7 @@ class _DoctorCard extends ConsumerWidget {
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600))),
                       if (doctor.verificationStatus == 'verified')
-                        const ShieldCheck(width: 18, height: 18, color: AppColors.primary)
+                        HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 18)
                       else if (doctor.verificationStatus == 'pending')
                         const Icon(Icons.hourglass_top_rounded,
                             color: AppColors.warning, size: 16),
@@ -371,7 +371,7 @@ class _DoctorCard extends ConsumerWidget {
             if (doctor.reviewCount > 0)
               Column(children: [
                 Row(children: [
-                  const Star(width: 16, height: 16, color: AppColors.warning),
+                  HugeIcon(icon: HugeIcons.strokeRoundedStar, color: AppColors.warning, size: 16),
                   const SizedBox(width: 2),
                   Text(doctor.rating.toStringAsFixed(1),
                       style: const TextStyle(
@@ -432,7 +432,7 @@ class _DoctorCard extends ConsumerWidget {
                 onPressed: doctor.acceptingNewPatients != true
                     ? null
                     : () => _showBookSheet(context, doctor),
-                icon: const Calendar(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 16),
                 label: const Text('Book Appointment'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 40),
@@ -446,7 +446,7 @@ class _DoctorCard extends ConsumerWidget {
               onPressed: doctor.phone != null && doctor.phone!.isNotEmpty
                   ? () => _callDoctor(context, doctor.phone!)
                   : null,
-              icon: const Phone(width: 16, height: 16),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedTelephone, color: AppColors.primary, size: 16),
               label: const Text('Call'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
             ),
@@ -597,7 +597,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                           fontWeight: FontWeight.w700)),
                   if (doctor.verificationStatus == 'verified') ...[
                     const SizedBox(width: 6),
-                    const ShieldCheck(width: 20, height: 20, color: AppColors.primary),
+                    HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 20),
                   ] else if (doctor.verificationStatus == 'pending') ...[
                     const SizedBox(width: 6),
                     const Icon(Icons.hourglass_top_rounded,
@@ -628,7 +628,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                         color: AppColors.warningLight,
                         borderRadius: BorderRadius.circular(20)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Star(width: 16, height: 16, color: AppColors.warning),
+                      HugeIcon(icon: HugeIcons.strokeRoundedStar, color: AppColors.warning, size: 16),
                       const SizedBox(width: 4),
                       Text(doctor.rating.toStringAsFixed(1),
                           style: const TextStyle(
@@ -662,28 +662,28 @@ class _DoctorProfileSheet extends StatelessWidget {
 
             // Details
             if (doctor.hospital != null)
-              _ProfileRow(const Hospital(width: 16, height: 16, color: AppColors.mutedForeground), 'Hospital', doctor.hospital!),
+              _ProfileRow(HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: AppColors.mutedForeground, size: 16), 'Hospital', doctor.hospital!),
             if (doctor.specialty != null)
               _ProfileRow(const Icon(Icons.medical_information_rounded, size: 16, color: AppColors.mutedForeground), 'Specialty', doctor.specialty!),
             if (doctor.phone != null && doctor.phone!.isNotEmpty)
-              _ProfileRow(const Phone(width: 16, height: 16, color: AppColors.mutedForeground), 'Phone', doctor.phone!),
+              _ProfileRow(HugeIcon(icon: HugeIcons.strokeRoundedTelephone, color: AppColors.mutedForeground, size: 16), 'Phone', doctor.phone!),
             if (doctor.licenseNo != null && doctor.licenseNo!.isNotEmpty)
-              _ProfileRow(const Medal(width: 16, height: 16, color: AppColors.mutedForeground), 'License', doctor.licenseNo!),
+              _ProfileRow(HugeIcon(icon: HugeIcons.strokeRoundedMedal01, color: AppColors.mutedForeground, size: 16), 'License', doctor.licenseNo!),
             if (doctor.availableHours != null && doctor.availableHours!.isNotEmpty)
-              _ProfileRow(const Clock(width: 16, height: 16, color: AppColors.mutedForeground), 'Hours', doctor.availableHours!),
+              _ProfileRow(HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: AppColors.mutedForeground, size: 16), 'Hours', doctor.availableHours!),
             if (doctor.consultationFee != null && doctor.consultationFee!.isNotEmpty)
               _ProfileRow(const Icon(Icons.payments_rounded, size: 16, color: AppColors.mutedForeground), 'Fee', doctor.consultationFee!),
             _ProfileRow(
               doctor.acceptingNewPatients
-                  ? const CheckCircle(width: 16, height: 16, color: AppColors.mutedForeground)
-                  : const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
+                  ? HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.mutedForeground, size: 16)
+                  : HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
               'Availability',
               doctor.acceptingNewPatients ? 'Accepting new patients' : 'Not accepting new patients',
               valueColor: doctor.acceptingNewPatients ? AppColors.success : AppColors.destructive,
             ),
             if (isConnected)
               _ProfileRow(
-                const CheckCircle(width: 16, height: 16, color: AppColors.mutedForeground),
+                HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.mutedForeground, size: 16),
                 'Status',
                 'Connected — your doctor',
                 valueColor: AppColors.success,
@@ -705,7 +705,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                       _BookAppointmentSheet(doctor: doctor, patientId: patientId),
                 );
               },
-              icon: const Calendar(width: 16, height: 16),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 16),
               label: const Text('Book Appointment'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 46),
@@ -720,7 +720,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                   final uri = Uri.parse('tel:${doctor.phone}');
                   if (await canLaunchUrl(uri)) await launchUrl(uri);
                 },
-                icon: const Phone(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedTelephone, color: AppColors.primary, size: 16),
                 label: const Text('Call Doctor'),
                 style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 46)),
@@ -896,11 +896,7 @@ class _BookAppointmentSheetState
                   ),
                 ),
                 child: Row(children: [
-                  Calendar(
-                      width: 16, height: 16,
-                      color: _preferredDate != null
-                          ? AppColors.primary
-                          : AppColors.mutedForeground),
+                  HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: _preferredDate != null ? AppColors.primary : AppColors.mutedForeground, size: 16),
                   const SizedBox(width: 10),
                   Text(
                     _preferredDate != null
@@ -919,7 +915,7 @@ class _BookAppointmentSheetState
                     const Spacer(),
                     GestureDetector(
                       onTap: () => setState(() => _preferredDate = null),
-                      child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
                     ),
                   ],
                 ]),
@@ -1034,8 +1030,7 @@ class _PrescriptionCard extends StatelessWidget {
               decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8)),
-              child: const Notes(
-                  color: AppColors.success, width: 20, height: 20)),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.success, size: 20)),
           const SizedBox(width: 12),
           Expanded(
               child: Column(

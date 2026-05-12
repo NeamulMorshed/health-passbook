@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/appointment.dart';
@@ -240,9 +240,7 @@ class _VitalCard extends StatelessWidget {
                 .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Activity(
-              width: 18, height: 18,
-              color: normal ? AppColors.success : AppColors.warning),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: normal ? AppColors.success : AppColors.warning, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -428,7 +426,7 @@ class _PrescriptionsTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    const Notes(width: 18, height: 18, color: AppColors.primary),
+                    HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.primary, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -566,7 +564,7 @@ class _ApptCard extends StatelessWidget {
       child: BentoCard(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
-          const Calendar(width: 18, height: 18, color: AppColors.primary),
+          HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 18),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -697,7 +695,7 @@ class _LogsTab extends ConsumerWidget {
                           child: BentoCard(
                             padding: const EdgeInsets.all(12),
                             child: Row(children: [
-                              const Running(width: 16, height: 16, color: AppColors.success),
+                              HugeIcon(icon: HugeIcons.strokeRoundedRunningShoes, color: AppColors.success, size: 16),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(

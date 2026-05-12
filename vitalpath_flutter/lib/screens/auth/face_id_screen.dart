@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
@@ -63,9 +63,9 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
   };
 
   Widget get _biometricWidget => switch (_biometricType) {
-    BiometricType.face => const User(width: 64, height: 64, color: AppColors.primary),
-    BiometricType.fingerprint => const Fingerprint(width: 64, height: 64, color: AppColors.primary),
-    _ => const Lock(width: 64, height: 64, color: AppColors.primary),
+    BiometricType.face => HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 64),
+    BiometricType.fingerprint => HugeIcon(icon: HugeIcons.strokeRoundedFingerPrint, color: AppColors.primary, size: 64),
+    _ => HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.primary, size: 64),
   };
 
   Future<void> _authenticate() async {

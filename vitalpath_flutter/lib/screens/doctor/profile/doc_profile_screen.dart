@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/doctor.dart';
@@ -109,17 +109,17 @@ class DocProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: const Healthcare(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: Colors.black, size: 18),
                     title: 'Edit Profile',
                     onTap: () => _showEditSheet(context, ref, user.uid),
                   ),
                   BentoSettingsTile(
-                    icon: const Medal(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedMedal01, color: Colors.black, size: 18),
                     title: 'Credentials',
                     onTap: () {},
                   ),
                   BentoSettingsTile(
-                    icon: const MapPin(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedMapPin, color: Colors.black, size: 18),
                     title: 'Hospital Location',
                     showDivider: false,
                     onTap: () {},
@@ -136,17 +136,17 @@ class DocProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: const Bell(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: Colors.black, size: 18),
                     title: 'Notifications',
                     onTap: () => context.push('/notification-settings'),
                   ),
                   BentoSettingsTile(
-                    icon: const Lock(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: Colors.black, size: 18),
                     title: 'Privacy & Security',
                     onTap: () => context.push('/privacy-security'),
                   ),
                   BentoSettingsTile(
-                    icon: const QuestionMark(width: 18, height: 18),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedQuestion, color: Colors.black, size: 18),
                     title: 'Help & Support',
                     showDivider: false,
                     onTap: () => _showHelp(context),
@@ -160,7 +160,7 @@ class DocProfileScreen extends ConsumerWidget {
               Center(
                 child: TextButton.icon(
                   onPressed: () => _signOut(context, ref),
-                  icon: const LogOut(width: 18, height: 18, color: AppColors.destructive),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLogout01, color: AppColors.destructive, size: 18),
                   label: const Text(
                     'Sign Out',
                     style: TextStyle(color: AppColors.destructive, fontSize: 15, fontWeight: FontWeight.w500),

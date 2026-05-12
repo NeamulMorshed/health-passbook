@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -71,8 +71,8 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               indicatorColor: AppColors.primary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
               tabs: [
-                Tab(icon: PharmacyCrossCircle(width: 20, height: 20, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground), text: 'Medicines'),
-                Tab(icon: Apple(width: 20, height: 20, color: _tabCtrl.index == 1 ? AppColors.primary : AppColors.mutedForeground), text: 'Food'),
+                Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground, size: 20), text: 'Medicines'),
+                Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedApple, color: _tabCtrl.index == 1 ? AppColors.primary : AppColors.mutedForeground, size: 20), text: 'Food'),
               ],
             ),
           ),
@@ -90,7 +90,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                     ),
                   ),
                   child: Row(children: [
-                    const User(width: 15, height: 15, color: AppColors.primary),
+                    HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 15),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -135,7 +135,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               }
             },
             backgroundColor: AppColors.primary,
-            icon: const Plus(width: 20, height: 20, color: Colors.white),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.white, size: 20),
             label: Text(_tabCtrl.index == 0 ? 'Add Medicine' : 'Log Meal', style: const TextStyle(color: Colors.white)),
           ),
         );
@@ -180,7 +180,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8)),
-                  child: const ScanBarcode(width: 22, height: 22, color: AppColors.primary),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedBarcodeScan, color: AppColors.primary, size: 22),
                 ),
                 title: const Text('Scan Prescription',
                     style: TextStyle(
@@ -188,7 +188,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                         fontWeight: FontWeight.w600)),
                 subtitle: const Text('Take a photo and we\'ll read it for you',
                     style: TextStyle(fontSize: 12)),
-                trailing: const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+                trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -212,7 +212,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.border,
                       borderRadius: BorderRadius.circular(8)),
-                  child: const EditPencil(width: 18, height: 18, color: AppColors.mutedForeground),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.mutedForeground, size: 18),
                 ),
                 title: const Text('Add Manually',
                     style: TextStyle(
@@ -220,7 +220,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                         fontWeight: FontWeight.w600)),
                 subtitle: const Text('Enter medicine details yourself',
                     style: TextStyle(fontSize: 12)),
-                trailing: const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+                trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
                 onTap: () {
                   Navigator.pop(context);
                   _showMedicineSheet(context, uid, activeMember: activeMember);
@@ -547,7 +547,7 @@ class _AddMemberChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Plus(width: 14, height: 14, color: AppColors.primary.withValues(alpha: 0.8)),
+            HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: AppColors.primary.withValues(alpha: 0.8), size: 14),
             const SizedBox(width: 4),
             Text('Add member',
                 style: TextStyle(
@@ -648,7 +648,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
             badge,
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: const MoreVert(width: 20, height: 20, color: AppColors.mutedForeground),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical, color: AppColors.mutedForeground, size: 20),
               onSelected: (v) {
                 if (v == 'edit') {
                   showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
@@ -657,9 +657,9 @@ class _MedCardState extends ConsumerState<_MedCard> {
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [EditPencil(width: 18, height: 18), SizedBox(width: 8), Text('Edit')])),
+                PopupMenuItem(value: 'edit', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 18), const SizedBox(width: 8), const Text('Edit')])),
                 if (widget.med.prescribedBy == null)
-                  const PopupMenuItem(value: 'delete', child: Row(children: [Trash(width: 18, height: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Remove', style: TextStyle(color: AppColors.destructive))])),
+                  PopupMenuItem(value: 'delete', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18), const SizedBox(width: 8), const Text('Remove', style: TextStyle(color: AppColors.destructive))])),
               ],
             ),
           ]),
@@ -695,7 +695,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
               onPressed: _isTaking ? null : _logDose,
               icon: _isTaking
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Check(width: 16, height: 16, color: Colors.white),
+                  : HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
               label: const Text('Mark as Taken'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
             ),
@@ -797,12 +797,12 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.success.withValues(alpha: 0.1);
       fg = AppColors.success;
       label = slot.shortTime;
-      icon = CheckCircle(width: 14, height: 14, color: fg);
+      icon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: fg, size: 14);
     } else if (slot.isMissed) {
       bg = AppColors.warning.withValues(alpha: 0.1);
       fg = AppColors.warning;
       label = 'Missed · ${slot.shortTime}';
-      icon = WarningTriangle(width: 14, height: 14, color: fg);
+      icon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: fg, size: 14);
     } else if (slot.isDue) {
       bg = AppColors.primary;
       fg = Colors.white;
@@ -812,7 +812,7 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
       label = slot.shortTime;
-      icon = Clock(width: 13, height: 13, color: fg);
+      icon = HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: fg, size: 13);
     }
 
     final chip = Container(
@@ -948,7 +948,7 @@ class _MealCard extends ConsumerWidget {
             StatusBadge.warning(meal.mealType),
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: const MoreVert(width: 20, height: 20, color: AppColors.mutedForeground),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical, color: AppColors.mutedForeground, size: 20),
               onSelected: (v) {
                 if (v == 'edit') {
                   showLogMealSheet(context, uid, existing: meal);
@@ -956,9 +956,9 @@ class _MealCard extends ConsumerWidget {
                   _confirmDeleteMeal(context, ref, uid, meal.id);
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Row(children: [EditPencil(width: 18, height: 18), SizedBox(width: 8), Text('Edit')])),
-                PopupMenuItem(value: 'delete', child: Row(children: [Trash(width: 18, height: 18, color: AppColors.destructive), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.destructive))])),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'edit', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 18), const SizedBox(width: 8), const Text('Edit')])),
+                PopupMenuItem(value: 'delete', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18), const SizedBox(width: 8), const Text('Delete', style: TextStyle(color: AppColors.destructive))])),
               ],
             ),
           ]),
@@ -1166,11 +1166,11 @@ class _MedDetailSheet extends ConsumerWidget {
                 if (slot.isTaken) {
                   bg = AppColors.success.withValues(alpha: 0.08); fg = AppColors.success;
                   label = 'Taken';
-                  icon = CheckCircle(width: 16, height: 16, color: fg);
+                  icon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: fg, size: 16);
                 } else if (slot.isMissed) {
                   bg = AppColors.warning.withValues(alpha: 0.08); fg = AppColors.warning;
                   label = 'Missed';
-                  icon = WarningTriangle(width: 16, height: 16, color: fg);
+                  icon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: fg, size: 16);
                 } else if (slot.isDue) {
                   bg = AppColors.primary.withValues(alpha: 0.08); fg = AppColors.primary;
                   label = 'Due now';
@@ -1213,7 +1213,7 @@ class _MedDetailSheet extends ConsumerWidget {
                     Navigator.pop(context);
                     showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
                   },
-                  icon: const EditPencil(width: 16, height: 16),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
                   label: const Text('Edit'),
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
@@ -1237,7 +1237,7 @@ class _MedDetailSheet extends ConsumerWidget {
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    icon: const Check(width: 16, height: 16, color: Colors.white),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
                     label: const Text('Mark as Taken'),
                     style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
                   ),
@@ -1347,7 +1347,7 @@ class _MealDetailSheet extends StatelessWidget {
                 Navigator.pop(context);
                 showLogMealSheet(context, uid, existing: meal);
               },
-              icon: const EditPencil(width: 16, height: 16),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
               label: const Text('Edit Meal'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
             ),

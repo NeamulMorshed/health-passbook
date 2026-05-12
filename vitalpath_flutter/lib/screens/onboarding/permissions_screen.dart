@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -16,7 +16,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
   final _perms = [
     _PermData(
-      icon: const MapPin(width: 50, height: 50, color: AppColors.success),
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedMapPin, color: AppColors.success, size: 50),
       color: AppColors.success,
       title: 'Location Access',
       subtitle: 'Track your walks and outdoor activities with GPS for accurate distance measurement.',
@@ -24,7 +24,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       permission: Permission.location,
     ),
     _PermData(
-      icon: const Camera(width: 50, height: 50, color: AppColors.primary),
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: AppColors.primary, size: 50),
       color: AppColors.primary,
       title: 'Camera & Photos',
       subtitle: 'Take photos of your meals and prescriptions to keep detailed health records.',
@@ -32,7 +32,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       permission: Permission.camera,
     ),
     _PermData(
-      icon: const Bell(width: 50, height: 50, color: AppColors.warning),
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: AppColors.warning, size: 50),
       color: AppColors.warning,
       title: 'Medication Reminders',
       subtitle: 'Get notified when it\'s time to take your medicine. Never miss a dose again.',
@@ -112,7 +112,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                   border: Border.all(color: data.color.withValues(alpha: 0.2)),
                 ),
                 child: Row(children: [
-                  InfoCircle(width: 15, height: 15, color: data.color),
+                  HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: data.color, size: 15),
                   const SizedBox(width: 8),
                   Expanded(child: Text(data.why, style: TextStyle(fontSize: 13, color: data.color))),
                 ]),

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' as iconoir;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -80,7 +80,7 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
         color: AppColors.warningLight,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(children: [
-          const iconoir.WarningTriangle(width: 18, height: 18, color: AppColors.warning),
+          HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.warning, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -101,7 +101,7 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
             ]),
           ),
           IconButton(
-            icon: const iconoir.Xmark(width: 16, height: 16, color: AppColors.textTertiary),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.textTertiary, size: 16),
             onPressed: () => setState(() => _dismissed = true),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             padding: EdgeInsets.zero,
@@ -131,7 +131,7 @@ class _PendingInviteBanner extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
           child: Row(children: [
-            const iconoir.Shield(width: 20, height: 20, color: Color(0xFF7C3AED)),
+            HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -142,7 +142,7 @@ class _PendingInviteBanner extends ConsumerWidget {
                     style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
               ]),
             ),
-            const iconoir.NavArrowRight(width: 16, height: 16, color: Color(0xFF7C3AED)),
+            HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: const Color(0xFF7C3AED), size: 16),
           ]),
         ),
       )).toList(),
@@ -249,13 +249,13 @@ class _HomeContent extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(children: [
-                        const iconoir.Sparks(width: 24, height: 24, color: Colors.white),
+                        HugeIcon(icon: HugeIcons.strokeRoundedSparkles, color: Colors.white, size: 24),
                         const SizedBox(width: 14),
                         const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('AI Health Insights', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                           Text('Personalised suggestions from Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12)),
                         ])),
-                        const iconoir.NavArrowRight(width: 14, height: 14, color: Colors.white70),
+                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.white70, size: 14),
                       ]),
                     ),
                   ),
@@ -295,7 +295,7 @@ class _CaregiversActiveBanner extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: Row(children: [
-        const iconoir.Shield(width: 13, height: 13, color: Color(0xFF7C3AED)),
+        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 13),
         const SizedBox(width: 6),
         Expanded(
           child: Text('$names $verb in your care circle',
@@ -327,7 +327,7 @@ class _TimeContextualCard extends StatelessWidget {
     if (h >= 5 && h < 11) {
       final dueMeds = meds.where((m) => m.isActive && m.hasDueSlot).toList();
       return _ContextCard(
-        icon: const iconoir.SunLight(width: 18, height: 18, color: Color(0xFFF59E0B)),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: const Color(0xFFF59E0B), size: 18),
         color: const Color(0xFFF59E0B),
         heading: 'Morning routine',
         actionLabel: dueMeds.isNotEmpty ? 'View Medicines' : 'Log Breakfast',
@@ -336,7 +336,7 @@ class _TimeContextualCard extends StatelessWidget {
       );
     } else if (h >= 11 && h < 14) {
       return _ContextCard(
-        icon: iconoir.SunLight(width: 18, height: 18, color: AppColors.primary),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: AppColors.primary, size: 18),
         color: AppColors.primary,
         heading: 'Midday check-in',
         actionLabel: loggedTypes.contains(AppConstants.mealLunch) ? 'Log Vitals' : 'Log Lunch',
@@ -345,7 +345,7 @@ class _TimeContextualCard extends StatelessWidget {
       );
     } else if (h >= 14 && h < 17) {
       return _ContextCard(
-        icon: iconoir.Running(width: 18, height: 18, color: AppColors.success),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedRunningShoes, color: AppColors.success, size: 18),
         color: AppColors.success,
         heading: 'Afternoon boost',
         actionLabel: 'Log Activity',
@@ -355,7 +355,7 @@ class _TimeContextualCard extends StatelessWidget {
     } else if (h >= 17 && h < 21) {
       final eveningDue = meds.where((m) => m.isActive && m.hasDueSlot).toList();
       return _ContextCard(
-        icon: const iconoir.HalfMoon(width: 18, height: 18, color: Color(0xFF7C3AED)),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: const Color(0xFF7C3AED), size: 18),
         color: const Color(0xFF7C3AED),
         heading: 'Evening routine',
         actionLabel: eveningDue.isNotEmpty ? 'View Medicines' : 'Log Dinner',
@@ -365,7 +365,7 @@ class _TimeContextualCard extends StatelessWidget {
     } else {
       final allDone = meds.where((m) => m.isActive).every((m) => m.takenToday);
       return _ContextCard(
-        icon: iconoir.Bed(width: 18, height: 18, color: AppColors.mutedForeground),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedBed, color: AppColors.mutedForeground, size: 18),
         color: AppColors.mutedForeground,
         heading: 'End of day',
         body: allDone ? 'All medicines taken today — excellent health day!' : 'Check your medicines before bed to complete today\'s log.',
@@ -751,7 +751,7 @@ class _DailyAwarenessCard extends ConsumerWidget {
               color: AppColors.warning.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const iconoir.WarningTriangle(width: 20, height: 20, color: AppColors.warning),
+            child: HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.warning, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -834,8 +834,8 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            iconoir.Check(width: 12, height: 12, color: AppColors.success),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: AppColors.success, size: 12),
             SizedBox(width: 4),
             Text('All done', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
           ]),
@@ -849,9 +849,9 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
         SizedBox(
           width: double.infinity,
           child: BentoCard(
-            child: const Column(children: [
-              SizedBox(height: 8),
-              iconoir.Trophy(width: 32, height: 32, color: AppColors.success),
+            child: Column(children: [
+              const SizedBox(height: 8),
+              HugeIcon(icon: HugeIcons.strokeRoundedAward01, color: AppColors.success, size: 32),
               SizedBox(height: 8),
               Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               SizedBox(height: 2),
@@ -1003,9 +1003,9 @@ class _MealStatusCard extends StatelessWidget {
   static const _allMeals = [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner];
 
   static Widget _mealIcon(String meal, Color color) {
-    if (meal == AppConstants.mealBreakfast) return iconoir.SunLight(width: 18, height: 18, color: color);
-    if (meal == AppConstants.mealLunch) return iconoir.SunLight(width: 18, height: 18, color: color);
-    return iconoir.MoonSat(width: 18, height: 18, color: color);
+    if (meal == AppConstants.mealBreakfast) return HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
+    if (meal == AppConstants.mealLunch) return HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
+    return HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: color, size: 18);
   }
 
   @override
@@ -1202,11 +1202,11 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
                       child: Row(children: [
-                        const iconoir.Shield(width: 20, height: 20, color: Color(0xFF7C3AED)),
+                        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
                         const SizedBox(width: 10),
                         Expanded(child: Text('${inv.patientName} invited you to their Care Circle',
                             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                        const iconoir.NavArrowRight(width: 16, height: 16, color: Color(0xFF7C3AED)),
+                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: const Color(0xFF7C3AED), size: 16),
                       ]),
                     ),
                   ))),
@@ -1231,7 +1231,7 @@ class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
                             Text(conn.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                             Text(conn.relationship.relationshipLabel, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
                           ])),
-                          const iconoir.NavArrowRight(width: 16, height: 16, color: AppColors.textTertiary),
+                          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
                         ]),
                       ),
                     ))),
@@ -1307,7 +1307,7 @@ class _EmptyMembersCard extends StatelessWidget {
   Widget build(BuildContext context) => BentoCard(
     child: Column(children: [
       const SizedBox(height: 4),
-      const iconoir.Group(width: 36, height: 36, color: Color(0xFFF59E0B)),
+      HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: const Color(0xFFF59E0B), size: 36),
       const SizedBox(height: 10),
       const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       const SizedBox(height: 4),
@@ -1352,8 +1352,8 @@ class _CaregiverMedSection extends ConsumerWidget {
               label: dueMeds.isNotEmpty ? 'due now' : 'all done',
               value: '${dueMeds.length}',
               icon: dueMeds.isNotEmpty
-                  ? const iconoir.Alarm(width: 18, height: 18, color: AppColors.warning)
-                  : const iconoir.CheckCircle(width: 18, height: 18, color: AppColors.success),
+                  ? HugeIcon(icon: HugeIcons.strokeRoundedAlarmClock, color: AppColors.warning, size: 18)
+                  : HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 18),
               iconBgColor: dueMeds.isNotEmpty ? AppColors.warningLight : AppColors.successLight,
               iconColor: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success,
             ),
@@ -1387,9 +1387,9 @@ class _CaregiverMedSection extends ConsumerWidget {
             const SizedBox(height: 12),
             BentoCard(
               color: AppColors.successLight,
-              child: const Column(children: [
-                SizedBox(height: 4),
-                iconoir.CheckCircle(width: 28, height: 28, color: AppColors.success),
+              child: Column(children: [
+                const SizedBox(height: 4),
+                HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 28),
                 SizedBox(height: 6),
                 Text('All medicines taken!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.success)),
                 SizedBox(height: 4),
@@ -1455,12 +1455,12 @@ class _CaregiverQuickActions extends StatelessWidget {
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
-        icon: const iconoir.Calendar(width: 22, height: 22, color: Color(0xFFF59E0B)),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: const Color(0xFFF59E0B), size: 22),
         label: 'Appointments', color: const Color(0xFFF59E0B), onTap: () => context.go('/appointments'),
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
-        icon: const iconoir.UserPlus(width: 22, height: 22, color: AppColors.success),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.success, size: 22),
         label: 'Add Member', color: AppColors.success, onTap: () => context.go('/care'),
       )),
     ]),

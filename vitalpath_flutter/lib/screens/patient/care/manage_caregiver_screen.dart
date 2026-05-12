@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
@@ -334,7 +334,7 @@ class _ManageCaregiverScreenState
               else
                 TextButton.icon(
                   onPressed: _pickQuietHours,
-                  icon: const MoonSat(width: 18, height: 18),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: Colors.black, size: 18),
                   label: const Text('Set quiet hours'),
                 ),
             ],

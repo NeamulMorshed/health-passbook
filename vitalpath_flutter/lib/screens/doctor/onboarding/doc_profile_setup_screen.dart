@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -136,7 +136,7 @@ class _DocProfileSetupScreenState
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child: HealthShield(width: 28, height: 28, color: Colors.white),
+                        child: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: Colors.white, size: 28),
                       ),
                     ),
                     const SizedBox(width: 16),

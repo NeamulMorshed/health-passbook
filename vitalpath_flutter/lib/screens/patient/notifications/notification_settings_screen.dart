@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/bento_card.dart';
@@ -103,7 +103,7 @@ class _NotificationSettingsScreenState
                   padding: EdgeInsets.zero,
                   child: Column(children: [
                     BentoSettingsTile(
-                      icon: const Calendar(width: 20, height: 20, color: AppColors.primary),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 20),
                       title: 'Appointment Alerts',
                       subtitle: 'When a doctor confirms, reschedules or cancels',
                       trailing: Switch(
@@ -117,7 +117,7 @@ class _NotificationSettingsScreenState
                       showDivider: true,
                     ),
                     BentoSettingsTile(
-                      icon: const Group(width: 20, height: 20, color: AppColors.primary),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 20),
                       title: 'Doctor Updates',
                       subtitle: 'New prescriptions and updates from your doctors',
                       trailing: Switch(

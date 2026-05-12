@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_repository.dart';
@@ -193,19 +193,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final splashData = [
       _SplashData(
-        icon: const Heart(width: 56, height: 56, color: AppColors.primary),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 56),
         color: AppColors.primary,
         title: 'Omra',
         subtitle: 'Your health, in harmony',
       ),
       _SplashData(
-        icon: const HealthShield(width: 56, height: 56, color: AppColors.success),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: AppColors.success, size: 56),
         color: AppColors.success,
         title: 'Smart Health Tracking',
         subtitle: 'Medicines, meals, and activity\nall in one place',
       ),
       _SplashData(
-        icon: const Group(width: 56, height: 56, color: AppColors.primary),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 56),
         color: AppColors.primary,
         title: 'Doctor Connect',
         subtitle: 'Book appointments and receive\nprescriptions instantly',

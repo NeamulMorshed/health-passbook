@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
 import '../theme/app_theme.dart';
@@ -26,7 +26,7 @@ class NotifBell extends ConsumerWidget {
       alignment: Alignment.center,
       children: [
         IconButton(
-          icon: const Bell(width: 24, height: 24),
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: Colors.black, size: 24),
           tooltip: 'Notifications',
           onPressed: () => context.push('/notifications'),
         ),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -108,7 +108,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           BentoCard(
             padding: EdgeInsets.zero,
             child: BentoSettingsTile(
-              icon: const Fingerprint(width: 20, height: 20, color: AppColors.primary),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedFingerPrint, color: AppColors.primary, size: 20),
               title: 'Biometric Login',
               subtitle: _biometricAvailable
                   ? 'Use Face ID or fingerprint to log in'
@@ -130,7 +130,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _InfoRow(
-                const Lock(width: 18, height: 18, color: AppColors.mutedForeground),
+                HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.mutedForeground, size: 18),
                 'Data Encryption',
                 'All your health data is encrypted in transit and at rest via Firebase.',
               ),
@@ -142,7 +142,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
               ),
               const SizedBox(height: 12),
               _InfoRow(
-                const ShareIos(width: 18, height: 18, color: AppColors.mutedForeground),
+                HugeIcon(icon: HugeIcons.strokeRoundedShare01, color: AppColors.mutedForeground, size: 18),
                 'Data Sharing',
                 'Your data is only shared with doctors you connect with.',
               ),
@@ -156,7 +156,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           BentoCard(
             padding: EdgeInsets.zero,
             child: BentoSettingsTile(
-              icon: const Trash(width: 20, height: 20, color: AppColors.destructive),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 20),
               title: 'Delete Account',
               subtitle: 'Permanently delete your account and data',
               onTap: _showDeleteDialog,

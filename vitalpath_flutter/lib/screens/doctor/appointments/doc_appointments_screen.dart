@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -188,7 +188,7 @@ class _DocApptCard extends ConsumerWidget {
                 color: AppColors.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8)),
             child: Row(children: [
-              const Clock(width: 16, height: 16, color: AppColors.primary),
+              HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: AppColors.primary, size: 16),
               const SizedBox(width: 8),
               Text(DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
                   style: const TextStyle(
@@ -203,7 +203,7 @@ class _DocApptCard extends ConsumerWidget {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _showConfirmSheet(context, ref),
-                icon: const Check(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.black, size: 16),
                 label: const Text('Set Date & Confirm'),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success, minimumSize: const Size(0, 42)),
@@ -216,7 +216,7 @@ class _DocApptCard extends ConsumerWidget {
                   minimumSize: const Size(42, 42),
                   foregroundColor: AppColors.destructive,
                   side: const BorderSide(color: AppColors.destructive)),
-              child: const Xmark(width: 16, height: 16),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.black, size: 16),
             ),
           ]),
         ],
@@ -226,7 +226,7 @@ class _DocApptCard extends ConsumerWidget {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () => _confirmComplete(context, ref),
-                icon: const CheckCircle(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: Colors.black, size: 16),
                 label: const Text('Mark Completed'),
                 style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary, minimumSize: const Size(0, 42)),
@@ -419,7 +419,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Calendar(width: 18, height: 18, color: AppColors.primary),
+                  HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 18),
                   const SizedBox(width: 10),
                   Text(DateFormat('EEEE, MMM d, y').format(_selectedDate),
                       style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -440,7 +440,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.border)),
                 child: Row(children: [
-                  const Clock(width: 18, height: 18, color: AppColors.primary),
+                  HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: AppColors.primary, size: 18),
                   const SizedBox(width: 10),
                   Text(_selectedTime.format(context),
                       style: const TextStyle(fontWeight: FontWeight.w500)),

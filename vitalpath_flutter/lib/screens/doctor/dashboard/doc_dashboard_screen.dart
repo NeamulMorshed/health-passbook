@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -97,7 +97,7 @@ class DocDashboardScreen extends ConsumerWidget {
                     Expanded(child: BentoStatCard(
                       label: 'Patients',
                       value: '$patientCount',
-                      icon: const Group(width: 18, height: 18, color: AppColors.primary),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 18),
                       iconBgColor: AppColors.primaryTint,
                       iconColor: AppColors.primary,
                     )),
@@ -105,7 +105,7 @@ class DocDashboardScreen extends ConsumerWidget {
                     Expanded(child: BentoStatCard(
                       label: 'Today',
                       value: '${confirmed.length}',
-                      icon: const Calendar(width: 18, height: 18, color: AppColors.info),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.info, size: 18),
                       iconBgColor: AppColors.infoLight,
                       iconColor: AppColors.info,
                     )),
@@ -113,7 +113,7 @@ class DocDashboardScreen extends ConsumerWidget {
                     Expanded(child: BentoStatCard(
                       label: 'Pending',
                       value: '${pending.length}',
-                      icon: const Clock(width: 18, height: 18, color: AppColors.warning),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: AppColors.warning, size: 18),
                       iconBgColor: AppColors.warningLight,
                       iconColor: AppColors.warning,
                     )),
@@ -123,21 +123,21 @@ class DocDashboardScreen extends ConsumerWidget {
                   // Quick actions
                   Row(children: [
                     _ActionTile(
-                      icon: const Group(width: 22, height: 22, color: AppColors.primary),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 22),
                       label: 'Patients',
                       color: AppColors.primary,
                       onTap: () => context.go('/doc/patients'),
                     ),
                     const SizedBox(width: 12),
                     _ActionTile(
-                      icon: const Calendar(width: 22, height: 22, color: AppColors.primary),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 22),
                       label: 'Appointments',
                       color: AppColors.primary,
                       onTap: () => context.go('/doc/appointments'),
                     ),
                     const SizedBox(width: 12),
                     _ActionTile(
-                      icon: const EditPencil(width: 22, height: 22, color: AppColors.success),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.success, size: 22),
                       label: 'Prescribe',
                       color: AppColors.success,
                       onTap: () => context.go('/doc/patients', extra: {'mode': 'prescribe'}),
@@ -162,7 +162,7 @@ class DocDashboardScreen extends ConsumerWidget {
                             color: AppColors.muted,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const CheckCircle(width: 32, height: 32, color: AppColors.success),
+                          child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 32),
                         ),
                         const SizedBox(height: 10),
                         const Text('All caught up', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -242,7 +242,7 @@ class _PendingApptCard extends ConsumerWidget {
           ])),
           StatusBadge.warning('Pending'),
           const SizedBox(width: 4),
-          const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
         ]),
       ),
     );

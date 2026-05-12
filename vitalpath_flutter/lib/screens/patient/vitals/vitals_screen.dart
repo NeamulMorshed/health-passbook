@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -51,7 +51,7 @@ class _VitalsContent extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showLogVitalSheet(context, ref, patientId),
         backgroundColor: AppColors.primary,
-        icon: const Plus(width: 20, height: 20, color: Colors.white),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.white, size: 20),
         label: const Text('Log a Vital', style: TextStyle(color: Colors.white)),
       ),
       body: vitalsAsync.when(
@@ -92,7 +92,7 @@ class _VitalsContent extends ConsumerWidget {
                         ? '${latestBpSys.value.toInt()}/${latestBpDia?.value.toInt() ?? '-'}'
                         : '--',
                     unit: 'mmHg',
-                    icon: const Droplet(width: 20, height: 20, color: Color(0xFF3B82F6)),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: const Color(0xFF3B82F6), size: 20),
                     iconBgColor: const Color(0xFFEFF6FF),
                     iconColor: const Color(0xFF3B82F6),
                     onTap: () => _showHistorySheet(context, VitalType.bpSystolic, readings),
@@ -101,7 +101,7 @@ class _VitalsContent extends ConsumerWidget {
                     label: 'Heart Rate',
                     value: fmt(latestPulse),
                     unit: VitalType.unitFor(VitalType.pulse),
-                    icon: const Activity(width: 20, height: 20, color: AppColors.destructive),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.destructive, size: 20),
                     iconBgColor: AppColors.destructiveLight,
                     iconColor: AppColors.destructive,
                     onTap: () => _showHistorySheet(context, VitalType.pulse, readings),
@@ -113,7 +113,7 @@ class _VitalsContent extends ConsumerWidget {
                     label: 'SpO₂',
                     value: fmt(latestSpo2),
                     unit: VitalType.unitFor(VitalType.spo2),
-                    icon: const Activity(width: 20, height: 20, color: AppColors.success),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.success, size: 20),
                     iconBgColor: AppColors.successLight,
                     iconColor: AppColors.success,
                     onTap: () => _showHistorySheet(context, VitalType.spo2, readings),
@@ -122,7 +122,7 @@ class _VitalsContent extends ConsumerWidget {
                     label: 'Temperature',
                     value: fmt(latestTemp),
                     unit: VitalType.unitFor(VitalType.temp),
-                    icon: const TemperatureHigh(width: 20, height: 20, color: AppColors.warning),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedTemperature, color: AppColors.warning, size: 20),
                     iconBgColor: AppColors.warningLight,
                     iconColor: AppColors.warning,
                     onTap: () => _showHistorySheet(context, VitalType.temp, readings),
@@ -134,7 +134,7 @@ class _VitalsContent extends ConsumerWidget {
                     label: 'Glucose',
                     value: fmt(latestGlucose),
                     unit: VitalType.unitFor(VitalType.glucose),
-                    icon: const Droplet(width: 20, height: 20, color: AppColors.warning),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: AppColors.warning, size: 20),
                     iconBgColor: AppColors.warningLight,
                     iconColor: AppColors.warning,
                     onTap: () => _showHistorySheet(context, VitalType.glucose, readings),
@@ -143,7 +143,7 @@ class _VitalsContent extends ConsumerWidget {
                     label: 'BP Diastolic',
                     value: fmt(latestBpDia),
                     unit: VitalType.unitFor(VitalType.bpDiastolic),
-                    icon: const Droplet(width: 20, height: 20, color: Color(0xFF3B82F6)),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: const Color(0xFF3B82F6), size: 20),
                     iconBgColor: const Color(0xFFEFF6FF),
                     iconColor: const Color(0xFF3B82F6),
                     onTap: () => _showHistorySheet(context, VitalType.bpDiastolic, readings),
@@ -486,7 +486,7 @@ class _VitalHistorySheet extends ConsumerWidget {
                                 color: AppColors.muted,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: const Activity(width: 48, height: 48, color: AppColors.mutedForeground),
+                              child: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.mutedForeground, size: 48),
                             ),
                             const SizedBox(height: 16),
                             const Text('No Readings Yet',
@@ -518,10 +518,10 @@ class _VitalHistorySheet extends ConsumerWidget {
                         final Widget statusIcon;
                         if (isNormal) {
                           statusColor = AppColors.success;
-                          statusIcon = const CheckCircle(width: 16, height: 16, color: AppColors.success);
+                          statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 16);
                         } else if (val >= borderlineLow && val <= borderlineHigh) {
                           statusColor = AppColors.warning;
-                          statusIcon = WarningTriangle(width: 16, height: 16, color: AppColors.warning);
+                          statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.warning, size: 16);
                         } else {
                           statusColor = AppColors.destructive;
                           statusIcon = Icon(Icons.error_rounded, size: 16, color: AppColors.destructive);
@@ -644,19 +644,19 @@ class _VitalStatusCard extends ConsumerWidget {
     if (missedMeds.isNotEmpty && abnormalReadings.isNotEmpty) {
       statusColor = AppColors.destructive;
       statusText = 'Needs attention';
-      statusIcon = WarningTriangle(width: 13, height: 13, color: AppColors.destructive);
+      statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.destructive, size: 13);
     } else if (missedMeds.isNotEmpty || abnormalReadings.isNotEmpty) {
       statusColor = AppColors.warning;
       statusText = 'Check in today';
-      statusIcon = const InfoCircle(width: 13, height: 13, color: AppColors.warning);
+      statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.warning, size: 13);
     } else if (activeMeds.isNotEmpty && activeMeds.every((m) => m.takenToday)) {
       statusColor = AppColors.success;
       statusText = 'On track';
-      statusIcon = const CheckCircle(width: 13, height: 13, color: AppColors.success);
+      statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 13);
     } else {
       statusColor = AppColors.primary;
       statusText = 'Good day';
-      statusIcon = const SunLight(width: 13, height: 13, color: AppColors.primary);
+      statusIcon = HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: AppColors.primary, size: 13);
     }
 
     final medStreak = gamProfile?.medStreak ?? 0;
@@ -709,7 +709,7 @@ class _VitalStatusCard extends ConsumerWidget {
               _VitalChip(
                 label: '${latestBpSys.value.toInt()}/${latestBpDia.value.toInt()}',
                 unit: 'mmHg',
-                iconBuilder: (c) => Heart(width: 12, height: 12, color: c),
+                iconBuilder: (c) => HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: c, size: 12),
                 isNormal: VitalType.isNormal(VitalType.bpSystolic, latestBpSys.value) &&
                     VitalType.isNormal(VitalType.bpDiastolic, latestBpDia.value),
               ),
@@ -717,14 +717,14 @@ class _VitalStatusCard extends ConsumerWidget {
               _VitalChip(
                 label: '${latestPulse.value.toInt()}',
                 unit: 'bpm',
-                iconBuilder: (c) => StatsUpSquare(width: 12, height: 12, color: c),
+                iconBuilder: (c) => HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: c, size: 12),
                 isNormal: VitalType.isNormal(VitalType.pulse, latestPulse.value),
               ),
             if (latestGlucose != null)
               _VitalChip(
                 label: '${latestGlucose.value.toInt()}',
                 unit: 'mg/dL',
-                iconBuilder: (c) => Droplet(width: 12, height: 12, color: c),
+                iconBuilder: (c) => HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: c, size: 12),
                 isNormal: VitalType.isNormal(VitalType.glucose, latestGlucose.value),
               ),
           ]),
@@ -781,8 +781,8 @@ class _VitalChip extends StatelessWidget {
         Text(unit, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
         const SizedBox(width: 5),
         isNormal
-            ? CheckCircle(width: 11, height: 11, color: color)
-            : WarningTriangle(width: 11, height: 11, color: color),
+            ? HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: color, size: 11)
+            : HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: color, size: 11),
       ]),
     );
   }

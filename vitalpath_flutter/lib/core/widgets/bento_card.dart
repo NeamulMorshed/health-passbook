@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' as iconoir;
+import 'package:hugeicons/hugeicons.dart';
 import '../theme/app_theme.dart';
 
 // ── Widget 1 — BentoCard ─────────────────────────────────────────────────────
@@ -327,11 +327,7 @@ class BentoSettingsTile extends StatelessWidget {
                   ),
                 ),
                 trailing ??
-                    const iconoir.NavArrowRight(
-                      width: 16,
-                      height: 16,
-                      color: AppColors.textTertiary,
-                    ),
+                    HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
               ],
             ),
           ),

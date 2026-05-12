@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 
 class DoctorShell extends StatelessWidget {
@@ -11,23 +11,23 @@ class DoctorShell extends StatelessWidget {
 
   static final _tabs = [
     _TabItem(
-      icon:         StatsUpSquare(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: StatsUpSquare(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.primary, size: _kSize),
       label: 'Dashboard', route: '/doc/dashboard',
     ),
     _TabItem(
-      icon:         Group(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: Group(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: _kSize),
       label: 'Patients', route: '/doc/patients',
     ),
     _TabItem(
-      icon:         Calendar(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: Calendar(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: _kSize),
       label: 'Visits', route: '/doc/appointments',
     ),
     _TabItem(
-      icon:         User(width: _kSize, height: _kSize, color: AppColors.textTertiary),
-      selectedIcon: User(width: _kSize, height: _kSize, color: AppColors.primary),
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: _kSize),
       label: 'Profile', route: '/doc/profile',
     ),
   ];

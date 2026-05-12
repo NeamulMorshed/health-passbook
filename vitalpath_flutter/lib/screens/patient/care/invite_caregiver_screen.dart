@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
@@ -123,7 +123,7 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
           title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
           leading: _step > 0 && !_sent
               ? IconButton(
-                  icon: const NavArrowLeft(width: 18, height: 18),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, color: Colors.black, size: 18),
                   onPressed: () => setState(() => _step--),
                 )
               : null,
@@ -200,7 +200,7 @@ class _StepIndicator extends StatelessWidget {
                   ),
                   child: Center(
                     child: done
-                        ? const Check(width: 14, height: 14, color: Colors.white)
+                        ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 14)
                         : Text(
                             '${i + 1}',
                             style: TextStyle(
@@ -303,7 +303,7 @@ class _Step1 extends StatelessWidget {
                               : AppColors.foreground)),
                 ),
                 if (isSelected)
-                  const CheckCircle(width: 20, height: 20, color: AppColors.primary),
+                  HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 20),
               ]),
             ),
           );
@@ -606,7 +606,7 @@ class _ConfirmationView extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: CheckCircle(width: 48, height: 48, color: AppColors.primary),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 48),
             ),
           ),
           const SizedBox(height: 24),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -62,7 +62,7 @@ class AppointmentsScreen extends ConsumerWidget {
                             color: AppColors.muted,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Calendar(width: 48, height: 48, color: AppColors.mutedForeground),
+                          child: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.mutedForeground, size: 48),
                         ),
                         const SizedBox(height: 16),
                         const Text('No Appointments',
@@ -107,7 +107,7 @@ class AppointmentsScreen extends ConsumerWidget {
                   if (hasMore)
                     TextButton.icon(
                       onPressed: () => ref.read(_apptLimitProvider.notifier).state += _pageSize,
-                      icon: const NavArrowDown(width: 24, height: 24),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, color: AppColors.primary, size: 24),
                       label: const Text('Load more'),
                     )
                   else
@@ -169,7 +169,7 @@ class _ApptCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
                 child: Row(children: [
-                  const Clock(width: 16, height: 16, color: AppColors.primary),
+                  HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: AppColors.primary, size: 16),
                   const SizedBox(width: 8),
                   Text(
                     DateFormat('EEEE, MMM d, y - h:mm a').format(appt.scheduledAt!),
@@ -190,7 +190,7 @@ class _ApptCard extends ConsumerWidget {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => _confirmCancel(context, ref),
-                icon: const XmarkCircle(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCancelCircle, color: AppColors.destructive, size: 16),
                 label: const Text('Cancel Request'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 40),
@@ -204,7 +204,7 @@ class _ApptCard extends ConsumerWidget {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => _confirmCancel(context, ref),
-                icon: const XmarkCircle(width: 16, height: 16),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCancelCircle, color: AppColors.destructive, size: 16),
                 label: const Text('Cancel Appointment'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 40),
@@ -227,7 +227,7 @@ class _ApptCard extends ConsumerWidget {
                     ])
                   : OutlinedButton.icon(
                       onPressed: () => _showRateSheet(context),
-                      icon: const Star(width: 16, height: 16, color: AppColors.warning),
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedStar, color: AppColors.warning, size: 16),
                       label: const Text('Rate this appointment'),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 40),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 import '../../core/constants/app_constants.dart';
@@ -308,7 +308,7 @@ class _Step1 extends StatelessWidget {
                 if (dob != null)
                   GestureDetector(
                     onTap: () => onDobChanged(null),
-                    child: const Xmark(width: 16, height: 16, color: AppColors.mutedForeground),
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
                   ),
               ],
             ),
@@ -337,7 +337,7 @@ class _Step2 extends StatelessWidget {
         BentoCard(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Hospital(width: 28, height: 28, color: Color(0xFFF59E0B)),
+            HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: const Color(0xFFF59E0B), size: 28),
             const SizedBox(height: 12),
             const Text(
               'Connect with their doctor',
@@ -454,7 +454,7 @@ class _Step3State extends State<_Step3> {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Heart(width: 44, height: 44, color: Color(0xFFF59E0B)),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: const Color(0xFFF59E0B), size: 44),
             ),
           ),
         ),
@@ -495,11 +495,7 @@ class _Step3State extends State<_Step3> {
             ),
           ),
           child: Row(children: [
-            Bell(
-              width: 24,
-              height: 24,
-              color: _notifGranted ? AppColors.success : const Color(0xFFF59E0B),
-            ),
+            HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: _notifGranted ? AppColors.success : const Color(0xFFF59E0B), size: 24),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -605,7 +601,7 @@ Widget _infoBox(String text, Color color) => Container(
           color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        InfoCircle(width: 18, height: 18, color: color),
+        HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: color, size: 18),
         const SizedBox(width: 10),
         Expanded(
             child: Text(text,

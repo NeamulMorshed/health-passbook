@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/patient.dart';
@@ -237,7 +237,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                        child: const Camera(width: 14, height: 14, color: Colors.white),
+                        child: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: Colors.white, size: 14),
                       ),
                     ),
                   ],

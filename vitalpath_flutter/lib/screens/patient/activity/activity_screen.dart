@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:geolocator/geolocator.dart' hide ActivityType;
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer, Position;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
@@ -502,8 +502,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle),
                   child: _isPaused
-                      ? const Play(width: 34, height: 34, color: Colors.white)
-                      : const Pause(width: 34, height: 34, color: Colors.white),
+                      ? HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 34)
+                      : HugeIcon(icon: HugeIcons.strokeRoundedPause, color: Colors.white, size: 34),
                 ),
               ),
               const SizedBox(width: 24),
@@ -529,7 +529,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle),
-                child: const Play(width: 40, height: 40, color: Colors.white),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 40),
               ),
             ),
           const SizedBox(height: 12),
@@ -596,7 +596,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             decoration: const InputDecoration(
               labelText: 'Notes (optional)',
               hintText: 'e.g. Felt great, outdoor session',
-              prefixIcon: Notes(width: 24, height: 24),
+              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textSecondary, size: 24),
             ),
           ),
           const SizedBox(height: 16),

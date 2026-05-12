@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle;
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -160,7 +160,7 @@ class _RxCard extends StatelessWidget {
                           ),
                         ]),
                   ),
-                  const NavArrowRight(width: 14, height: 14, color: AppColors.mutedForeground),
+                  HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
                 ]),
 
                 if (rx.diagnosis != null &&
@@ -272,8 +272,7 @@ class _RxDetailSheet extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Notes(
-                    color: AppColors.primary, width: 24, height: 24),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.primary, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

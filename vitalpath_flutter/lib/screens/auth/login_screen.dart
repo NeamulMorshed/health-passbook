@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconoir_flutter/iconoir_flutter.dart' hide Text, Navigator, List, Radius, Circle, AppNotification, Timer;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -188,10 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Heart(
-                    width: 32, height: 32,
-                    color: AppColors.primary,
-                  ),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 32),
                 ),
                 const SizedBox(height: 28),
 
@@ -373,11 +370,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             _loading ? null : _submitEmail(),
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Lock(width: 20, height: 20),
+                          prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: Colors.black, size: 20),
                           suffixIcon: IconButton(
                             icon: _obscurePassword
-                                ? const Eye(width: 20, height: 20)
-                                : const EyeClosed(width: 20, height: 20),
+                                ? HugeIcon(icon: HugeIcons.strokeRoundedEye, color: Colors.black, size: 20)
+                                : HugeIcon(icon: HugeIcons.strokeRoundedViewOff, color: Colors.black, size: 20),
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
                           ),
