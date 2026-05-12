@@ -257,7 +257,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       side: const BorderSide(
                           color: AppColors.border, width: 1.5),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(100)),
                       backgroundColor: AppColors.muted,
                     ),
                     child: Row(
@@ -311,7 +311,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         side: const BorderSide(
                             color: AppColors.border, width: 1.5),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(100)),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,

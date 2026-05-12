@@ -173,7 +173,7 @@ class _TourSheetState extends State<_TourSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: step.color,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(100)),
               ),
               child: Text(
                 isLast ? 'Get started' : 'Next',

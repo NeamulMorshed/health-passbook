@@ -535,7 +535,7 @@ class _Step3State extends State<_Step3> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(100)),
                 ),
                 child: const Text('Allow',
                     style: TextStyle(

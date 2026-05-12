@@ -306,7 +306,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16)),
+                                borderRadius: BorderRadius.circular(100)),
                           ),
                           child: Text(
                             _step < 2 ? 'Next' : 'Get Started',

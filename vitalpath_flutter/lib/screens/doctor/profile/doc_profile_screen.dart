@@ -481,7 +481,7 @@ class _VerificationBannerState extends State<_VerificationBanner> {
                     backgroundColor: color.withValues(alpha: 0.12),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(100)),
                   ),
                   child: Text('Request',
                       style: TextStyle(
