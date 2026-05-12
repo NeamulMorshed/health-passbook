@@ -261,24 +261,36 @@ class _DocApptCard extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Cancel Appointment'),
         content: Text('Cancel ${appt.patientName}\'s appointment request?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
-                appt.id,
-                patientId: appt.patientId,
-                doctorId: appt.doctorId,
-              );
-              if (!context.mounted) return;
-              final state = ref.read(doctorAppointmentNotifierProvider);
-              if (state is AsyncError) {
-                showAppSnack(context, 'Failed to cancel. Check your connection and try again.');
-              }
-            },
-            child: const Text('Cancel'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  await ref.read(doctorAppointmentNotifierProvider.notifier).cancel(
+                    appt.id,
+                    patientId: appt.patientId,
+                    doctorId: appt.doctorId,
+                  );
+                  if (!context.mounted) return;
+                  final state = ref.read(doctorAppointmentNotifierProvider);
+                  if (state is AsyncError) {
+                    showAppSnack(context, 'Failed to cancel. Check your connection and try again.');
+                  }
+                },
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Keep'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -291,20 +303,32 @@ class _DocApptCard extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Mark Completed'),
         content: Text('Mark ${appt.patientName}\'s appointment as completed?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Not yet')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
-              if (!context.mounted) return;
-              final state = ref.read(doctorAppointmentNotifierProvider);
-              if (state is AsyncError) {
-                showAppSnack(context, 'Failed to mark completed. Check your connection and try again.');
-              }
-            },
-            child: const Text('Mark Completed'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  await ref.read(doctorAppointmentNotifierProvider.notifier).complete(appt.id);
+                  if (!context.mounted) return;
+                  final state = ref.read(doctorAppointmentNotifierProvider);
+                  if (state is AsyncError) {
+                    showAppSnack(context, 'Failed to mark completed. Check your connection and try again.');
+                  }
+                },
+                child: const Text('Mark Completed'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Not yet'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

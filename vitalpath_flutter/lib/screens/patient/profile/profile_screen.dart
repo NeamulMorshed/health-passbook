@@ -34,7 +34,7 @@ class ProfileScreen extends ConsumerWidget {
         final gamAsync     = ref.watch(gamificationProvider(user.uid));
 
         return Scaffold(
-          backgroundColor: AppColors.surface,
+          backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
             title: const Text('My Profile'),
             automaticallyImplyLeading: false,
@@ -329,18 +329,30 @@ class ProfileScreen extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              try {
-                await ref.read(authRepositoryProvider).signOut();
-              } catch (_) {}
-              if (context.mounted) context.go('/user-select');
-            },
-            child: const Text('Sign Out'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref.read(authRepositoryProvider).signOut();
+                  } catch (_) {}
+                  if (context.mounted) context.go('/user-select');
+                },
+                child: const Text('Sign Out'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -255,9 +255,24 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
             '${VitalType.labelFor(_selectedType)} of $val $unit is outside the normal range ($minN–$maxN $unit). '
             'Please double-check the value. Log anyway?',
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Edit')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Log Anyway')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Log Anyway'),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Edit'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -299,13 +314,24 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
           builder: (_) => AlertDialog(
             title: const Text('Discard reading?',
                 style: TextStyle(fontWeight: FontWeight.w600)),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Keep')),
-              TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Discard')),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Discard'),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Keep'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -544,15 +570,25 @@ class _VitalHistorySheet extends ConsumerWidget {
                                     title: const Text('Delete Reading?',
                                         style: TextStyle(fontWeight: FontWeight.w600)),
                                     content: const Text('This reading will be permanently deleted.'),
+                                    actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                                     actions: [
-                                      TextButton(
-                                          onPressed: () => Navigator.pop(dialogCtx, false),
-                                          child: const Text('Cancel')),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.destructive),
-                                        onPressed: () => Navigator.pop(dialogCtx, true),
-                                        child: const Text('Delete'),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColors.destructive),
+                                            onPressed: () => Navigator.pop(dialogCtx, true),
+                                            child: const Text('Delete'),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Center(
+                                            child: TextButton(
+                                              onPressed: () => Navigator.pop(dialogCtx, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

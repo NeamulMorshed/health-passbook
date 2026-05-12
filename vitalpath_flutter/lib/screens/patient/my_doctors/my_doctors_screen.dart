@@ -505,29 +505,39 @@ class _DoctorCard extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Remove Doctor'),
         content: Text('Remove Dr. ${doctor.name} from your doctors list?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              try {
-                await ref
-                    .read(connectionNotifierProvider.notifier)
-                    .remove(patientId, doctor.uid);
-                if (context.mounted) {
-                  showAppSnack(context, 'Dr. ${doctor.name} removed from your list.');
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  showAppSnack(context, 'Failed to remove doctor. Please try again.');
-                }
-              }
-            },
-            child: const Text('Remove'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref
+                        .read(connectionNotifierProvider.notifier)
+                        .remove(patientId, doctor.uid);
+                    if (context.mounted) {
+                      showAppSnack(context, 'Dr. ${doctor.name} removed from your list.');
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      showAppSnack(context, 'Failed to remove doctor. Please try again.');
+                    }
+                  }
+                },
+                child: const Text('Remove'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

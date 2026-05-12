@@ -451,7 +451,7 @@ class _RefillCountdownCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          iconoir.PharmacyCrossCircle(width: 15, height: 15, color: cardColor),
+          Icon(Icons.medication_outlined, size: 15, color: cardColor),
           const SizedBox(width: 6),
           Text(urgent ? 'Refill urgently needed' : 'Medicine refill needed',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cardColor)),
@@ -846,16 +846,19 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         header,
         const SizedBox(height: 12),
-        BentoCard(
-          child: const Column(children: [
-            SizedBox(height: 8),
-            iconoir.Trophy(width: 32, height: 32, color: AppColors.success),
-            SizedBox(height: 8),
-            Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            SizedBox(height: 2),
-            Text('Great job keeping up with your health today.', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-            SizedBox(height: 8),
-          ]),
+        SizedBox(
+          width: double.infinity,
+          child: BentoCard(
+            child: const Column(children: [
+              SizedBox(height: 8),
+              iconoir.Trophy(width: 32, height: 32, color: AppColors.success),
+              SizedBox(height: 8),
+              Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              SizedBox(height: 2),
+              Text('Great job keeping up with your health today.', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              SizedBox(height: 8),
+            ]),
+          ),
         ),
       ]);
     }
@@ -948,7 +951,7 @@ class _MedRow extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: iconoir.PharmacyCrossCircle(width: 20, height: 20, color: iconColor),
+          child: Icon(Icons.medication_outlined, size: 20, color: iconColor),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1341,7 +1344,7 @@ class _CaregiverMedSection extends ConsumerWidget {
             left: BentoStatCard(
               label: 'taken today',
               value: '$takenToday/${activeMeds.length}',
-              icon: const iconoir.PharmacyCrossCircle(width: 18, height: 18, color: AppColors.primary),
+              icon: const Icon(Icons.medication_outlined, size: 18, color: AppColors.primary),
               iconBgColor: AppColors.primaryTint,
               iconColor: AppColors.primary,
             ),
@@ -1360,7 +1363,7 @@ class _CaregiverMedSection extends ConsumerWidget {
             BentoCard(
               child: Column(children: [
                 const SizedBox(height: 8),
-                const iconoir.PharmacyCrossCircle(width: 28, height: 28, color: AppColors.mutedForeground),
+                const Icon(Icons.medication_outlined, size: 28, color: AppColors.mutedForeground),
                 const SizedBox(height: 8),
                 Text('No medicines for $memberName yet', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
                 const SizedBox(height: 8),
@@ -1415,7 +1418,7 @@ class _CaregiverMedTile extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: const iconoir.PharmacyCrossCircle(width: 22, height: 22, color: AppColors.primary),
+          child: const Icon(Icons.medication_outlined, size: 22, color: AppColors.primary),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1447,7 +1450,7 @@ class _CaregiverQuickActions extends StatelessWidget {
     const SizedBox(height: 12),
     Row(children: [
       Expanded(child: _ActionBtn(
-        icon: const iconoir.PharmacyCrossCircle(width: 22, height: 22, color: AppColors.primary),
+        icon: const Icon(Icons.medication_outlined, size: 22, color: AppColors.primary),
         label: 'Add Medicine', color: AppColors.primary, onTap: () => context.go('/care'),
       )),
       const SizedBox(width: 10),

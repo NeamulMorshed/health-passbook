@@ -67,13 +67,22 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
           title: const Text('Invite already sent'),
           content: Text(
               'An invite was already sent to $email. Send again?'),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogCtx, false),
-                child: const Text('Cancel')),
-            TextButton(
-                onPressed: () => Navigator.pop(dialogCtx, true),
-                child: const Text('Send Anyway')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogCtx, true),
+                    child: const Text('Send Anyway')),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: const Text('Cancel')),
+                ),
+              ],
+            ),
           ],
         ),
       );

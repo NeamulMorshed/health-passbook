@@ -23,7 +23,7 @@ class DoctorShell extends StatelessWidget {
     _TabItem(
       icon:         Calendar(width: _kSize, height: _kSize, color: AppColors.textTertiary),
       selectedIcon: Calendar(width: _kSize, height: _kSize, color: AppColors.primary),
-      label: 'Appointments', route: '/doc/appointments',
+      label: 'Visits', route: '/doc/appointments',
     ),
     _TabItem(
       icon:         User(width: _kSize, height: _kSize, color: AppColors.textTertiary),

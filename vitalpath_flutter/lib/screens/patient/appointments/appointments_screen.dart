@@ -265,30 +265,42 @@ class _ApptCard extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: Text(title),
         content: Text(content),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Keep')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => const Center(child: CircularProgressIndicator()),
-              );
-              await ref.read(appointmentNotifierProvider.notifier).cancel(
-                appt.id,
-                patientId: appt.patientId,
-                doctorId: appt.doctorId,
-              );
-              if (context.mounted) {
-                Navigator.of(context).pop(); // dismiss loading dialog
-                showAppSnack(context, isConfirmed
-                    ? 'Appointment cancelled.'
-                    : 'Appointment request cancelled.');
-              }
-            },
-            child: Text(btnLabel),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(child: CircularProgressIndicator()),
+                  );
+                  await ref.read(appointmentNotifierProvider.notifier).cancel(
+                    appt.id,
+                    patientId: appt.patientId,
+                    doctorId: appt.doctorId,
+                  );
+                  if (context.mounted) {
+                    Navigator.of(context).pop(); // dismiss loading dialog
+                    showAppSnack(context, isConfirmed
+                        ? 'Appointment cancelled.'
+                        : 'Appointment request cancelled.');
+                  }
+                },
+                child: Text(btnLabel),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Keep'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

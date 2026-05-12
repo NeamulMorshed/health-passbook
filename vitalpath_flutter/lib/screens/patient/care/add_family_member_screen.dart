@@ -413,31 +413,40 @@ class _AddFamilyMemberScreenState
         title: const Text('Delete Member Permanently'),
         content: Text(
             'This will permanently delete ${widget.existing!.name} and all their health data, including medicines and history. This action cannot be undone.'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              final nav = Navigator.of(context);
-              Navigator.pop(dialogCtx);
-              try {
-                await ref
-                    .read(familyMemberNotifierProvider.notifier)
-                    .delete(widget.uid, widget.existing!.id);
-                if (mounted) nav.pop('deleted');
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Failed to delete member. Please try again.'),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                }
-              }
-            },
-            child: const Text('Delete Permanently'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  final nav = Navigator.of(context);
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref
+                        .read(familyMemberNotifierProvider.notifier)
+                        .delete(widget.uid, widget.existing!.id);
+                    if (mounted) nav.pop('deleted');
+                  } catch (_) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Failed to delete member. Please try again.'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                  }
+                },
+                child: const Text('Delete Permanently'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx),
+                    child: const Text('Cancel')),
+              ),
+            ],
           ),
         ],
       ),

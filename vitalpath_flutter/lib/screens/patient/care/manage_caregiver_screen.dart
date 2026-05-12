@@ -68,14 +68,23 @@ class _ManageCaregiverScreenState
             'Remove ${widget.connection.caregiverName ?? widget.connection.caregiverEmail}?'),
         content: const Text(
             'They will immediately lose access to your health data and stop receiving notifications.'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Yes, Remove',
-                  style: TextStyle(color: AppColors.destructive))),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogCtx, true),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                  child: const Text('Yes, Remove')),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: const Text('Cancel')),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -367,13 +376,22 @@ class _ManageCaregiverScreenState
           keyboardType: TextInputType.number,
           decoration: InputDecoration(suffixText: unit),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Save')),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogCtx, true),
+                  child: const Text('Save')),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: const Text('Cancel')),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -408,13 +426,22 @@ class _ManageCaregiverScreenState
           content: Text(
               'Quiet hours from ${start.format(context)} to ${end.format(context)} '
               'will span midnight (e.g., 22:00–07:00). Is that correct?'),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(dialogCtx, false),
-                child: const Text('Change')),
-            TextButton(
-                onPressed: () => Navigator.pop(dialogCtx, true),
-                child: const Text('Confirm')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogCtx, true),
+                    child: const Text('Confirm')),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: const Text('Change')),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -460,13 +487,22 @@ class _ManageCaregiverScreenState
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, true),
-              child: const Text('Save')),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogCtx, true),
+                  child: const Text('Save')),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: const Text('Cancel')),
+              ),
+            ],
+          ),
         ],
       ),
     );

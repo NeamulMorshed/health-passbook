@@ -103,9 +103,24 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Unusual Weight'),
           content: Text('${w}kg seems unusual. Are you sure this is correct?'),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Edit')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirm')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Confirm'),
+                ),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Edit'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       );

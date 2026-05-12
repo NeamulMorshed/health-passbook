@@ -257,24 +257,36 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
     builder: (dialogCtx) => AlertDialog(
       title: const Text('Delete Meal'),
       content: const Text('Remove this meal log from today?'),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-        ElevatedButton(
-          onPressed: () async {
-            Navigator.pop(dialogCtx);
-            try {
-              await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
-            } catch (_) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Failed to delete meal. Please try again.'),
-                  behavior: SnackBarBehavior.floating,
-                ));
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-          child: const Text('Delete'),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                try {
+                  await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Failed to delete meal. Please try again.'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+              child: const Text('Delete'),
+            ),
+            const SizedBox(height: 4),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -704,51 +716,60 @@ class _MedCardState extends ConsumerState<_MedCard> {
             content: Text(
               'Are you sure you want to remove ${widget.med.name} from your medicines? This action cannot be undone.',
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(
-                onPressed: removing ? null : () => Navigator.pop(dialogCtx),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: removing
-                    ? null
-                    : () async {
-                        setDialogState(() => removing = true);
-                        try {
-                          if (widget.familyMember != null) {
-                            await ref.read(familyMedicinePatchProvider).delete(
-                                widget.uid, widget.familyMember!.id, widget.med.id);
-                          } else {
-                            await ref
-                                .read(medicineNotifierProvider.notifier)
-                                .delete(widget.uid, widget.med.id);
-                          }
-                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('${widget.med.name} removed'),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 2),
-                            ));
-                          }
-                        } catch (_) {
-                          setDialogState(() => removing = false);
-                          if (dialogCtx.mounted) Navigator.pop(dialogCtx);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text('Failed to remove medicine. Please try again.'),
-                              behavior: SnackBarBehavior.floating,
-                            ));
-                          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-                child: removing
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Remove'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: removing
+                        ? null
+                        : () async {
+                            setDialogState(() => removing = true);
+                            try {
+                              if (widget.familyMember != null) {
+                                await ref.read(familyMedicinePatchProvider).delete(
+                                    widget.uid, widget.familyMember!.id, widget.med.id);
+                              } else {
+                                await ref
+                                    .read(medicineNotifierProvider.notifier)
+                                    .delete(widget.uid, widget.med.id);
+                              }
+                              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('${widget.med.name} removed'),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                ));
+                              }
+                            } catch (_) {
+                              setDialogState(() => removing = false);
+                              if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                  content: Text('Failed to remove medicine. Please try again.'),
+                                  behavior: SnackBarBehavior.floating,
+                                ));
+                              }
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                    child: removing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Remove'),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: TextButton(
+                      onPressed: removing ? null : () => Navigator.pop(dialogCtx),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1496,9 +1517,18 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
             content: Text(
               '${_nameCtrl.text.trim()} is already in the medicines list. Add it again?',
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                  ),
+                ],
+              ),
             ],
           ),
         );

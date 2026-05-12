@@ -342,9 +342,18 @@ class _ScanPrescriptionScreenState
           title: const Text('Duplicate Medicines'),
           content: Text(
               '${duplicateNames.join(', ')} ${duplicateNames.length == 1 ? 'already exists' : 'already exist'} in your medicines. Add anyway?'),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Add Anyway')),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Add Anyway')),
+                const SizedBox(height: 4),
+                Center(
+                  child: TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
+                ),
+              ],
+            ),
           ],
         ),
       );

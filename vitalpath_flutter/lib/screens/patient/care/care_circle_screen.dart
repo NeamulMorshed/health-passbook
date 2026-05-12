@@ -498,35 +498,44 @@ class _DoctorCard extends ConsumerWidget {
         content: Text(
           'Remove Dr. ${doctor.name} from your care circle? You will lose access to their prescriptions.',
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              try {
-                await ref
-                    .read(connectionNotifierProvider.notifier)
-                    .remove(uid, doctor.uid);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Doctor removed from your care circle.'),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Failed to remove doctor. Please try again.'),
-                    behavior: SnackBarBehavior.floating,
-                  ));
-                }
-              }
-            },
-            child: const Text('Remove'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref
+                        .read(connectionNotifierProvider.notifier)
+                        .remove(uid, doctor.uid);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Doctor removed from your care circle.'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Failed to remove doctor. Please try again.'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                  }
+                },
+                child: const Text('Remove'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx),
+                    child: const Text('Cancel')),
+              ),
+            ],
           ),
         ],
       ),

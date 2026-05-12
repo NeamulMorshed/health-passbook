@@ -164,9 +164,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           builder: (ctx) => AlertDialog(
             title: const Text('Discard changes?'),
             content: const Text('You have unsaved changes. Leave without saving?'),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep editing')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard')),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Discard'),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Keep editing'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );

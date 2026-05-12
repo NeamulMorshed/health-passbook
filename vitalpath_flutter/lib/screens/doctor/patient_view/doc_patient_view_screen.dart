@@ -1245,12 +1245,24 @@ class _NoteCard extends StatelessWidget {
               builder: (ctx) => AlertDialog(
                 title: const Text('Delete Note'),
                 content: const Text('Delete this consultation note?'),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-                    onPressed: () { Navigator.pop(ctx); onDelete(); },
-                    child: const Text('Delete'),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                        onPressed: () { Navigator.pop(ctx); onDelete(); },
+                        child: const Text('Delete'),
+                      ),
+                      const SizedBox(height: 4),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

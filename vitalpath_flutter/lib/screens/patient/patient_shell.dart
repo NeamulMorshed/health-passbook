@@ -28,7 +28,7 @@ class PatientShell extends StatelessWidget {
     _TabItem(
       icon:         Calendar(width: _kSize, height: _kSize, color: AppColors.textTertiary),
       selectedIcon: Calendar(width: _kSize, height: _kSize, color: AppColors.primary),
-      label: 'Appointments', route: '/appointments',
+      label: 'Visits', route: '/appointments',
     ),
     _TabItem(
       icon:         User(width: _kSize, height: _kSize, color: AppColors.textTertiary),

@@ -57,24 +57,36 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete Account'),
         content: const Text('This will permanently delete your account and all health data. This cannot be undone.'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              try {
-                await ref.read(authRepositoryProvider).deleteAccount();
-                if (!mounted) return;
-                // ignore: use_build_context_synchronously
-                context.go('/user-select');
-              } catch (e) {
-                if (!mounted) return;
-                // ignore: use_build_context_synchronously
-                showAppSnack(context, 'Could not delete account. Please sign out and sign back in, then try again.');
-              }
-            },
-            child: const Text('Delete'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref.read(authRepositoryProvider).deleteAccount();
+                    if (!mounted) return;
+                    // ignore: use_build_context_synchronously
+                    context.go('/user-select');
+                  } catch (e) {
+                    if (!mounted) return;
+                    // ignore: use_build_context_synchronously
+                    showAppSnack(context, 'Could not delete account. Please sign out and sign back in, then try again.');
+                  }
+                },
+                child: const Text('Delete'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

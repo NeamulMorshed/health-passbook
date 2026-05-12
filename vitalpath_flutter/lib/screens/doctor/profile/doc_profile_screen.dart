@@ -190,15 +190,27 @@ class DocProfileScreen extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Help & Support'),
         content: const Text('For assistance, contact us at support@vitalpath.health'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Close')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              final uri = Uri.parse('mailto:support@vitalpath.health?subject=Doctor%20Support%20Request');
-              if (await canLaunchUrl(uri)) launchUrl(uri);
-            },
-            child: const Text('Send Email'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  final uri = Uri.parse('mailto:support@vitalpath.health?subject=Doctor%20Support%20Request');
+                  if (await canLaunchUrl(uri)) launchUrl(uri);
+                },
+                child: const Text('Send Email'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -211,16 +223,28 @@ class DocProfileScreen extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await ref.read(authRepositoryProvider).signOut();
-              if (context.mounted) context.go('/user-select');
-            },
-            child: const Text('Sign Out'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  await ref.read(authRepositoryProvider).signOut();
+                  if (context.mounted) context.go('/user-select');
+                },
+                child: const Text('Sign Out'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
