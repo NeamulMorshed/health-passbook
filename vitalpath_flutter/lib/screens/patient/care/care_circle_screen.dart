@@ -505,11 +505,26 @@ class _DoctorCard extends ConsumerWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.destructive),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(dialogCtx);
-              ref
-                  .read(connectionNotifierProvider.notifier)
-                  .remove(uid, doctor.uid);
+              try {
+                await ref
+                    .read(connectionNotifierProvider.notifier)
+                    .remove(uid, doctor.uid);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Doctor removed from your care circle.'),
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Failed to remove doctor. Please try again.'),
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                }
+              }
             },
             child: const Text('Remove'),
           ),

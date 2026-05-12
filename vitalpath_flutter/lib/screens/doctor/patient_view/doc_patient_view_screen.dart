@@ -1203,8 +1203,17 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
               itemCount: notes.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) => _NoteCard(note: notes[i], onDelete: () async {
-                await ref.read(consultationNoteNotifierProvider.notifier)
-                    .delete(widget.patientId, notes[i].id);
+                try {
+                  await ref.read(consultationNoteNotifierProvider.notifier)
+                      .delete(widget.patientId, notes[i].id);
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Failed to delete note. Please try again.'),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  }
+                }
               }),
             );
           },
@@ -1216,7 +1225,7 @@ class _NotesTabState extends ConsumerState<_NotesTab> {
 
 class _NoteCard extends StatelessWidget {
   final ConsultationNote note;
-  final VoidCallback onDelete;
+  final Future<void> Function() onDelete;
   const _NoteCard({required this.note, required this.onDelete});
 
   @override

@@ -514,12 +514,17 @@ class _DoctorCard extends ConsumerWidget {
                 backgroundColor: AppColors.destructive),
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              await ref
-                  .read(connectionNotifierProvider.notifier)
-                  .remove(patientId, doctor.uid);
-              if (context.mounted) {
-                showAppSnack(
-                    context, 'Dr. ${doctor.name} removed from your list.');
+              try {
+                await ref
+                    .read(connectionNotifierProvider.notifier)
+                    .remove(patientId, doctor.uid);
+                if (context.mounted) {
+                  showAppSnack(context, 'Dr. ${doctor.name} removed from your list.');
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  showAppSnack(context, 'Failed to remove doctor. Please try again.');
+                }
               }
             },
             child: const Text('Remove'),

@@ -423,10 +423,19 @@ class _AddFamilyMemberScreenState
             onPressed: () async {
               final nav = Navigator.of(context);
               Navigator.pop(dialogCtx);
-              await ref
-                  .read(familyMemberNotifierProvider.notifier)
-                  .delete(widget.uid, widget.existing!.id);
-              if (mounted) nav.pop('deleted');
+              try {
+                await ref
+                    .read(familyMemberNotifierProvider.notifier)
+                    .delete(widget.uid, widget.existing!.id);
+                if (mounted) nav.pop('deleted');
+              } catch (_) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Failed to delete member. Please try again.'),
+                    behavior: SnackBarBehavior.floating,
+                  ));
+                }
+              }
             },
             child: const Text('Delete Permanently'),
           ),

@@ -262,7 +262,16 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
         ElevatedButton(
           onPressed: () async {
             Navigator.pop(dialogCtx);
-            await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+            try {
+              await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Failed to delete meal. Please try again.'),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              }
+            }
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
           child: const Text('Delete'),
@@ -613,7 +622,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
               decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8)),
-              child: const PharmacyCrossCircle(width: 20, height: 20, color: AppColors.primary),
+              child: const Icon(Icons.medication_outlined, size: 20, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -674,7 +683,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
               onPressed: _isTaking ? null : _logDose,
               icon: _isTaking
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Check(width: 16, height: 16),
+                  : const Check(width: 16, height: 16, color: Colors.white),
               label: const Text('Mark as Taken'),
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
             ),
@@ -777,7 +786,7 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.primary;
       fg = Colors.white;
       label = 'Take · ${slot.shortTime}';
-      icon = PharmacyCrossCircle(width: 14, height: 14, color: fg);
+      icon = Icon(Icons.medication_outlined, size: 14, color: fg);
     } else {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
@@ -1001,7 +1010,7 @@ class _MedDetailSheet extends ConsumerWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const PharmacyCrossCircle(width: 20, height: 20, color: AppColors.primary),
+                child: const Icon(Icons.medication_outlined, size: 20, color: AppColors.primary),
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1207,7 +1216,7 @@ class _MedDetailSheet extends ConsumerWidget {
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    icon: const Check(width: 16, height: 16),
+                    icon: const Check(width: 16, height: 16, color: Colors.white),
                     label: const Text('Mark as Taken'),
                     style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
                   ),

@@ -540,28 +540,37 @@ class _VitalHistorySheet extends ConsumerWidget {
                               onPressed: () async {
                                 final confirmed = await showDialog<bool>(
                                   context: context,
-                                  builder: (_) => AlertDialog(
+                                  builder: (dialogCtx) => AlertDialog(
                                     title: const Text('Delete Reading?',
                                         style: TextStyle(fontWeight: FontWeight.w600)),
                                     content: const Text('This reading will be permanently deleted.'),
                                     actions: [
                                       TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
+                                          onPressed: () => Navigator.pop(dialogCtx, false),
                                           child: const Text('Cancel')),
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
                                             backgroundColor: AppColors.destructive),
-                                        onPressed: () => Navigator.pop(context, true),
+                                        onPressed: () => Navigator.pop(dialogCtx, true),
                                         child: const Text('Delete'),
                                       ),
                                     ],
                                   ),
                                 );
-                                if (confirmed == true) {
-                                  await ref
-                                      .read(vitalsNotifierProvider.notifier)
-                                      .delete(r.id);
-                                  if (context.mounted) Navigator.pop(context);
+                                if (confirmed == true && context.mounted) {
+                                  try {
+                                    await ref
+                                        .read(vitalsNotifierProvider.notifier)
+                                        .delete(r.id);
+                                    if (context.mounted) Navigator.pop(context);
+                                  } catch (_) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                        content: Text('Failed to delete reading. Please try again.'),
+                                        behavior: SnackBarBehavior.floating,
+                                      ));
+                                    }
+                                  }
                                 }
                               },
                             ),

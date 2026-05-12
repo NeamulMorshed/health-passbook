@@ -80,10 +80,19 @@ class _ManageCaregiverScreenState
       ),
     );
     if (ok == true && mounted) {
-      await ref
-          .read(caregiverConnectionNotifierProvider.notifier)
-          .remove(widget.connection.id);
-      if (mounted) Navigator.pop(context);
+      try {
+        await ref
+            .read(caregiverConnectionNotifierProvider.notifier)
+            .remove(widget.connection.id);
+        if (mounted) Navigator.pop(context);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Failed to remove caregiver. Please try again.'),
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+      }
     }
   }
 
