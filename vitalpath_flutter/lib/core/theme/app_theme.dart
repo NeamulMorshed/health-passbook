@@ -214,6 +214,10 @@ class AppTheme {
         space: 0,
       ),
 
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        shape: StadiumBorder(),
+      ),
+
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(

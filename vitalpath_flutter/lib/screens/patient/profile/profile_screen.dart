@@ -45,7 +45,11 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               // ── Profile Header ─────────────────────────────────────────
               Container(
-                color: AppColors.surface,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 0.5),
+                ),
                 padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
                 child: Column(children: [
                   AppAvatar(name: user.name, size: 72, imageUrl: user.photoUrl),

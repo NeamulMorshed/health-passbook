@@ -28,14 +28,6 @@ class BentoCard extends StatelessWidget {
       color: color,
       borderRadius: BorderRadius.circular(borderRadius),
       border: Border.all(color: AppColors.border, width: 0.5),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x08000000),
-          blurRadius: 10,
-          offset: Offset(0, 2),
-          spreadRadius: 0,
-        ),
-      ],
     );
 
     final content = Padding(padding: padding, child: child);
