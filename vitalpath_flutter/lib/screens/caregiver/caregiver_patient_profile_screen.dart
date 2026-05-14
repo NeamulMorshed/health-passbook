@@ -385,6 +385,11 @@ class _MedicinesSection extends ConsumerWidget {
 
   List<DoseSlot> _slotsForDate(Medicine med, DateTime date) {
     if (med.reminderTimes.isEmpty) return [];
+    // Respect day-of-week schedule (e.g. Mon–Fri only medicines)
+    final dow = date.weekday % 7; // Mon=1…Sat=6, Sun=0
+    if (med.reminderDays.isNotEmpty && !med.reminderDays.contains(dow)) {
+      return [];
+    }
     final base = DateTime(date.year, date.month, date.day);
     final now = DateTime.now();
     final isSelectedToday = base.year == now.year &&
@@ -511,21 +516,30 @@ class _MedRow extends StatelessWidget {
         d.month == selectedDate.month &&
         d.day == selectedDate.day);
 
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isFutureDate = selectedDate.isAfter(today);
+
     final allTaken =
         slots.isNotEmpty ? slots.every((s) => s.isTaken) : hasDoseOnDate;
     final anyMissed =
         slots.isNotEmpty ? slots.any((s) => s.isMissed) : false;
 
-    final statusColor = allTaken
-        ? AppColors.success
-        : anyMissed
-            ? AppColors.destructive
-            : AppColors.warning;
-    final statusIcon = allTaken
-        ? Icons.check_circle_rounded
-        : anyMissed
-            ? Icons.cancel_rounded
-            : Icons.radio_button_unchecked_rounded;
+    // Future dates: nothing is due yet — show neutral, not amber warning
+    final statusColor = isFutureDate
+        ? AppColors.mutedForeground
+        : allTaken
+            ? AppColors.success
+            : anyMissed
+                ? AppColors.destructive
+                : AppColors.warning;
+    final statusIcon = isFutureDate
+        ? Icons.radio_button_unchecked_rounded
+        : allTaken
+            ? Icons.check_circle_rounded
+            : anyMissed
+                ? Icons.cancel_rounded
+                : Icons.radio_button_unchecked_rounded;
 
     return BentoCard(
       padding: const EdgeInsets.all(12),
