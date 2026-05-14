@@ -2,24 +2,83 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 import '../../../models/patient.dart';
 
-class DocPatientsScreen extends ConsumerWidget {
+enum _SortOrder { nameAsc, nameDesc, ageAsc, ageDesc }
+
+class DocPatientsScreen extends ConsumerStatefulWidget {
   const DocPatientsScreen({super.key});
+  @override
+  ConsumerState<DocPatientsScreen> createState() => _DocPatientsScreenState();
+}
+
+class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+  _SortOrder _sort = _SortOrder.nameAsc;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<PatientProfile> _applyFilter(List<PatientProfile> all) {
+    final q = _query.toLowerCase();
+    var filtered = q.isEmpty
+        ? all
+        : all.where((p) => p.name.toLowerCase().contains(q)).toList();
+
+    switch (_sort) {
+      case _SortOrder.nameAsc:
+        filtered.sort((a, b) => a.name.compareTo(b.name));
+      case _SortOrder.nameDesc:
+        filtered.sort((a, b) => b.name.compareTo(a.name));
+      case _SortOrder.ageAsc:
+        filtered.sort((a, b) => (a.age ?? 0).compareTo(b.age ?? 0));
+      case _SortOrder.ageDesc:
+        filtered.sort((a, b) => (b.age ?? 0).compareTo(a.age ?? 0));
+    }
+    return filtered;
+  }
+
+  String get _sortLabel {
+    switch (_sort) {
+      case _SortOrder.nameAsc:  return 'Name A–Z';
+      case _SortOrder.nameDesc: return 'Name Z–A';
+      case _SortOrder.ageAsc:   return 'Age ↑';
+      case _SortOrder.ageDesc:  return 'Age ↓';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
         title: const Text('My Patients'),
         automaticallyImplyLeading: false,
+        actions: [
+          PopupMenuButton<_SortOrder>(
+            tooltip: 'Sort',
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedSortByDown01, color: Colors.black, size: 24),
+            initialValue: _sort,
+            onSelected: (v) => setState(() => _sort = v),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: _SortOrder.nameAsc,  child: Text('Name A–Z')),
+              const PopupMenuItem(value: _SortOrder.nameDesc, child: Text('Name Z–A')),
+              const PopupMenuItem(value: _SortOrder.ageAsc,   child: Text('Age (youngest first)')),
+              const PopupMenuItem(value: _SortOrder.ageDesc,  child: Text('Age (oldest first)')),
+            ],
+          ),
+        ],
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -44,13 +103,73 @@ class DocPatientsScreen extends ConsumerWidget {
                   subtitle: 'Patients will appear here once they book an appointment with you.',
                 );
               }
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: patients.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, i) =>
-                    _PatientCard(patient: patients[i], doctorId: user.uid),
-              );
+
+              final visible = _applyFilter(patients);
+
+              return Column(children: [
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _query = v.trim()),
+                    decoration: InputDecoration(
+                      hintText: 'Search patients by name…',
+                      prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.black, size: 20),
+                      suffixIcon: _query.isNotEmpty
+                          ? IconButton(
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.black, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _query = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.muted,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Count + sort label
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(children: [
+                    Text(
+                      '${visible.length} patient${visible.length == 1 ? '' : 's'}',
+                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Sorted: $_sortLabel',
+                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: 8),
+
+                // List
+                Expanded(
+                  child: visible.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.person_search_rounded,
+                          title: 'No Match',
+                          subtitle: 'Try a different name.',
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                          itemCount: visible.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemBuilder: (_, i) =>
+                              _PatientCard(patient: visible[i], doctorId: user.uid),
+                        ),
+                ),
+              ]);
             },
           );
         },
@@ -66,48 +185,38 @@ class _PatientCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
+    return BentoCard(
       onTap: () => context.push('/doc/patient/${patient.uid}'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(children: [
-          AppAvatar(name: patient.name, size: 48),
-          const SizedBox(width: 14),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(patient.name,
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Inter')),
-                const SizedBox(height: 4),
-                Row(children: [
-                  if (patient.age != null) _InfoChip('${patient.age} yrs'),
-                  if (patient.age != null) const SizedBox(width: 6),
-                  if (patient.bloodType != null)
-                    _InfoChip(patient.bloodType!),
-                  if (patient.bloodType != null) const SizedBox(width: 6),
-                  if (patient.conditions.isNotEmpty)
-                    _InfoChip(patient.conditions.first),
-                ]),
-              ])),
-          IconButton(
-            tooltip: 'Remove patient',
-            icon: const Icon(Icons.person_remove_rounded,
-                size: 18, color: AppColors.destructive),
-            onPressed: () => _confirmRemove(context, ref),
+      child: Row(children: [
+        AppAvatar(name: patient.name, size: 48),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(patient.name,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Row(children: [
+                if (patient.age != null) _InfoChip('${patient.age} yrs'),
+                if (patient.age != null) const SizedBox(width: 6),
+                if (patient.bloodType != null)
+                  _InfoChip(patient.bloodType!),
+                if (patient.bloodType != null) const SizedBox(width: 6),
+                if (patient.conditions.isNotEmpty)
+                  _InfoChip(patient.conditions.first),
+              ]),
+            ],
           ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 14, color: AppColors.mutedForeground),
-        ]),
-      ),
+        ),
+        IconButton(
+          tooltip: 'Remove patient',
+          icon: const Icon(Icons.person_remove_rounded,
+              size: 18, color: AppColors.destructive),
+          onPressed: () => _confirmRemove(context, ref),
+        ),
+        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
+      ]),
     );
   }
 
@@ -115,28 +224,40 @@ class _PatientCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Patient',
-            style: TextStyle(fontFamily: 'Inter')),
-        content: Text('Remove ${patient.name} from your patients list?',
-            style: const TextStyle(fontFamily: 'Inter')),
+        title: const Text('Remove Patient'),
+        content: Text('Remove ${patient.name} from your patients list?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await ref
-                  .read(connectionNotifierProvider.notifier)
-                  .remove(patient.uid, doctorId);
-              if (context.mounted) {
-                showAppSnack(
-                    context, '${patient.name} removed from your list.');
-              }
-            },
-            child: const Text('Remove'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref
+                        .read(connectionNotifierProvider.notifier)
+                        .remove(patient.uid, doctorId);
+                    if (context.mounted) {
+                      showAppSnack(context, '${patient.name} removed from your list.');
+                    }
+                  } catch (_) {
+                    if (context.mounted) {
+                      showAppSnack(context, 'Failed to remove patient. Please try again.');
+                    }
+                  }
+                },
+                child: const Text('Remove'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -150,8 +271,8 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(6)),
-    child: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
+    child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
   );
 }
 

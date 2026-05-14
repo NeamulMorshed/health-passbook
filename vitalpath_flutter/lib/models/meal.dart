@@ -13,6 +13,7 @@ class MealLog {
   final String? photoUrl;
   final String? reminderTime;   // "HH:mm" e.g. "07:30", null if no reminder
   final String reminderRepeat;  // 'once' | 'daily'
+  final List<int> reminderDays; // 0=Sun, 1=Mon, …, 6=Sat; used when reminderRepeat == 'daily'
 
   const MealLog({
     required this.id,
@@ -27,6 +28,7 @@ class MealLog {
     this.photoUrl,
     this.reminderTime,
     this.reminderRepeat = 'once',
+    this.reminderDays = const [0, 1, 2, 3, 4, 5, 6],
   });
 
   factory MealLog.fromMap(Map<String, dynamic> map, String id) {
@@ -43,6 +45,13 @@ class MealLog {
       photoUrl: map['photoUrl'],
       reminderTime: map['reminderTime'],
       reminderRepeat: map['reminderRepeat'] ?? 'once',
+      reminderDays: (() {
+        final raw = map['reminderDays'];
+        if (raw is List && raw.isNotEmpty) {
+          return raw.map((d) => (d as num).toInt()).toList();
+        }
+        return [0, 1, 2, 3, 4, 5, 6];
+      })(),
     );
   }
 
@@ -58,5 +67,6 @@ class MealLog {
         'photoUrl': photoUrl,
         'reminderTime': reminderTime,
         'reminderRepeat': reminderRepeat,
+        'reminderDays': reminderDays,
       };
 }

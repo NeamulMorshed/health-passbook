@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-enum UserType { patient, doctor }
+enum UserType { patient, doctor, caregiver }
 
 class AppUser {
   const AppUser({
@@ -106,6 +106,7 @@ class AppUser {
 
   static UserType _parseUserType(dynamic value) {
     if (value == 'doctor') return UserType.doctor;
+    if (value == 'caregiver') return UserType.caregiver;
     return UserType.patient;
   }
 

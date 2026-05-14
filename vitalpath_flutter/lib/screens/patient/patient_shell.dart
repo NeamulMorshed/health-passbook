@@ -1,25 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 
 class PatientShell extends StatelessWidget {
   final Widget child;
   const PatientShell({super.key, required this.child});
 
-  static const _tabs = [
-    _TabItem(icon: Icons.home_rounded, label: 'Home', route: '/home'),
-    _TabItem(icon: Icons.medication_rounded, label: 'Care', route: '/care'),
-    _TabItem(icon: Icons.directions_run_rounded, label: 'Activity', route: '/activity'),
-    _TabItem(icon: Icons.calendar_today_rounded, label: 'Visits', route: '/appointments'),
-    _TabItem(icon: Icons.person_rounded, label: 'Profile', route: '/profile'),
+  static const _kSize = 24.0;
+
+  static final _tabs = [
+    _TabItem(
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.primary, size: _kSize),
+      label: 'Home', route: '/home',
+    ),
+    _TabItem(
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.primary, size: _kSize),
+      label: 'Medicines', route: '/care',
+    ),
+    _TabItem(
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.primary, size: _kSize),
+      label: 'Vitals', route: '/vitals',
+    ),
+    _TabItem(
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: _kSize),
+      label: 'Visits', route: '/appointments',
+    ),
+    _TabItem(
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: _kSize),
+      label: 'Profile', route: '/profile',
+    ),
   ];
 
   int _currentIndex(BuildContext context) {
     final loc = GoRouterState.of(context).matchedLocation;
+    int best = 0;
+    int bestLen = 0;
     for (int i = 0; i < _tabs.length; i++) {
-      if (loc.startsWith(_tabs[i].route)) return i;
+      final route = _tabs[i].route;
+      if (loc == route || loc.startsWith('$route/')) {
+        if (route.length > bestLen) {
+          best = i;
+          bestLen = route.length;
+        }
+      }
     }
-    return 0;
+    return best;
   }
 
   @override
@@ -29,13 +60,22 @@ class PatientShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+          boxShadow: [BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          )],
         ),
-        child: BottomNavigationBar(
-          currentIndex: idx,
-          onTap: (i) => context.go(_tabs[i].route),
-          items: _tabs.map((t) => BottomNavigationBarItem(
-            icon: Icon(t.icon),
+        child: NavigationBar(
+          selectedIndex: idx,
+          onDestinationSelected: (i) => context.go(_tabs[i].route),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          destinations: _tabs.map((t) => NavigationDestination(
+            icon: t.icon,
+            selectedIcon: t.selectedIcon,
             label: t.label,
           )).toList(),
         ),
@@ -45,8 +85,9 @@ class PatientShell extends StatelessWidget {
 }
 
 class _TabItem {
-  final IconData icon;
+  final Widget icon;
+  final Widget selectedIcon;
   final String label;
   final String route;
-  const _TabItem({required this.icon, required this.label, required this.route});
+  const _TabItem({required this.icon, required this.selectedIcon, required this.label, required this.route});
 }

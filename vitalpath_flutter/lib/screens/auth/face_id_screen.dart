@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_theme.dart';
@@ -10,8 +11,16 @@ import '../../providers/auth_provider.dart';
 
 const _kBiometricPref = 'biometric_enabled';
 
+// Fix H4a — isSetupMode distinguishes first-setup from unlock mode.
 class FaceIdScreen extends ConsumerStatefulWidget {
-  const FaceIdScreen({super.key});
+  /// When [isSetupMode] is true the user is setting up biometrics for the
+  /// first time — skipping writes [biometric_enabled = false].
+  /// When false the screen is acting as an unlock gate — skipping just
+  /// navigates away without changing the stored preference.
+  final bool isSetupMode;
+
+  const FaceIdScreen({super.key, this.isSetupMode = true});
+
   @override
   ConsumerState<FaceIdScreen> createState() => _FaceIdScreenState();
 }
@@ -20,6 +29,9 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
   final _localAuth = LocalAuthentication();
   bool _checking = false;
   BiometricType? _biometricType;
+
+  // Fix H4b — surface failure feedback to the user.
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -50,14 +62,17 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
     _ => 'Enable Biometrics',
   };
 
-  IconData get _biometricIcon => switch (_biometricType) {
-    BiometricType.face => Icons.face_retouching_natural_rounded,
-    BiometricType.fingerprint => Icons.fingerprint_rounded,
-    _ => Icons.lock_open_rounded,
+  Widget get _biometricWidget => switch (_biometricType) {
+    BiometricType.face => HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 64),
+    BiometricType.fingerprint => HugeIcon(icon: HugeIcons.strokeRoundedFingerPrint, color: AppColors.primary, size: 64),
+    _ => HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.primary, size: 64),
   };
 
   Future<void> _authenticate() async {
-    setState(() => _checking = true);
+    setState(() {
+      _checking = true;
+      _errorMessage = null;
+    });
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       if (!canCheck) {
@@ -65,13 +80,16 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
         return;
       }
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Use biometrics to log into VitalPath',
+        localizedReason: 'Use biometrics to log into Omra',
         options: const AuthenticationOptions(biometricOnly: false),
       );
       if (authenticated && mounted) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool(_kBiometricPref, true);
-        _navigateNext();
+        if (mounted) _navigateNext();
+      } else if (!authenticated && mounted) {
+        // Fix H4b — show feedback when biometric auth returns false.
+        setState(() => _errorMessage = 'Authentication failed. Try again.');
       }
     } catch (_) {
       if (mounted) await _skipWithoutSaving();
@@ -93,19 +111,26 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
   }
 
   Future<void> _skipWithoutSaving() async {
+    if (!mounted) return;
     _navigateNext();
   }
 
   void _skip() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kBiometricPref, false);
+    if (widget.isSetupMode) {
+      // First-time setup: write false to indicate user declined biometrics.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kBiometricPref, false);
+      // Fix — mounted check after async pref write.
+      if (!mounted) return;
+    }
+    // In unlock mode (isSetupMode == false): just navigate, don't change pref.
     _navigateNext();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -115,19 +140,49 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
               Container(
                 width: 120,
                 height: 120,
-                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha:0.1), shape: BoxShape.circle),
-                child: Icon(_biometricIcon, size: 64, color: AppColors.primary),
+                decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle),
+                child: Center(child: _biometricWidget),
               ),
               const SizedBox(height: 32),
-              Text(_biometricLabel, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
+              Text(
+                _biometricLabel,
+                style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.foreground),
+              ),
               const SizedBox(height: 12),
-              const Text('Use biometric authentication\nfor faster, more secure login.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: AppColors.mutedForeground, fontFamily: 'Inter', height: 1.5)),
+              const Text(
+                'Use biometric authentication\nfor faster, more secure login.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 15,
+                    color: AppColors.mutedForeground,
+                    height: 1.5),
+              ),
+              // Fix H4b — display auth failure message.
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.red),
+                ),
+              ],
               const Spacer(),
-              GradientButton(label: _biometricLabel, onPressed: _authenticate, isLoading: _checking),
+              GradientButton(
+                  label: _biometricLabel,
+                  onPressed: _authenticate,
+                  isLoading: _checking),
               const SizedBox(height: 14),
               TextButton(
-                onPressed: _skip,
-                child: const Text('Skip for now', style: TextStyle(color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                onPressed: _checking ? null : _skip,
+                child: const Text('Skip for now',
+                    style: TextStyle(
+                        color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],

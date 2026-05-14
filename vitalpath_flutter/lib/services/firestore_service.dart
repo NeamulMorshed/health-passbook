@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../models/medicine.dart';
 import '../models/meal.dart';
@@ -8,12 +10,19 @@ import '../models/patient.dart';
 import '../models/doctor.dart';
 import '../models/activity_log.dart';
 import '../models/app_notification.dart';
+import '../models/family_member.dart';
+import '../models/consultation_note.dart';
+import '../models/vital_reading.dart';
 import '../core/constants/app_constants.dart';
 
 const _uuid = Uuid();
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // F9: Constant for consultationNotes collection to avoid hardcoded strings.
+  static const _colConsultationNotes = 'consultationNotes';
 
   // ─── Users ────────────────────────────────────────────────────────────────
 
@@ -117,10 +126,13 @@ class FirestoreService {
         .map((s) => s.docs.length);
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery}) async {
+  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery, String? city}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
+    }
+    if (city != null && city.isNotEmpty) {
+      query = query.where('city', isEqualTo: city);
     }
     final snap = await query.limit(50).get();
     var results = snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
@@ -227,8 +239,151 @@ class FirestoreService {
     });
   }
 
+  // ─── Family Members ───────────────────────────────────────────────────────
+
+  Stream<List<FamilyMember>> watchFamilyMembers(String uid) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .orderBy('createdAt')
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => FamilyMember.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addFamilyMember(String uid, FamilyMember member) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(member.id)
+        .set(member.toMap());
+  }
+
+  Future<void> updateFamilyMember(String uid, FamilyMember member) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(member.id)
+        .update({...member.toMap(), 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> deleteFamilyMember(String uid, String memberId) async {
+    // Delete member's medicines first, then the member document.
+    // F3: Split into chunks of 499 to stay within Firestore's 500-op batch limit.
+    final medSnap = await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .get();
+
+    final medicineDocs = medSnap.docs;
+    final memberRef = _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId);
+
+    const chunkSize = 499;
+    if (medicineDocs.isEmpty) {
+      // No medicines — just delete the member document.
+      await memberRef.delete();
+      return;
+    }
+
+    for (var i = 0; i < medicineDocs.length; i += chunkSize) {
+      final batch = _db.batch();
+      final chunk = medicineDocs.sublist(i, min(i + chunkSize, medicineDocs.length));
+      for (final doc in chunk) {
+        batch.delete(doc.reference);
+      }
+      // Only delete the member document on the last chunk.
+      if (i + chunkSize >= medicineDocs.length) {
+        batch.delete(memberRef);
+      }
+      await batch.commit();
+    }
+  }
+
+  // ── Family member medicines ────────────────────────────────────────────────
+
+  Stream<List<Medicine>> watchFamilyMemberMedicines(
+      String uid, String memberId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .where('isActive', isEqualTo: true)
+        .orderBy('startDate', descending: true)
+        .snapshots()
+        .map((s) =>
+            s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+  }
+
+  Future<void> addFamilyMemberMedicine(
+      String uid, String memberId, Medicine medicine) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicine.id)
+        .set(medicine.toMap());
+  }
+
+  Future<void> updateFamilyMemberMedicine(String uid, String memberId,
+      String medicineId, Map<String, dynamic> data) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({...data, 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> deleteFamilyMemberMedicine(
+      String uid, String memberId, String medicineId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({'isActive': false, 'updatedAt': FieldValue.serverTimestamp()});
+  }
+
+  Future<void> logFamilyMemberDose(
+      String uid, String memberId, String medicineId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses':
+          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ─── Meals ────────────────────────────────────────────────────────────────
 
+  // FIXME: date range computed at subscription — rebuild at midnight.
+  // The StreamProvider caller should call ref.invalidateSelf() on a midnight timer
+  // to re-subscribe with a fresh date range when the day rolls over.
   Stream<List<MealLog>> watchTodayMeals(String patientId) {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
@@ -241,7 +396,18 @@ class FirestoreService {
         .where('loggedAt', isLessThan: Timestamp.fromDate(end))
         .orderBy('loggedAt', descending: true)
         .snapshots()
-        .map((s) => s.docs.map((d) => MealLog.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          // Re-evaluate today's boundaries on each emission so stale data is filtered
+          // when the stream runs past midnight without re-subscribing.
+          final now = DateTime.now();
+          final todayStart = DateTime(now.year, now.month, now.day);
+          final todayEnd = todayStart.add(const Duration(days: 1));
+          return s.docs
+              .map((d) => MealLog.fromMap(d.data(), d.id))
+              .where((m) =>
+                  !m.loggedAt.isBefore(todayStart) && m.loggedAt.isBefore(todayEnd))
+              .toList();
+        });
   }
 
   Future<void> addMeal(String patientId, MealLog meal) async {
@@ -304,11 +470,14 @@ class FirestoreService {
   }
 
   Future<void> markAllNotificationsRead(String patientId) async {
+    // F10: Filter by createdAt <= now() so notifications that arrive between
+    // the query and batch write are not incorrectly marked as read.
     final snap = await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colNotifications)
         .where('isRead', isEqualTo: false)
+        .where('createdAt', isLessThanOrEqualTo: Timestamp.now())
         .get();
     final batch = _db.batch();
     for (final doc in snap.docs) {
@@ -422,6 +591,7 @@ class FirestoreService {
     String? notes,
     String? patientId,
     String? doctorId,
+    String? doctorName,
   }) async {
     final data = <String, dynamic>{
       'status': status.value,
@@ -431,9 +601,27 @@ class FirestoreService {
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
 
-    if (status == AppointmentStatus.cancelled &&
-        patientId != null && doctorId != null) {
-      await _cleanupConnectionIfInactive(patientId, doctorId);
+    if (status == AppointmentStatus.cancelled && patientId != null) {
+      // Write in-app notification to patient
+      final cancelNotif = <String, dynamic>{
+        'title': 'Appointment Cancelled',
+        'body': doctorName != null
+            ? 'Dr. $doctorName has cancelled your appointment.'
+            : 'Your appointment has been cancelled.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+      await _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4())
+          .set(cancelNotif);
+
+      if (doctorId != null) {
+        await _cleanupConnectionIfInactive(patientId, doctorId);
+      }
     }
   }
 
@@ -460,10 +648,12 @@ class FirestoreService {
   // ─── Prescriptions ────────────────────────────────────────────────────────
 
   Stream<List<Prescription>> watchPatientPrescriptions(String patientId) {
+    // TODO: implement pagination for patients with >50 prescriptions
     return _db
         .collection(AppConstants.colPrescriptions)
         .where('patientId', isEqualTo: patientId)
         .orderBy('issuedAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((s) => s.docs.map((d) => Prescription.fromMap(d.data(), d.id)).toList());
   }
@@ -500,6 +690,135 @@ class FirestoreService {
       );
     }
 
+    // In-app notification for the patient
+    final medCount = rx.medicines.length;
+    batch.set(
+      _db.collection(AppConstants.colPatients).doc(rx.patientId)
+          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      {
+        'title': 'New Prescription',
+        'body': 'Dr. ${rx.doctorName} prescribed $medCount '
+            '${medCount == 1 ? 'medicine' : 'medicines'}'
+            '${rx.diagnosis != null ? ' for ${rx.diagnosis}' : ''}.',
+        'type': NotificationType.general.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      },
+    );
+
     await batch.commit();
+  }
+
+  // ─── Doctor Rating ────────────────────────────────────────────────────────
+
+  Future<void> submitDoctorRating({
+    required String appointmentId,
+    required String doctorId,
+    required int rating,
+  }) async {
+    // F5: Verify appointment ownership before updating rating.
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User not authenticated');
+
+    await _db.runTransaction((tx) async {
+      final doctorRef = _db.collection(AppConstants.colDoctors).doc(doctorId);
+      final apptRef   = _db.collection(AppConstants.colAppointments).doc(appointmentId);
+
+      final doctorSnap = await tx.get(doctorRef);
+      if (!doctorSnap.exists) return;
+
+      // F5: Read and verify appointment ownership inside the transaction.
+      final apptSnap = await tx.get(apptRef);
+      if (!apptSnap.exists) throw Exception('Appointment not found');
+      final apptData = apptSnap.data();
+      if (apptData == null || apptData['patientId'] != uid) {
+        throw Exception('Unauthorised: appointment does not belong to current user');
+      }
+
+      final currentRating     = (doctorSnap.data()?['rating'] as num?)?.toDouble() ?? 0.0;
+      final currentReviewCount = (doctorSnap.data()?['reviewCount'] as int?) ?? 0;
+
+      final newCount  = currentReviewCount + 1;
+      final newRating = ((currentRating * currentReviewCount) + rating) / newCount;
+
+      tx.update(doctorRef, {
+        'rating':      newRating,
+        'reviewCount': newCount,
+      });
+      tx.update(apptRef, {
+        'patientRating': rating,
+      });
+    });
+  }
+
+  // ─── Consultation Notes ───────────────────────────────────────────────────
+
+  Stream<List<ConsultationNote>> watchConsultationNotes(String patientId, String doctorId) {
+    return _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(_colConsultationNotes)
+        .where('doctorId', isEqualTo: doctorId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => ConsultationNote.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addConsultationNote(ConsultationNote note) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(note.patientId)
+        .collection(_colConsultationNotes)
+        .doc(note.id)
+        .set(note.toMap());
+  }
+
+  Future<void> deleteConsultationNote(String patientId, String noteId) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(_colConsultationNotes)
+        .doc(noteId)
+        .delete();
+  }
+
+  // ─── Vitals ───────────────────────────────────────────────────────────────
+
+  Stream<List<VitalReading>> watchVitals(String patientId, {int limit = 50}) {
+    return _db
+        .collection(AppConstants.colVitals)
+        .where('patientId', isEqualTo: patientId)
+        .orderBy('recordedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((s) => s.docs
+            .map((d) => VitalReading.fromMap(d.data(), d.id))
+            .toList());
+  }
+
+  Future<void> addVitalReading(VitalReading reading) =>
+      _db.collection(AppConstants.colVitals).doc(reading.id).set(reading.toMap());
+
+  Future<void> deleteVitalReading(String readingId) =>
+      _db.collection(AppConstants.colVitals).doc(readingId).delete();
+
+  // ─── Pill Count ───────────────────────────────────────────────────────────
+
+  // M6: Wrap in a transaction to ensure pillsRemaining never goes below 0.
+  Future<void> decrementPillCount(String patientId, String medicineId) async {
+    final ref = _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+      final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
+      if (current == null || current <= 0) return;
+      tx.update(ref, {'pillsRemaining': current - 1});
+    });
   }
 }

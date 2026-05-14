@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-// import '../../../providers/gamification_provider.dart';
+import '../../../providers/gamification_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -17,7 +18,11 @@ class ProfileScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
+      error: (_, __) => Scaffold(body: Center(child: EmptyState(
+        icon: Icons.error_outline_rounded,
+        title: 'Something went wrong',
+        subtitle: 'Pull to refresh or try again.',
+      ))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
@@ -26,55 +31,62 @@ class ProfileScreen extends ConsumerWidget {
           return const Scaffold(body: SizedBox.shrink());
         }
         final patientAsync = ref.watch(patientProfileProvider(user.uid));
-        // final gamAsync = ref.watch(gamificationProvider(user.uid));
+        final gamAsync     = ref.watch(gamificationProvider(user.uid));
 
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
             title: const Text('My Profile'),
             automaticallyImplyLeading: false,
-            actions: [
-              const NotifBell(),
-              IconButton(
-                icon: const Icon(Icons.edit_rounded),
-                tooltip: 'Edit Profile',
-                onPressed: () => context.push('/edit-profile'),
-              ),
-            ],
+            actions: const [NotifBell()],
           ),
           body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
             children: [
-              // Header
+              // ── Profile Header ─────────────────────────────────────────
               Container(
-                color: AppColors.surface,
-                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 0.5),
+                ),
+                padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
                 child: Column(children: [
                   AppAvatar(name: user.name, size: 72, imageUrl: user.photoUrl),
                   const SizedBox(height: 12),
-                  Text(user.name.isNotEmpty ? user.name : 'Patient', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'Inter')),
+                  Text(
+                    user.name.isNotEmpty ? user.name : 'Patient',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 4),
-                  Text(user.phone, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+                  Text(
+                    user.phone,
+                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+                  ),
                   const SizedBox(height: 8),
-                  // gamAsync.when(
-                  //   data: (g) => GestureDetector(
-                  //     onTap: () => context.push('/gamification'),
-                  //     child: Container(
-                  //       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  //       decoration: BoxDecoration(
-                  //         color: AppColors.primary.withValues(alpha: 0.1),
-                  //         borderRadius: BorderRadius.circular(20),
-                  //         border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                  //       ),
-                  //       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  //         const Icon(Icons.military_tech_rounded, size: 14, color: AppColors.primary),
-                  //         const SizedBox(width: 5),
-                  //         Text('Lv ${g.level} • ${g.hp} HP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, fontFamily: 'Inter')),
-                  //       ]),
-                  //     ),
-                  //   ),
-                  //   loading: () => const SizedBox.shrink(),
-                  //   error: (_, __) => const SizedBox.shrink(),
-                  // ),
+                  gamAsync.when(
+                    data: (g) => GestureDetector(
+                      onTap: () => context.push('/gamification'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          HugeIcon(icon: HugeIcons.strokeRoundedMedal01, color: AppColors.primary, size: 14),
+                          const SizedBox(width: 5),
+                          Text(
+                            'Lv ${g.level} • ${g.hp} HP',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                          ),
+                        ]),
+                      ),
+                    ),
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 16),
                   patientAsync.when(
                     data: (patient) {
@@ -90,66 +102,217 @@ class ProfileScreen extends ConsumerWidget {
                       ]);
                     },
                     loading: () => const CircularProgressIndicator(),
-                    error: (_, __) => const SizedBox(),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Column(children: [
+                        const Text('Failed to load health info', style: TextStyle(color: AppColors.mutedForeground)),
+                        TextButton(onPressed: () => ref.invalidate(patientProfileProvider(user.uid)), child: const Text('Retry')),
+                      ]),
+                    ),
                   ),
                 ]),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-              // Health Info
+              // ── Streak & Points ────────────────────────────────────────
+              gamAsync.when(
+                data: (g) => BentoCard(
+                  padding: EdgeInsets.zero,
+                  child: IntrinsicHeight(
+                    child: Row(children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${g.medStreak}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary),
+                              ),
+                              const Text('Streak Days', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const VerticalDivider(width: 1, thickness: 0.5, color: AppColors.border),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${g.hp}',
+                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary),
+                              ),
+                              const Text('Points', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Health Information ─────────────────────────────────────
               patientAsync.when(
                 data: (patient) {
                   if (patient == null) return const SizedBox();
-                  return Container(
-                    color: AppColors.surface,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Health Information', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Inter')),
-                      const SizedBox(height: 16),
-                      if (patient.bmi != null)
-                        _InfoRow('BMI', '${patient.bmi!.toStringAsFixed(1)} (${_bmiLabel(patient.bmi!)})'),
-                      if (patient.conditions.isNotEmpty)
-                        _InfoRow('Conditions', patient.conditions.join(', ')),
-                      if (patient.allergies != null)
-                        _InfoRow('Allergies', patient.allergies!),
-                      if (patient.emergencyContact != null)
-                        _InfoRow('Emergency Contact', patient.emergencyContact!),
-                    ]),
-                  );
+                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    _SectionLabel('Health Information'),
+                    const SizedBox(height: 8),
+                    BentoCard(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        if (patient.bmi != null)
+                          _InfoRow('BMI', '${patient.bmi!.toStringAsFixed(1)} (${_bmiLabel(patient.bmi!)})'),
+                        if (patient.conditions.isNotEmpty)
+                          _InfoRow('Conditions', patient.conditions.join(', ')),
+                        if (patient.allergies != null)
+                          _InfoRow('Allergies', patient.allergies!),
+                        if (patient.emergencyContact != null) ...[
+                          _InfoRow('Emergency Contact',
+                              patient.emergencyContact!.name.isNotEmpty
+                                  ? patient.emergencyContact!.name
+                                  : patient.emergencyContact!.phone),
+                          if (patient.emergencyContact!.relationship.isNotEmpty)
+                            _InfoRow('EC Relationship', patient.emergencyContact!.relationship),
+                          if (patient.emergencyContact!.name.isNotEmpty &&
+                              patient.emergencyContact!.phone.isNotEmpty)
+                            _InfoRow('Emergency Phone', patient.emergencyContact!.phone),
+                        ],
+                      ]),
+                    ),
+                    const SizedBox(height: 20),
+                  ]);
                 },
                 loading: () => const SizedBox(),
-                error: (_, __) => const SizedBox(),
+                error: (_, __) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(children: [
+                    const Text('Failed to load health info', style: TextStyle(color: AppColors.mutedForeground)),
+                    TextButton(onPressed: () => ref.invalidate(patientProfileProvider(user.uid)), child: const Text('Retry')),
+                  ]),
+                ),
               ),
 
-              const SizedBox(height: 12),
-
-              // Menu items
-              Container(
-                color: AppColors.surface,
+              // ── Family & Care ──────────────────────────────────────────
+              _SectionLabel('Family & Care'),
+              const SizedBox(height: 8),
+              BentoCard(
+                padding: EdgeInsets.zero,
                 child: Column(children: [
-                  _MenuItem(icon: Icons.people_rounded, label: 'My Doctors', color: AppColors.doctorPrimary, onTap: () => context.push('/my-doctors')),
-                  _MenuItem(icon: Icons.calendar_month_rounded, label: 'Appointments', color: AppColors.primary, onTap: () => context.go('/appointments')),
-                  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Prescriptions', color: AppColors.success, onTap: () => context.push('/prescriptions')),
-                  // _MenuItem(icon: Icons.military_tech_rounded, label: 'Health Rewards', color: AppColors.primary, onTap: () => context.push('/gamification')),
-                  _MenuItem(icon: Icons.auto_awesome_rounded, label: 'AI Health Insights', color: const Color(0xFF0EA5E9), onTap: () => context.push('/insights')),
-                  _MenuItem(icon: Icons.notifications_rounded, label: 'Notifications', color: AppColors.warning, onTap: () => context.push('/notification-settings')),
-                  _MenuItem(icon: Icons.security_rounded, label: 'Privacy & Security', color: AppColors.mutedForeground, onTap: () => context.push('/privacy-security')),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textPrimary, size: 18),
+                    title: 'Care Circle',
+                    subtitle: 'Manage caregivers & family',
+                    showDivider: false,
+                    onTap: () => context.push('/care-circle'),
+                  ),
                 ]),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              Container(
-                color: AppColors.surface,
-                child: _MenuItem(
-                  icon: Icons.logout_rounded,
-                  label: 'Sign Out',
-                  color: AppColors.destructive,
-                  onTap: () => _signOut(context, ref),
+              // ── Health ─────────────────────────────────────────────────
+              _SectionLabel('Health'),
+              const SizedBox(height: 8),
+              BentoCard(
+                padding: EdgeInsets.zero,
+                child: Column(children: [
+                  // TODO: Build dedicated health profile view/edit screen
+                  // BentoSettingsTile(
+                  //   icon: const HealthShield(width: 18, height: 18),
+                  //   title: 'Health Profile',
+                  //   onTap: () => context.push('/onboarding/health-profile'),
+                  // ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textPrimary, size: 18),
+                    title: 'Appointments',
+                    onTap: () => context.go('/appointments'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textPrimary, size: 18),
+                    title: 'Prescriptions',
+                    onTap: () => context.push('/prescriptions'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedAward01, color: AppColors.textPrimary, size: 18),
+                    title: 'Achievements',
+                    onTap: () => context.push('/gamification'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.textPrimary, size: 18),
+                    title: 'Insights',
+                    showDivider: false,
+                    onTap: () => context.push('/insights'),
+                  ),
+                ]),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Settings ───────────────────────────────────────────────
+              _SectionLabel('Settings'),
+              const SizedBox(height: 8),
+              BentoCard(
+                padding: EdgeInsets.zero,
+                child: Column(children: [
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.textPrimary, size: 18),
+                    title: 'Edit Profile',
+                    onTap: () => context.push('/edit-profile'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: AppColors.textPrimary, size: 18),
+                    title: 'Notifications',
+                    onTap: () => context.push('/notification-settings'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.textPrimary, size: 18),
+                    title: 'Privacy',
+                    showDivider: false,
+                    onTap: () => context.push('/privacy-security'),
+                  ),
+                ]),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Account ────────────────────────────────────────────────
+              _SectionLabel('Account'),
+              const SizedBox(height: 8),
+              BentoCard(
+                padding: EdgeInsets.zero,
+                child: Column(children: [
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedQuestion, color: AppColors.textPrimary, size: 18),
+                    title: 'Help & Support',
+                    showDivider: false,
+                    onTap: () {},
+                  ),
+                ]),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Sign Out ───────────────────────────────────────────────
+              Center(
+                child: TextButton.icon(
+                  onPressed: () => _signOut(context, ref),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLogout01, color: AppColors.destructive, size: 18),
+                  label: const Text(
+                    'Sign Out',
+                    style: TextStyle(color: AppColors.destructive, fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
             ],
           ),
         );
@@ -168,18 +331,32 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Sign Out', style: TextStyle(fontFamily: 'Inter')),
-        content: const Text('Are you sure you want to sign out?', style: TextStyle(fontFamily: 'Inter')),
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await ref.read(authRepositoryProvider).signOut();
-              if (context.mounted) context.go('/user-select');
-            },
-            child: const Text('Sign Out'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                onPressed: () async {
+                  Navigator.pop(dialogCtx);
+                  try {
+                    await ref.read(authRepositoryProvider).signOut();
+                  } catch (_) {}
+                  if (context.mounted) context.go('/user-select');
+                },
+                child: const Text('Sign Out'),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -192,8 +369,8 @@ class _ProfileStat extends StatelessWidget {
   const _ProfileStat(this.value, this.label);
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.foreground)),
-    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
+    Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.foreground)),
+    Text(label, style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground)),
   ]);
 }
 
@@ -209,27 +386,23 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      SizedBox(width: 130, child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, fontFamily: 'Inter'))),
-      Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Inter'))),
+      SizedBox(width: 130, child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground))),
+      Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
     ]),
   );
 }
 
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _MenuItem({required this.icon, required this.label, required this.color, required this.onTap});
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: color.withValues(alpha:0.1), borderRadius: BorderRadius.circular(8)),
-      child: Icon(icon, color: color, size: 20),
+  Widget build(BuildContext context) => Text(
+    text.toUpperCase(),
+    style: const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textTertiary,
+      letterSpacing: 0.8,
     ),
-    title: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Inter')),
-    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.mutedForeground),
-    onTap: onTap,
   );
 }

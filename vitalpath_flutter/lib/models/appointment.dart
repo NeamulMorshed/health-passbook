@@ -29,6 +29,9 @@ class Appointment {
   final String? notes;
   final String? patientNote;
   final DateTime createdAt;
+  final int? patientRating;
+  final String? familyMemberId;
+  final String? familyMemberName;
 
   const Appointment({
     required this.id,
@@ -42,6 +45,9 @@ class Appointment {
     this.notes,
     this.patientNote,
     required this.createdAt,
+    this.patientRating,
+    this.familyMemberId,
+    this.familyMemberName,
   });
 
   bool get isPending   => status == AppointmentStatus.pending;
@@ -51,31 +57,37 @@ class Appointment {
 
   factory Appointment.fromMap(Map<String, dynamic> map, String id) {
     return Appointment(
-      id:              id,
-      patientId:       map['patientId']      ?? '',
-      patientName:     map['patientName']    ?? '',
-      doctorId:        map['doctorId']       ?? '',
-      doctorName:      map['doctorName']     ?? '',
-      doctorSpecialty: map['doctorSpecialty'],
-      status:          AppointmentStatus.fromString(map['status']),
-      scheduledAt:     (map['scheduledAt'] as Timestamp?)?.toDate(),
-      notes:           map['notes'],
-      patientNote:     map['patientNote'],
-      createdAt:       (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      id:               id,
+      patientId:        map['patientId']      ?? '',
+      patientName:      map['patientName']    ?? '',
+      doctorId:         map['doctorId']       ?? '',
+      doctorName:       map['doctorName']     ?? '',
+      doctorSpecialty:  map['doctorSpecialty'],
+      status:           AppointmentStatus.fromString(map['status']),
+      scheduledAt:      (map['scheduledAt'] as Timestamp?)?.toDate(),
+      notes:            map['notes'],
+      patientNote:      map['patientNote'],
+      createdAt:        (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      patientRating:    map['patientRating'] as int?,
+      familyMemberId:   map['familyMemberId'] as String?,
+      familyMemberName: map['familyMemberName'] as String?,
     );
   }
 
   Map<String, dynamic> toMap() => {
-    'patientId':      patientId,
-    'patientName':    patientName,
-    'doctorId':       doctorId,
-    'doctorName':     doctorName,
+    'patientId':       patientId,
+    'patientName':     patientName,
+    'doctorId':        doctorId,
+    'doctorName':      doctorName,
     'doctorSpecialty': doctorSpecialty,
-    'status':         status.value,
-    'scheduledAt':    scheduledAt != null ? Timestamp.fromDate(scheduledAt!) : null,
-    'notes':          notes,
-    'patientNote':    patientNote,
-    'createdAt':      Timestamp.fromDate(createdAt),
+    'status':          status.value,
+    'scheduledAt':     scheduledAt != null ? Timestamp.fromDate(scheduledAt!) : null,
+    'notes':           notes,
+    'patientNote':     patientNote,
+    'createdAt':       Timestamp.fromDate(createdAt),
+    'patientRating':   patientRating,
+    if (familyMemberId != null) 'familyMemberId': familyMemberId,
+    if (familyMemberName != null) 'familyMemberName': familyMemberName,
   };
 
   Appointment copyWith({
@@ -84,17 +96,19 @@ class Appointment {
     String? notes,
   }) {
     return Appointment(
-      id:             id,
-      patientId:      patientId,
-      patientName:    patientName,
-      doctorId:       doctorId,
-      doctorName:     doctorName,
-      doctorSpecialty: doctorSpecialty,
-      status:         status ?? this.status,
-      scheduledAt:    scheduledAt ?? this.scheduledAt,
-      notes:          notes ?? this.notes,
-      patientNote:    patientNote,
-      createdAt:      createdAt,
+      id:               id,
+      patientId:        patientId,
+      patientName:      patientName,
+      doctorId:         doctorId,
+      doctorName:       doctorName,
+      doctorSpecialty:  doctorSpecialty,
+      status:           status ?? this.status,
+      scheduledAt:      scheduledAt ?? this.scheduledAt,
+      notes:            notes ?? this.notes,
+      patientNote:      patientNote,
+      createdAt:        createdAt,
+      familyMemberId:   familyMemberId,
+      familyMemberName: familyMemberName,
     );
   }
 }

@@ -47,3 +47,9 @@ final firestoreServiceProvider = Provider<FirestoreService>(
 final notificationServiceProvider = Provider<NotificationService>(
   (_) => NotificationService(),
 );
+
+// true = granted/provisional, false = denied/not-yet-asked.
+// Re-evaluated each time the provider is watched (i.e. on screen mount).
+final notifPermGrantedProvider = FutureProvider<bool>((ref) {
+  return ref.read(notificationServiceProvider).isPermissionGranted();
+});

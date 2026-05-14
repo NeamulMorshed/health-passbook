@@ -17,6 +17,13 @@
     @com.google.firebase.firestore.PropertyName <fields>;
 }
 
+# MLKit optional script modules (Chinese, Devanagari, Japanese, Korean) are not
+# included in the Latin-only build — suppress R8 missing-class errors for them.
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**
+
 # Play Core (Flutter deferred components — not used, suppress R8 warnings)
 -dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
 -dontwarn com.google.android.play.core.splitinstall.SplitInstallException

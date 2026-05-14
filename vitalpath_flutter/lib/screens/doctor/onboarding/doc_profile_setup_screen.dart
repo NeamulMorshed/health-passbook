@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -22,7 +23,11 @@ class _DocProfileSetupScreenState
   final _phoneCtrl = TextEditingController();
   final _licenseCtrl = TextEditingController();
   final _hospitalCtrl = TextEditingController();
+  final _hoursCtrl = TextEditingController();
+  final _feeCtrl = TextEditingController();
+  final _cityCtrl = TextEditingController();
   String? _specialty;
+  bool _accepting = true;
 
   static const _specialties = [
     'General Physician',
@@ -62,6 +67,9 @@ class _DocProfileSetupScreenState
     _phoneCtrl.dispose();
     _licenseCtrl.dispose();
     _hospitalCtrl.dispose();
+    _hoursCtrl.dispose();
+    _feeCtrl.dispose();
+    _cityCtrl.dispose();
     super.dispose();
   }
 
@@ -81,6 +89,10 @@ class _DocProfileSetupScreenState
         'specialty': _specialty,
         'licenseNo': _licenseCtrl.text.trim(),
         'hospital': _hospitalCtrl.text.trim(),
+        'acceptingNewPatients': _accepting,
+        'availableHours': _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim(),
+        'consultationFee': _feeCtrl.text.trim().isEmpty ? null : _feeCtrl.text.trim(),
+        'city': _cityCtrl.text.trim().isEmpty ? null : _cityCtrl.text.trim(),
       });
 
       await ref.read(firestoreServiceProvider).updateUserProfile(uid, {
@@ -99,7 +111,7 @@ class _DocProfileSetupScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.pageBackground,
       body: LoadingOverlay(
         isLoading: _saving,
         message: 'Setting up your profile…',
@@ -119,12 +131,13 @@ class _DocProfileSetupScreenState
                       height: 56,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                          colors: [AppColors.primary, Color(0xFF5B21B6)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.medical_services_rounded,
-                          color: Colors.white, size: 28),
+                      child: const Center(
+                        child: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: Colors.white, size: 28),
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -136,7 +149,6 @@ class _DocProfileSetupScreenState
                             style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                fontFamily: 'Inter',
                                 color: AppColors.foreground),
                           ),
                           SizedBox(height: 2),
@@ -144,8 +156,7 @@ class _DocProfileSetupScreenState
                             'Complete your details to get started.',
                             style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.mutedForeground,
-                                fontFamily: 'Inter'),
+                                color: AppColors.mutedForeground),
                           ),
                         ],
                       ),
@@ -186,15 +197,13 @@ class _DocProfileSetupScreenState
                 _label('Specialty'),
                 DropdownButtonFormField<String>(
                   initialValue: _specialty,
-                  hint: const Text('Select your specialty',
-                      style: TextStyle(fontFamily: 'Inter')),
+                  hint: const Text('Select your specialty'),
                   decoration: const InputDecoration(),
                   isExpanded: true,
                   items: _specialties
                       .map((s) => DropdownMenuItem(
                           value: s,
-                          child: Text(s,
-                              style: const TextStyle(fontFamily: 'Inter'))))
+                          child: Text(s)))
                       .toList(),
                   validator: (v) =>
                       v == null ? 'Please select your specialty' : null,
@@ -223,11 +232,47 @@ class _DocProfileSetupScreenState
                       ? 'Hospital or clinic name is required'
                       : null,
                 ),
+                const SizedBox(height: 16),
+
+                _label('Available Hours (optional)'),
+                TextFormField(
+                  controller: _hoursCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. Mon–Fri 9am–5pm'),
+                ),
+                const SizedBox(height: 16),
+
+                _label('Consultation Fee (optional)'),
+                TextFormField(
+                  controller: _feeCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. \$50 / Free'),
+                ),
+                const SizedBox(height: 16),
+
+                _label('City (optional)'),
+                TextFormField(
+                  controller: _cityCtrl,
+                  decoration: const InputDecoration(hintText: 'e.g. Dhaka'),
+                ),
+                const SizedBox(height: 16),
+
+                BentoCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Row(children: [
+                    const Expanded(child: Text('Accepting New Patients',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                    Switch(
+                      value: _accepting,
+                      activeThumbColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                      onChanged: (v) => setState(() => _accepting = v),
+                    ),
+                  ]),
+                ),
                 const SizedBox(height: 36),
 
                 GradientButton(
                   label: 'Complete Setup',
-                  colors: const [AppColors.doctorPrimary, Color(0xFF5B21B6)],
+                  colors: const [AppColors.primary, Color(0xFF5B21B6)],
                   onPressed: _save,
                   isLoading: _saving,
                 ),
@@ -247,8 +292,7 @@ class _DocProfileSetupScreenState
           style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.foreground,
-              fontFamily: 'Inter'),
+              color: AppColors.foreground),
         ),
       );
 }

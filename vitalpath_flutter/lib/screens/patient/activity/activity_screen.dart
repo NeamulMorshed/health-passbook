@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' hide ActivityType;
+import 'package:hugeicons/hugeicons.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_theme.dart';
@@ -11,7 +12,8 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-// import '../../../providers/gamification_provider.dart';
+import '../../../providers/gamification_provider.dart';
+import '../../../models/activity_log.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -20,13 +22,17 @@ class ActivityScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivityScreenState extends ConsumerState<ActivityScreen> {
-  bool _isWalking = false;
+  // Activity type selection
+  String _activityType = ActivityType.walk;
+
+  // GPS tracking state
+  bool _isTracking = false;
   bool _isPaused = false;
   Timer? _timer;
   int _seconds = 0;
   double _distanceKm = 0;
 
-  // Pedometer-based step tracking
+  // Pedometer
   int _steps = 0;
   int? _stepBaseline;
   bool _pedometerAvailable = false;
@@ -36,41 +42,41 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   Position? _lastPosition;
   StreamSubscription<Position>? _positionSub;
 
-  final _stepsCtrl = TextEditingController();
+  // Manual log controllers
+  final _manualDurationCtrl = TextEditingController();
+  final _manualCaloriesCtrl = TextEditingController();
+  final _manualNotesCtrl = TextEditingController();
+
+  bool get _isGpsType => ActivityType.gpsTracked.contains(_activityType);
 
   @override
   void dispose() {
     _timer?.cancel();
     _positionSub?.cancel();
     _stepSub?.cancel();
-    _stepsCtrl.dispose();
+    _manualDurationCtrl.dispose();
+    _manualCaloriesCtrl.dispose();
+    _manualNotesCtrl.dispose();
     super.dispose();
   }
 
-  void _toggleWalk() async {
-    if (_isWalking) {
-      await _stopWalk();
-    } else {
-      await _startWalk();
-    }
-  }
+  // ── GPS tracking methods ──────────────────────────────────────────────────
 
-  void _pauseWalk() {
+  void _pauseTracking() {
     _timer?.cancel();
     _stepSub?.pause();
     _positionSub?.pause();
     setState(() => _isPaused = true);
   }
 
-  void _resumeWalk() {
+  void _resumeTracking() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _seconds++));
     _stepSub?.resume();
     _positionSub?.resume();
     setState(() => _isPaused = false);
   }
 
-  Future<void> _startWalk() async {
-    // ── Location permission ──────────────────────────────────────────────
+  Future<void> _startGpsTracking() async {
     var locPerm = await Geolocator.checkPermission();
     if (locPerm == LocationPermission.denied) {
       locPerm = await Geolocator.requestPermission();
@@ -84,11 +90,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       return;
     }
 
-    // ── Activity recognition permission (step sensor, Android 10+) ──────
     final actPerm = await Permission.activityRecognition.request();
 
     setState(() {
-      _isWalking = true;
+      _isTracking = true;
       _seconds = 0;
       _distanceKm = 0;
       _steps = 0;
@@ -97,11 +102,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       _lastPosition = null;
     });
 
-    // ── Timer ────────────────────────────────────────────────────────────
     _timer =
         Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _seconds++));
 
-    // ── GPS stream (distance) ────────────────────────────────────────────
     _positionSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -120,12 +123,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       _lastPosition = pos;
     }, onError: (_) {});
 
-    // ── Pedometer stream (steps) ─────────────────────────────────────────
     if (actPerm.isGranted) {
       _stepSub = Pedometer.stepCountStream.listen(
         (StepCount event) {
           if (_stepBaseline == null) {
-            // First event — capture baseline so we count delta from here
             setState(() {
               _stepBaseline = event.steps;
               _pedometerAvailable = true;
@@ -135,7 +136,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           }
         },
         onError: (_) {
-          // Hardware sensor not available — GPS-based estimation used at save
           setState(() => _pedometerAvailable = false);
         },
         cancelOnError: false,
@@ -143,39 +143,81 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     }
   }
 
-  Future<void> _stopWalk() async {
+  Future<void> _stopGpsTracking() async {
     _timer?.cancel();
-    _stepSub?.resume(); // resume before cancel so pause-cancel works correctly
-    _positionSub?.resume();
     await _positionSub?.cancel();
     await _stepSub?.cancel();
     setState(() => _isPaused = false);
 
-    // If pedometer had no data, fall back to stride-length estimate from GPS
-    final finalSteps =
-        _steps > 0 ? _steps : (_distanceKm * 1333).round();
-    // ~0.04 kcal/step or ~60 kcal/km
+    final useStepEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    final finalSteps = _steps > 0 ? _steps : (useStepEstimate ? (_distanceKm * _kStepsPerKm).round() : 0);
     final kcal = _steps > 0
         ? (_steps * 0.04).round()
         : (_distanceKm * 60).round();
 
-    setState(() => _isWalking = false);
+    setState(() => _isTracking = false);
 
     final user = await ref.read(currentUserProvider.future);
     if (user == null || !mounted) return;
 
     await ref.read(activityNotifierProvider.notifier).save(
           user.uid,
-          type: 'walk',
+          type: _activityType,
           durationSeconds: _seconds,
           distanceKm: _distanceKm,
           steps: finalSteps,
           caloriesBurned: kcal,
         );
-    // final hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: finalSteps, type: 'walk');
+
+    int hp = 0;
+    try {
+      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: finalSteps, type: _activityType);
+    } catch (_) {}
+
     if (mounted) {
+      final hpSuffix = hp > 0 ? '  +$hp HP' : '';
       showAppSnack(context,
-          'Walk saved — ${_distanceKm.toStringAsFixed(2)} km · $finalSteps steps · ${_formatTime(_seconds)}');
+          '${ActivityType.labelFor(_activityType)} saved — ${_distanceKm.toStringAsFixed(2)} km · $finalSteps steps · ${_formatTime(_seconds)}$hpSuffix');
+    }
+  }
+
+  // ── Manual save ──────────────────────────────────────────────────────────
+
+  Future<void> _saveManualActivity() async {
+    final minutes = int.tryParse(_manualDurationCtrl.text.trim());
+    if (minutes == null || minutes <= 0) {
+      showAppSnack(context, 'Please enter a valid duration in minutes.',
+          isError: true);
+      return;
+    }
+    final calories = int.tryParse(_manualCaloriesCtrl.text.trim());
+    final user = await ref.read(currentUserProvider.future);
+    if (user == null || !mounted) return;
+
+    await ref.read(activityNotifierProvider.notifier).save(
+          user.uid,
+          type: _activityType,
+          durationSeconds: minutes * 60,
+          steps: null,
+          distanceKm: null,
+          caloriesBurned: calories,
+          notes: _manualNotesCtrl.text.trim().isEmpty ? null : _manualNotesCtrl.text.trim(),
+        );
+
+    if (!mounted) return;
+
+    int hp = 0;
+    try {
+      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: 0, type: _activityType);
+    } catch (_) {}
+
+    if (mounted) {
+      _manualDurationCtrl.clear();
+      _manualCaloriesCtrl.clear();
+      _manualNotesCtrl.clear();
+      final hpSuffix = hp > 0 ? '  +$hp HP' : '';
+      showAppSnack(context,
+          '${ActivityType.labelFor(_activityType)} logged — $minutes min${calories != null ? ' · $calories kcal' : ''}$hpSuffix');
     }
   }
 
@@ -185,38 +227,15 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
   }
 
-  // Live display values: use pedometer steps when available, else GPS estimate
-  int get _displaySteps =>
-      _steps > 0 ? _steps : (_distanceKm * 1333).round();
+  static const _kStepsPerKm = 1333;
+  int get _displaySteps {
+    if (_steps > 0) return _steps;
+    final useEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    return useEstimate ? (_distanceKm * _kStepsPerKm).round() : 0;
+  }
   int get _displayKcal => _steps > 0
       ? (_steps * 0.04).round()
       : (_distanceKm * 60).round();
-
-  void _addManualSteps() async {
-    final text = _stepsCtrl.text.trim();
-    final count = int.tryParse(text);
-    if (count == null || count <= 0) {
-      showAppSnack(context, 'Please enter a valid step count.', isError: true);
-      return;
-    }
-    if (count > 100000) {
-      showAppSnack(context, 'That seems too high. Please enter a realistic step count.', isError: true);
-      return;
-    }
-    final user = await ref.read(currentUserProvider.future);
-    if (user == null) return;
-    await ref.read(activityNotifierProvider.notifier).save(
-          user.uid,
-          type: 'steps',
-          durationSeconds: 0,
-          steps: count,
-          caloriesBurned: (count * 0.04).round(),
-        );
-    if (mounted) {
-      _stepsCtrl.clear();
-      showAppSnack(context, '$count steps added successfully.');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -232,8 +251,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const EmptyState(
             icon: Icons.error_outline_rounded,
-            title: 'Something went wrong',
-            subtitle: 'Pull to refresh or try again.'),
+            title: "Can't load right now",
+            subtitle: 'Check your connection and try again.'),
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -250,175 +269,81 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // GPS Walk Tracker card
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _isWalking
-                          ? [AppColors.success, const Color(0xFF15803D)]
-                          : [AppColors.primary, AppColors.primaryDark],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                          color: (_isWalking
-                                  ? AppColors.success
-                                  : AppColors.primary)
-                              .withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6))
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('GPS Walk Tracker',
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontFamily: 'Inter')),
-                          if (_isWalking && _pedometerAvailable) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text('Step Sensor Active',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontFamily: 'Inter')),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _formatTime(_seconds),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 56,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Inter'),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _WalkStat(
-                                _distanceKm.toStringAsFixed(2), 'km'),
-                            _WalkStat('$_displaySteps', 'steps'),
-                            _WalkStat('$_displayKcal', 'kcal'),
-                          ]),
-                      const SizedBox(height: 24),
-                      if (_isWalking)
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          GestureDetector(
-                            onTap: _isPaused ? _resumeWalk : _pauseWalk,
-                            child: Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle),
-                              child: Icon(
-                                  _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                                  color: Colors.white,
-                                  size: 34),
-                            ),
-                          ),
-                          const SizedBox(width: 24),
-                          GestureDetector(
-                            onTap: _toggleWalk,
-                            child: Container(
-                              width: 68,
-                              height: 68,
-                              decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle),
-                              child: const Icon(Icons.stop_rounded, color: Colors.white, size: 34),
-                            ),
-                          ),
-                        ])
-                      else
-                        GestureDetector(
-                          onTap: _toggleWalk,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle),
-                            child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 40),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      Text(
-                          _isWalking
-                              ? (_isPaused ? 'Paused — tap to resume or stop' : 'Tap pause or stop')
-                              : 'Tap to Start Walk',
-                          style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontFamily: 'Inter')),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Manual steps
-                const SectionHeader(title: 'Log Manual Steps'),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border)),
-                  child: Row(children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _stepsCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                            hintText: 'Enter step count',
-                            prefixIcon:
-                                Icon(Icons.directions_walk_rounded),
-                            filled: false,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: _addManualSteps,
-                      style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(80, 44)),
-                      child: const Text('Add'),
-                    ),
-                  ]),
-                ),
-                const SizedBox(height: 24),
-
-                // Weekly steps chart
-                const SectionHeader(title: 'This Week'),
-                const SizedBox(height: 12),
+                // P5.2 — Weekly activity trend chart (always shown at top)
                 activityAsync.when(
-                  data: (logs) => _WeeklyStepsChart(logs: logs),
+                  data: (logs) => _WeeklyActivityChart(logs: logs),
                   loading: () => const SizedBox(
                     height: 140,
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
+                const SizedBox(height: 20),
+
+                // P5.1 — Activity type picker (only when not tracking)
+                if (!_isTracking) ...[
+                  const SectionHeader(title: 'Activity Type'),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ActivityType.allTypes.map((type) {
+                        final sel = _activityType == type;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _activityType = type),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: sel ? AppColors.primary : AppColors.muted,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: sel
+                                      ? AppColors.primary
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    ActivityType.iconFor(type),
+                                    size: 15,
+                                    color: sel
+                                        ? Colors.white
+                                        : AppColors.mutedForeground,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    ActivityType.labelFor(type),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: sel
+                                          ? Colors.white
+                                          : AppColors.mutedForeground,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                // ── GPS tracker card (for GPS types) or Manual form (for manual types)
+                if (_isGpsType) _buildGpsCard() else _buildManualCard(),
+
                 const SizedBox(height: 24),
 
-                // Recent activity
+                // Recent activity list
                 const SectionHeader(title: 'Recent Activity'),
                 const SizedBox(height: 12),
                 activityAsync.when(
@@ -427,20 +352,20 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       return const EmptyState(
                           icon: Icons.directions_run_outlined,
                           title: 'No Activity Yet',
-                          subtitle:
-                              'Start a walk or log your steps.');
+                          subtitle: 'Start a session or log an activity.');
                     }
                     return Column(
                       children: logs.take(10).map((log) {
-                        final isWalk = log.type == 'walk';
+                        final isGps =
+                            ActivityType.gpsTracked.contains(log.type);
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                               color: AppColors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: AppColors.border)),
+                              border:
+                                  Border.all(color: AppColors.border)),
                           child: Row(children: [
                             Container(
                               padding: const EdgeInsets.all(8),
@@ -450,11 +375,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   borderRadius:
                                       BorderRadius.circular(8)),
                               child: Icon(
-                                  isWalk
-                                      ? Icons.directions_walk_rounded
-                                      : Icons.stairs_rounded,
-                                  color: AppColors.success,
-                                  size: 20),
+                                ActivityType.iconFor(log.type),
+                                color: AppColors.success,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -463,23 +387,21 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                       CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                        isWalk
-                                            ? 'GPS Walk'
-                                            : 'Manual Steps',
+                                        ActivityType.labelFor(log.type),
                                         style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight:
-                                                FontWeight.w600,
-                                            fontFamily: 'Inter')),
+                                                FontWeight.w600)),
                                     Text(
-                                      isWalk
+                                      isGps
                                           ? '${log.distanceKm?.toStringAsFixed(2) ?? 0} km · ${log.steps ?? 0} steps · ${log.formattedDuration}'
-                                          : '${log.steps ?? 0} steps',
+                                          : log.durationSeconds > 0
+                                              ? '${log.durationSeconds ~/ 60} min'
+                                              : 'Manual log',
                                       style: const TextStyle(
                                           fontSize: 12,
-                                          color:
-                                              AppColors.mutedForeground,
-                                          fontFamily: 'Inter'),
+                                          color: AppColors
+                                              .mutedForeground),
                                     ),
                                   ]),
                             ),
@@ -488,8 +410,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.warning,
-                                      fontFamily: 'Inter')),
+                                      color: AppColors.warning)),
                           ]),
                         );
                       }).toList(),
@@ -506,6 +427,187 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       ),
     );
   }
+
+  Widget _buildGpsCard() {
+    final label = ActivityType.labelFor(_activityType);
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _isTracking
+              ? [AppColors.success, const Color(0xFF15803D)]
+              : [AppColors.primary, AppColors.primaryDark],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color:
+                  (_isTracking ? AppColors.success : AppColors.primary)
+                      .withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('GPS $label Tracker',
+                  style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13)),
+              if (_isTracking && _pedometerAvailable) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Step Sensor Active',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12)),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _formatTime(_seconds),
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 56,
+                fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _WalkStat(_distanceKm.toStringAsFixed(2), 'km'),
+                _WalkStat('$_displaySteps', 'steps'),
+                _WalkStat('$_displayKcal', 'kcal'),
+              ]),
+          const SizedBox(height: 24),
+          if (_isTracking)
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              GestureDetector(
+                onTap: _isPaused ? _resumeTracking : _pauseTracking,
+                child: Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle),
+                  child: _isPaused
+                      ? HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 34)
+                      : HugeIcon(icon: HugeIcons.strokeRoundedPause, color: Colors.white, size: 34),
+                ),
+              ),
+              const SizedBox(width: 24),
+              GestureDetector(
+                onTap: _stopGpsTracking,
+                child: Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle),
+                  child: const Icon(Icons.stop_rounded,
+                      color: Colors.white, size: 34),
+                ),
+              ),
+            ])
+          else
+            GestureDetector(
+              onTap: _startGpsTracking,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 40),
+              ),
+            ),
+          const SizedBox(height: 12),
+          Text(
+              _isTracking
+                  ? (_isPaused
+                      ? 'Paused — tap to resume or stop'
+                      : 'Tap pause or stop')
+                  : 'Start ${ActivityType.labelFor(_activityType)}',
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManualCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(ActivityType.iconFor(_activityType),
+                color: AppColors.primary, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              'Log ${ActivityType.labelFor(_activityType)}',
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600),
+            ),
+          ]),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _manualDurationCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Duration (minutes) *',
+              hintText: 'e.g. 30',
+              prefixIcon: Icon(Icons.timer_rounded),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _manualCaloriesCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Estimated calories (optional)',
+              hintText: 'e.g. 150',
+              prefixIcon: Icon(Icons.local_fire_department_rounded),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _manualNotesCtrl,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Notes (optional)',
+              hintText: 'e.g. Felt great, outdoor session',
+              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textSecondary, size: 24),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GradientButton(
+            label: 'Save Activity',
+            onPressed: _saveManualActivity,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _WalkStat extends StatelessWidget {
@@ -517,19 +619,28 @@ class _WalkStat extends StatelessWidget {
             style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Inter')),
+                fontWeight: FontWeight.w700)),
         Text(label,
             style: const TextStyle(
-                color: Colors.white70, fontSize: 12, fontFamily: 'Inter')),
+                color: Colors.white70, fontSize: 12)),
       ]);
 }
 
-class _WeeklyStepsChart extends StatelessWidget {
-  final List<dynamic> logs;
-  const _WeeklyStepsChart({required this.logs});
+// ── P5.2 — Weekly Activity Chart ──────────────────────────────────────────────
+class _WeeklyActivityChart extends StatelessWidget {
+  final List<ActivityLog> logs;
+  const _WeeklyActivityChart({required this.logs});
 
-  static const _dayLabels = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _dayLabels = [
+    '',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun'
+  ];
 
   List<int> _dailySteps() {
     final now = DateTime.now();
@@ -540,7 +651,7 @@ class _WeeklyStepsChart extends StatelessWidget {
               l.loggedAt.day == day.day &&
               l.loggedAt.month == day.month &&
               l.loggedAt.year == day.year)
-          .fold<int>(0, (sum, l) => sum + ((l.steps ?? 0) as int));
+          .fold<int>(0, (sum, l) => sum + (l.steps ?? 0));
     });
   }
 
@@ -548,8 +659,15 @@ class _WeeklyStepsChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final steps = _dailySteps();
     final maxSteps = steps.reduce((a, b) => a > b ? a : b);
+
+    // Y-axis max: max of (10000, actual max) rounded up to nearest 2000
     const goal = 10000;
-    final todaySteps = steps.last;
+    final rawMax = maxSteps > goal ? maxSteps : goal;
+    final yMax = ((rawMax / 2000).ceil() * 2000).toDouble();
+
+    final weeklySteps = steps.fold<int>(0, (a, b) => a + b);
+    final weeklyKm = logs.fold<double>(0, (a, l) => a + (l.distanceKm ?? 0));
+    final activeDays = steps.where((s) => s > 0).length;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -561,47 +679,34 @@ class _WeeklyStepsChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('$todaySteps', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFamily: 'Inter', color: AppColors.success)),
-                const Text('steps today', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              ]),
-            ),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('Goal: $goal', style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground, fontFamily: 'Inter')),
-              const SizedBox(height: 2),
-              Text(
-                todaySteps >= goal ? 'Goal reached!' : '${goal - todaySteps} to go',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: todaySteps >= goal ? AppColors.success : AppColors.warning,
-                  fontFamily: 'Inter',
-                ),
-              ),
-            ]),
-          ]),
-          const SizedBox(height: 16),
+          const Text('Weekly Activity',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 14),
           SizedBox(
-            height: 110,
+            height: 120,
             child: BarChart(
               BarChartData(
-                maxY: maxSteps > 0 ? maxSteps * 1.2 : goal.toDouble(),
+                maxY: yMax,
                 minY: 0,
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 22,
                       getTitlesWidget: (value, meta) {
                         final now = DateTime.now();
-                        final day = now.subtract(Duration(days: 6 - value.toInt()));
+                        final day = now.subtract(
+                            Duration(days: 6 - value.toInt()));
                         final label = _dayLabels[day.weekday];
                         final isToday = value.toInt() == 6;
                         return Padding(
@@ -609,10 +714,13 @@ class _WeeklyStepsChart extends StatelessWidget {
                           child: Text(
                             label,
                             style: TextStyle(
-                              fontSize: 10,
-                              fontFamily: 'Inter',
-                              color: isToday ? AppColors.success : AppColors.mutedForeground,
-                              fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                              fontSize: 12,
+                              color: isToday
+                                  ? AppColors.primary
+                                  : AppColors.mutedForeground,
+                              fontWeight: isToday
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                             ),
                           ),
                         );
@@ -621,33 +729,66 @@ class _WeeklyStepsChart extends StatelessWidget {
                   ),
                 ),
                 barGroups: List.generate(7, (i) {
-                  final isToday = i == 6;
-                  final hitGoal = steps[i] >= goal;
+                  final s = steps[i];
+                  Color barColor;
+                  if (s >= goal) {
+                    barColor = AppColors.primary;
+                  } else if (s >= 5000) {
+                    barColor = AppColors.success;
+                  } else {
+                    barColor = AppColors.warning;
+                  }
                   return BarChartGroupData(
                     x: i,
                     barRods: [
                       BarChartRodData(
-                        toY: steps[i].toDouble(),
-                        color: hitGoal
-                            ? AppColors.success
-                            : isToday
-                                ? AppColors.primary
-                                : AppColors.primary.withValues(alpha: 0.35),
+                        toY: s.toDouble(),
+                        color: s == 0
+                            ? AppColors.muted
+                            : barColor,
                         width: 18,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4)),
                       ),
                     ],
                   );
                 }),
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                        BarTooltipItem(
                       '${steps[groupIndex]}',
-                      const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Inter', fontWeight: FontWeight.w600),
+                      const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
               ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Weekly summary row
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.muted,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'This week: $weeklySteps steps  ·  ${weeklyKm.toStringAsFixed(1)} km  ·  $activeDays active day${activeDays == 1 ? '' : 's'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.mutedForeground,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

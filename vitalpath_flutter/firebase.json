@@ -5,5 +5,10 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "appDistribution": {
+    "appId": "1:768599207887:android:a365080e6a086985736cba",
+    "releaseNotesFile": "release_notes.txt",
+    "testers": "neamul.morshed.nahid@gmail.com"
   }
 }

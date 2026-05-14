@@ -57,7 +57,10 @@ class Medicine {
   final DateTime? endDate;
   final List<DateTime> loggedDoses;
   final List<String> reminderTimes; // "HH:mm" e.g. ["08:00", "20:00"]
-  final String reminderRepeat;      // 'daily' | 'weekly'
+  final String reminderRepeat;      // 'daily' | 'weekly' (legacy, use reminderDays for day selection)
+  final List<int> reminderDays;     // 0=Sun, 1=Mon, …, 6=Sat; empty = use reminderRepeat default
+  final String? scannedPhotoUrl;    // original prescription photo from OCR scan
+  final int? pillsRemaining;
 
   const Medicine({
     required this.id,
@@ -74,20 +77,30 @@ class Medicine {
     this.loggedDoses = const [],
     this.reminderTimes = const [],
     this.reminderRepeat = 'daily',
+    this.reminderDays = const [0, 1, 2, 3, 4, 5, 6],
+    this.scannedPhotoUrl,
+    this.pillsRemaining,
   });
 
   // ── Slot computation ────────────────────────────────────────────────────────
 
   static const _gracePeriod = Duration(minutes: 30);
 
+  // M3: Use int.tryParse with fallbacks to avoid FormatException on malformed times.
   static (int, int) _parseHM(String t) {
     final p = t.split(':');
-    return (int.parse(p[0]), int.parse(p[1]));
+    final h = int.tryParse(p.isNotEmpty ? p[0] : '0') ?? 0;
+    final m = int.tryParse(p.length > 1 ? p[1] : '0') ?? 0;
+    return (h, m);
   }
 
   /// All dose slots for today, sorted by scheduled time.
   List<DoseSlot> get todaySlots {
     if (reminderTimes.isEmpty) return [];
+
+    // Skip days not in the schedule (0=Sun, 1=Mon, …, 6=Sat)
+    final todayDow = DateTime.now().weekday % 7; // Mon=1..Sun=7 → %7 gives Mon=1..Sat=6, Sun=0
+    if (reminderDays.isNotEmpty && !reminderDays.contains(todayDow)) return [];
 
     final now = DateTime.now();
     final base = DateTime(now.year, now.month, now.day);
@@ -192,6 +205,18 @@ class Medicine {
               .toList() ??
           [],
       reminderRepeat: map['reminderRepeat'] ?? 'daily',
+      reminderDays: (() {
+        final raw = map['reminderDays'];
+        if (raw is List && raw.isNotEmpty) {
+          return raw.map((d) => (d as num).toInt()).toList();
+        }
+        // Backward compat: derive from reminderRepeat
+        final repeat = map['reminderRepeat'] ?? 'daily';
+        if (repeat == 'weekly') return [1]; // legacy weekly → Monday
+        return [0, 1, 2, 3, 4, 5, 6];      // legacy daily → every day
+      })(),
+      scannedPhotoUrl: map['scannedPhotoUrl'] as String?,
+      pillsRemaining: map['pillsRemaining'] as int?,
     );
   }
 
@@ -209,5 +234,8 @@ class Medicine {
         'loggedDoses': loggedDoses.map((d) => Timestamp.fromDate(d)).toList(),
         'reminderTimes': reminderTimes,
         'reminderRepeat': reminderRepeat,
+        'reminderDays': reminderDays,
+        'scannedPhotoUrl': scannedPhotoUrl,
+        'pillsRemaining': pillsRemaining,
       };
 }

@@ -40,6 +40,48 @@
         { "fieldPath": "isActive",   "order": "ASCENDING" },
         { "fieldPath": "startDate",  "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "medicines",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isActive",   "order": "ASCENDING" },
+        { "fieldPath": "startDate",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vitals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientId",  "order": "ASCENDING" },
+        { "fieldPath": "recordedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "caregiver_connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientId",  "order": "ASCENDING" },
+        { "fieldPath": "status",     "order": "ASCENDING" },
+        { "fieldPath": "invitedAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "caregiver_connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caregiverUid", "order": "ASCENDING" },
+        { "fieldPath": "status",       "order": "ASCENDING" },
+        { "fieldPath": "connectedAt",  "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "caregiver_connections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "caregiverEmail", "order": "ASCENDING" },
+        { "fieldPath": "status",         "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

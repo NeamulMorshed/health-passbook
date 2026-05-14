@@ -1,0 +1,4 @@
+VitalPath v2.6.0+20 — UI Redesign (in progress)
+
+UI Redesign:
+- Work in progress

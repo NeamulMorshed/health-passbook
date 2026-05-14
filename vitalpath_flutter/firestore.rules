@@ -62,6 +62,16 @@ service cloud.firestore {
         allow delete: if isSignedIn() && isOwner(patientId);
       }
 
+      match /family_members/{memberId} {
+        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)));
+        allow create, update: if isSignedIn() && isOwner(patientId);
+        allow delete:         if isSignedIn() && isOwner(patientId);
+
+        match /medicines/{medId} {
+          allow read, write: if isSignedIn() && isOwner(patientId);
+        }
+      }
+
       // Patient ↔ Doctor connections — doctor creates both sides during confirmation batch.
       match /connections/{doctorId} {
         allow read:   if isSignedIn() && (isOwner(patientId) || isOwner(doctorId));
@@ -122,10 +132,59 @@ service cloud.firestore {
         request.resource.data.doctorId == request.auth.uid;
     }
 
+    // ── vitals ────────────────────────────────────────────────────────────────
+
+    match /vitals/{readingId} {
+      allow read:   if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId))
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.patientId == request.auth.uid;
+      allow delete: if isSignedIn() &&
+        resource.data.patientId == request.auth.uid;
+    }
+
+    // ── caregiver_connections ─────────────────────────────────────────────────
+    // Patient creates and owns connections. Caregiver (matched by email or UID)
+    // can read their own and update to accept/decline an invite.
+
+    match /caregiver_connections/{connId} {
+      allow read: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverUid == request.auth.uid ||
+        resource.data.caregiverEmail == request.auth.token.email
+      );
+      allow create: if isSignedIn() &&
+        request.resource.data.patientId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverEmail == request.auth.token.email ||
+        resource.data.caregiverUid == request.auth.uid
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.caregiverUid == request.auth.uid
+      );
+    }
+
     // ── gamification ──────────────────────────────────────────────────────────
 
     match /gamification/{uid} {
       allow read, write: if isSignedIn() && isOwner(uid);
+    }
+
+    // ── Shared drug-lookup caches (Phase B + C) ───────────────────────────────
+    // Populated by any authenticated user, readable by all authenticated users.
+    // This is intentional: shared caches mean each unique drug name / pair is
+    // looked up only once across the entire user base.
+
+    match /rxnorm_cache/{doc} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /drug_interaction_cache/{doc} {
+      allow read, write: if isSignedIn();
     }
   }
 }

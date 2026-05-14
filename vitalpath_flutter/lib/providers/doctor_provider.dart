@@ -4,6 +4,7 @@ import '../models/doctor.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/prescription.dart';
+import '../models/consultation_note.dart';
 import '../services/firestore_service.dart';
 import 'auth_provider.dart';
 
@@ -35,12 +36,13 @@ final doctorPatientCountProvider = StreamProvider.family<int, String>((ref, doct
 });
 
 // ─── Search Doctors (for patients) ───────────────────────────────────────────
-typedef DoctorSearchKey = ({String nameQuery, String specialty});
+typedef DoctorSearchKey = ({String nameQuery, String specialty, String city});
 
 final doctorSearchProvider = FutureProvider.family<List<DoctorProfile>, DoctorSearchKey>((ref, key) async {
   return ref.watch(firestoreServiceProvider).searchDoctors(
     specialty: key.specialty.isEmpty ? null : key.specialty,
     nameQuery: key.nameQuery.isEmpty ? null : key.nameQuery,
+    city: key.city.isEmpty || key.city == 'All' ? null : key.city,
   );
 });
 
@@ -170,4 +172,54 @@ class PrescriptionNotifier extends StateNotifier<AsyncValue<void>> {
 
 final prescriptionNotifierProvider = StateNotifierProvider<PrescriptionNotifier, AsyncValue<void>>((ref) {
   return PrescriptionNotifier(ref.watch(firestoreServiceProvider));
+});
+
+// ─── Consultation Notes ───────────────────────────────────────────────────────
+typedef ConsultationNotesKey = ({String patientId, String doctorId});
+
+final consultationNotesProvider = StreamProvider.family<List<ConsultationNote>, ConsultationNotesKey>((ref, key) {
+  return ref.watch(firestoreServiceProvider).watchConsultationNotes(key.patientId, key.doctorId);
+});
+
+class ConsultationNoteNotifier extends StateNotifier<AsyncValue<void>> {
+  final FirestoreService _db;
+  ConsultationNoteNotifier(this._db) : super(const AsyncValue.data(null));
+
+  Future<void> add({
+    required String patientId,
+    required String doctorId,
+    required String doctorName,
+    required String note,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final cn = ConsultationNote(
+        id: const Uuid().v4(),
+        patientId: patientId,
+        doctorId: doctorId,
+        doctorName: doctorName,
+        note: note,
+        createdAt: DateTime.now(),
+      );
+      await _db.addConsultationNote(cn);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+
+  Future<void> delete(String patientId, String noteId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _db.deleteConsultationNote(patientId, noteId);
+      state = const AsyncValue.data(null);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+}
+
+final consultationNoteNotifierProvider =
+    StateNotifierProvider<ConsultationNoteNotifier, AsyncValue<void>>((ref) {
+  return ConsultationNoteNotifier(ref.watch(firestoreServiceProvider));
 });

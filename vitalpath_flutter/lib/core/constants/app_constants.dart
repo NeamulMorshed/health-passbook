@@ -10,6 +10,11 @@ class AppConstants {
   static const colActivityLogs = 'activity_logs';
   static const colNotifications = 'notifications';
   static const colConnections = 'connections';
+  static const colFamilyMembers = 'family_members';
+  static const colVitals = 'vitals';
+
+  // Family member relationships
+  static const relationships = ['Son', 'Daughter', 'Mother', 'Father', 'Spouse', 'Sibling', 'Other'];
 
   // User types
   static const typePatient = 'patient';
@@ -51,4 +56,8 @@ class AppConstants {
   static const prefUserType = 'user_type';
   static const prefOnboardingDone = 'onboarding_done';
   static const prefFaceIdEnabled = 'face_id_enabled';
+  static const prefOnboardingTourDone = 'onboarding_tour_done';
+
+  // Cities for doctor search
+  static const cities = ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna'];
 }
