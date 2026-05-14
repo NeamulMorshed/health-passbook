@@ -811,10 +811,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                                         .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Icon(
-                                      Icons.medication_outlined,
-                                      size: 14,
-                                      color: AppColors.primary),
+                                  child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 14),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(

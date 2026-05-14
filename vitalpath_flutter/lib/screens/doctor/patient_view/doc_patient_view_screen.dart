@@ -150,7 +150,7 @@ class _PatientDetailBodyState extends ConsumerState<_PatientDetailBody>
                 unselectedLabelStyle: const TextStyle(fontSize: 12),
                 tabs: [
                   Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground, size: 18), text: 'Overview'),
-                  Tab(icon: Icon(Icons.medication_outlined, size: 18), text: 'Medicines'),
+                  Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: _tabCtrl.index == 1 ? AppColors.primary : AppColors.mutedForeground, size: 18), text: 'Medicines'),
                   Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: _tabCtrl.index == 2 ? AppColors.primary : AppColors.mutedForeground, size: 18), text: 'Health Log'),
                   Tab(icon: Icon(Icons.description_rounded, size: 18), text: 'Rx History'),
                   Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: _tabCtrl.index == 4 ? AppColors.primary : AppColors.mutedForeground, size: 18), text: 'Notes'),
@@ -242,22 +242,21 @@ class _OverviewTab extends StatelessWidget {
                     ? AppColors.warning
                     : AppColors.destructive;
 
+            final medColor = takenToday == total && total > 0 ? AppColors.success : AppColors.warning;
             return Row(children: [
               Expanded(
                 child: _InsightChip(
-                  icon: Icons.medication_outlined,
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: medColor, size: 18),
                   label: "Today's Meds",
                   value: '$takenToday/$total',
                   subtitle: 'taken today',
-                  color: takenToday == total && total > 0
-                      ? AppColors.success
-                      : AppColors.warning,
+                  color: medColor,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _InsightChip(
-                  icon: Icons.trending_up_rounded,
+                  icon: Icon(Icons.trending_up_rounded, size: 18, color: total > 0 ? adherenceColor : AppColors.mutedForeground),
                   label: 'Adherence',
                   value: total > 0 ? '$pct%' : '--',
                   subtitle: 'today\'s session',
@@ -267,7 +266,7 @@ class _OverviewTab extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _InsightChip(
-                  icon: Icons.local_pharmacy_rounded,
+                  icon: const Icon(Icons.local_pharmacy_rounded, size: 18, color: AppColors.primary),
                   label: 'Medicines',
                   value: '$total',
                   subtitle: 'active',
@@ -409,6 +408,7 @@ class _MedicinesTab extends StatelessWidget {
         if (meds.isEmpty) {
           return const EmptyState(
             icon: Icons.medication_outlined,
+            iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 40),
             title: 'No Active Medicines',
             subtitle: 'This patient has no medicines recorded.',
           );
@@ -481,8 +481,7 @@ class _AdherenceCard extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.medication_outlined,
-                  color: AppColors.primary, size: 20),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -972,7 +971,7 @@ class _VitalStat extends StatelessWidget {
 }
 
 class _InsightChip extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label, value, subtitle;
   final Color color;
   const _InsightChip({
@@ -992,7 +991,7 @@ class _InsightChip extends StatelessWidget {
           border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, size: 18, color: color),
+          icon,
           const SizedBox(height: 6),
           Text(value,
               style: TextStyle(

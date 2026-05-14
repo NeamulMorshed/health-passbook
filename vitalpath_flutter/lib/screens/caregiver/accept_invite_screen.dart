@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
@@ -192,13 +193,13 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
   }
 
   Widget _permissionList(CaregiverPermissions p) {
-    final items = <(bool, IconData, String)>[
-      (p.medicines, Icons.medication_outlined, 'Medicines & dose tracking'),
-      (p.vitals, Icons.monitor_heart_rounded, 'Vitals & readings'),
-      (p.appointments, Icons.calendar_today_rounded, 'Upcoming appointments'),
-      (p.prescriptions, Icons.receipt_long_rounded, 'Prescriptions'),
-      (p.mealLogs, Icons.restaurant_rounded, 'Meal logs'),
-      (p.activityLogs, Icons.directions_run_rounded, 'Activity logs'),
+    final items = <(bool, Widget, String)>[
+      (p.medicines, HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18), 'Medicines & dose tracking'),
+      (p.vitals, const Icon(Icons.monitor_heart_rounded, size: 18, color: AppColors.primary), 'Vitals & readings'),
+      (p.appointments, const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary), 'Upcoming appointments'),
+      (p.prescriptions, const Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.primary), 'Prescriptions'),
+      (p.mealLogs, const Icon(Icons.restaurant_rounded, size: 18, color: AppColors.primary), 'Meal logs'),
+      (p.activityLogs, const Icon(Icons.directions_run_rounded, size: 18, color: AppColors.primary), 'Activity logs'),
     ];
     return Column(
       children: items
@@ -207,7 +208,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             (i) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(children: [
-                Icon(i.$2, size: 18, color: AppColors.primary),
+                i.$2,
                 const SizedBox(width: 12),
                 Text(i.$3, style: const TextStyle(fontSize: 14)),
               ]),

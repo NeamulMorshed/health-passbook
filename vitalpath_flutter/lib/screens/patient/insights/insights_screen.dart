@@ -268,7 +268,7 @@ class _InsightCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 18),
+              child: icon,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -309,13 +309,13 @@ class _InsightCard extends StatelessWidget {
     );
   }
 
-  (IconData, Color) _categoryStyle(String category) {
+  (Widget, Color) _categoryStyle(String category) {
     switch (category) {
-      case 'medication': return (Icons.medication_outlined, AppColors.primary);
-      case 'nutrition':  return (Icons.restaurant_rounded, AppColors.warning);
-      case 'activity':   return (Icons.directions_walk_rounded, AppColors.success);
-      case 'appointments': return (Icons.calendar_month_rounded, AppColors.primary);
-      default:           return (Icons.lightbulb_rounded, const Color(0xFF0EA5E9));
+      case 'medication':   return (HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18), AppColors.primary);
+      case 'nutrition':    return (const Icon(Icons.restaurant_rounded, color: AppColors.warning, size: 18), AppColors.warning);
+      case 'activity':     return (const Icon(Icons.directions_walk_rounded, color: AppColors.success, size: 18), AppColors.success);
+      case 'appointments': return (const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 18), AppColors.primary);
+      default:             return (const Icon(Icons.lightbulb_rounded, color: Color(0xFF0EA5E9), size: 18), const Color(0xFF0EA5E9));
     }
   }
 

@@ -296,6 +296,7 @@ class _MedicinesTab extends ConsumerWidget {
         if (active.isEmpty) {
           return const EmptyState(
               icon: Icons.medication_outlined,
+              iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 40),
               title: 'No active medicines',
               subtitle: '');
         }
@@ -339,8 +340,7 @@ class _MedCard extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.medication_outlined,
-                  size: 18, color: AppColors.primary),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(

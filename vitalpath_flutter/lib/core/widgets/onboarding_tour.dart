@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import '../constants/app_constants.dart';
@@ -34,25 +35,25 @@ class _TourSheetState extends State<_TourSheet> {
 
   static const _steps = [
     _TourStep(
-      icon: Icons.favorite_rounded,
+      icon: Icon(Icons.favorite_rounded, size: 36, color: AppColors.primary),
       color: AppColors.primary,
       title: 'Your daily health summary',
       body: 'The Home screen shows you exactly how your day is going — medicines taken, meals logged, steps walked, and upcoming appointments.',
     ),
     _TourStep(
-      icon: Icons.medication_outlined,
+      icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.success, size: 36),
       color: AppColors.success,
       title: 'Log medicines and meals',
       body: 'Tap the Care tab to add your medicines, log breakfast, lunch and dinner, and see your family member\'s health at a glance.',
     ),
     _TourStep(
-      icon: Icons.directions_walk_rounded,
+      icon: Icon(Icons.directions_walk_rounded, size: 36, color: Color(0xFF0EA5E9)),
       color: Color(0xFF0EA5E9),
       title: 'Track your activity',
       body: 'Use Activity to track walks, runs, yoga, gym sessions and more. See a weekly chart of your progress over time.',
     ),
     _TourStep(
-      icon: Icons.local_hospital_rounded,
+      icon: Icon(Icons.local_hospital_rounded, size: 36, color: AppColors.primary),
       color: AppColors.primary,
       title: 'Connect with doctors',
       body: 'Find and connect with your doctor from My Doctors. They can send you prescriptions and approve appointments directly in the app.',
@@ -119,7 +120,7 @@ class _TourSheetState extends State<_TourSheet> {
                         color: s.color.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(s.icon, size: 36, color: s.color),
+                      child: s.icon,
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -198,7 +199,7 @@ class _TourSheetState extends State<_TourSheet> {
 }
 
 class _TourStep {
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final String title;
   final String body;

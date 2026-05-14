@@ -146,42 +146,42 @@ class _ManageCaregiverScreenState
           const SizedBox(height: 10),
 
           _PermSwitch(
-            icon: Icons.medication_outlined,
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 20),
             label: 'Medicines & dose tracking',
             value: _permissions.medicines,
             onChanged: (v) =>
                 setState(() => _permissions = _permissions.copyWith(medicines: v)),
           ),
           _PermSwitch(
-            icon: Icons.monitor_heart_rounded,
+            icon: const Icon(Icons.monitor_heart_rounded, size: 20, color: AppColors.mutedForeground),
             label: 'Vitals & readings',
             value: _permissions.vitals,
             onChanged: (v) =>
                 setState(() => _permissions = _permissions.copyWith(vitals: v)),
           ),
           _PermSwitch(
-            icon: Icons.calendar_today_rounded,
+            icon: const Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.mutedForeground),
             label: 'Upcoming appointments',
             value: _permissions.appointments,
             onChanged: (v) =>
                 setState(() => _permissions = _permissions.copyWith(appointments: v)),
           ),
           _PermSwitch(
-            icon: Icons.receipt_long_rounded,
+            icon: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.mutedForeground),
             label: 'Prescriptions',
             value: _permissions.prescriptions,
             onChanged: (v) =>
                 setState(() => _permissions = _permissions.copyWith(prescriptions: v)),
           ),
           _PermSwitch(
-            icon: Icons.restaurant_rounded,
+            icon: const Icon(Icons.restaurant_rounded, size: 20, color: AppColors.mutedForeground),
             label: 'Meal logs',
             value: _permissions.mealLogs,
             onChanged: (v) =>
                 setState(() => _permissions = _permissions.copyWith(mealLogs: v)),
           ),
           _PermSwitch(
-            icon: Icons.directions_run_rounded,
+            icon: const Icon(Icons.directions_run_rounded, size: 20, color: AppColors.mutedForeground),
             label: 'Activity logs',
             value: _permissions.activityLogs,
             onChanged: (v) =>
@@ -530,7 +530,7 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _PermSwitch extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -551,7 +551,7 @@ class _PermSwitch extends StatelessWidget {
         child: SwitchListTile(
           value: value,
           onChanged: onChanged,
-          secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
+          secondary: icon,
           title: Text(label, style: const TextStyle(fontSize: 14)),
           activeThumbColor: AppColors.primary,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14),

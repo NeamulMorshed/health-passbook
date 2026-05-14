@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class GamificationProfile {
   final int hp;
@@ -118,10 +119,10 @@ class BadgeDefinition {
   final String id;
   final String name;
   final String description;
-  final IconData icon;
+  final Widget Function(Color) icon;
   final Color color;
 
-  const BadgeDefinition({
+  BadgeDefinition({
     required this.id,
     required this.name,
     required this.description,
@@ -130,14 +131,14 @@ class BadgeDefinition {
   });
 }
 
-const List<BadgeDefinition> kAllBadges = [
-  BadgeDefinition(id: 'med_first',    name: 'First Dose',      description: 'Logged your first medicine',     icon: Icons.medication_outlined,       color: Color(0xFF6366F1)),
-  BadgeDefinition(id: 'meal_first',   name: 'First Meal',      description: 'Logged your first meal',         icon: Icons.restaurant_rounded,       color: Color(0xFF22C55E)),
-  BadgeDefinition(id: 'active_first', name: 'First Steps',     description: 'Logged your first activity',     icon: Icons.directions_walk_rounded,  color: Color(0xFFF59E0B)),
-  BadgeDefinition(id: 'med_7',        name: 'Dedicated',       description: '7-day medicine streak',          icon: Icons.local_fire_department_rounded, color: Color(0xFF6366F1)),
-  BadgeDefinition(id: 'meal_7',       name: 'Healthy Eater',   description: '7-day meal logging streak',      icon: Icons.favorite_rounded,         color: Color(0xFF22C55E)),
-  BadgeDefinition(id: 'activity_5',   name: 'Stay Active',     description: '5-day activity streak',          icon: Icons.fitness_center_rounded,   color: Color(0xFFF59E0B)),
-  BadgeDefinition(id: 'hp_500',       name: 'Centurion',       description: 'Reached 500 Health Points',      icon: Icons.military_tech_rounded,    color: Color(0xFFF59E0B)),
-  BadgeDefinition(id: 'hp_1000',      name: 'Elite',           description: 'Reached 1000 Health Points',     icon: Icons.star_rounded,             color: Color(0xFF8B5CF6)),
-  BadgeDefinition(id: 'streak_shield', name: 'Streak Shield', description: 'Maintained a 3-day combined streak', icon: Icons.shield_rounded, color: Color(0xFF0EA5E9)),
+final List<BadgeDefinition> kAllBadges = [
+  BadgeDefinition(id: 'med_first',    name: 'First Dose',      description: 'Logged your first medicine',         icon: (c) => HugeIcon(icon: HugeIcons.strokeRoundedMedicine01,          color: c, size: 28), color: Color(0xFF6366F1)),
+  BadgeDefinition(id: 'meal_first',   name: 'First Meal',      description: 'Logged your first meal',             icon: (c) => Icon(Icons.restaurant_rounded,              color: c, size: 28), color: Color(0xFF22C55E)),
+  BadgeDefinition(id: 'active_first', name: 'First Steps',     description: 'Logged your first activity',         icon: (c) => Icon(Icons.directions_walk_rounded,         color: c, size: 28), color: Color(0xFFF59E0B)),
+  BadgeDefinition(id: 'med_7',        name: 'Dedicated',       description: '7-day medicine streak',              icon: (c) => Icon(Icons.local_fire_department_rounded,   color: c, size: 28), color: Color(0xFF6366F1)),
+  BadgeDefinition(id: 'meal_7',       name: 'Healthy Eater',   description: '7-day meal logging streak',          icon: (c) => Icon(Icons.favorite_rounded,                color: c, size: 28), color: Color(0xFF22C55E)),
+  BadgeDefinition(id: 'activity_5',   name: 'Stay Active',     description: '5-day activity streak',              icon: (c) => Icon(Icons.fitness_center_rounded,          color: c, size: 28), color: Color(0xFFF59E0B)),
+  BadgeDefinition(id: 'hp_500',       name: 'Centurion',       description: 'Reached 500 Health Points',          icon: (c) => Icon(Icons.military_tech_rounded,           color: c, size: 28), color: Color(0xFFF59E0B)),
+  BadgeDefinition(id: 'hp_1000',      name: 'Elite',           description: 'Reached 1000 Health Points',         icon: (c) => Icon(Icons.star_rounded,                    color: c, size: 28), color: Color(0xFF8B5CF6)),
+  BadgeDefinition(id: 'streak_shield', name: 'Streak Shield',  description: 'Maintained a 3-day combined streak', icon: (c) => Icon(Icons.shield_rounded,                  color: c, size: 28), color: Color(0xFF0EA5E9)),
 ];

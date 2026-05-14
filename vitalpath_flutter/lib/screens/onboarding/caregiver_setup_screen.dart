@@ -544,20 +544,20 @@ class _Step3State extends State<_Step3> {
         ),
         const SizedBox(height: 20),
         // Feature summary tiles — kept as Container (custom color border)
-        _summaryTile(Icons.medication_outlined, AppColors.primary,
+        _summaryTile(HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20), AppColors.primary,
             'Medicine Tracker', 'Log and schedule their daily medications'),
         const SizedBox(height: 10),
-        _summaryTile(Icons.restaurant_rounded, AppColors.success,
+        _summaryTile(const Icon(Icons.restaurant_rounded, color: AppColors.success, size: 20), AppColors.success,
             'Meal Logging', 'Track breakfast, lunch, and dinner'),
         const SizedBox(height: 10),
-        _summaryTile(Icons.calendar_month_rounded, const Color(0xFFF59E0B),
+        _summaryTile(const Icon(Icons.calendar_month_rounded, color: Color(0xFFF59E0B), size: 20), const Color(0xFFF59E0B),
             'Appointments', 'Book and manage doctor visits'),
       ],
     );
   }
 
   Widget _summaryTile(
-          IconData icon, Color color, String title, String subtitle) =>
+          Widget icon, Color color, String title, String subtitle) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
@@ -566,7 +566,7 @@ class _Step3State extends State<_Step3> {
           border: Border.all(color: color.withValues(alpha: 0.15)),
         ),
         child: Row(children: [
-          Icon(icon, color: color, size: 20),
+          icon,
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

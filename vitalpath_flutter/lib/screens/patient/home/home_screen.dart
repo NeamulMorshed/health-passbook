@@ -451,7 +451,7 @@ class _RefillCountdownCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(Icons.medication_outlined, size: 15, color: cardColor),
+          HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: cardColor, size: 15),
           const SizedBox(width: 6),
           Text(urgent ? 'Refill urgently needed' : 'Medicine refill needed',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cardColor)),
@@ -951,7 +951,7 @@ class _MedRow extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(Icons.medication_outlined, size: 20, color: iconColor),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: iconColor, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1344,7 +1344,7 @@ class _CaregiverMedSection extends ConsumerWidget {
             left: BentoStatCard(
               label: 'taken today',
               value: '$takenToday/${activeMeds.length}',
-              icon: const Icon(Icons.medication_outlined, size: 18, color: AppColors.primary),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18),
               iconBgColor: AppColors.primaryTint,
               iconColor: AppColors.primary,
             ),
@@ -1363,7 +1363,7 @@ class _CaregiverMedSection extends ConsumerWidget {
             BentoCard(
               child: Column(children: [
                 const SizedBox(height: 8),
-                const Icon(Icons.medication_outlined, size: 28, color: AppColors.mutedForeground),
+                HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 28),
                 const SizedBox(height: 8),
                 Text('No medicines for $memberName yet', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
                 const SizedBox(height: 8),
@@ -1418,7 +1418,7 @@ class _CaregiverMedTile extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: const Icon(Icons.medication_outlined, size: 22, color: AppColors.primary),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1450,7 +1450,7 @@ class _CaregiverQuickActions extends StatelessWidget {
     const SizedBox(height: 12),
     Row(children: [
       Expanded(child: _ActionBtn(
-        icon: const Icon(Icons.medication_outlined, size: 22, color: AppColors.primary),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
         label: 'Add Medicine', color: AppColors.primary, onTap: () => context.go('/care'),
       )),
       const SizedBox(width: 10),

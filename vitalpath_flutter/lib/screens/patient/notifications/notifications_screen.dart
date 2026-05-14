@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
@@ -96,11 +97,11 @@ class _NotifCard extends StatelessWidget {
   final VoidCallback onTap;
   const _NotifCard({required this.notif, required this.onTap});
 
-  IconData get _icon => switch (notif.type) {
-    NotificationType.medicineReminder => Icons.medication_outlined,
-    NotificationType.mealReminder     => Icons.restaurant_rounded,
-    NotificationType.appointment      => Icons.calendar_month_rounded,
-    NotificationType.general          => Icons.notifications_rounded,
+  Widget _iconWidget(Color c) => switch (notif.type) {
+    NotificationType.medicineReminder => HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: c, size: 20),
+    NotificationType.mealReminder     => Icon(Icons.restaurant_rounded, color: c, size: 20),
+    NotificationType.appointment      => Icon(Icons.calendar_month_rounded, color: c, size: 20),
+    NotificationType.general          => Icon(Icons.notifications_rounded, color: c, size: 20),
   };
 
   Color get _color => switch (notif.type) {
@@ -132,7 +133,7 @@ class _NotifCard extends StatelessWidget {
                 color: _color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(_icon, color: _color, size: 20),
+              child: _iconWidget(_color),
             ),
             const SizedBox(width: 12),
             Expanded(

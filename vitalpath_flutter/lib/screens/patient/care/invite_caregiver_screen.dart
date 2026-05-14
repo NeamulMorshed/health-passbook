@@ -351,42 +351,42 @@ class _Step2 extends StatelessWidget {
         const SizedBox(height: 24),
 
         _PermRow(
-          icon: Icons.medication_outlined,
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 20),
           label: 'Medicines & dose tracking',
           value: permissions.medicines,
           onChanged: (v) =>
               onChange(permissions.copyWith(medicines: v)),
         ),
         _PermRow(
-          icon: Icons.monitor_heart_rounded,
+          icon: const Icon(Icons.monitor_heart_rounded, size: 20, color: AppColors.mutedForeground),
           label: 'Vitals & readings',
           value: permissions.vitals,
           onChanged: (v) =>
               onChange(permissions.copyWith(vitals: v)),
         ),
         _PermRow(
-          icon: Icons.calendar_today_rounded,
+          icon: const Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.mutedForeground),
           label: 'Upcoming appointments',
           value: permissions.appointments,
           onChanged: (v) =>
               onChange(permissions.copyWith(appointments: v)),
         ),
         _PermRow(
-          icon: Icons.receipt_long_rounded,
+          icon: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.mutedForeground),
           label: 'Prescriptions',
           value: permissions.prescriptions,
           onChanged: (v) =>
               onChange(permissions.copyWith(prescriptions: v)),
         ),
         _PermRow(
-          icon: Icons.restaurant_rounded,
+          icon: const Icon(Icons.restaurant_rounded, size: 20, color: AppColors.mutedForeground),
           label: 'Meal logs',
           value: permissions.mealLogs,
           onChanged: (v) =>
               onChange(permissions.copyWith(mealLogs: v)),
         ),
         _PermRow(
-          icon: Icons.directions_run_rounded,
+          icon: const Icon(Icons.directions_run_rounded, size: 20, color: AppColors.mutedForeground),
           label: 'Activity logs',
           value: permissions.activityLogs,
           onChanged: (v) =>
@@ -427,7 +427,7 @@ class _Step2 extends StatelessWidget {
 }
 
 class _PermRow extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -448,7 +448,7 @@ class _PermRow extends StatelessWidget {
         child: SwitchListTile(
           value: value,
           onChanged: onChanged,
-          secondary: Icon(icon, size: 20, color: AppColors.mutedForeground),
+          secondary: icon,
           title: Text(label,
               style: const TextStyle(fontSize: 14)),
           activeThumbColor: AppColors.primary,

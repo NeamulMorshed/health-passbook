@@ -209,6 +209,7 @@ class AppAvatar extends StatelessWidget {
 // ─── Empty State ──────────────────────────────────────────────────────────────
 class EmptyState extends StatelessWidget {
   final IconData icon;
+  final Widget? iconWidget;
   final String title;
   final String subtitle;
   final String? actionLabel;
@@ -217,6 +218,7 @@ class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
     required this.icon,
+    this.iconWidget,
     required this.title,
     required this.subtitle,
     this.actionLabel,
@@ -237,7 +239,7 @@ class EmptyState extends StatelessWidget {
                 color: AppColors.muted,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, size: 40, color: AppColors.mutedForeground),
+              child: iconWidget ?? Icon(icon, size: 40, color: AppColors.mutedForeground),
             ),
             const SizedBox(height: 16),
             Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

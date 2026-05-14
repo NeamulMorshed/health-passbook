@@ -412,6 +412,7 @@ class _MedicineTab extends ConsumerWidget {
               if (meds.isEmpty) {
                 return EmptyState(
                   icon: Icons.medication_outlined,
+                  iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 40),
                   title: activeMember == null
                       ? 'No Medicines Yet'
                       : 'No Medicines for $memberName',
@@ -634,7 +635,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
               decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.medication_outlined, size: 20, color: AppColors.primary),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -807,7 +808,7 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.primary;
       fg = Colors.white;
       label = 'Take · ${slot.shortTime}';
-      icon = Icon(Icons.medication_outlined, size: 14, color: fg);
+      icon = HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: fg, size: 14);
     } else {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
@@ -1031,7 +1032,7 @@ class _MedDetailSheet extends ConsumerWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.medication_outlined, size: 20, color: AppColors.primary),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
               ),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
