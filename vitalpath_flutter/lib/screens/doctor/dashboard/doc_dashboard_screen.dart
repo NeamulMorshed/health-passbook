@@ -73,10 +73,10 @@ class DocDashboardScreen extends ConsumerWidget {
           ),
           body: apptsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: EmptyState(
+            error: (e, __) => Center(child: EmptyState(
               icon: Icons.error_outline_rounded,
               title: 'Failed to load',
-              subtitle: 'Pull to refresh.',
+              subtitle: e.toString(),
             )),
             data: (appts) {
               final pending      = appts.where((a) => a.isPending).toList();

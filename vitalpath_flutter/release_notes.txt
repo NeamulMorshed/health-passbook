@@ -1,4 +1,15 @@
-VitalPath v2.6.0+20 — UI Redesign (in progress)
+VitalPath v2.9.0+24 — Doctor portal fix + Caregiver portal
 
-UI Redesign:
-- Work in progress
+Doctor Portal:
+- Fixed "Failed to load" error caused by missing Firestore composite indexes
+- Deployed all required indexes (doctorId+createdAt, patientId+createdAt, etc.)
+- Error messages now show actual details to aid debugging
+
+Caregiver Portal (v2.8.x):
+- Redesigned as a warm today-focused dashboard with date selector
+- Medicine status per day (taken / missed / upcoming dose chips)
+- Next upcoming appointment card
+- Meal log status (breakfast/lunch/dinner)
+- Vitals snapshot
+- Fixed invite accept/decline flow end-to-end
+- Firestore security rules updated for caregiver data access
