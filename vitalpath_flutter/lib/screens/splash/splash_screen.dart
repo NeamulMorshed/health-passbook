@@ -9,7 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 
-const _kOnboardingShownKey = 'onboarding_shown';
+const _kOnboardingShownKey = 'onboarding_shown_v2';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
