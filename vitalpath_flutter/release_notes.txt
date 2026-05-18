@@ -1,15 +1,8 @@
-VitalPath v2.9.0+24 — Doctor portal fix + Caregiver portal
+VitalPath v2.9.1+25 — Splash screen illustrations & copy
 
-Doctor Portal:
-- Fixed "Failed to load" error caused by missing Firestore composite indexes
-- Deployed all required indexes (doctorId+createdAt, patientId+createdAt, etc.)
-- Error messages now show actual details to aid debugging
-
-Caregiver Portal (v2.8.x):
-- Redesigned as a warm today-focused dashboard with date selector
-- Medicine status per day (taken / missed / upcoming dose chips)
-- Next upcoming appointment card
-- Meal log status (breakfast/lunch/dinner)
-- Vitals snapshot
-- Fixed invite accept/decline flow end-to-end
-- Firestore security rules updated for caregiver data access
+- Replaced icon placeholders with custom SVG illustrations on all 3 splash screens
+- Screen 1: "Take Care of Your Health Every Day"
+- Screen 2: "Stay Close to Your Patients"
+- Screen 3: "Care for Loved Ones Anytime"
+- Each illustration renders at 280×220 px
+- Updated titles and subtitles to match final copy

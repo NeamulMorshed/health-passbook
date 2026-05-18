@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_repository.dart';
@@ -193,22 +192,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final splashData = [
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 56),
         color: AppColors.primary,
-        title: 'Omra',
-        subtitle: 'Your health, in harmony',
+        title: 'Take Care of Your Health Every Day',
+        subtitle: 'Track medicines, meals, and appointments easily in one simple place.',
       ),
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: AppColors.success, size: 56),
         color: AppColors.success,
-        title: 'Smart Health Tracking',
-        subtitle: 'Medicines, meals, and activity\nall in one place',
+        title: 'Stay Close to Your Patients',
+        subtitle: 'Manage appointments and patient updates with ease.',
       ),
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 56),
         color: AppColors.primary,
-        title: 'Doctor Connect',
-        subtitle: 'Book appointments and receive\nprescriptions instantly',
+        title: 'Care for Loved Ones Anytime',
+        subtitle: 'Stay updated on your family\'s health and daily care routines.',
       ),
     ];
 
@@ -228,32 +224,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _step == 0
-                          ? SvgPicture.asset(
-                              'assets/icons/Starting logo.svg',
-                              width: 184,
-                              height: 36,
-                            )
-                          : Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
-                                color: data.color.withValues(alpha: 0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(child: data.icon),
-                            ),
+                      SvgPicture.asset(
+                          _step == 0
+                              ? 'assets/icons/Take Care of Your Health Every Day.svg'
+                              : _step == 1
+                                  ? 'assets/icons/Stay Close to Your Patients.svg'
+                                  : 'assets/icons/Care for Loved Ones Anytime.svg',
+                          width: 280,
+                          height: 220,
+                        ),
                       const SizedBox(height: 32),
-                      if (_step > 0)
-                        Text(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
                           data.title,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 30,
+                            fontSize: 26,
                             fontWeight: FontWeight.w700,
                             color: AppColors.foreground,
                           ),
                         ),
-                      if (_step > 0) const SizedBox(height: 12),
+                      ),
+                      const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
@@ -346,13 +339,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 }
 
 class _SplashData {
-  final Widget icon;
   final Color color;
   final String title;
   final String subtitle;
 
   const _SplashData({
-    required this.icon,
     required this.color,
     required this.title,
     required this.subtitle,
