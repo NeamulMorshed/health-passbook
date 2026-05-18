@@ -113,7 +113,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             if (isAlreadyActioned) ...[
               BentoCard(
                 child: Text(
-                  'This invite has already been ${connection.status}.',
+                  'This invite has already been ${connection.status == 'connected' ? 'accepted' : 'declined'}.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       fontSize: 14,
@@ -132,11 +132,17 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     try {
                       final user = await ref.read(currentUserProvider.future);
                       if (user == null) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Session expired. Please sign in again.')));
+                        }
                         if (mounted) setState(() => _processing = false);
                         return;
                       }
                       await notifier.accept(
                         connectionId: connection.id,
+                        patientId: connection.patientId,
                         caregiverUid: user.uid,
                         caregiverName: user.name,
                       );

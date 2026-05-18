@@ -145,28 +145,50 @@ class InviteResponseNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<void> accept({
     required String connectionId,
+    required String patientId,
     required String caregiverUid,
     required String caregiverName,
   }) async {
     state = const AsyncLoading();
     try {
-      await _db.collection('caregiver_connections').doc(connectionId).update({
-        'caregiverUid': caregiverUid,
-        'caregiverName': caregiverName,
-        'status': 'connected',
-        'connectedAt': Timestamp.now(),
-      });
+      final batch = _db.batch();
+      // Mark connection as connected
+      batch.update(
+        _db.collection('caregiver_connections').doc(connectionId),
+        {
+          'caregiverUid': caregiverUid,
+          'caregiverName': caregiverName,
+          'status': 'connected',
+          'connectedAt': Timestamp.now(),
+        },
+      );
+      // Write mirror doc so Firestore rules can verify caregiver access
+      // via isCaregiverFor(patientId) without a collection query.
+      batch.set(
+        _db
+            .collection('patients')
+            .doc(patientId)
+            .collection('caregivers')
+            .doc(caregiverUid),
+        {'connectedAt': Timestamp.now()},
+      );
+      await batch.commit();
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
+      rethrow;
     }
   }
 
   Future<void> decline(String connectionId) async {
-    await _db
-        .collection('caregiver_connections')
-        .doc(connectionId)
-        .update({'status': 'removed'});
+    try {
+      await _db
+          .collection('caregiver_connections')
+          .doc(connectionId)
+          .update({'status': 'declined'});
+    } catch (_) {
+      rethrow;
+    }
   }
 }
 

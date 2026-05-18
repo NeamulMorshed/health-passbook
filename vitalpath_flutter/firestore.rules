@@ -27,6 +27,13 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/doctors/$(request.auth.uid)/connections/$(patientId));
     }
 
+    // Written by InviteResponseNotifier.accept() so rules can check caregiver
+    // access without a collection query (Firestore rules don't support queries).
+    function isCaregiverFor(patientId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/patients/$(patientId)/caregivers/$(request.auth.uid));
+    }
+
     // ── users ────────────────────────────────────────────────────────────────
 
     match /users/{uid} {
@@ -41,17 +48,19 @@ service cloud.firestore {
       allow write: if isSignedIn() && isOwner(patientId);
 
       match /medicines/{medId} {
-        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)));
+        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)) || isCaregiverFor(patientId));
         allow create:         if isSignedIn() && (isOwner(patientId) || isDoctor());
         allow update, delete: if isSignedIn() && isOwner(patientId);
       }
 
       match /meals/{mealId} {
-        allow read, write: if isSignedIn() && isOwner(patientId);
+        allow read:  if isSignedIn() && (isOwner(patientId) || isCaregiverFor(patientId));
+        allow write: if isSignedIn() && isOwner(patientId);
       }
 
       match /activity_logs/{logId} {
-        allow read, write: if isSignedIn() && isOwner(patientId);
+        allow read:  if isSignedIn() && (isOwner(patientId) || isCaregiverFor(patientId));
+        allow write: if isSignedIn() && isOwner(patientId);
       }
 
       // Notifications: patient owns them, but any authenticated user (doctor) can create.
@@ -70,6 +79,13 @@ service cloud.firestore {
         match /medicines/{medId} {
           allow read, write: if isSignedIn() && isOwner(patientId);
         }
+      }
+
+      // Mirror document written by caregiver on accept so isCaregiverFor() works.
+      match /caregivers/{caregiverUid} {
+        allow read:           if isSignedIn() && (isOwner(patientId) || isOwner(caregiverUid));
+        allow create, update: if isSignedIn() && isOwner(caregiverUid);
+        allow delete:         if isSignedIn() && (isOwner(patientId) || isOwner(caregiverUid));
       }
 
       // Patient ↔ Doctor connections — doctor creates both sides during confirmation batch.
@@ -99,7 +115,8 @@ service cloud.firestore {
     match /appointments/{apptId} {
       allow read: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
-        resource.data.doctorId  == request.auth.uid
+        resource.data.doctorId  == request.auth.uid ||
+        isCaregiverFor(resource.data.patientId)
       );
 
       allow create: if isSignedIn() && isPatient() &&
@@ -125,7 +142,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.doctorId  == request.auth.uid ||
-        (isDoctor() && doctorHasPatient(resource.data.patientId))
+        (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
+        isCaregiverFor(resource.data.patientId)
       );
 
       allow create: if isSignedIn() && isDoctor() &&
@@ -137,7 +155,8 @@ service cloud.firestore {
     match /vitals/{readingId} {
       allow read:   if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
-        (isDoctor() && doctorHasPatient(resource.data.patientId))
+        (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
+        isCaregiverFor(resource.data.patientId)
       );
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
@@ -153,13 +172,15 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.caregiverUid == request.auth.uid ||
-        resource.data.caregiverEmail == request.auth.token.email
+        resource.data.caregiverEmail == request.auth.token.email ||
+        resource.data.caregiverEmail == request.auth.token.email.lower()
       );
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.caregiverEmail == request.auth.token.email ||
+        resource.data.caregiverEmail == request.auth.token.email.lower() ||
         resource.data.caregiverUid == request.auth.uid
       );
       allow delete: if isSignedIn() && (
