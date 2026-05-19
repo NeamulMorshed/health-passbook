@@ -212,8 +212,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: FadeTransition(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _nextStep,
+        child: SafeArea(
+          child: FadeTransition(
           opacity: _fadeAnim,
           child: ScaleTransition(
             scale: _scaleAnim,
@@ -332,6 +335,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ],
             ),
           ),
+        ),
         ),
       ),
     );
