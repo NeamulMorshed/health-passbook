@@ -511,7 +511,7 @@ class _Step3 extends StatelessWidget {
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
-              'Enter the email they use (or will use) to register on VitalPath.',
+              'Enter the email they use (or will use) to register on Omra.',
               style: TextStyle(
                   fontSize: 14,
                   color: AppColors.mutedForeground)),

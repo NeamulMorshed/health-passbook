@@ -103,6 +103,10 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
     if (!mounted) return;
     if (user?.userType == UserType.doctor) {
       context.go('/doc/dashboard');
+    } else if (user?.userType == UserType.caregiver) {
+      context.go(user?.onboardingComplete == false
+          ? '/onboarding/caregiver-setup'
+          : '/caregiver/home');
     } else if (user?.onboardingComplete == false) {
       context.go('/onboarding/permissions');
     } else {

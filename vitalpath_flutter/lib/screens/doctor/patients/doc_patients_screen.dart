@@ -12,7 +12,8 @@ import '../../../models/patient.dart';
 enum _SortOrder { nameAsc, nameDesc, ageAsc, ageDesc }
 
 class DocPatientsScreen extends ConsumerStatefulWidget {
-  const DocPatientsScreen({super.key});
+  final String? mode;
+  const DocPatientsScreen({super.key, this.mode});
   @override
   ConsumerState<DocPatientsScreen> createState() => _DocPatientsScreenState();
 }
@@ -100,13 +101,25 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                 return const EmptyState(
                   icon: Icons.people_outline_rounded,
                   title: 'No Patients Yet',
-                  subtitle: 'Patients will appear here once they book an appointment with you.',
+                  subtitle: 'Patients will appear here once they book an appointment with you or connect via My Doctors.',
                 );
               }
 
               final visible = _applyFilter(patients);
 
               return Column(children: [
+                // Prescribe-mode banner
+                if (widget.mode == 'prescribe')
+                  Container(
+                    width: double.infinity,
+                    color: AppColors.primaryTint,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: const Text(
+                      'Select a patient to write a prescription',
+                      style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+
                 // Search bar
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),

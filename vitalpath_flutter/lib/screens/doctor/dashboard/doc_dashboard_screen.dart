@@ -76,12 +76,19 @@ class DocDashboardScreen extends ConsumerWidget {
             error: (e, __) => Center(child: EmptyState(
               icon: Icons.error_outline_rounded,
               title: 'Failed to load',
-              subtitle: e.toString(),
+              subtitle: 'Unable to load appointments. Pull to refresh.',
             )),
             data: (appts) {
               final pending      = appts.where((a) => a.isPending).toList();
               final confirmed    = appts.where((a) => a.isConfirmed).toList();
               final patientCount = patientCountAsync.asData?.value ?? 0;
+              final now = DateTime.now();
+              final todayStart = DateTime(now.year, now.month, now.day);
+              final todayEnd = todayStart.add(const Duration(days: 1));
+              final todayCount = confirmed.where((a) =>
+                  a.scheduledAt != null &&
+                  !a.scheduledAt!.isBefore(todayStart) &&
+                  a.scheduledAt!.isBefore(todayEnd)).length;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
@@ -104,7 +111,7 @@ class DocDashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(child: BentoStatCard(
                       label: 'Today',
-                      value: '${confirmed.length}',
+                      value: '$todayCount',
                       icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.info, size: 18),
                       iconBgColor: AppColors.infoLight,
                       iconColor: AppColors.info,

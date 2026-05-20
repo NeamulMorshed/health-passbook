@@ -51,7 +51,7 @@ class _ManageCaregiverScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          const SnackBar(content: Text('Failed to save settings. Please try again.')),
         );
       }
     } finally {

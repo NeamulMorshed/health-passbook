@@ -17,9 +17,9 @@ class CaregiverShell extends StatelessWidget {
       label: 'Home',     route: '/caregiver/home',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: _kAmber, size: _kSize),
-      label: 'Family',   route: '/caregiver/care',
+      icon:         HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textTertiary, size: _kSize),
+      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: _kAmber, size: _kSize),
+      label: 'Family',   route: '/caregiver/patients',
     ),
     _TabItem(
       icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser,      color: AppColors.textTertiary, size: _kSize),
@@ -27,11 +27,6 @@ class CaregiverShell extends StatelessWidget {
       label: 'Profile',  route: '/caregiver/profile',
     ),
   ];
-
-  // Routes not in _tabs that logically belong to a specific tab.
-  static const _routeToTabIndex = {
-    '/caregiver/patients': 1, // "My Family" belongs under the Family tab
-  };
 
   int _currentIndex(BuildContext context) {
     final loc = GoRouterState.of(context).matchedLocation;
@@ -43,14 +38,6 @@ class CaregiverShell extends StatelessWidget {
         if (route.length > bestLen) {
           best = i;
           bestLen = route.length;
-        }
-      }
-    }
-    // If no tab matched, check the explicit override map.
-    if (bestLen == 0) {
-      for (final entry in _routeToTabIndex.entries) {
-        if (loc == entry.key || loc.startsWith('${entry.key}/')) {
-          return entry.value;
         }
       }
     }

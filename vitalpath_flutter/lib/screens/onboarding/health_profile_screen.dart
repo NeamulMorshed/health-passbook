@@ -432,13 +432,19 @@ class _Step3 extends StatelessWidget {
         TextField(
           controller: ecNameCtrl,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'Contact name'),
+          decoration: const InputDecoration(
+            labelText: 'Contact name',
+            hintText: 'e.g. Jane Smith',
+          ),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: ecPhoneCtrl,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(hintText: 'Phone number'),
+          decoration: const InputDecoration(
+            labelText: 'Phone number',
+            hintText: 'e.g. +1 555 0000',
+          ),
         ),
       ],
     );

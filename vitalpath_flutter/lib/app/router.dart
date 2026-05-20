@@ -58,7 +58,7 @@ class _AuthNotifier extends ChangeNotifier {
 // Routes only patients (not caregivers, not doctors) may access.
 const _patientOnlyRoutes = {
   '/home', '/vitals', '/profile', '/my-doctors', '/prescriptions',
-  '/care-circle', '/activity', '/gamification', '/insights', '/medicines',
+  '/care-circle', '/activity', '/gamification', '/insights',
 };
 
 // Routes patients and caregivers share (doctors are blocked).
@@ -228,12 +228,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/doc/onboarding/profile',
           builder: (_, __) => const DocProfileSetupScreen()),
 
-      // Patient shell — 5 tabs: Home, Medicines, Vitals, Appointments, Profile
+      // Patient shell — 5 tabs: Home, Care, Vitals, Appointments, Profile
       ShellRoute(
         builder: (context, state, child) => PatientShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/care', builder: (_, __) => const CareScreen()),
+          GoRoute(
+            path: '/care',
+            builder: (_, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return CareScreen(initialMemberId: extra?['memberId'] as String?);
+            },
+          ),
           GoRoute(path: '/vitals', builder: (_, __) => const VitalsScreen()),
           GoRoute(
               path: '/appointments',
@@ -327,7 +333,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => CaregiverShell(child: child),
         routes: [
           GoRoute(path: '/caregiver/home',     builder: (_, __) => const CaregiverHomeScreen()),
-          GoRoute(path: '/caregiver/care',     builder: (_, __) => const CareScreen()),
           GoRoute(path: '/caregiver/patients', builder: (_, __) => const CaregiverPatientsScreen()),
           GoRoute(path: '/caregiver/profile',  builder: (_, __) => const CaregiverProfileScreen()),
         ],
@@ -342,7 +347,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (_, __) => const DocDashboardScreen()),
           GoRoute(
               path: '/doc/patients',
-              builder: (_, __) => const DocPatientsScreen()),
+              builder: (_, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                return DocPatientsScreen(mode: extra?['mode'] as String?);
+              }),
           GoRoute(
               path: '/doc/appointments',
               builder: (_, __) => const DocAppointmentsScreen()),

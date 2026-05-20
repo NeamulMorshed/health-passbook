@@ -98,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         name: result.displayName ?? email.split('@').first,
         phone: '',
         userType:
-            widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
+            widget.userType == 'doctor' ? UserType.doctor : widget.userType == 'caregiver' ? UserType.caregiver : UserType.patient,
         createdAt: DateTime.now(),
       );
       try {
@@ -126,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             uid: uid,
             name: displayName ?? 'New User',
             phone: '',
-            userType: widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
+            userType: widget.userType == 'doctor' ? UserType.doctor : widget.userType == 'caregiver' ? UserType.caregiver : UserType.patient,
             createdAt: DateTime.now(),
           );
           ref.read(authRepositoryProvider).createProfile(newUser).then((_) {
@@ -155,6 +155,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) context.go('/doc/onboarding/profile');
       } else {
         if (mounted) context.go('/doc/dashboard');
+      }
+    } else if (user.userType == UserType.caregiver) {
+      if (!user.onboardingComplete) {
+        if (mounted) context.go('/onboarding/caregiver-setup');
+      } else {
+        if (mounted) context.go('/caregiver/home');
       }
     } else if (!user.onboardingComplete) {
       if (mounted) context.go('/onboarding/permissions');

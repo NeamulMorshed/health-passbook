@@ -609,7 +609,7 @@ class _AdherenceRingCard extends ConsumerWidget {
           const SizedBox(height: 10),
           Row(mainAxisSize: MainAxisSize.min, children: List.generate(7, (i) {
             final filled = i < weeklyMedDays;
-            const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+            const days = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
             return Container(
               width: 24, height: 24,
               margin: const EdgeInsets.only(right: 4),
@@ -667,7 +667,7 @@ class _FamilyStatusChip extends ConsumerWidget {
     final dotColor = _statusColor(medsAsync);
 
     return GestureDetector(
-      onTap: () => context.go('/care'),
+      onTap: () => context.go('/care', extra: {'memberId': member.id}),
       child: BentoCard(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(mainAxisSize: MainAxisSize.min, children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
@@ -295,7 +296,7 @@ class ProfileScreen extends ConsumerWidget {
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedQuestion, color: AppColors.textPrimary, size: 18),
                     title: 'Help & Support',
                     showDivider: false,
-                    onTap: () {},
+                    onTap: () => launchUrl(Uri.parse('mailto:support@omra.health')),
                   ),
                 ]),
               ),

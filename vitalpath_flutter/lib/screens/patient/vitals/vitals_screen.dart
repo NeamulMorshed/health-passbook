@@ -95,7 +95,7 @@ class _VitalsContent extends ConsumerWidget {
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: const Color(0xFF3B82F6), size: 20),
                     iconBgColor: const Color(0xFFEFF6FF),
                     iconColor: const Color(0xFF3B82F6),
-                    onTap: () => _showHistorySheet(context, VitalType.bpSystolic, readings),
+                    onTap: () => _showHistorySheet(context, VitalType.bpSystolic),
                   ),
                   right: BentoStatCard(
                     label: 'Heart Rate',
@@ -104,7 +104,7 @@ class _VitalsContent extends ConsumerWidget {
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.destructive, size: 20),
                     iconBgColor: AppColors.destructiveLight,
                     iconColor: AppColors.destructive,
-                    onTap: () => _showHistorySheet(context, VitalType.pulse, readings),
+                    onTap: () => _showHistorySheet(context, VitalType.pulse),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -116,7 +116,7 @@ class _VitalsContent extends ConsumerWidget {
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.success, size: 20),
                     iconBgColor: AppColors.successLight,
                     iconColor: AppColors.success,
-                    onTap: () => _showHistorySheet(context, VitalType.spo2, readings),
+                    onTap: () => _showHistorySheet(context, VitalType.spo2),
                   ),
                   right: BentoStatCard(
                     label: 'Temperature',
@@ -125,29 +125,18 @@ class _VitalsContent extends ConsumerWidget {
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedTemperature, color: AppColors.warning, size: 20),
                     iconBgColor: AppColors.warningLight,
                     iconColor: AppColors.warning,
-                    onTap: () => _showHistorySheet(context, VitalType.temp, readings),
+                    onTap: () => _showHistorySheet(context, VitalType.temp),
                   ),
                 ),
                 const SizedBox(height: 12),
-                BentoRow(
-                  left: BentoStatCard(
-                    label: 'Glucose',
-                    value: fmt(latestGlucose),
-                    unit: VitalType.unitFor(VitalType.glucose),
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: AppColors.warning, size: 20),
-                    iconBgColor: AppColors.warningLight,
-                    iconColor: AppColors.warning,
-                    onTap: () => _showHistorySheet(context, VitalType.glucose, readings),
-                  ),
-                  right: BentoStatCard(
-                    label: 'BP Diastolic',
-                    value: fmt(latestBpDia),
-                    unit: VitalType.unitFor(VitalType.bpDiastolic),
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: const Color(0xFF3B82F6), size: 20),
-                    iconBgColor: const Color(0xFFEFF6FF),
-                    iconColor: const Color(0xFF3B82F6),
-                    onTap: () => _showHistorySheet(context, VitalType.bpDiastolic, readings),
-                  ),
+                BentoStatCard(
+                  label: 'Glucose',
+                  value: fmt(latestGlucose),
+                  unit: VitalType.unitFor(VitalType.glucose),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedDroplet, color: AppColors.warning, size: 20),
+                  iconBgColor: AppColors.warningLight,
+                  iconColor: AppColors.warning,
+                  onTap: () => _showHistorySheet(context, VitalType.glucose),
                 ),
               ],
             ),
@@ -167,15 +156,13 @@ class _VitalsContent extends ConsumerWidget {
     );
   }
 
-  void _showHistorySheet(
-      BuildContext context, String type, List<VitalReading> allReadings) {
-    final readings = allReadings.where((r) => r.type == type).toList();
+  void _showHistorySheet(BuildContext context, String type) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _VitalHistorySheet(type: type, readings: readings),
+      builder: (_) => _VitalHistorySheet(patientId: patientId, type: type),
     );
   }
 }
@@ -428,12 +415,14 @@ class _LogVitalSheetState extends ConsumerState<_LogVitalSheet> {
 
 // ─── Vital History Sheet ──────────────────────────────────────────────────────
 class _VitalHistorySheet extends ConsumerWidget {
+  final String patientId;
   final String type;
-  final List<VitalReading> readings;
-  const _VitalHistorySheet({required this.type, required this.readings});
+  const _VitalHistorySheet({required this.patientId, required this.type});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final allReadings = ref.watch(vitalsProvider(patientId)).asData?.value ?? [];
+    final readings = allReadings.where((r) => r.type == type).toList();
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.6,
@@ -598,7 +587,6 @@ class _VitalHistorySheet extends ConsumerWidget {
                                     await ref
                                         .read(vitalsNotifierProvider.notifier)
                                         .delete(r.id);
-                                    if (context.mounted) Navigator.pop(context);
                                   } catch (_) {
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

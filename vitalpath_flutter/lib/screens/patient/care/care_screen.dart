@@ -19,7 +19,8 @@ import 'scan_prescription_screen.dart';
 import 'add_family_member_screen.dart';
 
 class CareScreen extends ConsumerStatefulWidget {
-  const CareScreen({super.key});
+  final String? initialMemberId;
+  const CareScreen({super.key, this.initialMemberId});
   @override
   ConsumerState<CareScreen> createState() => _CareScreenState();
 }
@@ -28,6 +29,7 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
   late TabController _tabCtrl;
   // null = primary user ("Me"), non-null = active family member
   FamilyMember? _activeMember;
+  bool _initialMemberSet = false;
 
   @override
   void initState() {
@@ -56,6 +58,19 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
           );
           return const Scaffold(body: SizedBox.shrink());
         }
+
+        // Auto-select family member when navigating from home chip
+        if (widget.initialMemberId != null && !_initialMemberSet) {
+          final members = ref.watch(familyMembersProvider(user.uid)).asData?.value ?? [];
+          final match = members.where((m) => m.id == widget.initialMemberId).firstOrNull;
+          if (match != null) {
+            _initialMemberSet = true;
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) { if (mounted) setState(() => _activeMember = match); },
+            );
+          }
+        }
+
         return Scaffold(
           backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
@@ -1690,6 +1705,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   late String _reminderRepeat;
   late List<int> _reminderDays;
   final _formKey = GlobalKey<FormState>();
+  bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -1744,34 +1760,45 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
 
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_saving) return;
+    setState(() => _saving = true);
     final reminderTime = _setReminder ? _reminderTimeString : null;
     final repeat = _setReminder ? _reminderRepeat : 'once';
-
     final days = _setReminder && repeat == 'daily' ? _reminderDays : <int>[];
-    if (_isEdit) {
-      await ref.read(mealNotifierProvider.notifier).update(
-        widget.uid, widget.existing!.id,
-        mealType: _type, description: _descCtrl.text.trim(),
-        calories: int.tryParse(_calCtrl.text),
-        protein: double.tryParse(_proteinCtrl.text),
-        carbs: double.tryParse(_carbsCtrl.text),
-        fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
-      );
-    } else {
-      await ref.read(mealNotifierProvider.notifier).add(
-        widget.uid,
-        mealType: _type, description: _descCtrl.text.trim(),
-        calories: int.tryParse(_calCtrl.text),
-        protein: double.tryParse(_proteinCtrl.text),
-        carbs: double.tryParse(_carbsCtrl.text),
-        fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
-      );
-      final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
-      if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
+    try {
+      if (_isEdit) {
+        await ref.read(mealNotifierProvider.notifier).update(
+          widget.uid, widget.existing!.id,
+          mealType: _type, description: _descCtrl.text.trim(),
+          calories: int.tryParse(_calCtrl.text),
+          protein: double.tryParse(_proteinCtrl.text),
+          carbs: double.tryParse(_carbsCtrl.text),
+          fat: double.tryParse(_fatCtrl.text),
+          reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
+        );
+      } else {
+        await ref.read(mealNotifierProvider.notifier).add(
+          widget.uid,
+          mealType: _type, description: _descCtrl.text.trim(),
+          calories: int.tryParse(_calCtrl.text),
+          protein: double.tryParse(_proteinCtrl.text),
+          carbs: double.tryParse(_carbsCtrl.text),
+          fat: double.tryParse(_fatCtrl.text),
+          reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
+        );
+        final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
+        if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save meal. Please try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -1880,7 +1907,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   ],
                 ],
                 const SizedBox(height: 20),
-                GradientButton(label: _isEdit ? 'Save Changes' : 'Log Meal', onPressed: _save),
+                GradientButton(label: _isEdit ? 'Save Changes' : 'Log Meal', onPressed: _saving ? null : _save, isLoading: _saving),
                 const SizedBox(height: 8),
               ],
             ),

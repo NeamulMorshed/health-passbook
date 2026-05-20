@@ -67,17 +67,6 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
           padding: const EdgeInsets.all(28),
           child: Column(
             children: [
-              // Fix H — Back button on step 0 (returns to /user-select).
-              if (_step == 0)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: () => context.go('/user-select'),
-                  ),
-                ),
               const SizedBox(height: 8),
               // Progress
               Row(

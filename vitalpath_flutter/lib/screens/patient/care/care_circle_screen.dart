@@ -13,8 +13,6 @@ import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
 import '../../../models/caregiver_connection.dart';
 import 'add_family_member_screen.dart';
-import 'invite_caregiver_screen.dart';
-import 'manage_caregiver_screen.dart';
 
 class CareCircleScreen extends ConsumerWidget {
   const CareCircleScreen({super.key});
@@ -268,11 +266,7 @@ class _CareCircleBody extends ConsumerWidget {
                   : null,
               color: const Color(0xFF7C3AED),
               action: TextButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const InviteCaregiverScreen()),
-                ),
+                onPressed: () => context.push('/invite-caregiver'),
                 icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 14),
                 label: const Text('Invite',
                     style: TextStyle(fontSize: 12)),
@@ -298,11 +292,7 @@ class _CareCircleBody extends ConsumerWidget {
                     message:
                         'No family members monitoring you yet.\nInvite a family member to stay updated on your health.',
                     actionLabel: 'Invite family member',
-                    onAction: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const InviteCaregiverScreen()),
-                    ),
+                    onAction: () => context.push('/invite-caregiver'),
                   );
                 }
                 return Column(
@@ -1056,13 +1046,7 @@ class _CaregiverCard extends ConsumerWidget {
       child: BentoCard(
         onTap: isPending
             ? null
-            : () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ManageCaregiverScreen(connection: connection),
-                  ),
-                ),
+            : () => context.push('/manage-caregiver', extra: connection),
         padding: const EdgeInsets.all(14),
         child: Row(children: [
           CircleAvatar(

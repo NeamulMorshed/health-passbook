@@ -39,6 +39,7 @@ final caregiverPatientsProvider =
 
 final pendingInvitesForEmailProvider =
     StreamProvider.family<List<CaregiverConnection>, String>((ref, email) {
+  if (email.isEmpty) return Stream.value([]);
   return _db
       .collection('caregiver_connections')
       .where('caregiverEmail', isEqualTo: email.toLowerCase())
@@ -181,12 +182,15 @@ class InviteResponseNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> decline(String connectionId) async {
+    state = const AsyncLoading();
     try {
       await _db
           .collection('caregiver_connections')
           .doc(connectionId)
           .update({'status': 'declined'});
-    } catch (_) {
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
       rethrow;
     }
   }
