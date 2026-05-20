@@ -148,9 +148,13 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                         caregiverName: user.name,
                       );
                       if (context.mounted) {
-                        context.go(user.userType == UserType.caregiver
-                            ? '/caregiver/home'
-                            : '/home');
+                        if (user.userType == UserType.caregiver) {
+                          context.go('/caregiver/home');
+                        } else if (user.userType == UserType.doctor) {
+                          context.go('/doc/dashboard');
+                        } else {
+                          context.go('/home');
+                        }
                       }
                     } catch (e) {
                       if (context.mounted) {
@@ -178,9 +182,13 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                       await notifier.decline(connection.id);
                       if (context.mounted) {
                         final cu = ref.read(currentUserProvider).asData?.value;
-                        context.go(cu?.userType == UserType.caregiver
-                            ? '/caregiver/home'
-                            : '/home');
+                        if (cu?.userType == UserType.caregiver) {
+                          context.go('/caregiver/home');
+                        } else if (cu?.userType == UserType.doctor) {
+                          context.go('/doc/dashboard');
+                        } else {
+                          context.go('/home');
+                        }
                       }
                     } catch (e) {
                       if (context.mounted) {

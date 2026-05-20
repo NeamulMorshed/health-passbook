@@ -146,7 +146,7 @@ class _CareCircleBody extends ConsumerWidget {
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                   if (caregiverCount > 0)
-                                    '$caregiverCount ${caregiverCount == 1 ? 'family monitor' : 'family monitors'}',
+                                    '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
                                 ].isEmpty
                                   ? 'Add people to your health circle.'
                                   : [
@@ -155,7 +155,7 @@ class _CareCircleBody extends ConsumerWidget {
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                       if (caregiverCount > 0)
-                                        '$caregiverCount ${caregiverCount == 1 ? 'family monitor' : 'family monitors'}',
+                                        '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
                                     ].join(' · '),
                           style: const TextStyle(
                               fontSize: 12,

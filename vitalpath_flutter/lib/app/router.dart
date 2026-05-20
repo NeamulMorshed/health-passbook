@@ -122,7 +122,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         final user = userState.asData?.value;
         if (user == null) return null;
         if (user.userType == UserType.doctor) return '/doc/dashboard';
-        if (user.userType == UserType.caregiver) return '/caregiver/home';
+        if (user.userType == UserType.caregiver) {
+          return user.onboardingComplete
+              ? '/caregiver/home'
+              : '/onboarding/caregiver-setup';
+        }
         return '/home';
       }
 

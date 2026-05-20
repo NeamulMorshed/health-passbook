@@ -989,18 +989,26 @@ class _MissedDoseNudge extends ConsumerWidget {
         final today = DateTime(now.year, now.month, now.day);
         final missed = meds.where((m) {
           if (!m.isActive) return false;
-          return m.reminderTimes.any((t) {
+          if (m.reminderTimes.isEmpty) return false;
+          final base = DateTime(today.year, today.month, today.day);
+          final scheduled = m.reminderTimes.map((t) {
             final parts = t.split(':');
             final h = int.tryParse(parts[0]) ?? 0;
             final min = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
-            final slot = DateTime(today.year, today.month, today.day, h, min);
-            if (slot.isAfter(now)) return false;
-            final taken = m.loggedDoses.any((d) =>
-                d.year == today.year &&
-                d.month == today.month &&
-                d.day == today.day);
-            return !taken;
-          });
+            return DateTime(base.year, base.month, base.day, h, min);
+          }).toList()..sort();
+          final dateDoses = m.loggedDoses.where((d) =>
+              d.year == today.year && d.month == today.month && d.day == today.day).toList();
+          return List.generate(scheduled.length, (i) {
+            final slotTime = scheduled[i];
+            if (slotTime.isAfter(now)) return false;
+            final rawStart = slotTime.subtract(const Duration(minutes: 30));
+            final windowStart = rawStart.isBefore(base) ? base : rawStart;
+            final windowEnd = i + 1 < scheduled.length
+                ? scheduled[i + 1].subtract(const Duration(minutes: 30))
+                : DateTime(base.year, base.month, base.day, 23, 59, 59);
+            return !dateDoses.any((d) => !d.isBefore(windowStart) && d.isBefore(windowEnd));
+          }).any((isMissed) => isMissed);
         }).toList();
 
         if (missed.isEmpty) return const SizedBox.shrink();

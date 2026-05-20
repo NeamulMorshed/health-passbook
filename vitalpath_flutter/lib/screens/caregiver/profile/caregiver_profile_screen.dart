@@ -33,9 +33,7 @@ class CaregiverProfileScreen extends ConsumerWidget {
         }
 
         final connections = ref.watch(caregiverPatientsProvider(user.uid)).asData?.value ?? [];
-        final badgeLabel = connections.length == 1
-            ? connections.first.relationship.relationshipLabel
-            : 'Family Member';
+        const badgeLabel = 'Family Member';
 
         return Scaffold(
           backgroundColor: AppColors.pageBackground,

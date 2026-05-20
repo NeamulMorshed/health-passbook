@@ -329,10 +329,7 @@ class _OnboardingGuidanceCard extends StatelessWidget {
         style: TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4),
       ),
       const SizedBox(height: 12),
-      Row(children: [
-        _GuidanceStep(icon: Icons.mail_rounded, label: 'Wait for a family member to invite you, or'),
-        const SizedBox(width: 8),
-      ]),
+      _GuidanceStep(icon: Icons.mail_rounded, label: 'Wait for a family member to invite you, or'),
       const SizedBox(height: 6),
       _GuidanceStep(icon: Icons.person_add_rounded, label: 'Ask them to invite you from their Health Circle'),
     ]),

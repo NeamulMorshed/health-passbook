@@ -112,7 +112,6 @@ async function _checkPatientMissedDoses(
     .get();
 
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayStr = today.toISOString().split("T")[0]; // "YYYY-MM-DD"
 
   for (const medDoc of medsSnap.docs) {
     const med = medDoc.data();
@@ -120,18 +119,29 @@ async function _checkPatientMissedDoses(
     if (reminderTimes.length === 0) continue;
 
     const loggedDoses: Timestamp[] = med.loggedDoses ?? [];
-    const dosedToday = loggedDoses.some((ts) => {
-      const d = ts.toDate();
-      return d.toISOString().split("T")[0] === todayStr;
-    });
-    if (dosedToday) continue;
 
-    // Check if any reminder time fell in the past 30-minute window.
+    // Check each slot individually — a multi-dose medicine needs per-slot tracking.
+    // A slot is "missed in this window" if:
+    //   1. The slot time fell within [windowStart, now)
+    //   2. No logged dose falls within that slot's 30-min coverage window
     const hasMissed = reminderTimes.some((t) => {
       const [hStr, mStr] = t.split(":");
       const slotTime = new Date(today);
       slotTime.setHours(parseInt(hStr, 10), parseInt(mStr ?? "0", 10), 0, 0);
-      return slotTime >= windowStart && slotTime <= now;
+
+      // Only consider slots that fell in this function's 30-min window.
+      if (slotTime < windowStart || slotTime >= now) return false;
+
+      // The slot's coverage window: [slotTime - 30 min, slotTime + 30 min).
+      const coverStart = new Date(slotTime.getTime() - 30 * 60 * 1000);
+      const coverEnd = new Date(slotTime.getTime() + 30 * 60 * 1000);
+
+      const slotCovered = loggedDoses.some((ts) => {
+        const d = ts.toDate();
+        return d >= coverStart && d < coverEnd;
+      });
+
+      return !slotCovered;
     });
 
     if (!hasMissed) continue;
