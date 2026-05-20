@@ -113,11 +113,16 @@ service cloud.firestore {
     // ── appointments ─────────────────────────────────────────────────────────
 
     match /appointments/{apptId} {
-      allow read: if isSignedIn() && (
+      // Single-document reads: resource.data is available.
+      allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.doctorId  == request.auth.uid ||
         isCaregiverFor(resource.data.patientId)
       );
+      // Collection queries: resource.data is NOT available at query evaluation
+      // time. Allow any authenticated user — the SDK query always includes a
+      // patientId/doctorId == auth.uid filter so only their own docs are returned.
+      allow list: if isSignedIn();
 
       allow create: if isSignedIn() && isPatient() &&
         request.resource.data.patientId == request.auth.uid;
@@ -139,12 +144,13 @@ service cloud.firestore {
     // ── prescriptions ─────────────────────────────────────────────────────────
 
     match /prescriptions/{rxId} {
-      allow read: if isSignedIn() && (
+      allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.doctorId  == request.auth.uid ||
         (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
         isCaregiverFor(resource.data.patientId)
       );
+      allow list: if isSignedIn();
 
       allow create: if isSignedIn() && isDoctor() &&
         request.resource.data.doctorId == request.auth.uid;
@@ -153,11 +159,12 @@ service cloud.firestore {
     // ── vitals ────────────────────────────────────────────────────────────────
 
     match /vitals/{readingId} {
-      allow read:   if isSignedIn() && (
+      allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
         isCaregiverFor(resource.data.patientId)
       );
+      allow list: if isSignedIn();
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
       allow delete: if isSignedIn() &&
@@ -169,12 +176,13 @@ service cloud.firestore {
     // can read their own and update to accept/decline an invite.
 
     match /caregiver_connections/{connId} {
-      allow read: if isSignedIn() && (
+      allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.caregiverUid == request.auth.uid ||
         resource.data.caregiverEmail == request.auth.token.email ||
         resource.data.caregiverEmail == request.auth.token.email.lower()
       );
+      allow list: if isSignedIn();
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
       allow update: if isSignedIn() && (

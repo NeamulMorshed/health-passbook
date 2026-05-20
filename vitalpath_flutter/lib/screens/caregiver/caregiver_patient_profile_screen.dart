@@ -166,6 +166,7 @@ class _CaregiverPatientProfileScreenState
                 ),
 
                 if (p.medicines) ...[
+                  _MissedDoseNudge(patientId: conn.patientId),
                   _MedicinesSection(
                       patientId: conn.patientId, selectedDate: _selectedDate),
                   const SizedBox(height: 18),
@@ -262,7 +263,7 @@ class _DateStripState extends State<_DateStrip> {
           final future = _isFuture(i);
 
           return GestureDetector(
-            onTap: () => widget.onSelect(d),
+            onTap: future ? null : () => widget.onSelect(d),
             child: Container(
               width: _itemW,
               margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -649,10 +650,14 @@ class _AppointmentSection extends ConsumerWidget {
               icon: HugeIcons.strokeRoundedCalendar01,
               color: _kAmber,
               size: 18),
-          title: 'Next Appointment',
+          title: 'Upcoming Appointments',
+          badge: upcoming.isEmpty ? null : '${upcoming.length}',
+          badgeColor: _kAmber,
           children: upcoming.isEmpty
               ? [const _EmptyTile('No upcoming appointments')]
-              : [_ApptCard(appt: upcoming.first)],
+              : upcoming.map((a) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ApptCard(appt: a))).toList(),
         );
       },
     );
@@ -961,6 +966,67 @@ class _VitalsSection extends ConsumerWidget {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+// ── Missed dose nudge ─────────────────────────────────────────────────────────
+
+class _MissedDoseNudge extends ConsumerWidget {
+  final String patientId;
+  const _MissedDoseNudge({required this.patientId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final medsAsync = ref.watch(medicinesProvider(patientId));
+    return medsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (meds) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final missed = meds.where((m) {
+          if (!m.isActive) return false;
+          return m.reminderTimes.any((t) {
+            final parts = t.split(':');
+            final h = int.tryParse(parts[0]) ?? 0;
+            final min = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+            final slot = DateTime(today.year, today.month, today.day, h, min);
+            if (slot.isAfter(now)) return false;
+            final taken = m.loggedDoses.any((d) =>
+                d.year == today.year &&
+                d.month == today.month &&
+                d.day == today.day);
+            return !taken;
+          });
+        }).toList();
+
+        if (missed.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.destructive.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.destructive.withValues(alpha: 0.25)),
+            ),
+            child: Row(children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.destructive, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  missed.length == 1
+                      ? '${missed.first.name} hasn\'t been taken yet today.'
+                      : '${missed.length} medicines haven\'t been taken yet today.',
+                  style: const TextStyle(fontSize: 13, color: AppColors.destructive, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ]),
+          ),
         );
       },
     );

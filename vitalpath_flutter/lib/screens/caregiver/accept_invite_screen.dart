@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/bento_card.dart';
+import '../../../models/app_user.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -30,7 +31,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
-      appBar: AppBar(title: const Text('Care Circle Invite')),
+      appBar: AppBar(title: const Text('Health Sharing Invite')),
       body: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
@@ -65,7 +66,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                             fontSize: 18,
                             fontWeight: FontWeight.w700)),
                     Text(
-                        'Invites you as ${connection.relationship.relationshipLabel}',
+                        'Wants to share their health with you (as their ${connection.relationship.relationshipLabel})',
                         style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.mutedForeground)),
@@ -89,7 +90,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             ],
 
             const SizedBox(height: 28),
-            const Text('If you accept, you will be able to see:',
+            const Text("You'll be able to view their health information:",
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600)),
@@ -100,7 +101,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             BentoCard(
               color: AppColors.muted,
               child: const Text(
-                'You will not be able to edit any health data.',
+                'You can view but not edit their health data. Only they and their doctor can make changes.',
                 style: TextStyle(
                     fontSize: 12,
                     color: AppColors.mutedForeground),
@@ -146,7 +147,11 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                         caregiverUid: user.uid,
                         caregiverName: user.name,
                       );
-                      if (context.mounted) context.go('/home');
+                      if (context.mounted) {
+                        context.go(user.userType == UserType.caregiver
+                            ? '/caregiver/home'
+                            : '/home');
+                      }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +163,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                       if (mounted) setState(() => _processing = false);
                     }
                   },
-                  child: const Text('Accept Invite',
+                  child: const Text('Accept & Start Monitoring',
                       style: TextStyle(fontSize: 15)),
                 ),
               ),
@@ -171,7 +176,12 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     setState(() => _processing = true);
                     try {
                       await notifier.decline(connection.id);
-                      if (context.mounted) context.go('/home');
+                      if (context.mounted) {
+                        final cu = ref.read(currentUserProvider).asData?.value;
+                        context.go(cu?.userType == UserType.caregiver
+                            ? '/caregiver/home'
+                            : '/home');
+                      }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -186,7 +196,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                   style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.destructive,
                       side: const BorderSide(color: AppColors.destructive)),
-                  child: const Text('Decline',
+                  child: const Text('Not Now',
                       style: TextStyle(fontSize: 15)),
                 ),
               ),

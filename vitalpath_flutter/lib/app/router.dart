@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'navigation_key.dart';
 
 import '../providers/auth_provider.dart';
 import '../models/app_user.dart';
@@ -37,6 +38,10 @@ import '../screens/patient/care/invite_caregiver_screen.dart';
 import '../screens/patient/care/manage_caregiver_screen.dart';
 import '../screens/caregiver/accept_invite_screen.dart';
 import '../screens/caregiver/caregiver_patient_profile_screen.dart';
+import '../screens/caregiver/caregiver_shell.dart';
+import '../screens/caregiver/home/caregiver_home_screen.dart';
+import '../screens/caregiver/patients/caregiver_patients_screen.dart';
+import '../screens/caregiver/profile/caregiver_profile_screen.dart';
 import '../screens/onboarding/caregiver_setup_screen.dart';
 import '../screens/patient/vitals/vitals_screen.dart';
 import '../models/caregiver_connection.dart';
@@ -50,12 +55,18 @@ class _AuthNotifier extends ChangeNotifier {
   void ping() => notifyListeners();
 }
 
-// ── Patient shell routes ──────────────────────────────────────────────────
-// All routes that should only be accessible to patients / caregivers.
-const _patientRoutes = {
-  '/home', '/vitals', '/care', '/appointments', '/profile',
-  '/medicines', '/activity', '/gamification', '/insights',
-  '/notifications', '/care-circle', '/my-doctors', '/prescriptions',
+// Routes only patients (not caregivers, not doctors) may access.
+const _patientOnlyRoutes = {
+  '/home', '/vitals', '/profile', '/my-doctors', '/prescriptions',
+  '/care-circle', '/activity', '/gamification', '/insights', '/medicines',
+};
+
+// Routes patients and caregivers share (doctors are blocked).
+const _sharedNonDoctorRoutes = {
+  '/care', '/appointments', '/notifications', '/notification-settings',
+  '/edit-profile', '/privacy-security', '/invite-family',
+  '/invite-caregiver', '/manage-caregiver', '/accept-invite',
+  '/caregiver-patient-profile',
 };
 
 // ── Router provider ───────────────────────────────────────────────────────
@@ -85,6 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: notifier,
 
@@ -109,7 +121,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (userState.isLoading) return null;
         final user = userState.asData?.value;
         if (user == null) return null;
-        return user.userType == UserType.doctor ? '/doc/dashboard' : '/home';
+        if (user.userType == UserType.doctor) return '/doc/dashboard';
+        if (user.userType == UserType.caregiver) return '/caregiver/home';
+        return '/home';
       }
 
       // Redirect unauthenticated users away from protected routes.
@@ -125,25 +139,43 @@ final routerProvider = Provider<GoRouter>((ref) {
       final user = userState.asData?.value;
       if (user == null) return null;
 
-      final isDoctor = user.userType == UserType.doctor;
-      final isPatientOrCaregiver =
-          user.userType == UserType.patient || user.userType == UserType.caregiver;
+      final isDoctor    = user.userType == UserType.doctor;
+      final isCaregiver = user.userType == UserType.caregiver;
+      final isPatient   = user.userType == UserType.patient;
 
       // Fix C1 — Role-based route guards.
-      if (loc.startsWith('/doc/') && !isDoctor) {
-        return '/home';
+
+      // Doctors may not access patient or caregiver areas.
+      if (isDoctor) {
+        final inPatient   = _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'));
+        final inShared    = _sharedNonDoctorRoutes.any((r) => loc == r || loc.startsWith('$r/'));
+        final inCaregiver = loc.startsWith('/caregiver');
+        if (inPatient || inShared || inCaregiver) return '/doc/dashboard';
       }
-      if (_patientRoutes.any((r) => loc == r || loc.startsWith('$r/')) &&
-          !isPatientOrCaregiver) {
-        return '/doc/dashboard';
+
+      // Non-doctors may not access doctor area.
+      if (!isDoctor && loc.startsWith('/doc/')) {
+        return isCaregiver ? '/caregiver/home' : '/home';
+      }
+
+      // Caregivers may not access patient-only routes.
+      if (isCaregiver && _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
+        return '/caregiver/home';
+      }
+
+      // Patients may not access caregiver portal.
+      if (isPatient && loc.startsWith('/caregiver')) {
+        return '/home';
       }
 
       // Fix H2 — Guard onboarding routes by role and onboarding state.
       if (loc == '/onboarding/permissions' ||
           loc == '/onboarding/health-profile' ||
           loc == '/onboarding/caregiver-setup') {
-        if (!isPatientOrCaregiver) return '/doc/dashboard';
-        if (user.onboardingComplete) return '/home';
+        if (isDoctor) return '/doc/dashboard';
+        if (user.onboardingComplete) {
+          return isCaregiver ? '/caregiver/home' : '/home';
+        }
       }
       if (loc == '/doc/onboarding/profile') {
         if (!isDoctor) return '/home';
@@ -284,6 +316,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CaregiverPatientProfileScreen(
               connection: state.extra as CaregiverConnection);
         },
+      ),
+
+      // Caregiver shell — 3 tabs: Home, Family, Profile
+      ShellRoute(
+        builder: (context, state, child) => CaregiverShell(child: child),
+        routes: [
+          GoRoute(path: '/caregiver/home',     builder: (_, __) => const CaregiverHomeScreen()),
+          GoRoute(path: '/caregiver/care',     builder: (_, __) => const CareScreen()),
+          GoRoute(path: '/caregiver/patients', builder: (_, __) => const CaregiverPatientsScreen()),
+          GoRoute(path: '/caregiver/profile',  builder: (_, __) => const CaregiverProfileScreen()),
+        ],
       ),
 
       // Doctor shell

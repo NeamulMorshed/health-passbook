@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -39,7 +40,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                   color: AppColors.primary.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 32),
+                child: SvgPicture.asset('assets/icons/icon.svg', width: 32, height: 32),
               ),
               const SizedBox(height: 28),
               const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.foreground, height: 1.2)),
@@ -114,7 +115,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
             if (!user.onboardingComplete) {
               context.go('/onboarding/caregiver-setup');
             } else {
-              context.go('/home');
+              context.go('/caregiver/home');
             }
           } else if (!user.onboardingComplete) {
             context.go('/onboarding/permissions');

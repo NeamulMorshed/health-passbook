@@ -92,7 +92,7 @@ class _CareCircleBody extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
-        title: const Text('Care Circle'),
+        title: const Text('Health Circle'),
         actions: [
           if (!isLoading)
             Padding(
@@ -132,7 +132,7 @@ class _CareCircleBody extends ConsumerWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Your Care Circle',
+                        const Text('Your Health Circle',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -146,16 +146,16 @@ class _CareCircleBody extends ConsumerWidget {
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                   if (caregiverCount > 0)
-                                    '$caregiverCount ${caregiverCount == 1 ? 'caregiver' : 'caregivers'}',
+                                    '$caregiverCount ${caregiverCount == 1 ? 'family monitor' : 'family monitors'}',
                                 ].isEmpty
-                                  ? 'Add people to your care circle.'
+                                  ? 'Add people to your health circle.'
                                   : [
                                       if (doctorCount > 0)
                                         '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                       if (caregiverCount > 0)
-                                        '$caregiverCount ${caregiverCount == 1 ? 'caregiver' : 'caregivers'}',
+                                        '$caregiverCount ${caregiverCount == 1 ? 'family monitor' : 'family monitors'}',
                                     ].join(' · '),
                           style: const TextStyle(
                               fontSize: 12,
@@ -260,7 +260,7 @@ class _CareCircleBody extends ConsumerWidget {
             // M-CC1: count only connected caregivers (not pending)
             _SectionHeader(
               icon: Icons.shield_rounded,
-              title: 'Caregivers',
+              title: 'Family Monitoring Me',
               count: caregiversAsync.hasValue
                   ? caregiversAsync.asData!.value
                       .where((c) => c.isConnected)
@@ -296,8 +296,8 @@ class _CareCircleBody extends ConsumerWidget {
                   return _EmptyCard(
                     icon: Icons.shield_outlined,
                     message:
-                        'No caregivers connected yet.\nInvite a family member to view your health.',
-                    actionLabel: 'Invite caregiver',
+                        'No family members monitoring you yet.\nInvite a family member to stay updated on your health.',
+                    actionLabel: 'Invite family member',
                     onAction: () => Navigator.push(
                       context,
                       MaterialPageRoute(

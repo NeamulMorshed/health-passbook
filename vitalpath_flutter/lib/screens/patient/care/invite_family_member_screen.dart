@@ -308,7 +308,7 @@ class _SuccessView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'When $email creates an Omra account, they\'ll automatically appear in your care circle.',
+          'When $email creates an Omra account, they\'ll automatically be linked with your account.',
           textAlign: TextAlign.center,
           style: const TextStyle(
               fontSize: 14,
@@ -350,7 +350,7 @@ class _SuccessView extends StatelessWidget {
           width: double.infinity,
           child: TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Back to Care Circle',
+            child: const Text('Back to Health Circle',
                 style: TextStyle(color: AppColors.primary)),
           ),
         ),

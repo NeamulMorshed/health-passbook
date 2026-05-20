@@ -33,6 +33,13 @@ class FirestoreService {
     });
   }
 
+  Future<void> saveFcmToken(String uid, String token) async {
+    await _db.collection(AppConstants.colUsers).doc(uid).update({
+      'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ─── Patient ──────────────────────────────────────────────────────────────
 
   Future<PatientProfile?> getPatient(String uid) async {

@@ -89,7 +89,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
       // Mark caregiver onboarding complete
       await ref.read(authRepositoryProvider).markOnboardingComplete(uid);
 
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/caregiver/home');
     } catch (e) {
       // Fix H — surface Firestore errors to the user.
       if (mounted) {
@@ -106,12 +106,12 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const steps = ['Who you care for', 'Their Doctor', 'All Set'];
+    const steps = ['Who you look after', 'Their Doctor', 'All Set'];
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
-        title: const Text('Caregiver Setup'),
+        title: const Text('Family Health Setup'),
         automaticallyImplyLeading: false,
         leading: _page > 0
             ? IconButton(
@@ -178,7 +178,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                     ? 'Next'
                     : _page == 1
                         ? 'Next'
-                        : 'Start Caring',
+                        : 'Get Started',
                 colors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
                 onPressed: _next,
                 isLoading: _saving,
@@ -224,7 +224,7 @@ class _Step1 extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
         _infoBox(
-          'Tell us about the person you\'re caring for so we can set up their health profile.',
+          'Tell us about the family member you\'re looking after so we can set up their health profile.',
           const Color(0xFFF59E0B),
         ),
         const SizedBox(height: 24),
@@ -454,7 +454,7 @@ class _Step3State extends State<_Step3> {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: const Color(0xFFF59E0B), size: 44),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: Color(0xFFF59E0B), size: 44),
             ),
           ),
         ),

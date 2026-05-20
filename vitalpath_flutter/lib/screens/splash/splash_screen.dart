@@ -147,7 +147,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           if (!user.onboardingComplete) {
             context.go('/onboarding/caregiver-setup');
           } else {
-            context.go('/home');
+            context.go('/caregiver/home');
           }
         } else if (!user.onboardingComplete) {
           context.go('/onboarding/permissions');

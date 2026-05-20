@@ -120,7 +120,7 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
       child: Scaffold(
         backgroundColor: AppColors.pageBackground,
         appBar: AppBar(
-          title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
+          title: Text(_sent ? 'Invite Sent' : 'Invite a Family Member'),
           leading: _step > 0 && !_sent
               ? IconButton(
                   icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, color: Colors.black, size: 18),
@@ -616,7 +616,7 @@ class _ConfirmationView extends StatelessWidget {
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Text(
-            'Once $email accepts, they\'ll appear in your Care Circle.',
+            'Once $email accepts, they\'ll be able to view your health data.',
             textAlign: TextAlign.center,
             style: const TextStyle(
                 fontSize: 14,
@@ -632,7 +632,7 @@ class _ConfirmationView extends StatelessWidget {
           const SizedBox(height: 32),
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Back to Care Circle'),
+            child: const Text('Back to Health Circle'),
           ),
         ],
       ),

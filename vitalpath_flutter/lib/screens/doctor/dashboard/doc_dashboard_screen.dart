@@ -46,7 +46,7 @@ class DocDashboardScreen extends ConsumerWidget {
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w400),
                 ),
                 Text(
-                  'Dr. ${user.name}',
+                  user.name.startsWith('Dr.') ? user.name : 'Dr. ${user.name}',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 docAsync.when(

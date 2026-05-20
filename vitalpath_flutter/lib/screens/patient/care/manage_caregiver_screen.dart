@@ -349,7 +349,7 @@ class _ManageCaregiverScreenState
               foregroundColor: AppColors.destructive,
               side: const BorderSide(color: AppColors.destructive),
             ),
-            child: Text('Remove ${name.split(' ').first} from Care Circle'),
+            child: Text('Remove ${name.split(' ').first} from Health Circle'),
           ),
 
           const SizedBox(height: 24),

@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'app/router.dart';
 import 'core/theme/app_theme.dart';
+import 'providers/auth_provider.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -32,18 +33,23 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  // Initialize notifications
+  // Bug 1 fix: initialize once here, then inject into the provider via
+  // overrideWithValue so every caller shares the same initialized instance.
   final notificationService = NotificationService();
   await notificationService.initialize();
 
   runApp(
     ProviderScope(
       overrides: [
-        // You can override providers here for testing
+        notificationServiceProvider.overrideWithValue(notificationService),
       ],
       child: const OmraApp(),
     ),
   );
+
+  // Bug 4 fix: handle the notification that cold-started the app (terminated state).
+  // Must be called after runApp so the navigator is ready.
+  notificationService.handleInitialMessage();
 }
 
 class OmraApp extends ConsumerWidget {
@@ -51,6 +57,9 @@ class OmraApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Bug 2 fix: keep FCM token in sync for the lifetime of the app.
+    ref.watch(fcmTokenSyncProvider);
+
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

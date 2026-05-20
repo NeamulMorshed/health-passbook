@@ -44,6 +44,10 @@ final firestoreServiceProvider = Provider<FirestoreService>(
   (_) => FirestoreService(),
 );
 
+// Bug 1 fix: declared with a placeholder factory; main.dart overrides this with
+// the already-initialized instance via ProviderScope.overrides so the same
+// object (with its initialized _local plugin and onMessage listener) is shared
+// everywhere.
 final notificationServiceProvider = Provider<NotificationService>(
   (_) => NotificationService(),
 );
@@ -52,4 +56,18 @@ final notificationServiceProvider = Provider<NotificationService>(
 // Re-evaluated each time the provider is watched (i.e. on screen mount).
 final notifPermGrantedProvider = FutureProvider<bool>((ref) {
   return ref.read(notificationServiceProvider).isPermissionGranted();
+});
+
+// Bug 2 fix: save the FCM device token to Firestore whenever the signed-in
+// user changes, so Cloud Functions can address push notifications to this device.
+final fcmTokenSyncProvider = Provider<void>((ref) {
+  ref.listen(currentUserProvider, (_, next) {
+    next.whenData((user) async {
+      if (user == null) return;
+      await ref.read(notificationServiceProvider).syncTokenForUser(
+        user.uid,
+        ref.read(firestoreServiceProvider),
+      );
+    });
+  });
 });

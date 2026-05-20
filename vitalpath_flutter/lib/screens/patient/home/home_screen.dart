@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
@@ -22,9 +21,6 @@ import '../care/care_screen.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../core/widgets/onboarding_tour.dart';
 import '../../../providers/caregiver_provider.dart';
-import '../../../models/caregiver_connection.dart';
-import '../../caregiver/accept_invite_screen.dart';
-import '../../caregiver/caregiver_patient_profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -46,9 +42,6 @@ class HomeScreen extends ConsumerWidget {
           WidgetsBinding.instance.addPostFrameCallback(
               (_) { if (context.mounted) context.go('/user-select'); });
           return const Scaffold(body: SizedBox.shrink());
-        }
-        if (user.userType == UserType.caregiver) {
-          return _CaregiverHomeContent(user: user);
         }
         WidgetsBinding.instance.addPostFrameCallback(
             (_) { if (context.mounted) maybeShowOnboardingTour(context); });
@@ -129,7 +122,7 @@ class _PendingInviteBanner extends ConsumerWidget {
         child: BentoCard(
           color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
+          onTap: () => context.go('/accept-invite', extra: inv),
           child: Row(children: [
             HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
             const SizedBox(width: 10),
@@ -165,6 +158,14 @@ class _HomeContent extends ConsumerWidget {
     final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
     ref.watch(vitalsProvider(user.uid));
     final gamAsync = ref.watch(gamificationProvider(user.uid));
+
+    // Bug 6 fix: restore medicine reminders after a reinstall (OS wipes alarms).
+    ref.listen(medicinesProvider(user.uid), (_, next) {
+      next.whenData((medicines) {
+        ref.read(notificationServiceProvider)
+            .rescheduleAllRemindersIfNeeded(user.uid, medicines);
+      });
+    });
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
@@ -711,22 +712,53 @@ class _FamilyStatusChip extends ConsumerWidget {
 }
 
 // ── Daily Awareness Card ──────────────────────────────────────────────────────
-class _DailyAwarenessCard extends ConsumerWidget {
+class _DailyAwarenessCard extends ConsumerStatefulWidget {
   final String uid;
   const _DailyAwarenessCard({required this.uid});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final meds = ref.watch(medicinesProvider(uid)).asData?.value ?? [];
-    final meals = ref.watch(todayMealsProvider(uid)).asData?.value ?? [];
+  ConsumerState<_DailyAwarenessCard> createState() => _DailyAwarenessCardState();
+}
 
-    final hasMissedMed = meds.any((m) => m.isActive && m.hasMissedSlot);
-    final loggedTypes = meals.map((m) => m.mealType).toSet();
+class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
+  late Timer _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild every minute so time-based conditions re-evaluate without
+    // needing a Firestore event to trigger a rebuild.
+    _ticker = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) { if (mounted) setState(() {}); },
+    );
+  }
+
+  @override
+  void dispose() {
+    _ticker.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meds = ref.watch(medicinesProvider(widget.uid)).asData?.value ?? [];
+    final meals = ref.watch(todayMealsProvider(widget.uid)).asData?.value ?? [];
+
     final h = DateTime.now().hour;
+
+    // Missed medicine: any slot whose window closed without a dose, OR an
+    // unscheduled medicine not taken by midday.
+    final hasMissedMed = meds.any((m) =>
+        m.isActive &&
+        (m.hasMissedSlot ||
+            (m.reminderTimes.isEmpty && !m.takenToday && h >= 12)));
+
+    final loggedTypes = meals.map((m) => m.mealType).toSet();
     final hasMissedMeal =
         (h >= 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) ||
         (h >= 16 && !loggedTypes.contains(AppConstants.mealLunch)) ||
-        (h >= 23 && !loggedTypes.contains(AppConstants.mealDinner));
+        (h >= 21 && !loggedTypes.contains(AppConstants.mealDinner));
 
     if (!hasMissedMed && !hasMissedMeal) return const SizedBox.shrink();
 
@@ -1115,381 +1147,4 @@ class _MealRow extends StatelessWidget {
       ]),
     );
   }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// Caregiver Home Content
-// ══════════════════════════════════════════════════════════════════════════════
-class _CaregiverHomeContent extends ConsumerStatefulWidget {
-  final AppUser user;
-  const _CaregiverHomeContent({required this.user});
-  @override
-  ConsumerState<_CaregiverHomeContent> createState() => _CaregiverHomeContentState();
-}
-
-class _CaregiverHomeContentState extends ConsumerState<_CaregiverHomeContent> {
-  String? _selectedMemberId;
-
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return 'Good Morning';
-    if (h >= 12 && h < 17) return 'Good Afternoon';
-    if (h >= 17 && h < 23) return 'Good Evening';
-    return 'Good Night';
-  }
-
-  String _initials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final membersAsync = ref.watch(familyMembersProvider(widget.user.uid));
-    final connectedPatientsAsync = ref.watch(caregiverPatientsProvider(widget.user.uid));
-    final pendingInvitesAsync = ref.watch(pendingInvitesForEmailProvider(widget.user.email ?? ''));
-    final today = DateFormat('EEEE, MMM d').format(DateTime.now());
-
-    return membersAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
-      data: (members) {
-        if (_selectedMemberId == null && members.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => setState(() => _selectedMemberId = members.first.id));
-        }
-        final selectedMember = members.where((m) => m.id == _selectedMemberId).firstOrNull;
-
-        return Scaffold(
-          backgroundColor: AppColors.pageBackground,
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            backgroundColor: AppColors.surface,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-              Text(widget.user.name.isNotEmpty ? widget.user.name : 'Caregiver',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground)),
-            ]),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(24),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                ),
-              ),
-            ),
-            actions: const [NotifBell()],
-          ),
-          body: RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(familyMembersProvider(widget.user.uid));
-              if (_selectedMemberId != null) ref.invalidate(familyMemberMedicinesProvider((uid: widget.user.uid, memberId: _selectedMemberId!)));
-            },
-            child: CustomScrollView(slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
-                sliver: SliverList(delegate: SliverChildListDelegate([
-
-                  // Pending invites
-                  ...((pendingInvitesAsync.asData?.value ?? []).map((inv) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: BentoCard(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AcceptInviteScreen(connection: inv))),
-                      child: Row(children: [
-                        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text('${inv.patientName} invited you to their Care Circle',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: const Color(0xFF7C3AED), size: 16),
-                      ]),
-                    ),
-                  ))),
-
-                  // My patients
-                  ...((connectedPatientsAsync.asData?.value ?? []).isNotEmpty ? [
-                    const Text('My Patients', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
-                    const SizedBox(height: 10),
-                    ...((connectedPatientsAsync.asData?.value ?? []).map((conn) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: BentoCard(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CaregiverPatientProfileScreen(connection: conn))),
-                        child: Row(children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12),
-                            child: Text(_initials(conn.patientName),
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF7C3AED))),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(conn.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                            Text(conn.relationship.relationshipLabel, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                          ])),
-                          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
-                        ]),
-                      ),
-                    ))),
-                    const SizedBox(height: 12),
-                  ] : []),
-
-                  const Text('Who are you checking on today?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
-                  const SizedBox(height: 10),
-                  if (members.isEmpty)
-                    _EmptyMembersCard(caregiverUid: widget.user.uid)
-                  else
-                    SizedBox(
-                      height: 80,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: members.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (_, i) {
-                          final m = members[i];
-                          final selected = m.id == _selectedMemberId;
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedMemberId = m.id),
-                            child: Column(children: [
-                              Container(
-                                width: 48, height: 48,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: selected ? const Color(0xFFF59E0B) : const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                                  border: Border.all(color: selected ? const Color(0xFFF59E0B) : AppColors.border, width: selected ? 2.5 : 1),
-                                ),
-                                child: Center(child: Text(m.initials,
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: selected ? Colors.white : const Color(0xFFF59E0B)))),
-                              ),
-                              const SizedBox(height: 6),
-                              SizedBox(width: 60, child: Text(m.name.split(' ').first,
-                                  textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w600 : FontWeight.w400, color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground))),
-                            ]),
-                          );
-                        },
-                      ),
-                    ),
-                  const SizedBox(height: 24),
-
-                  if (selectedMember != null) ...[
-                    BentoSectionHeader(title: "${selectedMember.name}'s Overview"),
-                    if (selectedMember.age != null) ...[
-                      const SizedBox(height: 4),
-                      Text('${selectedMember.age} yrs · ${selectedMember.relationship}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                    ],
-                    const SizedBox(height: 12),
-                    _CaregiverMedSection(caregiverUid: widget.user.uid, memberId: selectedMember.id, memberName: selectedMember.name),
-                    const SizedBox(height: 12),
-                    _CaregiverQuickActions(caregiverUid: widget.user.uid, memberId: selectedMember.id),
-                  ] else if (members.isNotEmpty) const Center(child: CircularProgressIndicator()),
-                  const SizedBox(height: 12),
-                ])),
-              ),
-            ]),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _EmptyMembersCard extends StatelessWidget {
-  final String caregiverUid;
-  const _EmptyMembersCard({required this.caregiverUid});
-
-  @override
-  Widget build(BuildContext context) => BentoCard(
-    child: Column(children: [
-      const SizedBox(height: 4),
-      HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: const Color(0xFFF59E0B), size: 36),
-      const SizedBox(height: 10),
-      const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      const Text('Go to Care to add the people you care for.',
-          textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-      const SizedBox(height: 14),
-      OutlinedButton(
-        onPressed: () => context.go('/care'),
-        style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFF59E0B)), foregroundColor: const Color(0xFFF59E0B)),
-        child: const Text('Go to Medicines', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-      const SizedBox(height: 4),
-    ]),
-  );
-}
-
-class _CaregiverMedSection extends ConsumerWidget {
-  final String caregiverUid, memberId, memberName;
-  const _CaregiverMedSection({required this.caregiverUid, required this.memberId, required this.memberName});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(familyMemberMedicinesProvider((uid: caregiverUid, memberId: memberId)));
-    return medsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const SizedBox(),
-      data: (meds) {
-        final activeMeds = meds.where((m) => m.isActive).toList();
-        final takenToday = activeMeds.where((m) => m.takenToday).length;
-        final dueMeds = activeMeds.where((m) => m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot).toList();
-
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          BentoRow(
-            left: BentoStatCard(
-              label: 'taken today',
-              value: '$takenToday/${activeMeds.length}',
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18),
-              iconBgColor: AppColors.primaryTint,
-              iconColor: AppColors.primary,
-            ),
-            right: BentoStatCard(
-              label: dueMeds.isNotEmpty ? 'due now' : 'all done',
-              value: '${dueMeds.length}',
-              icon: dueMeds.isNotEmpty
-                  ? HugeIcon(icon: HugeIcons.strokeRoundedAlarmClock, color: AppColors.warning, size: 18)
-                  : HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 18),
-              iconBgColor: dueMeds.isNotEmpty ? AppColors.warningLight : AppColors.successLight,
-              iconColor: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success,
-            ),
-          ),
-          if (activeMeds.isEmpty) ...[
-            const SizedBox(height: 12),
-            BentoCard(
-              child: Column(children: [
-                const SizedBox(height: 8),
-                HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 28),
-                const SizedBox(height: 8),
-                Text('No medicines for $memberName yet', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-                const SizedBox(height: 8),
-              ]),
-            ),
-          ] else if (dueMeds.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text('Due now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            ...dueMeds.take(3).map((m) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _CaregiverMedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId),
-            )),
-            if (dueMeds.length > 3)
-              BentoCard(
-                onTap: () => context.go('/care'),
-                child: Center(child: Text('+${dueMeds.length - 3} more — see all in Medicines',
-                    style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500))),
-              ),
-          ] else ...[
-            const SizedBox(height: 12),
-            BentoCard(
-              color: AppColors.successLight,
-              child: Column(children: [
-                const SizedBox(height: 4),
-                HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 28),
-                SizedBox(height: 6),
-                Text('All medicines taken!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.success)),
-                SizedBox(height: 4),
-              ]),
-            ),
-          ],
-        ]);
-      },
-    );
-  }
-}
-
-class _CaregiverMedTile extends ConsumerWidget {
-  final Medicine medicine;
-  final String caregiverUid, memberId;
-  const _CaregiverMedTile({required this.medicine, required this.caregiverUid, required this.memberId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final slot = medicine.nextPendingSlot;
-    final subtitle = slot != null ? '${medicine.dosage} · Due at ${slot.displayTime}' : '${medicine.dosage} · ${medicine.frequency}';
-
-    return BentoCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-        ])),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: () async { await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id); },
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-            child: const Text('Give', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
-class _CaregiverQuickActions extends StatelessWidget {
-  final String caregiverUid, memberId;
-  const _CaregiverQuickActions({required this.caregiverUid, required this.memberId});
-
-  @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    const BentoSectionHeader(title: 'Quick Actions'),
-    const SizedBox(height: 12),
-    Row(children: [
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
-        label: 'Add Medicine', color: AppColors.primary, onTap: () => context.go('/care'),
-      )),
-      const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: const Color(0xFFF59E0B), size: 22),
-        label: 'Appointments', color: const Color(0xFFF59E0B), onTap: () => context.go('/appointments'),
-      )),
-      const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.success, size: 22),
-        label: 'Add Member', color: AppColors.success, onTap: () => context.go('/care'),
-      )),
-    ]),
-  ]);
-}
-
-class _ActionBtn extends StatelessWidget {
-  final Widget icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _ActionBtn({required this.icon, required this.label, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      constraints: const BoxConstraints(minHeight: 48),
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(children: [
-        icon,
-        const SizedBox(height: 6),
-        Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-      ]),
-    ),
-  );
 }
