@@ -44,6 +44,7 @@ import '../screens/caregiver/patients/caregiver_patients_screen.dart';
 import '../screens/caregiver/profile/caregiver_profile_screen.dart';
 import '../screens/onboarding/caregiver_setup_screen.dart';
 import '../screens/patient/vitals/vitals_screen.dart';
+import '../screens/patient/profile/patient_health_profile_screen.dart';
 import '../models/caregiver_connection.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
@@ -58,7 +59,7 @@ class _AuthNotifier extends ChangeNotifier {
 // Routes only patients (not caregivers, not doctors) may access.
 const _patientOnlyRoutes = {
   '/home', '/vitals', '/profile', '/my-doctors', '/prescriptions',
-  '/care-circle', '/activity', '/gamification', '/insights',
+  '/care-circle', '/activity', '/gamification', '/insights', '/health-profile',
 };
 
 // Routes patients and caregivers share (doctors are blocked).
@@ -281,6 +282,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/prescriptions',
           builder: (_, __) => const PrescriptionsScreen()),
+      GoRoute(
+          path: '/health-profile',
+          builder: (_, __) => const PatientHealthProfileScreen()),
       GoRoute(
           path: '/invite-family',
           builder: (_, __) => const InviteFamilyMemberScreen()),

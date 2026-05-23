@@ -227,16 +227,16 @@ class ProfileScreen extends ConsumerWidget {
               BentoCard(
                 padding: EdgeInsets.zero,
                 child: Column(children: [
-                  // TODO: Build dedicated health profile view/edit screen
-                  // BentoSettingsTile(
-                  //   icon: const HealthShield(width: 18, height: 18),
-                  //   title: 'Health Profile',
-                  //   onTap: () => context.push('/onboarding/health-profile'),
-                  // ),
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textPrimary, size: 18),
-                    title: 'Appointments',
-                    onTap: () => context.go('/appointments'),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.textPrimary, size: 18),
+                    title: 'Health Profile',
+                    subtitle: 'Your full health history',
+                    onTap: () => context.push('/health-profile'),
+                  ),
+                  BentoSettingsTile(
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: AppColors.textPrimary, size: 18),
+                    title: 'My Doctors',
+                    onTap: () => context.push('/my-doctors'),
                   ),
                   BentoSettingsTile(
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textPrimary, size: 18),

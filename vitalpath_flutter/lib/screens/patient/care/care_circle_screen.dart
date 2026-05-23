@@ -7,9 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../providers/doctor_provider.dart';
 import '../../../providers/caregiver_provider.dart';
-import '../../../models/doctor.dart';
 import '../../../models/family_member.dart';
 import '../../../models/caregiver_connection.dart';
 import 'add_family_member_screen.dart';
@@ -51,12 +49,9 @@ class _CareCircleBody extends ConsumerWidget {
   const _CareCircleBody({required this.uid});
 
   Future<void> _refresh(WidgetRef ref) async {
-    ref.invalidate(myDoctorsProvider(uid));
     ref.invalidate(familyMembersProvider(uid));
     ref.invalidate(patientCaregiverConnectionsProvider(uid));
-    // H-CC1: also await the caregiver connections future
     await Future.wait([
-      ref.read(myDoctorsProvider(uid).future).catchError((_) => <DoctorProfile>[]),
       ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
       ref.read(patientCaregiverConnectionsProvider(uid).future).catchError((_) => <CaregiverConnection>[]),
     ]);
@@ -76,16 +71,14 @@ class _CareCircleBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final doctorsAsync = ref.watch(myDoctorsProvider(uid));
     final membersAsync = ref.watch(familyMembersProvider(uid));
     final caregiversAsync = ref.watch(patientCaregiverConnectionsProvider(uid));
 
-    final doctorCount = doctorsAsync.asData?.value.length ?? 0;
     final memberCount = membersAsync.asData?.value.length ?? 0;
     final caregiverCount = caregiversAsync.asData?.value
         .where((c) => c.isConnected).length ?? 0;
-    final totalPeople = doctorCount + memberCount + caregiverCount;
-    final isLoading = doctorsAsync.isLoading || membersAsync.isLoading;
+    final totalPeople = memberCount + caregiverCount;
+    final isLoading = membersAsync.isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
@@ -137,19 +130,15 @@ class _CareCircleBody extends ConsumerWidget {
                                 color: AppColors.foreground)),
                         Text(
                           isLoading
-                              ? 'Everyone involved in your health journey.'
+                              ? 'Your family & caregivers in one place.'
                               : [
-                                  if (doctorCount > 0)
-                                    '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                   if (caregiverCount > 0)
                                     '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
                                 ].isEmpty
-                                  ? 'Add people to your health circle.'
+                                  ? 'Add family members or invite caregivers.'
                                   : [
-                                      if (doctorCount > 0)
-                                        '$doctorCount ${doctorCount == 1 ? 'doctor' : 'doctors'}',
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                       if (caregiverCount > 0)
@@ -162,50 +151,6 @@ class _CareCircleBody extends ConsumerWidget {
                       ]),
                 ),
               ]),
-            ),
-
-            const SizedBox(height: 24),
-
-            // ── Doctors section ─────────────────────────────────────────────
-            _SectionHeader(
-              icon: Icons.medical_services_rounded,
-              title: 'My Doctors',
-              count: doctorsAsync.hasValue ? doctorCount : null,
-              color: AppColors.primary,
-              action: TextButton.icon(
-                onPressed: () => context.push('/my-doctors'),
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.black, size: 14),
-                label: const Text('Find more',
-                    style: TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-              ),
-            ),
-            const SizedBox(height: 10),
-            doctorsAsync.when(
-              loading: () => const _ShimmerCard(),
-              error: (_, __) => _ErrorCard(
-                message: 'Could not load doctors.',
-                onRetry: () => ref.invalidate(myDoctorsProvider(uid)),
-              ),
-              data: (doctors) {
-                if (doctors.isEmpty) {
-                  return _EmptyCard(
-                    icon: Icons.person_add_rounded,
-                    message: 'No connected doctors yet.',
-                    actionLabel: 'Find a doctor',
-                    onAction: () => context.push('/my-doctors'),
-                  );
-                }
-                return Column(
-                  children: doctors
-                      .map((d) => _DoctorCard(uid: uid, doctor: d))
-                      .toList(),
-                );
-              },
             ),
 
             const SizedBox(height: 24),
@@ -311,226 +256,6 @@ class _CareCircleBody extends ConsumerWidget {
   }
 }
 
-// ─── Doctor card ──────────────────────────────────────────────────────────────
-class _DoctorCard extends ConsumerWidget {
-  final String uid;
-  final DoctorProfile doctor;
-  const _DoctorCard({required this.uid, required this.doctor});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: BentoCard(
-        onTap: () => _showDoctorDetail(context, ref),
-        padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.doctorLight,
-            backgroundImage: doctor.photoUrl != null
-                ? NetworkImage(doctor.photoUrl!)
-                : null,
-            child: doctor.photoUrl == null
-                ? Text(
-                    doctor.name.isNotEmpty
-                        ? doctor.name[0].toUpperCase()
-                        : 'D',
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Text('Dr. ${doctor.name}',
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    if (doctor.isVerified) ...[
-                      const SizedBox(width: 4),
-                      HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 14),
-                    ],
-                  ]),
-                  if (doctor.specialty != null)
-                    Text(doctor.specialty!,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.mutedForeground)),
-                  if (doctor.hospital != null)
-                    Text(doctor.hospital!,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.mutedForeground)),
-                ]),
-          ),
-          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
-        ]),
-      ),
-    );
-  }
-
-  void _showDoctorDetail(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 20),
-              Row(children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.doctorLight,
-                  backgroundImage: doctor.photoUrl != null
-                      ? NetworkImage(doctor.photoUrl!)
-                      : null,
-                  child: doctor.photoUrl == null
-                      ? Text(
-                          doctor.name.isNotEmpty
-                              ? doctor.name[0].toUpperCase()
-                              : 'D',
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Text('Dr. ${doctor.name}',
-                              style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700)),
-                          if (doctor.isVerified) ...[
-                            const SizedBox(width: 4),
-                            HugeIcon(icon: HugeIcons.strokeRoundedShieldKey, color: AppColors.primary, size: 15),
-                          ],
-                        ]),
-                        if (doctor.specialty != null)
-                          Text(doctor.specialty!,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.mutedForeground)),
-                        if (doctor.hospital != null)
-                          Text(doctor.hospital!,
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.mutedForeground)),
-                      ]),
-                ),
-              ]),
-              const SizedBox(height: 20),
-              const Divider(height: 1, color: AppColors.border),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    context.push('/appointments');
-                  },
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: Colors.black, size: 16),
-                  label: const Text('Book Appointment'),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _confirmRemove(context, ref);
-                  },
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedUnlink01, color: AppColors.destructive, size: 16),
-                  label: const Text('Remove Connection',
-                      style: TextStyle(
-                          color: AppColors.destructive)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.destructive),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _confirmRemove(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Remove Doctor'),
-        content: Text(
-          'Remove Dr. ${doctor.name} from your care circle? You will lose access to their prescriptions.',
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.destructive),
-                onPressed: () async {
-                  Navigator.pop(dialogCtx);
-                  try {
-                    await ref
-                        .read(connectionNotifierProvider.notifier)
-                        .remove(uid, doctor.uid);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Doctor removed from your care circle.'),
-                        behavior: SnackBarBehavior.floating,
-                      ));
-                    }
-                  } catch (_) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Failed to remove doctor. Please try again.'),
-                        behavior: SnackBarBehavior.floating,
-                      ));
-                    }
-                  }
-                },
-                child: const Text('Remove'),
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: TextButton(
-                    onPressed: () => Navigator.pop(dialogCtx),
-                    child: const Text('Cancel')),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Family member card ───────────────────────────────────────────────────────
 class _FamilyMemberCard extends ConsumerWidget {
