@@ -11,6 +11,7 @@ import '../../../models/caregiver_connection.dart';
 import '../../../models/meal.dart';
 import '../../../models/medicine.dart';
 import '../../../models/vital_reading.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/vitals_provider.dart';
 
@@ -38,6 +39,14 @@ final _cgMealsProvider =
 const _kAmber = AppColors.caregiver;
 const _kAmberDark = Color(0xFFD97706);
 
+String _timeAgo(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inDays == 0) return 'Today';
+  if (diff.inDays == 1) return 'Yesterday';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return DateFormat('MMM d').format(dt);
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 class CaregiverPatientProfileScreen extends ConsumerStatefulWidget {
@@ -61,6 +70,83 @@ class _CaregiverPatientProfileScreenState
 
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  void _showNudgeSheet(BuildContext context) {
+    final conn = widget.connection;
+    final messages = [
+      'Just checking in 💛',
+      "Don't forget your medicine!",
+      'Thinking of you today',
+      'How are you feeling?',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Send a nudge to ${conn.patientName}',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              const Text('They\'ll receive a notification from you.',
+                  style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+              const SizedBox(height: 16),
+              ...messages.map((msg) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _sendNudge(msg);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Nudge sent to ${conn.patientName}')),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _kAmber.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kAmber.withValues(alpha: 0.2)),
+                    ),
+                    child: Text(msg,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  ),
+                ),
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendNudge(String message) async {
+    final conn = widget.connection;
+    final senderName = ref.read(currentUserProvider).asData?.value?.name ?? 'Your family member';
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(conn.patientId)
+        .collection(AppConstants.colNotifications)
+        .add({
+      'title': 'Family Care',
+      'body': message,
+      'type': 'nudge',
+      'fromName': senderName,
+      'fromUid': conn.caregiverUid,
+      'read': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   bool get _isToday {
     final t = _dateOnly(DateTime.now());
     return _selectedDate == t;
@@ -81,6 +167,13 @@ class _CaregiverPatientProfileScreenState
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showNudgeSheet(context),
+        backgroundColor: _kAmber,
+        foregroundColor: Colors.white,
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedSent, color: Colors.white, size: 18),
+        label: const Text('Send a nudge', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      ),
       body: CustomScrollView(
         slivers: [
           // ── Warm amber header — intentionally different from doctor portal ──
@@ -144,6 +237,15 @@ class _CaregiverPatientProfileScreenState
               onSelect: (d) => setState(() => _selectedDate = d),
             ),
           ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Text(
+                'Tap a date to review that day\'s health activity',
+                style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+              ),
+            ),
+          ),
 
           // ── Dashboard ────────────────────────────────────────────────────────
           SliverPadding(
@@ -169,24 +271,44 @@ class _CaregiverPatientProfileScreenState
                   _MissedDoseNudge(patientId: conn.patientId),
                   _MedicinesSection(
                       patientId: conn.patientId, selectedDate: _selectedDate),
-                  const SizedBox(height: 18),
-                ],
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedMedicine01,
+                    title: 'Medicines',
+                    patientName: conn.patientName,
+                  ),
+                const SizedBox(height: 18),
 
                 if (p.appointments) ...[
                   _AppointmentSection(patientId: conn.patientId),
-                  const SizedBox(height: 18),
-                ],
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedCalendar01,
+                    title: 'Upcoming Visits',
+                    patientName: conn.patientName,
+                  ),
+                const SizedBox(height: 18),
 
                 if (p.mealLogs) ...[
                   _MealsSection(
                       patientId: conn.patientId, selectedDate: _selectedDate),
-                  const SizedBox(height: 18),
-                ],
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedRestaurant01,
+                    title: 'Meals',
+                    patientName: conn.patientName,
+                  ),
+                const SizedBox(height: 18),
 
                 if (p.vitals) ...[
                   _VitalsSection(patientId: conn.patientId),
-                  const SizedBox(height: 18),
-                ],
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedPulse01,
+                    title: 'Recent Readings',
+                    patientName: conn.patientName,
+                  ),
+                const SizedBox(height: 18),
               ]),
             ),
           ),
@@ -650,7 +772,7 @@ class _AppointmentSection extends ConsumerWidget {
               icon: HugeIcons.strokeRoundedCalendar01,
               color: _kAmber,
               size: 18),
-          title: 'Upcoming Appointments',
+          title: 'Upcoming Visits',
           badge: upcoming.isEmpty ? null : '${upcoming.length}',
           badgeColor: _kAmber,
           children: upcoming.isEmpty
@@ -714,19 +836,17 @@ class _ApptCard extends StatelessWidget {
           child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Dr. ${appt.doctorName}',
+                Text('$dayLabel · ${DateFormat('h:mm a').format(at)}',
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w600)),
-                if (appt.doctorSpecialty != null) ...[
+                Text('with Dr. ${appt.doctorName}',
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.foreground)),
+                if (appt.doctorSpecialty != null)
                   Text(appt.doctorSpecialty!,
                       style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.mutedForeground)),
-                ],
-                Text('$dayLabel · ${DateFormat('h:mm a').format(at)}',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground)),
               ]),
         ),
         Container(
@@ -907,7 +1027,7 @@ class _VitalsSection extends ConsumerWidget {
         if (latest.isEmpty) {
           return _Section(
             icon: HugeIcon(icon: HugeIcons.strokeRoundedPulse01, color: _kAmber, size: 18),
-            title: 'Latest Vitals',
+            title: 'Recent Readings',
             children: [const _EmptyTile('No vitals recorded yet')],
           );
         }
@@ -917,7 +1037,7 @@ class _VitalsSection extends ConsumerWidget {
 
         return _Section(
           icon: HugeIcon(icon: HugeIcons.strokeRoundedPulse01, color: _kAmber, size: 18),
-          title: 'Latest Vitals',
+          title: 'Recent Readings',
           children: [
             BentoCard(
               padding: const EdgeInsets.all(14),
@@ -955,6 +1075,10 @@ class _VitalsSection extends ConsumerWidget {
                                   style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700)),
+                              Text(_timeAgo(r.recordedAt),
+                                  style: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppColors.textTertiary)),
                             ]),
                       ),
                     ]),
@@ -1015,19 +1139,19 @@ class _MissedDoseNudge extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.destructive.withValues(alpha: 0.08),
+              color: _kAmber.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.destructive.withValues(alpha: 0.25)),
+              border: Border.all(color: _kAmber.withValues(alpha: 0.25)),
             ),
             child: Row(children: [
-              HugeIcon(icon: HugeIcons.strokeRoundedAlert01, color: AppColors.destructive, size: 20),
+              HugeIcon(icon: HugeIcons.strokeRoundedAlert01, color: _kAmberDark, size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   missed.length == 1
-                      ? '${missed.first.name} hasn\'t been taken yet today.'
-                      : '${missed.length} medicines haven\'t been taken yet today.',
-                  style: const TextStyle(fontSize: 13, color: AppColors.destructive, fontWeight: FontWeight.w500),
+                      ? '${missed.first.name} may not have been taken yet — worth a check-in.'
+                      : '${missed.length} medicines may not have been taken yet — consider checking in.',
+                  style: TextStyle(fontSize: 13, color: _kAmberDark, fontWeight: FontWeight.w500),
                 ),
               ),
             ]),
@@ -1036,6 +1160,36 @@ class _MissedDoseNudge extends ConsumerWidget {
       },
     );
   }
+}
+
+// ── Locked section placeholder ────────────────────────────────────────────────
+
+class _LockedSection extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final String title;
+  final String patientName;
+  const _LockedSection({required this.icon, required this.title, required this.patientName});
+
+  @override
+  Widget build(BuildContext context) => _Section(
+    icon: HugeIcon(icon: icon, color: AppColors.textTertiary, size: 18),
+    title: title,
+    children: [
+      BentoCard(
+        padding: const EdgeInsets.all(14),
+        child: Row(children: [
+          HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.textTertiary, size: 16),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$patientName hasn\'t shared this with you yet.',
+              style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+            ),
+          ),
+        ]),
+      ),
+    ],
+  );
 }
 
 // ── Shared small widgets ──────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
+import '../../../providers/patient_provider.dart';
 import '../../../models/app_user.dart';
 import '../../../models/caregiver_connection.dart';
 
@@ -143,27 +144,7 @@ class CaregiverPatientsScreen extends ConsumerWidget {
                   return Column(
                     children: patients.map((conn) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: BentoCard(
-                        onTap: () => context.go('/caregiver-patient-profile', extra: conn),
-                        child: Row(children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: AppColors.caregiver.withValues(alpha: 0.12),
-                            child: Text(_initials(conn.patientName),
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                                    color: AppColors.caregiver)),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(conn.patientName,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                            Text(conn.relationship.relationshipLabel,
-                                style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                          ])),
-                          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01,
-                              color: AppColors.textTertiary, size: 16),
-                        ]),
-                      ),
+                      child: _ConnectedPatientCard(conn: conn),
                     )).toList(),
                   );
                 },
@@ -172,6 +153,65 @@ class CaregiverPatientsScreen extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+enum _StatusDot { green, amber }
+
+class _ConnectedPatientCard extends ConsumerWidget {
+  final CaregiverConnection conn;
+  const _ConnectedPatientCard({required this.conn});
+
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final medsAsync = ref.watch(medicinesProvider(conn.patientId));
+    _StatusDot? dot;
+    if (medsAsync.hasValue) {
+      final active = medsAsync.value!.where((m) => m.isActive).toList();
+      if (active.isNotEmpty) {
+        final anyDue = active.any((m) => m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot);
+        dot = anyDue ? _StatusDot.amber : _StatusDot.green;
+      }
+    }
+
+    return BentoCard(
+      onTap: () => context.go('/caregiver-patient-profile', extra: conn),
+      child: Row(children: [
+        Stack(children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.caregiver.withValues(alpha: 0.12),
+            child: Text(_initials(conn.patientName),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.caregiver)),
+          ),
+          if (dot != null)
+            Positioned(
+              bottom: 0, right: 0,
+              child: Container(
+                width: 14, height: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dot == _StatusDot.green ? AppColors.success : AppColors.caregiver,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              ),
+            ),
+        ]),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(conn.patientName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(conn.relationship.relationshipLabel,
+              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+        ])),
+        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
+      ]),
     );
   }
 }

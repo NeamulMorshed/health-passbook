@@ -253,12 +253,14 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
 
                   // ── Selected member overview ──────────────────────────────
                   if (selectedMember != null) ...[
-                    BentoSectionHeader(title: "${selectedMember.name}'s Overview"),
-                    if (selectedMember.age != null) ...[
-                      const SizedBox(height: 4),
-                      Text('${selectedMember.age} yrs · ${selectedMember.relationship}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                    ],
+                    _DailySummaryBanner(
+                      caregiverUid: widget.user.uid,
+                      memberId: selectedMember.id,
+                      memberName: selectedMember.name,
+                      memberInitials: selectedMember.initials,
+                      memberAge: selectedMember.age,
+                      memberRelationship: selectedMember.relationship,
+                    ),
                     const SizedBox(height: 12),
                     _MedSection(
                       caregiverUid: widget.user.uid,
@@ -415,7 +417,7 @@ class _MedSection extends ConsumerWidget {
             const SizedBox(height: 8),
             ...dueMeds.take(3).map((m) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _MedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId),
+              child: _MedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId, memberName: memberName),
             )),
             if (dueMeds.length > 3)
               BentoCard(
@@ -447,8 +449,58 @@ class _MedSection extends ConsumerWidget {
 
 class _MedTile extends ConsumerWidget {
   final Medicine medicine;
-  final String caregiverUid, memberId;
-  const _MedTile({required this.medicine, required this.caregiverUid, required this.memberId});
+  final String caregiverUid, memberId, memberName;
+  const _MedTile({
+    required this.medicine,
+    required this.caregiverUid,
+    required this.memberId,
+    required this.memberName,
+  });
+
+  void _confirm(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Log dose for ${medicine.name}?',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text(
+                "This will update $memberName's health record.",
+                style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.caregiver),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id);
+                  },
+                  child: const Text('Log as Taken'),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -475,14 +527,12 @@ class _MedTile extends ConsumerWidget {
         ])),
         const SizedBox(width: 10),
         GestureDetector(
-          onTap: () async {
-            await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id);
-          },
+          onTap: () => _confirm(context, ref),
           child: Container(
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(10)),
-            child: const Text('Mark Taken', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+            child: const Text('Log as Taken', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
           ),
         ),
       ]),
@@ -509,17 +559,17 @@ class _QuickActions extends StatelessWidget {
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.caregiver, size: 22),
-        label: 'Add Family',
-        color: AppColors.caregiver,
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.info, size: 22),
+        label: 'Appointments',
+        color: AppColors.info,
         onTap: () => context.go('/caregiver/patients'),
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.success, size: 22),
-        label: 'My Family',
-        color: AppColors.success,
-        onTap: () => context.go('/caregiver/patients'),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.mutedForeground, size: 22),
+        label: 'My Profile',
+        color: AppColors.mutedForeground,
+        onTap: () => context.go('/caregiver/profile'),
       )),
     ]),
   ]);
@@ -552,4 +602,118 @@ class _ActionBtn extends StatelessWidget {
       ]),
     ),
   );
+}
+
+// ── Daily summary banner ──────────────────────────────────────────────────────
+
+class _DailySummaryBanner extends ConsumerWidget {
+  final String caregiverUid;
+  final String memberId;
+  final String memberName;
+  final String memberInitials;
+  final int? memberAge;
+  final String memberRelationship;
+
+  const _DailySummaryBanner({
+    required this.caregiverUid,
+    required this.memberId,
+    required this.memberName,
+    required this.memberInitials,
+    required this.memberAge,
+    required this.memberRelationship,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final medsAsync = ref.watch(
+      familyMemberMedicinesProvider((uid: caregiverUid, memberId: memberId)),
+    );
+
+    final meds = medsAsync.asData?.value;
+
+    final String statusText;
+    final Color statusColor;
+    final List<List<dynamic>> statusIcon;
+
+    if (meds == null) {
+      statusText = medsAsync.isLoading ? 'Loading today\'s status…' : 'Could not load';
+      statusColor = AppColors.mutedForeground;
+      statusIcon = HugeIcons.strokeRoundedClock01;
+    } else {
+      final active = meds.where((m) => m.isActive).toList();
+      if (active.isEmpty) {
+        statusText = 'No medicines scheduled today';
+        statusColor = AppColors.mutedForeground;
+        statusIcon = HugeIcons.strokeRoundedCheckmarkCircle01;
+      } else {
+        final due = active.where((m) =>
+            m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot).length;
+        if (due == 0) {
+          statusText = 'All caught up on medicines today';
+          statusColor = AppColors.success;
+          statusIcon = HugeIcons.strokeRoundedCheckmarkCircle01;
+        } else {
+          statusText = '$due medicine${due > 1 ? 's' : ''} to take today';
+          statusColor = AppColors.caregiver;
+          statusIcon = HugeIcons.strokeRoundedMedicine01;
+        }
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.caregiver.withValues(alpha: 0.15),
+          ),
+          child: Center(
+            child: Text(
+              memberInitials,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: AppColors.caregiver),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              memberName,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+            if (memberAge != null)
+              Text(
+                '$memberAge yrs · $memberRelationship',
+                style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground),
+              ),
+            const SizedBox(height: 4),
+            Row(children: [
+              HugeIcon(icon: statusIcon, color: statusColor, size: 12),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: statusColor,
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      ]),
+    );
+  }
 }

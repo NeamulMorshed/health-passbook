@@ -1,4 +1,9 @@
-VitalPath v2.9.3+27 — Splash tap-to-advance
+VitalPath v2.11.0+32 — Role Guard & UX Fixes
 
-- Splash screens now advance on tap anywhere on the screen
-- "Next" button still works as before
+• Fixed doctor portal leaking into caregiver/family member sessions
+• All 7 portal screens now enforce userType guards (caregiver home, patients, profile; doctor dashboard, patients, appointments, profile)
+• Role-mismatch dialog on user-select — warns when existing account differs from selected role
+• Fixed double "Dr." prefix on doctor profile screen
+• "Book Appointment" buttons renamed to "Book Now" throughout
+• All search icons replaced with HugeIcons for consistent icon style
+• AppColors.caregiver token — removes hardcoded amber Color() values across 12 files
