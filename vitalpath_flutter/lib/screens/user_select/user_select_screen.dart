@@ -105,23 +105,62 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
         if (result is AuthSuccess) {
           // Existing profile — navigate to the appropriate destination.
           final user = result.user;
-          if (user.userType == UserType.doctor) {
-            if (!user.onboardingComplete) {
-              context.go('/doc/onboarding/profile');
-            } else {
-              context.go('/doc/dashboard');
-            }
-          } else if (user.userType == UserType.caregiver) {
-            if (!user.onboardingComplete) {
-              context.go('/onboarding/caregiver-setup');
-            } else {
-              context.go('/caregiver/home');
-            }
-          } else if (!user.onboardingComplete) {
-            context.go('/onboarding/permissions');
-          } else {
-            context.go('/auth/faceid');
+
+          // Detect role mismatch: user tapped one role card but their account
+          // is registered under a different role. Surface a dialog rather than
+          // silently landing them in the wrong portal.
+          final selectedType = userType == 'doctor'
+              ? UserType.doctor
+              : userType == 'caregiver'
+                  ? UserType.caregiver
+                  : UserType.patient;
+
+          if (user.userType != selectedType) {
+            setState(() => _loading = false);
+            final storedLabel = user.userType == UserType.doctor
+                ? 'Doctor'
+                : user.userType == UserType.caregiver
+                    ? 'Family Member'
+                    : 'Patient';
+            showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Account Already Registered'),
+                content: Text(
+                  'This account is already registered as a $storedLabel. '
+                  'You\'ll be taken to your $storedLabel dashboard.',
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                actions: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: Text('Continue as $storedLabel'),
+                    ),
+                    const SizedBox(height: 4),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Use a different account'),
+                      ),
+                    ),
+                  ]),
+                ],
+              ),
+            ).then((confirmed) async {
+              if (!mounted) return;
+              if (confirmed == true) {
+                _navigateForExistingUser(user);
+              } else {
+                // Sign out so they can log in with the correct account.
+                await ref.read(authRepositoryProvider).signOut();
+                if (mounted) context.go('/auth/login', extra: {'userType': userType});
+              }
+            });
+            return;
           }
+
+          _navigateForExistingUser(user);
         } else if (result is AuthNewUser) {
           final parsedType = userType == 'doctor'
               ? UserType.doctor
@@ -165,6 +204,16 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
     } else {
       // User is completely unauthenticated.
       context.go('/auth/login', extra: {'userType': userType});
+    }
+  }
+
+  void _navigateForExistingUser(AppUser user) {
+    if (user.userType == UserType.doctor) {
+      context.go(user.onboardingComplete ? '/doc/dashboard' : '/doc/onboarding/profile');
+    } else if (user.userType == UserType.caregiver) {
+      context.go(user.onboardingComplete ? '/caregiver/home' : '/onboarding/caregiver-setup');
+    } else {
+      context.go(user.onboardingComplete ? '/auth/faceid' : '/onboarding/permissions');
     }
   }
 }

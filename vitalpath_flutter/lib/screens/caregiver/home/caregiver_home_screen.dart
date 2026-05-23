@@ -29,10 +29,17 @@ class CaregiverHomeScreen extends ConsumerWidget {
         )),
       ),
       data: (user) {
-        if (user == null) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) { if (context.mounted) context.go('/user-select'); },
-          );
+        if (user == null || user.userType != UserType.caregiver) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            if (user?.userType == UserType.doctor) {
+              context.go('/doc/dashboard');
+            } else if (user?.userType == UserType.patient) {
+              context.go('/home');
+            } else {
+              context.go('/user-select');
+            }
+          });
           return const Scaffold(body: SizedBox.shrink());
         }
         return _HomeContent(user: user);

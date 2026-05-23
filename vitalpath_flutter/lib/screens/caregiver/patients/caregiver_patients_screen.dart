@@ -7,6 +7,7 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
+import '../../../models/app_user.dart';
 import '../../../models/caregiver_connection.dart';
 
 class CaregiverPatientsScreen extends ConsumerWidget {
@@ -31,7 +32,19 @@ class CaregiverPatientsScreen extends ConsumerWidget {
         )),
       ),
       data: (user) {
-        if (user == null) return const Scaffold(body: SizedBox.shrink());
+        if (user == null || user.userType != UserType.caregiver) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            if (user?.userType == UserType.doctor) {
+              context.go('/doc/dashboard');
+            } else if (user?.userType == UserType.patient) {
+              context.go('/home');
+            } else {
+              context.go('/user-select');
+            }
+          });
+          return const Scaffold(body: SizedBox.shrink());
+        }
 
         final patientsAsync = ref.watch(caregiverPatientsProvider(user.uid));
         final pendingAsync  = ref.watch(pendingInvitesForEmailProvider(user.email ?? ''));

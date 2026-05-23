@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/notif_bell.dart';
+import '../../../models/app_user.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -26,10 +27,17 @@ class CaregiverProfileScreen extends ConsumerWidget {
         )),
       ),
       data: (user) {
-        if (user == null) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) { if (context.mounted) context.go('/user-select'); },
-          );
+        if (user == null || user.userType != UserType.caregiver) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            if (user?.userType == UserType.doctor) {
+              context.go('/doc/dashboard');
+            } else if (user?.userType == UserType.patient) {
+              context.go('/home');
+            } else {
+              context.go('/user-select');
+            }
+          });
           return const Scaffold(body: SizedBox.shrink());
         }
 
