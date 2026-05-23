@@ -380,24 +380,54 @@ class _MedSection extends ConsumerWidget {
             .where((m) => m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)
             .toList();
 
+        final dueColor = dueMeds.isNotEmpty ? AppColors.warning : AppColors.success;
+        final dueIcon  = dueMeds.isNotEmpty
+            ? HugeIcons.strokeRoundedAlarmClock
+            : HugeIcons.strokeRoundedCheckmarkCircle01;
+
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          BentoRow(
-            left: BentoStatCard(
-              label: 'taken today',
-              value: '$takenToday/${activeMeds.length}',
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 18),
-              iconBgColor: AppColors.caregiverLight,
-              iconColor: AppColors.caregiver,
-            ),
-            right: BentoStatCard(
-              label: dueMeds.isNotEmpty ? 'due now' : 'all done',
-              value: '${dueMeds.length}',
-              icon: dueMeds.isNotEmpty
-                  ? HugeIcon(icon: HugeIcons.strokeRoundedAlarmClock, color: AppColors.warning, size: 18)
-                  : HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 18),
-              iconBgColor: dueMeds.isNotEmpty ? AppColors.warningLight : AppColors.successLight,
-              iconColor: dueMeds.isNotEmpty ? AppColors.warning : AppColors.success,
-            ),
+          BentoCard(
+            child: Row(children: [
+              Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.caregiverLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 20),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  '$takenToday/${activeMeds.length}',
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+                const Text('taken today',
+                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              ]),
+              const Spacer(),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(
+                  '${dueMeds.length}',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: dueColor),
+                ),
+                Text(
+                  dueMeds.isNotEmpty ? 'due now' : 'all done',
+                  style: TextStyle(fontSize: 12, color: dueColor),
+                ),
+              ]),
+              const SizedBox(width: 12),
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: dueColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(child: HugeIcon(icon: dueIcon, color: dueColor, size: 18)),
+              ),
+            ]),
           ),
           if (activeMeds.isEmpty) ...[
             const SizedBox(height: 12),

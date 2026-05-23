@@ -1,7 +1,5 @@
-Omra v2.11.0+34 — Doctor dashboard fix
+Omra v2.11.0+35 — Family member medicine card layout fix
 
-• Fixed doctor home page showing "Failed to load" — appointment stream now sorts
-  client-side, removing the composite Firestore index dependency entirely
-• Made appointment parsing resilient — one malformed document can no longer crash
-  the entire stream for both doctor and patient appointment views
-• Fixed patientRating field cast — handles both int and double storage safely
+• Medicines card on family member home is now a single full-width card showing
+  "taken today" count on the left and "due now / all done" count on the right,
+  replacing the two narrow side-by-side half-width stat cards
