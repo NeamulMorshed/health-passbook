@@ -1,9 +1,13 @@
-VitalPath v2.11.0+32 — Role Guard & UX Fixes
+Omra v2.11.0+33 — Family Member Portal UX Overhaul
 
-• Fixed doctor portal leaking into caregiver/family member sessions
-• All 7 portal screens now enforce userType guards (caregiver home, patients, profile; doctor dashboard, patients, appointments, profile)
-• Role-mismatch dialog on user-select — warns when existing account differs from selected role
-• Fixed double "Dr." prefix on doctor profile screen
-• "Book Appointment" buttons renamed to "Book Now" throughout
-• All search icons replaced with HugeIcons for consistent icon style
-• AppColors.caregiver token — removes hardcoded amber Color() values across 12 files
+• Replaced all user-facing "caregiver" text with "family member" across the entire app
+• Family member home: live daily summary banner showing medicine status for each person
+• Family member home: confirmation sheet before logging a dose to prevent accidental taps
+• Family member home: Quick Actions fixed — replaced misleading "Add Family" with Appointments and My Profile
+• Patient list: status dot on each family member card (green = all medicines taken, amber = doses due)
+• Patient profile: Send a Nudge FAB — send pre-written care messages directly to family member
+• Patient profile: locked section placeholders when data category hasn't been shared yet
+• Patient profile: appointments now show time and day as primary, doctor name as secondary context
+• Patient profile: missed-dose banner softened to amber (was red/alarming)
+• Patient profile: vitals renamed to "Recent Readings", appointments renamed to "Upcoming Visits"
+• Patient profile: timestamp shown under each vital reading
