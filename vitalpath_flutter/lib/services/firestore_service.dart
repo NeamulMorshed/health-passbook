@@ -523,20 +523,44 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
-        .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final appts = s.docs
+              .map((d) {
+                try {
+                  return Appointment.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Appointment>()
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return appts;
+        });
   }
 
   Stream<List<Appointment>> watchDoctorAppointments(String doctorId) {
     return _db
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
-        .orderBy('createdAt', descending: true)
-        .limit(50)
+        .limit(100)
         .snapshots()
-        .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final appts = s.docs
+              .map((d) {
+                try {
+                  return Appointment.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Appointment>()
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return appts;
+        });
   }
 
   // Booking only creates the appointment — connection is established on confirmation.

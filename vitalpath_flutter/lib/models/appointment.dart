@@ -68,7 +68,7 @@ class Appointment {
       notes:            map['notes'],
       patientNote:      map['patientNote'],
       createdAt:        (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      patientRating:    map['patientRating'] as int?,
+      patientRating:    (map['patientRating'] as num?)?.toInt(),
       familyMemberId:   map['familyMemberId'] as String?,
       familyMemberName: map['familyMemberName'] as String?,
     );

@@ -1,13 +1,7 @@
-Omra v2.11.0+33 — Family Member Portal UX Overhaul
+Omra v2.11.0+34 — Doctor dashboard fix
 
-• Replaced all user-facing "caregiver" text with "family member" across the entire app
-• Family member home: live daily summary banner showing medicine status for each person
-• Family member home: confirmation sheet before logging a dose to prevent accidental taps
-• Family member home: Quick Actions fixed — replaced misleading "Add Family" with Appointments and My Profile
-• Patient list: status dot on each family member card (green = all medicines taken, amber = doses due)
-• Patient profile: Send a Nudge FAB — send pre-written care messages directly to family member
-• Patient profile: locked section placeholders when data category hasn't been shared yet
-• Patient profile: appointments now show time and day as primary, doctor name as secondary context
-• Patient profile: missed-dose banner softened to amber (was red/alarming)
-• Patient profile: vitals renamed to "Recent Readings", appointments renamed to "Upcoming Visits"
-• Patient profile: timestamp shown under each vital reading
+• Fixed doctor home page showing "Failed to load" — appointment stream now sorts
+  client-side, removing the composite Firestore index dependency entirely
+• Made appointment parsing resilient — one malformed document can no longer crash
+  the entire stream for both doctor and patient appointment views
+• Fixed patientRating field cast — handles both int and double storage safely
