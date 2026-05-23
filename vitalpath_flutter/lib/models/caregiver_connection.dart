@@ -239,7 +239,7 @@ extension RelationshipLabel on String {
       case 'sibling':
         return 'Sibling';
       case 'professional':
-        return 'Professional Caregiver';
+        return 'Professional Carer';
       default:
         return 'Other';
     }

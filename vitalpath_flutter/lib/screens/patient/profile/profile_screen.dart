@@ -212,7 +212,7 @@ class ProfileScreen extends ConsumerWidget {
                   BentoSettingsTile(
                     icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textPrimary, size: 18),
                     title: 'Care Circle',
-                    subtitle: 'Manage caregivers & family',
+                    subtitle: 'Manage family members',
                     showDivider: false,
                     onTap: () => context.push('/care-circle'),
                   ),

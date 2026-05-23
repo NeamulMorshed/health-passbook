@@ -130,14 +130,14 @@ class _CareCircleBody extends ConsumerWidget {
                                 color: AppColors.foreground)),
                         Text(
                           isLoading
-                              ? 'Your family & caregivers in one place.'
+                              ? 'Your family members in one place.'
                               : [
                                   if (memberCount > 0)
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                   if (caregiverCount > 0)
                                     '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
                                 ].isEmpty
-                                  ? 'Add family members or invite caregivers.'
+                                  ? 'Invite family members to monitor you.'
                                   : [
                                       if (memberCount > 0)
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
@@ -226,7 +226,7 @@ class _CareCircleBody extends ConsumerWidget {
             caregiversAsync.when(
               loading: () => const _ShimmerCard(),
               error: (_, __) => _ErrorCard(
-                message: 'Could not load caregivers.',
+                message: 'Could not load family members.',
                 onRetry: () =>
                     ref.invalidate(patientCaregiverConnectionsProvider(uid)),
               ),

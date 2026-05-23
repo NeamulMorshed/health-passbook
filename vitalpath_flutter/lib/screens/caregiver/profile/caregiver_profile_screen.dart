@@ -67,7 +67,7 @@ class CaregiverProfileScreen extends ConsumerWidget {
                   AppAvatar(name: user.name, size: 72, imageUrl: user.photoUrl),
                   const SizedBox(height: 12),
                   Text(
-                    user.name.isNotEmpty ? user.name : 'Caregiver',
+                    user.name.isNotEmpty ? user.name : 'Family Member',
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 6),

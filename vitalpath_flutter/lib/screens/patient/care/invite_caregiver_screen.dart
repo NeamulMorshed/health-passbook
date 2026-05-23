@@ -246,7 +246,7 @@ class _Step1 extends StatelessWidget {
     ('parent', Icons.elderly_rounded, 'Parent'),
     ('child', Icons.child_care_rounded, 'Child / Adult child'),
     ('sibling', Icons.people_rounded, 'Sibling'),
-    ('professional', Icons.medical_services_rounded, 'Professional Caregiver'),
+    ('professional', Icons.medical_services_rounded, 'Professional Carer'),
     ('other', Icons.person_rounded, 'Other'),
   ];
 

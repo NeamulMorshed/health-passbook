@@ -97,7 +97,7 @@ class _ManageCaregiverScreenState
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Failed to remove caregiver. Please try again.'),
+            content: Text('Failed to remove family member. Please try again.'),
             behavior: SnackBarBehavior.floating,
           ));
         }
