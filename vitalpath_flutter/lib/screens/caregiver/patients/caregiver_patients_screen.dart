@@ -135,10 +135,10 @@ class CaregiverPatientsScreen extends ConsumerWidget {
                         child: Row(children: [
                           CircleAvatar(
                             radius: 24,
-                            backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                            backgroundColor: AppColors.caregiver.withValues(alpha: 0.12),
                             child: Text(_initials(conn.patientName),
                                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                                    color: Color(0xFFF59E0B))),
+                                    color: AppColors.caregiver)),
                           ),
                           const SizedBox(width: 14),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

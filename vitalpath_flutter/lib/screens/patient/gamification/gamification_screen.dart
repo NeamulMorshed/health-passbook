@@ -365,12 +365,12 @@ class _HowToEarnSheet extends StatelessWidget {
   static final _items = [
     (icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01,     color: Color(0xFF6366F1), size: 18) as Widget, color: Color(0xFF6366F1), action: 'Log medicine on time',      hp: '+10 HP'),
     (icon: Icon(Icons.restaurant_rounded,            color: Color(0xFF22C55E), size: 18) as Widget,            color: Color(0xFF22C55E), action: 'Log a meal',                hp: '+5 HP'),
-    (icon: Icon(Icons.directions_walk_rounded,       color: Color(0xFFF59E0B), size: 18) as Widget,            color: Color(0xFFF59E0B), action: 'Log an activity session',   hp: '+10 HP'),
+    (icon: Icon(Icons.directions_walk_rounded,       color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: 'Log an activity session',   hp: '+10 HP'),
     (icon: Icon(Icons.local_fire_department_rounded, color: Color(0xFFEF4444), size: 18) as Widget,            color: Color(0xFFEF4444), action: '7-day medicine streak',     hp: '+50 HP'),
     (icon: Icon(Icons.favorite_rounded,              color: Color(0xFF22C55E), size: 18) as Widget,            color: Color(0xFF22C55E), action: '7-day meal streak',         hp: '+50 HP'),
-    (icon: Icon(Icons.fitness_center_rounded,        color: Color(0xFFF59E0B), size: 18) as Widget,            color: Color(0xFFF59E0B), action: '5-day activity streak',     hp: '+30 HP'),
+    (icon: Icon(Icons.fitness_center_rounded,        color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: '5-day activity streak',     hp: '+30 HP'),
     (icon: Icon(Icons.emoji_events_rounded,          color: Color(0xFF8B5CF6), size: 18) as Widget,            color: Color(0xFF8B5CF6), action: 'Complete weekly challenge', hp: '+100 HP'),
-    (icon: Icon(Icons.military_tech_rounded,         color: Color(0xFFF59E0B), size: 18) as Widget,            color: Color(0xFFF59E0B), action: 'Unlock a badge',            hp: '+50 HP'),
+    (icon: Icon(Icons.military_tech_rounded,         color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: 'Unlock a badge',            hp: '+50 HP'),
   ];
 
   @override

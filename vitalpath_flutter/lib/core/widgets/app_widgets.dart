@@ -217,7 +217,7 @@ class EmptyState extends StatelessWidget {
 
   const EmptyState({
     super.key,
-    required this.icon,
+    this.icon = Icons.info_outline_rounded,
     this.iconWidget,
     required this.title,
     required this.subtitle,

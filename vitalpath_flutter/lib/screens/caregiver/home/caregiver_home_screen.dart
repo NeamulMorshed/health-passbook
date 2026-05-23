@@ -210,10 +210,10 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: selected
-                                      ? const Color(0xFFF59E0B)
-                                      : const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                                      ? AppColors.caregiver
+                                      : AppColors.caregiver.withValues(alpha: 0.15),
                                   border: Border.all(
-                                    color: selected ? const Color(0xFFF59E0B) : AppColors.border,
+                                    color: selected ? AppColors.caregiver : AppColors.border,
                                     width: selected ? 2.5 : 1,
                                   ),
                                 ),
@@ -221,7 +221,7 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 16,
-                                      color: selected ? Colors.white : const Color(0xFFF59E0B),
+                                      color: selected ? Colors.white : AppColors.caregiver,
                                     ))),
                               ),
                               const SizedBox(height: 6),
@@ -234,7 +234,7 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                                      color: selected ? const Color(0xFFF59E0B) : AppColors.mutedForeground,
+                                      color: selected ? AppColors.caregiver : AppColors.mutedForeground,
                                     )),
                               ),
                             ]),
@@ -284,7 +284,7 @@ class _EmptyMembersCard extends StatelessWidget {
   Widget build(BuildContext context) => BentoCard(
     child: Column(children: [
       const SizedBox(height: 4),
-      HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: const Color(0xFFF59E0B), size: 36),
+      HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.caregiver, size: 36),
       const SizedBox(height: 10),
       const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       const SizedBox(height: 4),
@@ -295,8 +295,8 @@ class _EmptyMembersCard extends StatelessWidget {
       OutlinedButton(
         onPressed: () => context.go('/caregiver/care'),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFF59E0B)),
-          foregroundColor: const Color(0xFFF59E0B),
+          side: const BorderSide(color: AppColors.caregiver),
+          foregroundColor: AppColors.caregiver,
         ),
         child: const Text('Go to Family', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
@@ -312,16 +312,16 @@ class _OnboardingGuidanceCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
-      color: const Color(0xFFF59E0B).withValues(alpha: 0.07),
+      color: AppColors.caregiver.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.25)),
+      border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.25)),
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: const Color(0xFFF59E0B), size: 22),
+        HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.caregiver, size: 22),
         const SizedBox(width: 10),
         const Text('Welcome to Family Health',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFFF59E0B))),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.caregiver)),
       ]),
       const SizedBox(height: 8),
       const Text(
@@ -345,7 +345,7 @@ class _GuidanceStep extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, size: 14, color: const Color(0xFFF59E0B)),
+      Icon(icon, size: 14, color: AppColors.caregiver),
       const SizedBox(width: 8),
       Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground))),
     ],
@@ -502,9 +502,9 @@ class _QuickActions extends StatelessWidget {
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: const Color(0xFFF59E0B), size: 22),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.caregiver, size: 22),
         label: 'Add Family',
-        color: const Color(0xFFF59E0B),
+        color: AppColors.caregiver,
         onTap: () => context.go('/caregiver/care'),
       )),
       const SizedBox(width: 10),

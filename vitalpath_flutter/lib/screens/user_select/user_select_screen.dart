@@ -66,8 +66,8 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
               ),
               const SizedBox(height: 16),
               _RoleCard(
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: Color(0xFFF59E0B), size: 28),
-                color: const Color(0xFFF59E0B),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.caregiver, size: 28),
+                color: AppColors.caregiver,
                 title: 'I\'m a Family Member',
                 subtitle: 'Monitor health for someone you care for\nand connect with their doctors',
                 onTap: () => _handleRoleSelected('caregiver'),

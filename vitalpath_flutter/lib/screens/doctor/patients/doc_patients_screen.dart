@@ -169,8 +169,8 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                 // List
                 Expanded(
                   child: visible.isEmpty
-                      ? const EmptyState(
-                          icon: Icons.person_search_rounded,
+                      ? EmptyState(
+                          iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.mutedForeground, size: 40),
                           title: 'No Match',
                           subtitle: 'Try a different name.',
                         )

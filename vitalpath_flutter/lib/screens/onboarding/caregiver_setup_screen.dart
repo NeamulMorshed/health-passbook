@@ -134,7 +134,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                   margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
                   decoration: BoxDecoration(
                     color: i <= _page
-                        ? const Color(0xFFF59E0B)
+                        ? AppColors.caregiver
                         : AppColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -179,7 +179,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                     : _page == 1
                         ? 'Next'
                         : 'Get Started',
-                colors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                colors: const [AppColors.caregiver, Color(0xFFD97706)],
                 onPressed: _next,
                 isLoading: _saving,
               ),
@@ -225,7 +225,7 @@ class _Step1 extends StatelessWidget {
       children: [
         _infoBox(
           'Tell us about the family member you\'re looking after so we can set up their health profile.',
-          const Color(0xFFF59E0B),
+          AppColors.caregiver,
         ),
         const SizedBox(height: 24),
         _label('Their Full Name *'),
@@ -249,12 +249,12 @@ class _Step1 extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: selected
-                      ? const Color(0xFFF59E0B)
+                      ? AppColors.caregiver
                       : AppColors.muted,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: selected
-                        ? const Color(0xFFF59E0B)
+                        ? AppColors.caregiver
                         : AppColors.border,
                   ),
                 ),
@@ -331,13 +331,13 @@ class _Step2 extends StatelessWidget {
       children: [
         _infoBox(
           'Optional — you can always connect with doctors from the Care tab later.',
-          const Color(0xFFF59E0B),
+          AppColors.caregiver,
         ),
         const SizedBox(height: 28),
         BentoCard(
           padding: const EdgeInsets.all(20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: const Color(0xFFF59E0B), size: 28),
+            HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: AppColors.caregiver, size: 28),
             const SizedBox(height: 12),
             const Text(
               'Connect with their doctor',
@@ -366,19 +366,19 @@ class _Step2 extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _featureTile(
-          Icons.search_rounded,
+          HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.caregiver, size: 16),
           'Search by name or hospital',
           'Find any verified doctor on Omra',
         ),
         const SizedBox(height: 10),
         _featureTile(
-          Icons.send_rounded,
+          HugeIcon(icon: HugeIcons.strokeRoundedSent, color: AppColors.caregiver, size: 16),
           'Request a connection',
           'The doctor confirms and joins your care circle',
         ),
         const SizedBox(height: 10),
         _featureTile(
-          Icons.description_rounded,
+          HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.caregiver, size: 16),
           'Receive prescriptions instantly',
           'Digital prescriptions arrive in the app',
         ),
@@ -386,15 +386,15 @@ class _Step2 extends StatelessWidget {
     );
   }
 
-  Widget _featureTile(IconData icon, String title, String subtitle) =>
+  Widget _featureTile(Widget icon, String title, String subtitle) =>
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+            color: AppColors.caregiver.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFFF59E0B)),
+          child: icon,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -450,11 +450,11 @@ class _Step3State extends State<_Step3> {
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              color: AppColors.caregiver.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: Color(0xFFF59E0B), size: 44),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.caregiver, size: 44),
             ),
           ),
         ),
@@ -486,16 +486,16 @@ class _Step3State extends State<_Step3> {
           decoration: BoxDecoration(
             color: _notifGranted
                 ? AppColors.success.withValues(alpha: 0.06)
-                : const Color(0xFFF59E0B).withValues(alpha: 0.06),
+                : AppColors.caregiver.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _notifGranted
                   ? AppColors.success.withValues(alpha: 0.25)
-                  : const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                  : AppColors.caregiver.withValues(alpha: 0.25),
             ),
           ),
           child: Row(children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: _notifGranted ? AppColors.success : const Color(0xFFF59E0B), size: 24),
+            HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: _notifGranted ? AppColors.success : AppColors.caregiver, size: 24),
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -508,7 +508,7 @@ class _Step3State extends State<_Step3> {
                       fontWeight: FontWeight.w600,
                       color: _notifGranted
                           ? AppColors.success
-                          : const Color(0xFFF59E0B)),
+                          : AppColors.caregiver),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -527,7 +527,7 @@ class _Step3State extends State<_Step3> {
                 onPressed: _requestNotifications,
                 style: TextButton.styleFrom(
                   backgroundColor:
-                      const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                      AppColors.caregiver.withValues(alpha: 0.12),
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   shape: RoundedRectangleBorder(
@@ -536,7 +536,7 @@ class _Step3State extends State<_Step3> {
                 child: const Text('Allow',
                     style: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.caregiver,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -550,7 +550,7 @@ class _Step3State extends State<_Step3> {
         _summaryTile(const Icon(Icons.restaurant_rounded, color: AppColors.success, size: 20), AppColors.success,
             'Meal Logging', 'Track breakfast, lunch, and dinner'),
         const SizedBox(height: 10),
-        _summaryTile(const Icon(Icons.calendar_month_rounded, color: Color(0xFFF59E0B), size: 20), const Color(0xFFF59E0B),
+        _summaryTile(const Icon(Icons.calendar_month_rounded, color: AppColors.caregiver, size: 20), AppColors.caregiver,
             'Appointments', 'Book and manage doctor visits'),
       ],
     );

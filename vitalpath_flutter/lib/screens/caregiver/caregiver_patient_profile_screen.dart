@@ -35,7 +35,7 @@ final _cgMealsProvider =
 
 // ── Accent colours — warm amber, distinct from doctor (primary blue) ──────────
 
-const _kAmber = Color(0xFFF59E0B);
+const _kAmber = AppColors.caregiver;
 const _kAmberDark = Color(0xFFD97706);
 
 // ── Screen ────────────────────────────────────────────────────────────────────

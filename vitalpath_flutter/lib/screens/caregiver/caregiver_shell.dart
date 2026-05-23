@@ -8,7 +8,7 @@ class CaregiverShell extends StatelessWidget {
   const CaregiverShell({super.key, required this.child});
 
   static const _kSize = 24.0;
-  static const _kAmber = Color(0xFFF59E0B);
+  static const _kAmber = AppColors.caregiver;
 
   static final _tabs = [
     _TabItem(

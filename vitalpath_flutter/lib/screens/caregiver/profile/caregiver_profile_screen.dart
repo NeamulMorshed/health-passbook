@@ -66,13 +66,13 @@ class CaregiverProfileScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                      color: AppColors.caregiver.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+                      border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       badgeLabel,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B)),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.caregiver),
                     ),
                   ),
                   if (user.phone.isNotEmpty) ...[
@@ -102,9 +102,9 @@ class CaregiverProfileScreen extends ConsumerWidget {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                             leading: CircleAvatar(
                               radius: 20,
-                              backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                              backgroundColor: AppColors.caregiver.withValues(alpha: 0.12),
                               child: Text(initials,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFF59E0B))),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.caregiver)),
                             ),
                             title: Text(conn.patientName,
                                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),

@@ -312,12 +312,12 @@ class _FamilyMemberCard extends ConsumerWidget {
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
                         color: isLinked
-                            ? const Color(0xFFF59E0B).withValues(alpha: 0.15)
+                            ? AppColors.caregiver.withValues(alpha: 0.15)
                             : AppColors.muted,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: isLinked
-                              ? const Color(0xFFF59E0B)
+                              ? AppColors.caregiver
                               : AppColors.border,
                         ),
                       ),
@@ -327,7 +327,7 @@ class _FamilyMemberCard extends ConsumerWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: isLinked
-                                ? const Color(0xFFF59E0B)
+                                ? AppColors.caregiver
                                 : AppColors.mutedForeground),
                       ),
                     ),

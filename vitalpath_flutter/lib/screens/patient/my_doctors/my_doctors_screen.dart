@@ -255,8 +255,8 @@ class _FindDoctorsTabState extends ConsumerState<_FindDoctorsTab> {
                 subtitle: 'Check your connection and try again.'),
             data: (doctors) {
               if (doctors.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.person_search_rounded,
+                return EmptyState(
+                  iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.mutedForeground, size: 40),
                   title: 'No Doctors Found',
                   subtitle: 'Try a different name or specialty.',
                 );
@@ -433,7 +433,7 @@ class _DoctorCard extends ConsumerWidget {
                     ? null
                     : () => _showBookSheet(context, doctor),
                 icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 16),
-                label: const Text('Book Appointment'),
+                label: const Text('Book Now'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 40),
                   foregroundColor: AppColors.primary,
@@ -706,7 +706,7 @@ class _DoctorProfileSheet extends StatelessWidget {
                 );
               },
               icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 16),
-              label: const Text('Book Appointment'),
+              label: const Text('Book Now'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 46),
                 foregroundColor: AppColors.primary,
@@ -762,7 +762,7 @@ class _ProfileRow extends StatelessWidget {
       );
 }
 
-// ─── Book Appointment Sheet ────────────────────────────────────────────────────
+// ─── Book Now Sheet ────────────────────────────────────────────────────────────
 class _BookAppointmentSheet extends ConsumerStatefulWidget {
   final DoctorProfile doctor;
   final String patientId;

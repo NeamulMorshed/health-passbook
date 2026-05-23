@@ -680,11 +680,11 @@ class _VitalStatusCard extends ConsumerWidget {
           if (medStreak > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: const Color(0xFFF59E0B).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: AppColors.caregiver.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.local_fire_department_rounded, size: 13, color: Color(0xFFF59E0B)),
+                const Icon(Icons.local_fire_department_rounded, size: 13, color: AppColors.caregiver),
                 const SizedBox(width: 4),
-                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFF59E0B))),
+                Text('$medStreak day streak', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.caregiver)),
               ]),
             ),
         ]),

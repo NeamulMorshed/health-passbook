@@ -328,8 +328,8 @@ class _TimeContextualCard extends StatelessWidget {
     if (h >= 5 && h < 11) {
       final dueMeds = meds.where((m) => m.isActive && m.hasDueSlot).toList();
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: const Color(0xFFF59E0B), size: 18),
-        color: const Color(0xFFF59E0B),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: AppColors.caregiver, size: 18),
+        color: AppColors.caregiver,
         heading: 'Morning routine',
         actionLabel: dueMeds.isNotEmpty ? 'View Medicines' : 'Log Breakfast',
         body: dueMeds.isNotEmpty ? 'You have ${dueMeds.length} medicine${dueMeds.length == 1 ? '' : 's'} to take this morning.' : loggedTypes.contains(AppConstants.mealBreakfast) ? 'Breakfast done! Morning medicines all taken.' : 'Start your day — take your medicines and log breakfast.',
@@ -506,7 +506,7 @@ class _DailySnapshotRow extends StatelessWidget {
     }
 
     final medColor = active.isEmpty ? AppColors.mutedForeground : taken == active.length ? AppColors.success : AppColors.primary;
-    final streakColor = (medStreak ?? 0) > 0 ? const Color(0xFFF59E0B) : AppColors.mutedForeground;
+    final streakColor = (medStreak ?? 0) > 0 ? AppColors.caregiver : AppColors.mutedForeground;
     final visitColor = daysToAppt == null ? AppColors.mutedForeground : daysToAppt == 0 ? AppColors.success : daysToAppt <= 6 ? AppColors.warning : AppColors.primary;
 
     return Row(children: [

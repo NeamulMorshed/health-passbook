@@ -34,6 +34,10 @@ class AppColors {
   static const info            = Color(0xFF3B82F6);
   static const infoLight       = Color(0xFFEFF6FF);
 
+  // Caregiver / family member accent — amber #F59E0B
+  static const caregiver       = Color(0xFFF59E0B);
+  static const caregiverLight  = Color(0xFFFEF3C7);
+
   // Legacy aliases — keeps existing screens compiling without any changes
   static const background      = pageBackground;
   static const muted           = surfaceSubtle;
