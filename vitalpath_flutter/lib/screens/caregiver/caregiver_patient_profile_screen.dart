@@ -535,12 +535,12 @@ class _MedRow extends StatelessWidget {
                 ? AppColors.destructive
                 : AppColors.warning;
     final statusIcon = isFutureDate
-        ? Icons.radio_button_unchecked_rounded
+        ? HugeIcons.strokeRoundedCircle
         : allTaken
-            ? Icons.check_circle_rounded
+            ? HugeIcons.strokeRoundedCheckmarkCircle01
             : anyMissed
-                ? Icons.cancel_rounded
-                : Icons.radio_button_unchecked_rounded;
+                ? HugeIcons.strokeRoundedCancel01
+                : HugeIcons.strokeRoundedCircle;
 
     return BentoCard(
       padding: const EdgeInsets.all(12),
@@ -552,7 +552,7 @@ class _MedRow extends StatelessWidget {
             color: statusColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(statusIcon, color: statusColor, size: 18),
+          child: HugeIcon(icon: statusIcon, color: statusColor, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -601,12 +601,12 @@ class _DoseChip extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(
-          slot.isTaken
-              ? Icons.check_rounded
+        HugeIcon(
+          icon: slot.isTaken
+              ? HugeIcons.strokeRoundedTick01
               : slot.isMissed
-                  ? Icons.close_rounded
-                  : Icons.access_time_rounded,
+                  ? HugeIcons.strokeRoundedCancel01
+                  : HugeIcons.strokeRoundedClock01,
           size: 10,
           color: color,
         ),
@@ -778,8 +778,7 @@ class _MealsSection extends ConsumerWidget {
         ];
 
         return _Section(
-          icon:
-              const Icon(Icons.restaurant_rounded, color: _kAmber, size: 18),
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedRestaurant01, color: _kAmber, size: 18),
           title: 'Meals',
           children: [
             BentoCard(
@@ -873,7 +872,7 @@ class _MealsSection extends ConsumerWidget {
     if (type == AppConstants.mealLunch) {
       return HugeIcon(
           icon: HugeIcons.strokeRoundedSun01,
-          color: AppColors.primary,
+          color: AppColors.success,
           size: 18);
     }
     return HugeIcon(
@@ -907,8 +906,7 @@ class _VitalsSection extends ConsumerWidget {
 
         if (latest.isEmpty) {
           return _Section(
-            icon: const Icon(Icons.monitor_heart_rounded,
-                color: _kAmber, size: 18),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedPulse01, color: _kAmber, size: 18),
             title: 'Latest Vitals',
             children: [const _EmptyTile('No vitals recorded yet')],
           );
@@ -918,8 +916,7 @@ class _VitalsSection extends ConsumerWidget {
         final tileW = (screenW - 52) / 2;
 
         return _Section(
-          icon: const Icon(Icons.monitor_heart_rounded,
-              color: _kAmber, size: 18),
+          icon: HugeIcon(icon: HugeIcons.strokeRoundedPulse01, color: _kAmber, size: 18),
           title: 'Latest Vitals',
           children: [
             BentoCard(
@@ -1023,7 +1020,7 @@ class _MissedDoseNudge extends ConsumerWidget {
               border: Border.all(color: AppColors.destructive.withValues(alpha: 0.25)),
             ),
             child: Row(children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.destructive, size: 20),
+              HugeIcon(icon: HugeIcons.strokeRoundedAlert01, color: AppColors.destructive, size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -1065,7 +1062,7 @@ class _ErrorTile extends StatelessWidget {
   Widget build(BuildContext context) => BentoCard(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
-          const Icon(Icons.error_outline_rounded,
+          HugeIcon(icon: HugeIcons.strokeRoundedAlertCircle,
               size: 16, color: AppColors.destructive),
           const SizedBox(width: 8),
           Expanded(

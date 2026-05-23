@@ -148,17 +148,17 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                   ...((pendingInvitesAsync.asData?.value ?? []).map((inv) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: BentoCard(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                      color: AppColors.inviteAccent.withValues(alpha: 0.08),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       onTap: () => context.go('/accept-invite', extra: inv),
                       child: Row(children: [
-                        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
+                        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: AppColors.inviteAccent, size: 20),
                         const SizedBox(width: 10),
                         Expanded(child: Text(
                           '${inv.patientName} wants to share their health with you (as your ${inv.relationship.relationshipLabel})',
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                         )),
-                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: const Color(0xFF7C3AED), size: 16),
+                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.inviteAccent, size: 16),
                       ]),
                     ),
                   ))),
@@ -175,7 +175,7 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                         child: Row(children: [
                           CircleAvatar(
                             radius: 22,
-                            backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                            backgroundColor: AppColors.inviteAccent.withValues(alpha: 0.12),
                             child: Text(_initials(conn.patientName),
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF7C3AED))),
                           ),
@@ -327,7 +327,7 @@ class _OnboardingGuidanceCard extends StatelessWidget {
       Row(children: [
         HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.caregiver, size: 22),
         const SizedBox(width: 10),
-        const Text('Welcome to Family Health',
+        const Text('Welcome to Family Care',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.caregiver)),
       ]),
       const SizedBox(height: 8),
@@ -336,15 +336,15 @@ class _OnboardingGuidanceCard extends StatelessWidget {
         style: TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4),
       ),
       const SizedBox(height: 12),
-      _GuidanceStep(icon: Icons.mail_rounded, label: 'Wait for a family member to invite you, or'),
+      _GuidanceStep(icon: HugeIcons.strokeRoundedMail01, label: 'Wait for a family member to invite you, or'),
       const SizedBox(height: 6),
-      _GuidanceStep(icon: Icons.person_add_rounded, label: 'Ask them to invite you from their Health Circle'),
+      _GuidanceStep(icon: HugeIcons.strokeRoundedUserAdd01, label: 'Ask them to invite you from their Health Circle'),
     ]),
   );
 }
 
 class _GuidanceStep extends StatelessWidget {
-  final IconData icon;
+  final List<List<dynamic>> icon;
   final String label;
   const _GuidanceStep({required this.icon, required this.label});
 
@@ -352,7 +352,7 @@ class _GuidanceStep extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, size: 14, color: AppColors.caregiver),
+      HugeIcon(icon: icon, size: 14, color: AppColors.caregiver),
       const SizedBox(width: 8),
       Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground))),
     ],
@@ -383,9 +383,9 @@ class _MedSection extends ConsumerWidget {
             left: BentoStatCard(
               label: 'taken today',
               value: '$takenToday/${activeMeds.length}',
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18),
-              iconBgColor: AppColors.primaryTint,
-              iconColor: AppColors.primary,
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 18),
+              iconBgColor: AppColors.caregiverLight,
+              iconColor: AppColors.caregiver,
             ),
             right: BentoStatCard(
               label: dueMeds.isNotEmpty ? 'due now' : 'all done',
@@ -463,10 +463,10 @@ class _MedTile extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+            color: AppColors.caregiver.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
+          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 22),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -481,7 +481,7 @@ class _MedTile extends ConsumerWidget {
           child: Container(
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(10)),
             child: const Text('Mark Taken', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
           ),
         ),
@@ -502,9 +502,9 @@ class _QuickActions extends StatelessWidget {
     const SizedBox(height: 12),
     Row(children: [
       Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
+        icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 22),
         label: 'Check Medicines',
-        color: AppColors.primary,
+        color: AppColors.caregiver,
         onTap: () => context.go('/caregiver/patients'),
       )),
       const SizedBox(width: 10),

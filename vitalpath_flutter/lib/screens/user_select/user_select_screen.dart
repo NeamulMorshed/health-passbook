@@ -69,7 +69,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                 icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.caregiver, size: 28),
                 color: AppColors.caregiver,
                 title: 'I\'m a Family Member',
-                subtitle: 'Monitor health for someone you care for\nand connect with their doctors',
+                subtitle: 'Monitor medicines, meals, vitals\nand appointments for loved ones',
                 onTap: () => _handleRoleSelected('caregiver'),
                 isSelected: _selectedRole == 'caregiver',
               ),
@@ -248,7 +248,7 @@ class _RoleCard extends StatelessWidget {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.primary : color.withValues(alpha: 0.25),
+                color: isSelected ? color : color.withValues(alpha: 0.25),
                 width: isSelected ? 2 : 1.5,
               ),
               boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
@@ -282,7 +282,7 @@ class _RoleCard extends StatelessWidget {
               right: 12,
               child: Container(
                 decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 20),
+                child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: color, size: 20),
               ),
             ),
         ],

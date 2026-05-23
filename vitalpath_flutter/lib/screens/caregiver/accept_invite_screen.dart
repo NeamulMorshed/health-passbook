@@ -43,7 +43,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: AppColors.caregiver.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -52,7 +52,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary),
+                        color: AppColors.caregiver),
                   ),
                 ),
               ),
@@ -218,12 +218,12 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
   Widget _permissionList(CaregiverPermissions p) {
     final items = <(bool, Widget, String)>[
-      (p.medicines, HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18), 'Medicines & dose tracking'),
-      (p.vitals, const Icon(Icons.monitor_heart_rounded, size: 18, color: AppColors.primary), 'Vitals & readings'),
-      (p.appointments, const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary), 'Upcoming appointments'),
-      (p.prescriptions, const Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.primary), 'Prescriptions'),
-      (p.mealLogs, const Icon(Icons.restaurant_rounded, size: 18, color: AppColors.primary), 'Meal logs'),
-      (p.activityLogs, const Icon(Icons.directions_run_rounded, size: 18, color: AppColors.primary), 'Activity logs'),
+      (p.medicines, HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 18), 'Medicines & dose tracking'),
+      (p.vitals, HugeIcon(icon: HugeIcons.strokeRoundedPulse01, color: AppColors.caregiver, size: 18), 'Vitals & readings'),
+      (p.appointments, HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.caregiver, size: 18), 'Upcoming appointments'),
+      (p.prescriptions, HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 18), 'Prescriptions'),
+      (p.mealLogs, HugeIcon(icon: HugeIcons.strokeRoundedRestaurant01, color: AppColors.caregiver, size: 18), 'Meal logs'),
+      (p.activityLogs, HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.caregiver, size: 18), 'Activity logs'),
     ];
     return Column(
       children: items

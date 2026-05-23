@@ -38,6 +38,10 @@ class AppColors {
   static const caregiver       = Color(0xFFF59E0B);
   static const caregiverLight  = Color(0xFFFEF3C7);
 
+  // Invite / sharing accent — indigo #7C3AED
+  static const inviteAccent    = Color(0xFF7C3AED);
+  static const inviteAccentLight = Color(0xFFEDE9FE);
+
   // Legacy aliases — keeps existing screens compiling without any changes
   static const background      = pageBackground;
   static const muted           = surfaceSubtle;

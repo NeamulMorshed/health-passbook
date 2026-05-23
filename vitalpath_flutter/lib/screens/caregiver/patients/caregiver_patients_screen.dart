@@ -72,12 +72,12 @@ class CaregiverPatientsScreen extends ConsumerWidget {
                     ...pending.map((inv) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: BentoCard(
-                        color: const Color(0xFF7C3AED).withValues(alpha: 0.07),
+                        color: AppColors.inviteAccent.withValues(alpha: 0.07),
                         onTap: () => context.go('/accept-invite', extra: inv),
                         child: Row(children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                            backgroundColor: AppColors.inviteAccent.withValues(alpha: 0.12),
                             child: Text(_initials(inv.patientName),
                                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
                                     color: Color(0xFF7C3AED))),
