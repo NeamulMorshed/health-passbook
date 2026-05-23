@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'vitalpath_flutter.*\\.dart'; then cd \"/Users/nahid/Figma Exports/Exploration Work in Claude/Health Passbook/Health Passbook/vitalpath_flutter\" && flutter analyze --no-fatal-infos 2>&1 | tail -25; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
