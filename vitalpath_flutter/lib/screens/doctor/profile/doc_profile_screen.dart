@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../models/doctor.dart';
+import '../../../models/app_user.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
 
@@ -21,10 +22,17 @@ class DocProfileScreen extends ConsumerWidget {
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
-        if (user == null) {
-          WidgetsBinding.instance.addPostFrameCallback(
-            (_) { if (context.mounted) context.go('/user-select'); },
-          );
+        if (user == null || user.userType != UserType.doctor) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            if (user?.userType == UserType.caregiver) {
+              context.go('/caregiver/home');
+            } else if (user?.userType == UserType.patient) {
+              context.go('/home');
+            } else {
+              context.go('/user-select');
+            }
+          });
           return const Scaffold(body: SizedBox.shrink());
         }
         final docAsync     = ref.watch(doctorProfileProvider(user.uid));
@@ -43,7 +51,10 @@ class DocProfileScreen extends ConsumerWidget {
                 child: Column(children: [
                   AppAvatar(name: user.name, size: 80, imageUrl: user.photoUrl, backgroundColor: AppColors.primary),
                   const SizedBox(height: 14),
-                  Text('Dr. ${user.name}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                  Text(
+                    user.name.startsWith('Dr.') ? user.name : 'Dr. ${user.name}',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
                   docAsync.when(
                     data: (doc) => Column(children: [
                       const SizedBox(height: 4),
@@ -189,7 +200,7 @@ class DocProfileScreen extends ConsumerWidget {
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Help & Support'),
-        content: const Text('For assistance, contact us at support@vitalpath.health'),
+        content: const Text('For assistance, contact us at support@omra.health'),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           Column(
@@ -198,7 +209,7 @@ class DocProfileScreen extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () async {
                   Navigator.pop(dialogCtx);
-                  final uri = Uri.parse('mailto:support@vitalpath.health?subject=Doctor%20Support%20Request');
+                  final uri = Uri.parse('mailto:support@omra.health?subject=Doctor%20Support%20Request');
                   if (await canLaunchUrl(uri)) launchUrl(uri);
                 },
                 child: const Text('Send Email'),
@@ -441,8 +452,10 @@ class _VerificationBannerState extends State<_VerificationBanner> {
       padding: const EdgeInsets.all(16),
       color: color.withValues(alpha: 0.07),
       child: Row(children: [
-        Icon(
-          widget.isPending ? Icons.hourglass_top_rounded : Icons.verified_outlined,
+        HugeIcon(
+          icon: widget.isPending
+              ? HugeIcons.strokeRoundedClock01
+              : HugeIcons.strokeRoundedCheckmarkCircle01,
           color: color,
           size: 22,
         ),

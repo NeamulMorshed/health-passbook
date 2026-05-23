@@ -300,7 +300,7 @@ class _EmptyMembersCard extends StatelessWidget {
           style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
       const SizedBox(height: 14),
       OutlinedButton(
-        onPressed: () => context.go('/caregiver/care'),
+        onPressed: () => context.go('/caregiver/patients'),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.caregiver),
           foregroundColor: AppColors.caregiver,
@@ -419,7 +419,7 @@ class _MedSection extends ConsumerWidget {
             )),
             if (dueMeds.length > 3)
               BentoCard(
-                onTap: () => context.go('/caregiver/care'),
+                onTap: () => context.go('/caregiver/patients'),
                 child: Center(child: Text(
                   '+${dueMeds.length - 3} more — see all in Family',
                   style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
@@ -505,14 +505,14 @@ class _QuickActions extends StatelessWidget {
         icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 22),
         label: 'Check Medicines',
         color: AppColors.primary,
-        onTap: () => context.go('/caregiver/care'),
+        onTap: () => context.go('/caregiver/patients'),
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(
         icon: HugeIcon(icon: HugeIcons.strokeRoundedUserAdd01, color: AppColors.caregiver, size: 22),
         label: 'Add Family',
         color: AppColors.caregiver,
-        onTap: () => context.go('/caregiver/care'),
+        onTap: () => context.go('/caregiver/patients'),
       )),
       const SizedBox(width: 10),
       Expanded(child: _ActionBtn(

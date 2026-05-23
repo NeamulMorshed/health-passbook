@@ -7,6 +7,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/doctor_provider.dart';
+import '../../../models/app_user.dart';
 import '../../../models/appointment.dart';
 
 class DocAppointmentsScreen extends ConsumerStatefulWidget {
@@ -48,10 +49,17 @@ class _DocAppointmentsScreenState extends ConsumerState<DocAppointmentsScreen>
             title: 'Something went wrong',
             subtitle: 'Pull to refresh or try again.'),
         data: (user) {
-          if (user == null) {
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) { if (context.mounted) context.go('/user-select'); },
-            );
+          if (user == null || user.userType != UserType.doctor) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              if (user?.userType == UserType.caregiver) {
+                context.go('/caregiver/home');
+              } else if (user?.userType == UserType.patient) {
+                context.go('/home');
+              } else {
+                context.go('/user-select');
+              }
+            });
             return const Center(child: SizedBox.shrink());
           }
 

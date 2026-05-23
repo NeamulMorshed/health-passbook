@@ -114,22 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Splash is always reachable — no redirect.
       if (loc == '/splash') return null;
 
-      // Fix H1 — Block authenticated users from /user-select.
-      if (loc == '/user-select') {
-        if (!isAuthenticated) return null;
-        // User is logged in — redirect to role-appropriate home.
-        final userState = ref.read(currentUserProvider);
-        if (userState.isLoading) return null;
-        final user = userState.asData?.value;
-        if (user == null) return null;
-        if (user.userType == UserType.doctor) return '/doc/dashboard';
-        if (user.userType == UserType.caregiver) {
-          return user.onboardingComplete
-              ? '/caregiver/home'
-              : '/onboarding/caregiver-setup';
-        }
-        return '/home';
-      }
+      // /user-select is always accessible — authenticated users can visit it
+      // to switch roles or sign out. The screen itself handles role-aware
+      // navigation via _handleRoleSelected and shows a mismatch dialog when
+      // the tapped role differs from the stored userType.
+      if (loc == '/user-select') return null;
 
       // Redirect unauthenticated users away from protected routes.
       final isAuthRoute = loc.startsWith('/auth');
