@@ -5,10 +5,14 @@ enum InteractionSeverity { major, moderate, minor, unknown }
 extension InteractionSeverityX on InteractionSeverity {
   String get label {
     switch (this) {
-      case InteractionSeverity.major:    return 'Major';
-      case InteractionSeverity.moderate: return 'Moderate';
-      case InteractionSeverity.minor:    return 'Minor';
-      case InteractionSeverity.unknown:  return 'Interaction';
+      case InteractionSeverity.major:
+        return 'Major';
+      case InteractionSeverity.moderate:
+        return 'Moderate';
+      case InteractionSeverity.minor:
+        return 'Minor';
+      case InteractionSeverity.unknown:
+        return 'Interaction';
     }
   }
 }
@@ -35,31 +39,35 @@ class DrugInteraction {
   });
 
   factory DrugInteraction.fromMap(Map<String, dynamic> m) => DrugInteraction(
-        drugAName:   m['drugAName']   as String? ?? '',
-        drugBName:   m['drugBName']   as String? ?? '',
-        rxcuiA:      m['rxcuiA']      as String?,
-        rxcuiB:      m['rxcuiB']      as String?,
-        severity:    _severityFrom(m['severity'] as String?),
+        drugAName: m['drugAName'] as String? ?? '',
+        drugBName: m['drugBName'] as String? ?? '',
+        rxcuiA: m['rxcuiA'] as String?,
+        rxcuiB: m['rxcuiB'] as String?,
+        severity: _severityFrom(m['severity'] as String?),
         description: m['description'] as String? ?? '',
-        source:      m['source']      as String? ?? 'RxNav',
+        source: m['source'] as String? ?? 'RxNav',
       );
 
   Map<String, dynamic> toMap() => {
-        'drugAName':   drugAName,
-        'drugBName':   drugBName,
+        'drugAName': drugAName,
+        'drugBName': drugBName,
         if (rxcuiA != null) 'rxcuiA': rxcuiA,
         if (rxcuiB != null) 'rxcuiB': rxcuiB,
-        'severity':    severity.name,
+        'severity': severity.name,
         'description': description,
-        'source':      source,
+        'source': source,
       };
 
   static InteractionSeverity _severityFrom(String? s) {
     switch (s) {
-      case 'major':    return InteractionSeverity.major;
-      case 'moderate': return InteractionSeverity.moderate;
-      case 'minor':    return InteractionSeverity.minor;
-      default:         return InteractionSeverity.unknown;
+      case 'major':
+        return InteractionSeverity.major;
+      case 'moderate':
+        return InteractionSeverity.moderate;
+      case 'minor':
+        return InteractionSeverity.minor;
+      default:
+        return InteractionSeverity.unknown;
     }
   }
 }

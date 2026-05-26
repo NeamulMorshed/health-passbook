@@ -9,7 +9,8 @@ class GamificationService {
 
   Stream<GamificationProfile> watchProfile(String uid) {
     return _db.collection(_col).doc(uid).snapshots().map((snap) {
-      if (!snap.exists || snap.data() == null) return const GamificationProfile();
+      if (!snap.exists || snap.data() == null)
+        return const GamificationProfile();
       return GamificationProfile.fromMap(snap.data()!);
     });
   }
@@ -44,9 +45,8 @@ class GamificationService {
             ? (_isYesterday(profile.lastMedDate) ? profile.medStreak + 1 : 1)
             : weekReset.medStreak,
         lastMedDate: isNewDay ? now : weekReset.lastMedDate,
-        weeklyMedDays: isNewDay
-            ? weekReset.weeklyMedDays + 1
-            : weekReset.weeklyMedDays,
+        weeklyMedDays:
+            isNewDay ? weekReset.weeklyMedDays + 1 : weekReset.weeklyMedDays,
       );
 
       updated = _applyBadges(updated, 'med');
@@ -70,7 +70,8 @@ class GamificationService {
       final now = DateTime.now().toUtc();
 
       const hpGain = 8;
-      final newStreak = _isYesterday(profile.lastMealDate) ? profile.mealStreak + 1 : 1;
+      final newStreak =
+          _isYesterday(profile.lastMealDate) ? profile.mealStreak + 1 : 1;
       final weekReset = _resetWeekIfNeeded(profile, now);
       final newWeeklyMeal = weekReset.weeklyMealDays + 1;
 
@@ -87,7 +88,8 @@ class GamificationService {
     });
   }
 
-  Future<int> awardActivity(String uid, {required int steps, required String type}) async {
+  Future<int> awardActivity(String uid,
+      {required int steps, required String type}) async {
     // G1: Wrap in Firestore transaction to prevent race conditions.
     return await _db.runTransaction<int>((tx) async {
       final ref = _db.collection(_col).doc(uid);
@@ -102,7 +104,9 @@ class GamificationService {
       final now = DateTime.now().toUtc();
 
       final hpGain = steps >= 5000 ? 25 : 15;
-      final newStreak = _isYesterday(profile.lastActivityDate) ? profile.activityStreak + 1 : 1;
+      final newStreak = _isYesterday(profile.lastActivityDate)
+          ? profile.activityStreak + 1
+          : 1;
       final weekReset = _resetWeekIfNeeded(profile, now);
       final newWeeklyActivity = weekReset.weeklyActivityDays + 1;
 
@@ -124,7 +128,9 @@ class GamificationService {
     // G3: Convert stored UTC date to local before comparing.
     final local = date.toLocal();
     final now = DateTime.now();
-    return local.year == now.year && local.month == now.month && local.day == now.day;
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
   }
 
   bool _isYesterday(DateTime? date) {
@@ -134,10 +140,13 @@ class GamificationService {
     // G2: DST-safe yesterday using calendar arithmetic.
     final n = DateTime.now();
     final yesterday = DateTime(n.year, n.month, n.day - 1);
-    return local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day;
+    return local.year == yesterday.year &&
+        local.month == yesterday.month &&
+        local.day == yesterday.day;
   }
 
-  GamificationProfile _resetWeekIfNeeded(GamificationProfile profile, DateTime now) {
+  GamificationProfile _resetWeekIfNeeded(
+      GamificationProfile profile, DateTime now) {
     final weekStart = profile.weekStartDate;
     // G5: Calendar-based week reset — compare calendar dates, not raw duration.
     final today = DateTime(now.year, now.month, now.day);

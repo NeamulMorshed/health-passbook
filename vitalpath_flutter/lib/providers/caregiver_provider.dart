@@ -3,8 +3,72 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/caregiver_connection.dart';
 
+// ── Stream: caregiver mirror doc ─────────────────────────────────────────────
+// Carries permissions + lastNudgeSentAt. Readable by patient and caregiver.
+// Used to show the nudge follow-up indicator without querying patient
+// notifications (which caregivers cannot read by rule).
+
+typedef _MirrorKey = ({String patientId, String caregiverUid});
+
+final caregiverMirrorProvider =
+    StreamProvider.family<Map<String, dynamic>?, _MirrorKey>((ref, key) {
+  return _db
+      .collection('patients')
+      .doc(key.patientId)
+      .collection('caregivers')
+      .doc(key.caregiverUid)
+      .snapshots()
+      .map((doc) => doc.data());
+});
+
 const _uuid = Uuid();
 final _db = FirebaseFirestore.instance;
+
+// ── Stream: patient's shareCircleWithDoctors flag (7b) ───────────────────────
+// Default false when missing — doctors only see the family circle if the
+// patient opts in. Mirrored in the Firestore rule on caregiver_connections.
+
+final shareCircleWithDoctorsProvider =
+    StreamProvider.family<bool, String>((ref, patientUid) {
+  return _db
+      .collection('users')
+      .doc(patientUid)
+      .snapshots()
+      .map((doc) => (doc.data()?['shareCircleWithDoctors'] as bool?) ?? false);
+});
+
+Future<void> setShareCircleWithDoctors(String patientUid, bool value) {
+  return _db
+      .collection('users')
+      .doc(patientUid)
+      .update({'shareCircleWithDoctors': value});
+}
+
+// ── Stream: caregivers visible to doctor for a patient (7b) ──────────────────
+// Returns connected family members for the given patient. Rule-enforced:
+// only succeeds if patient.shareCircleWithDoctors == true AND the requesting
+// doctor has an active connection to the patient.
+
+final doctorVisibleCaregiversProvider =
+    StreamProvider.family<List<CaregiverConnection>, String>(
+        (ref, patientId) {
+  return _db
+      .collection('caregiver_connections')
+      .where('patientId', isEqualTo: patientId)
+      .where('status', isEqualTo: 'connected')
+      .snapshots()
+      .map((s) {
+    final out = <CaregiverConnection>[];
+    for (final d in s.docs) {
+      try {
+        out.add(CaregiverConnection.fromDoc(d));
+      } catch (_) {
+        // Defensive: skip malformed docs (ADR-003).
+      }
+    }
+    return out;
+  });
+});
 
 // ── Stream: all connections for a patient ────────────────────────────────────
 // Returns pending + connected (not removed) sorted newest-first.
@@ -89,13 +153,33 @@ class CaregiverConnectionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Patient updates permissions for an existing connection.
-  // C2: Added try/catch — surfaces errors via AsyncError state.
-  Future<void> updatePermissions(
-      String connectionId, CaregiverPermissions permissions) async {
+  /// Atomically updates both the connection doc and the caregiver mirror doc
+  /// so Firestore rules (caregiverCanRead) stay in sync with UI permissions.
+  Future<void> updatePermissions({
+    required String connectionId,
+    required String patientId,
+    required String? caregiverUid,
+    required CaregiverPermissions permissions,
+  }) async {
     state = const AsyncLoading();
     try {
-      await _db.collection('caregiver_connections').doc(connectionId).update(
-          {'permissions': permissions.toMap()});
+      final batch = _db.batch();
+      batch.update(
+        _db.collection('caregiver_connections').doc(connectionId),
+        {'permissions': permissions.toMap()},
+      );
+      // Mirror doc only exists once the caregiver has accepted.
+      if (caregiverUid != null) {
+        batch.update(
+          _db
+              .collection('patients')
+              .doc(patientId)
+              .collection('caregivers')
+              .doc(caregiverUid),
+          {'permissions': permissions.toMap()},
+        );
+      }
+      await batch.commit();
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -109,8 +193,10 @@ class CaregiverConnectionNotifier extends StateNotifier<AsyncValue<void>> {
       String connectionId, CaregiverNotifSettings settings) async {
     state = const AsyncLoading();
     try {
-      await _db.collection('caregiver_connections').doc(connectionId).update(
-          {'notifSettings': settings.toMap()});
+      await _db
+          .collection('caregiver_connections')
+          .doc(connectionId)
+          .update({'notifSettings': settings.toMap()});
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
@@ -149,6 +235,7 @@ class InviteResponseNotifier extends StateNotifier<AsyncValue<void>> {
     required String patientId,
     required String caregiverUid,
     required String caregiverName,
+    required CaregiverPermissions permissions,
   }) async {
     state = const AsyncLoading();
     try {
@@ -165,13 +252,14 @@ class InviteResponseNotifier extends StateNotifier<AsyncValue<void>> {
       );
       // Write mirror doc so Firestore rules can verify caregiver access
       // via isCaregiverFor(patientId) without a collection query.
+      // Permissions are included so caregiverCanRead() can gate per-section.
       batch.set(
         _db
             .collection('patients')
             .doc(patientId)
             .collection('caregivers')
             .doc(caregiverUid),
-        {'connectedAt': Timestamp.now()},
+        {'connectedAt': Timestamp.now(), 'permissions': permissions.toMap()},
       );
       await batch.commit();
       state = const AsyncData(null);

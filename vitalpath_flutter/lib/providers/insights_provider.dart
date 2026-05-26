@@ -31,11 +31,13 @@ class InsightsNotifier extends StateNotifier<AsyncValue<List<HealthInsight>>> {
 
       final recentMeds = medicines.where((m) => m.isActive).toList();
       // I1: Count expected doses per medicine based on actual reminder times count.
-      final totalDoses = recentMeds.fold<int>(0, (sum, m) => sum + m.reminderTimes.length * 7);
+      final totalDoses =
+          recentMeds.fold<int>(0, (sum, m) => sum + m.reminderTimes.length * 7);
       final takenDoses = recentMeds.fold<int>(0, (sum, m) {
         return sum + m.loggedDoses.where((d) => d.isAfter(sevenDaysAgo)).length;
       });
-      final adherence = totalDoses > 0 ? (takenDoses / totalDoses * 100) : 100.0;
+      final adherence =
+          totalDoses > 0 ? (takenDoses / totalDoses * 100) : 100.0;
 
       final recentMeals = meals;
       final avgCalories = recentMeals.isEmpty
@@ -43,9 +45,15 @@ class InsightsNotifier extends StateNotifier<AsyncValue<List<HealthInsight>>> {
           : recentMeals.fold<int>(0, (s, m) => s + (m.calories ?? 0)) ~/
               recentMeals.length;
 
-      final recentActivity = activities.where((a) => a.loggedAt.isAfter(sevenDaysAgo)).toList();
-      final totalSteps = recentActivity.fold<int>(0, (s, a) => s + (a.steps ?? 0));
-      final activeDays = recentActivity.map((a) => '${a.loggedAt.year}-${a.loggedAt.month}-${a.loggedAt.day}').toSet().length;
+      final recentActivity =
+          activities.where((a) => a.loggedAt.isAfter(sevenDaysAgo)).toList();
+      final totalSteps =
+          recentActivity.fold<int>(0, (s, a) => s + (a.steps ?? 0));
+      final activeDays = recentActivity
+          .map(
+              (a) => '${a.loggedAt.year}-${a.loggedAt.month}-${a.loggedAt.day}')
+          .toSet()
+          .length;
       final avgSteps = activeDays > 0 ? totalSteps ~/ activeDays : 0;
 
       final insights = await _service.generateInsights(
@@ -65,7 +73,7 @@ class InsightsNotifier extends StateNotifier<AsyncValue<List<HealthInsight>>> {
   }
 }
 
-final insightsNotifierProvider =
-    StateNotifierProvider.autoDispose<InsightsNotifier, AsyncValue<List<HealthInsight>>>((ref) {
+final insightsNotifierProvider = StateNotifierProvider.autoDispose<
+    InsightsNotifier, AsyncValue<List<HealthInsight>>>((ref) {
   return InsightsNotifier(ref.watch(aiInsightsServiceProvider));
 });

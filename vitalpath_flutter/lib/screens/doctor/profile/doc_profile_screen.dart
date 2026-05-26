@@ -19,8 +19,14 @@ class DocProfileScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (_, __) => const Scaffold(
+          body: Center(
+              child: EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Something went wrong',
+                  subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null || user.userType != UserType.doctor) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -35,12 +41,16 @@ class DocProfileScreen extends ConsumerWidget {
           });
           return const Scaffold(body: SizedBox.shrink());
         }
-        final docAsync     = ref.watch(doctorProfileProvider(user.uid));
-        final patientCount = ref.watch(doctorPatientCountProvider(user.uid)).maybeWhen(data: (c) => c, orElse: () => 0);
+        final docAsync = ref.watch(doctorProfileProvider(user.uid));
+        final patientCount = ref
+            .watch(doctorPatientCountProvider(user.uid))
+            .maybeWhen(data: (c) => c, orElse: () => 0);
 
         return Scaffold(
           backgroundColor: AppColors.pageBackground,
-          appBar: AppBar(title: const Text('Doctor Profile'), automaticallyImplyLeading: false),
+          appBar: AppBar(
+              title: const Text('Doctor Profile'),
+              automaticallyImplyLeading: false),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
             children: [
@@ -49,29 +59,45 @@ class DocProfileScreen extends ConsumerWidget {
                 color: AppColors.surface,
                 padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
                 child: Column(children: [
-                  AppAvatar(name: user.name, size: 80, imageUrl: user.photoUrl, backgroundColor: AppColors.primary),
+                  AppAvatar(
+                      name: user.name,
+                      size: 80,
+                      imageUrl: user.photoUrl,
+                      backgroundColor: AppColors.primary),
                   const SizedBox(height: 14),
                   Text(
-                    user.name.startsWith('Dr.') ? user.name : 'Dr. ${user.name}',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                    user.name.startsWith('Dr.')
+                        ? user.name
+                        : 'Dr. ${user.name}',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                   docAsync.when(
                     data: (doc) => Column(children: [
                       const SizedBox(height: 4),
                       if (doc?.specialty != null)
-                        Text(doc!.specialty!, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                        Text(doc!.specialty!,
+                            style: const TextStyle(
+                                fontSize: 14, color: AppColors.textSecondary)),
                       if (doc?.hospital != null) ...[
                         const SizedBox(height: 2),
-                        Text(doc!.hospital!, style: const TextStyle(fontSize: 12, color: AppColors.textTertiary)),
+                        Text(doc!.hospital!,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.textTertiary)),
                       ],
                       const SizedBox(height: 16),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                        _HeaderStat('$patientCount', 'Patients'),
-                        Container(width: 1, height: 28, color: AppColors.border),
-                        _HeaderStat(doc?.rating.toStringAsFixed(1) ?? '0.0', 'Rating'),
-                        Container(width: 1, height: 28, color: AppColors.border),
-                        _HeaderStat('${doc?.reviewCount ?? 0}', 'Reviews'),
-                      ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _HeaderStat('$patientCount', 'Patients'),
+                            Container(
+                                width: 1, height: 28, color: AppColors.border),
+                            _HeaderStat(doc?.rating.toStringAsFixed(1) ?? '0.0',
+                                'Rating'),
+                            Container(
+                                width: 1, height: 28, color: AppColors.border),
+                            _HeaderStat('${doc?.reviewCount ?? 0}', 'Reviews'),
+                          ]),
                     ]),
                     loading: () => const SizedBox(),
                     error: (_, __) => const SizedBox(),
@@ -81,34 +107,51 @@ class DocProfileScreen extends ConsumerWidget {
 
               // Verification banner
               docAsync.whenData((doc) {
-                final status = doc?.verificationStatus ?? 'unverified';
-                if (status == 'verified') return null;
-                return _VerificationBanner(uid: user.uid, isPending: status == 'pending');
-              }).value ?? const SizedBox.shrink(),
+                    final status = doc?.verificationStatus ?? 'unverified';
+                    if (status == 'verified') return null;
+                    return _VerificationBanner(
+                        uid: user.uid, isPending: status == 'pending');
+                  }).value ??
+                  const SizedBox.shrink(),
 
               const SizedBox(height: 16),
 
               // ── Professional Information ────────────────────────────────
               docAsync.when(
-                data: (doc) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _SectionLabel('Professional Information'),
-                  const SizedBox(height: 8),
-                  BentoCard(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      _InfoRow('License No.', doc?.licenseNo ?? 'Not set'),
-                      _InfoRow('Specialty', doc?.specialty ?? 'Not set'),
-                      _InfoRow('Hospital', doc?.hospital ?? 'Not set'),
-                      _InfoRow('Phone', doc?.phone ?? user.phone),
-                      _InfoRow('Verification', _verificationLabel(doc?.verificationStatus)),
-                      if (doc?.availableHours != null && doc!.availableHours!.isNotEmpty)
-                        _InfoRow('Available Hours', doc.availableHours!),
-                      if (doc?.consultationFee != null && doc!.consultationFee!.isNotEmpty)
-                        _InfoRow('Consultation Fee', doc.consultationFee!),
-                      _InfoRow('Accepting Patients', doc?.acceptingNewPatients == true ? 'Yes' : 'Not currently'),
+                data: (doc) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _SectionLabel('Professional Information'),
+                      const SizedBox(height: 8),
+                      BentoCard(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _InfoRow(
+                                  'License No.', doc?.licenseNo ?? 'Not set'),
+                              _InfoRow(
+                                  'Specialty', doc?.specialty ?? 'Not set'),
+                              _InfoRow('Hospital', doc?.hospital ?? 'Not set'),
+                              _InfoRow('Phone', doc?.phone ?? user.phone),
+                              _InfoRow('Verification',
+                                  _verificationLabel(doc?.verificationStatus)),
+                              if (doc?.availableHours != null &&
+                                  doc!.availableHours!.isNotEmpty)
+                                _InfoRow(
+                                    'Available Hours', doc.availableHours!),
+                              if (doc?.consultationFee != null &&
+                                  doc!.consultationFee!.isNotEmpty)
+                                _InfoRow(
+                                    'Consultation Fee', doc.consultationFee!),
+                              _InfoRow(
+                                  'Accepting Patients',
+                                  doc?.acceptingNewPatients == true
+                                      ? 'Yes'
+                                      : 'Not currently'),
+                            ]),
+                      ),
+                      const SizedBox(height: 20),
                     ]),
-                  ),
-                  const SizedBox(height: 20),
-                ]),
                 loading: () => const SizedBox(),
                 error: (_, __) => const SizedBox(),
               ),
@@ -120,17 +163,26 @@ class DocProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedHealth,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Edit Profile',
                     onTap: () => _showEditSheet(context, ref, user.uid),
                   ),
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedMedal01, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedMedal01,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Credentials',
                     onTap: () {},
                   ),
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedMapPin, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedMapPin,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Hospital Location',
                     showDivider: false,
                     onTap: () {},
@@ -147,17 +199,26 @@ class DocProfileScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: Column(children: [
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedBellDot,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Notifications',
                     onTap: () => context.push('/notification-settings'),
                   ),
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedLock,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Privacy & Security',
                     onTap: () => context.push('/privacy-security'),
                   ),
                   BentoSettingsTile(
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedQuestion, color: Colors.black, size: 18),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedQuestion,
+                        color: Colors.black,
+                        size: 18),
                     title: 'Help & Support',
                     showDivider: false,
                     onTap: () => _showHelp(context),
@@ -171,10 +232,16 @@ class DocProfileScreen extends ConsumerWidget {
               Center(
                 child: TextButton.icon(
                   onPressed: () => _signOut(context, ref),
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedLogout01, color: AppColors.destructive, size: 18),
+                  icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLogout01,
+                      color: AppColors.destructive,
+                      size: 18),
                   label: const Text(
                     'Sign Out',
-                    style: TextStyle(color: AppColors.destructive, fontSize: 15, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                        color: AppColors.destructive,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -190,7 +257,8 @@ class DocProfileScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => _EditProfileSheet(uid: uid, doc: doc),
     );
   }
@@ -200,7 +268,8 @@ class DocProfileScreen extends ConsumerWidget {
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Help & Support'),
-        content: const Text('For assistance, contact us at support@omra.health'),
+        content:
+            const Text('For assistance, contact us at support@omra.health'),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
           Column(
@@ -209,7 +278,8 @@ class DocProfileScreen extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () async {
                   Navigator.pop(dialogCtx);
-                  final uri = Uri.parse('mailto:support@omra.health?subject=Doctor%20Support%20Request');
+                  final uri = Uri.parse(
+                      'mailto:support@omra.health?subject=Doctor%20Support%20Request');
                   if (await canLaunchUrl(uri)) launchUrl(uri);
                 },
                 child: const Text('Send Email'),
@@ -240,7 +310,8 @@ class DocProfileScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.destructive),
                 onPressed: () async {
                   Navigator.pop(dialogCtx);
                   await ref.read(authRepositoryProvider).signOut();
@@ -284,11 +355,11 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   void initState() {
     super.initState();
     _specialtyCtrl = TextEditingController(text: widget.doc?.specialty ?? '');
-    _hospitalCtrl  = TextEditingController(text: widget.doc?.hospital ?? '');
-    _licenseCtrl   = TextEditingController(text: widget.doc?.licenseNo ?? '');
-    _hoursCtrl     = TextEditingController(text: widget.doc?.availableHours ?? '');
-    _feeCtrl       = TextEditingController(text: widget.doc?.consultationFee ?? '');
-    _accepting     = widget.doc?.acceptingNewPatients ?? true;
+    _hospitalCtrl = TextEditingController(text: widget.doc?.hospital ?? '');
+    _licenseCtrl = TextEditingController(text: widget.doc?.licenseNo ?? '');
+    _hoursCtrl = TextEditingController(text: widget.doc?.availableHours ?? '');
+    _feeCtrl = TextEditingController(text: widget.doc?.consultationFee ?? '');
+    _accepting = widget.doc?.acceptingNewPatients ?? true;
   }
 
   @override
@@ -304,60 +375,94 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
-          const SizedBox(height: 20),
-          const Text('Edit Profile', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 20),
-          TextField(controller: _specialtyCtrl,
-              decoration: const InputDecoration(labelText: 'Specialty', hintText: 'e.g. Cardiology')),
-          const SizedBox(height: 12),
-          TextField(controller: _hospitalCtrl,
-              decoration: const InputDecoration(labelText: 'Hospital', hintText: 'e.g. City General Hospital')),
-          const SizedBox(height: 12),
-          TextField(controller: _licenseCtrl,
-              decoration: const InputDecoration(labelText: 'License Number')),
-          const SizedBox(height: 12),
-          TextField(controller: _hoursCtrl,
-              decoration: const InputDecoration(labelText: 'Available Hours', hintText: 'e.g. Mon–Fri 9am–5pm')),
-          const SizedBox(height: 12),
-          TextField(controller: _feeCtrl,
-              decoration: const InputDecoration(labelText: 'Consultation Fee', hintText: 'e.g. \$50 / Free')),
-          const SizedBox(height: 12),
-          Row(children: [
-            const Expanded(child: Text('Accepting New Patients',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
-            Switch(
-              value: _accepting,
-              activeThumbColor: AppColors.primary,
-              activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
-              onChanged: (v) => setState(() => _accepting = v),
-            ),
-          ]),
-          const SizedBox(height: 20),
-          GradientButton(
-            label: 'Save Changes',
-            colors: [AppColors.primary, const Color(0xFF5B21B6)],
-            onPressed: () async {
-              final data = <String, dynamic>{
-                'acceptingNewPatients': _accepting,
-              };
-              if (_specialtyCtrl.text.isNotEmpty) data['specialty'] = _specialtyCtrl.text.trim();
-              if (_hospitalCtrl.text.isNotEmpty)  data['hospital']  = _hospitalCtrl.text.trim();
-              if (_licenseCtrl.text.isNotEmpty)   data['licenseNo'] = _licenseCtrl.text.trim();
-              data['availableHours']  = _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim();
-              data['consultationFee'] = _feeCtrl.text.trim().isEmpty  ? null : _feeCtrl.text.trim();
-              await ref.read(firestoreServiceProvider).updateDoctorProfile(widget.uid, data);
-              ref.invalidate(doctorProfileProvider(widget.uid));
-              if (context.mounted) Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 8),
-        ]),
+        child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                  child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Edit Profile',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 20),
+              TextField(
+                  controller: _specialtyCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Specialty', hintText: 'e.g. Cardiology')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: _hospitalCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Hospital',
+                      hintText: 'e.g. City General Hospital')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: _licenseCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'License Number')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: _hoursCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Available Hours',
+                      hintText: 'e.g. Mon–Fri 9am–5pm')),
+              const SizedBox(height: 12),
+              TextField(
+                  controller: _feeCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Consultation Fee',
+                      hintText: 'e.g. \$50 / Free')),
+              const SizedBox(height: 12),
+              Row(children: [
+                const Expanded(
+                    child: Text('Accepting New Patients',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500))),
+                Switch(
+                  value: _accepting,
+                  activeThumbColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                  onChanged: (v) => setState(() => _accepting = v),
+                ),
+              ]),
+              const SizedBox(height: 20),
+              GradientButton(
+                label: 'Save Changes',
+                colors: [AppColors.primary, const Color(0xFF5B21B6)],
+                onPressed: () async {
+                  final data = <String, dynamic>{
+                    'acceptingNewPatients': _accepting,
+                  };
+                  if (_specialtyCtrl.text.isNotEmpty)
+                    data['specialty'] = _specialtyCtrl.text.trim();
+                  if (_hospitalCtrl.text.isNotEmpty)
+                    data['hospital'] = _hospitalCtrl.text.trim();
+                  if (_licenseCtrl.text.isNotEmpty)
+                    data['licenseNo'] = _licenseCtrl.text.trim();
+                  data['availableHours'] = _hoursCtrl.text.trim().isEmpty
+                      ? null
+                      : _hoursCtrl.text.trim();
+                  data['consultationFee'] = _feeCtrl.text.trim().isEmpty
+                      ? null
+                      : _feeCtrl.text.trim();
+                  await ref
+                      .read(firestoreServiceProvider)
+                      .updateDoctorProfile(widget.uid, data);
+                  ref.invalidate(doctorProfileProvider(widget.uid));
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 8),
+            ]),
       ),
     );
   }
@@ -368,9 +473,12 @@ class _HeaderStat extends StatelessWidget {
   const _HeaderStat(this.value, this.label);
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-  ]);
+        Text(value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+      ]);
 }
 
 class _InfoRow extends StatelessWidget {
@@ -378,12 +486,19 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow(this.label, this.value);
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Row(children: [
-      SizedBox(width: 120, child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground))),
-      Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-    ]),
-  );
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(children: [
+          SizedBox(
+              width: 120,
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 13, color: AppColors.mutedForeground))),
+          Expanded(
+              child: Text(value,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500))),
+        ]),
+      );
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -391,21 +506,21 @@ class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
   @override
   Widget build(BuildContext context) => Text(
-    text.toUpperCase(),
-    style: const TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: AppColors.textTertiary,
-      letterSpacing: 0.8,
-    ),
-  );
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textTertiary,
+          letterSpacing: 0.8,
+        ),
+      );
 }
 
 String _verificationLabel(String? status) => switch (status) {
-  'verified' => 'Verified',
-  'pending'  => 'Pending review',
-  _          => 'Unverified',
-};
+      'verified' => 'Verified',
+      'pending' => 'Pending review',
+      _ => 'Unverified',
+    };
 
 // ── Verification Banner ───────────────────────────────────────────────────────
 class _VerificationBanner extends StatefulWidget {
@@ -435,9 +550,7 @@ class _VerificationBannerState extends State<_VerificationBanner> {
           .doc(widget.uid)
           .update({'verificationStatus': 'pending'});
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification request submitted. We\'ll review within 2–3 business days.')),
-        );
+        AppSnackBar.info(context, 'Verification request submitted. We\'ll review within 2–3 business days.');
       }
     } finally {
       if (mounted) setState(() => _requesting = false);
@@ -461,13 +574,12 @@ class _VerificationBannerState extends State<_VerificationBanner> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
               widget.isPending ? 'Verification pending' : 'Profile unverified',
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color),
+                  fontSize: 13, fontWeight: FontWeight.w600, color: color),
             ),
             const SizedBox(height: 2),
             Text(
@@ -475,8 +587,7 @@ class _VerificationBannerState extends State<_VerificationBanner> {
                   ? 'Your request is under review. We\'ll notify you when it\'s done.'
                   : 'Patients can see this. Request verification to show a trusted badge.',
               style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.mutedForeground),
+                  fontSize: 12, color: AppColors.mutedForeground),
             ),
           ]),
         ),
@@ -492,7 +603,8 @@ class _VerificationBannerState extends State<_VerificationBanner> {
                   onPressed: _requestVerification,
                   style: TextButton.styleFrom(
                     backgroundColor: color.withValues(alpha: 0.12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(100)),
                   ),

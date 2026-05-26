@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/medicine.dart';
@@ -18,22 +20,32 @@ import 'gamification_provider.dart';
 const _uuid = Uuid();
 
 // ─── Patient Profile ──────────────────────────────────────────────────────────
-final patientProfileProvider = FutureProvider.family<PatientProfile?, String>((ref, uid) async {
+final patientProfileProvider =
+    FutureProvider.family<PatientProfile?, String>((ref, uid) async {
   return ref.watch(firestoreServiceProvider).getPatient(uid);
 });
 
 // ─── Medicines Stream ─────────────────────────────────────────────────────────
-final medicinesProvider = StreamProvider.family<List<Medicine>, String>((ref, patientId) {
+final medicinesProvider =
+    StreamProvider.family<List<Medicine>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchMedicines(patientId);
 });
 
 // ─── Today's Meals Stream ─────────────────────────────────────────────────────
-final todayMealsProvider = StreamProvider.family<List<MealLog>, String>((ref, patientId) {
+// T-04: schedule a self-invalidation at the next midnight so the Firestore
+// query re-subscribes with a fresh date range when the day rolls over.
+final todayMealsProvider =
+    StreamProvider.family<List<MealLog>, String>((ref, patientId) {
+  final now = DateTime.now();
+  final nextMidnight = DateTime(now.year, now.month, now.day + 1);
+  final timer = Timer(nextMidnight.difference(now), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
   return ref.watch(firestoreServiceProvider).watchTodayMeals(patientId);
 });
 
 // ─── Activity Logs Stream ─────────────────────────────────────────────────────
-final activityLogsProvider = StreamProvider.family<List<ActivityLog>, String>((ref, patientId) {
+final activityLogsProvider =
+    StreamProvider.family<List<ActivityLog>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchRecentActivity(patientId);
 });
 
@@ -42,17 +54,26 @@ final activityLogsProvider = StreamProvider.family<List<ActivityLog>, String>((r
 // limit in the UI transparently re-subscribes with a larger Firestore query.
 typedef ApptsKey = ({String patientId, int limit});
 
-final patientAppointmentsProvider = StreamProvider.family<List<Appointment>, ApptsKey>((ref, key) {
-  return ref.watch(firestoreServiceProvider).watchPatientAppointments(key.patientId, limit: key.limit);
+final patientAppointmentsProvider =
+    StreamProvider.family<List<Appointment>, ApptsKey>((ref, key) {
+  return ref
+      .watch(firestoreServiceProvider)
+      .watchPatientAppointments(key.patientId, limit: key.limit);
 });
 
-// ─── Patient Prescriptions Stream ────────────────────────────────────────────
-final patientPrescriptionsProvider = StreamProvider.family<List<Prescription>, String>((ref, patientId) {
-  return ref.watch(firestoreServiceProvider).watchPatientPrescriptions(patientId);
+// ─── Patient Prescriptions Stream (paginated) ────────────────────────────────
+typedef RxKey = ({String patientId, int limit});
+
+final patientPrescriptionsProvider =
+    StreamProvider.family<List<Prescription>, RxKey>((ref, key) {
+  return ref
+      .watch(firestoreServiceProvider)
+      .watchPatientPrescriptions(key.patientId, limit: key.limit);
 });
 
 // ─── Notifications Stream ─────────────────────────────────────────────────────
-final notificationsProvider = StreamProvider.family<List<AppNotification>, String>((ref, patientId) {
+final notificationsProvider =
+    StreamProvider.family<List<AppNotification>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchNotifications(patientId);
 });
 
@@ -75,7 +96,8 @@ class FamilyMemberNotifier extends StateNotifier<AsyncValue<void>> {
   final FirestoreService _db;
   FamilyMemberNotifier(this._db) : super(const AsyncValue.data(null));
 
-  Future<void> add(String uid, {
+  Future<void> add(
+    String uid, {
     required String name,
     required String relationship,
     DateTime? dateOfBirth,
@@ -130,7 +152,9 @@ class FamilyMedicinePatch {
   final FirestoreService _db;
   FamilyMedicinePatch(this._db);
 
-  Future<void> add(String uid, String memberId, {
+  Future<void> add(
+    String uid,
+    String memberId, {
     required String name,
     required String dosage,
     required String frequency,
@@ -165,7 +189,7 @@ class FamilyMedicinePatch {
       _db.deleteFamilyMemberMedicine(uid, memberId, medicineId);
 
   Future<void> update(String uid, String memberId, String medicineId,
-      Map<String, dynamic> data) =>
+          Map<String, dynamic> data) =>
       _db.updateFamilyMemberMedicine(uid, memberId, medicineId, data);
 }
 
@@ -181,7 +205,8 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   MedicineNotifier(this._db, this._notif, this._gamification)
       : super(const AsyncValue.data(null));
 
-  Future<void> add(String patientId, {
+  Future<void> add(
+    String patientId, {
     required String name,
     required String dosage,
     required String frequency,
@@ -210,14 +235,17 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         scannedPhotoUrl: scannedPhotoUrl,
       );
       await _db.addMedicine(patientId, med);
-      await _scheduleAndSaveMedicineReminders(patientId, medId, name, dosage, reminderTimes, reminderRepeat);
+      await _scheduleAndSaveMedicineReminders(
+          patientId, medId, name, dosage, reminderTimes, reminderRepeat);
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
     }
   }
 
-  Future<void> update(String patientId, String medicineId, {
+  Future<void> update(
+    String patientId,
+    String medicineId, {
     required String name,
     required String dosage,
     required String frequency,
@@ -238,7 +266,8 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         'reminderRepeat': reminderRepeat,
         'reminderDays': reminderDays,
       });
-      await _scheduleAndSaveMedicineReminders(patientId, medicineId, name, dosage, reminderTimes, reminderRepeat);
+      await _scheduleAndSaveMedicineReminders(
+          patientId, medicineId, name, dosage, reminderTimes, reminderRepeat);
       state = const AsyncValue.data(null);
     } catch (e, s) {
       state = AsyncValue.error(e, s);
@@ -246,8 +275,12 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> _scheduleAndSaveMedicineReminders(
-    String patientId, String medId, String name, String dosage,
-    List<String> reminderTimes, String repeat,
+    String patientId,
+    String medId,
+    String name,
+    String dosage,
+    List<String> reminderTimes,
+    String repeat,
   ) async {
     for (int i = 0; i < reminderTimes.length; i++) {
       final parts = reminderTimes[i].split(':');
@@ -263,20 +296,23 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
         repeat: repeat,
       );
       final repeatLabel = repeat == 'weekly' ? 'Weekly' : 'Daily';
-      await _db.addNotification(patientId, AppNotification(
-        id: _uuid.v4(),
-        title: 'Medicine reminder set',
-        body: '$name — $dosage at ${reminderTimes[i]} ($repeatLabel)',
-        type: NotificationType.medicineReminder,
-        createdAt: DateTime.now(),
-        scheduledFor: _todayAt(hour, minute),
-      ));
+      await _db.addNotification(
+          patientId,
+          AppNotification(
+            id: _uuid.v4(),
+            title: 'Medicine reminder set',
+            body: '$name — $dosage at ${reminderTimes[i]} ($repeatLabel)',
+            type: NotificationType.medicineReminder,
+            createdAt: DateTime.now(),
+            scheduledFor: _todayAt(hour, minute),
+          ));
     }
   }
 
   /// Logs a dose and awards HP. Returns the HP gained (0 if daily cap reached).
   /// Gamification failure never throws — dose is always recorded.
-  Future<int> logDose(String patientId, String medicineId, {Medicine? medicine}) async {
+  Future<int> logDose(String patientId, String medicineId,
+      {Medicine? medicine}) async {
     await _db.logDose(patientId, medicineId);
     if (medicine != null && medicine.pillsRemaining != null) {
       await _db.decrementPillCount(patientId, medicineId);
@@ -302,7 +338,8 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final medicineNotifierProvider = StateNotifierProvider<MedicineNotifier, AsyncValue<void>>((ref) {
+final medicineNotifierProvider =
+    StateNotifierProvider<MedicineNotifier, AsyncValue<void>>((ref) {
   return MedicineNotifier(
     ref.watch(firestoreServiceProvider),
     ref.watch(notificationServiceProvider),
@@ -316,7 +353,8 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
   final NotificationService _notif;
   MealNotifier(this._db, this._notif) : super(const AsyncValue.data(null));
 
-  Future<void> add(String patientId, {
+  Future<void> add(
+    String patientId, {
     required String mealType,
     required String description,
     int? calories,
@@ -346,7 +384,8 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
       );
       await _db.addMeal(patientId, meal);
       if (reminderTime != null) {
-        await _scheduleAndSaveMealReminder(patientId, mealId, mealType, reminderTime, reminderRepeat);
+        await _scheduleAndSaveMealReminder(
+            patientId, mealId, mealType, reminderTime, reminderRepeat);
       }
       state = const AsyncValue.data(null);
     } catch (e, s) {
@@ -354,7 +393,9 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> update(String patientId, String mealId, {
+  Future<void> update(
+    String patientId,
+    String mealId, {
     required String mealType,
     required String description,
     int? calories,
@@ -380,7 +421,8 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
         'reminderDays': reminderDays,
       });
       if (reminderTime != null) {
-        await _scheduleAndSaveMealReminder(patientId, mealId, mealType, reminderTime, reminderRepeat);
+        await _scheduleAndSaveMealReminder(
+            patientId, mealId, mealType, reminderTime, reminderRepeat);
       }
       state = const AsyncValue.data(null);
     } catch (e, s) {
@@ -389,7 +431,11 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> _scheduleAndSaveMealReminder(
-    String patientId, String mealId, String mealType, String reminderTime, String repeat,
+    String patientId,
+    String mealId,
+    String mealType,
+    String reminderTime,
+    String repeat,
   ) async {
     final parts = reminderTime.split(':');
     if (parts.length != 2) return;
@@ -405,14 +451,16 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
       channel: AppConstants.notifChannelGeneral,
     );
     final repeatLabel = repeat == 'daily' ? 'Daily' : 'Once';
-    await _db.addNotification(patientId, AppNotification(
-      id: _uuid.v4(),
-      title: 'Meal reminder set',
-      body: '$mealType at $reminderTime ($repeatLabel)',
-      type: NotificationType.mealReminder,
-      createdAt: DateTime.now(),
-      scheduledFor: _todayAt(hour, minute),
-    ));
+    await _db.addNotification(
+        patientId,
+        AppNotification(
+          id: _uuid.v4(),
+          title: 'Meal reminder set',
+          body: '$mealType at $reminderTime ($repeatLabel)',
+          type: NotificationType.mealReminder,
+          createdAt: DateTime.now(),
+          scheduledFor: _todayAt(hour, minute),
+        ));
   }
 
   Future<void> delete(String patientId, String mealId) async {
@@ -421,8 +469,10 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final mealNotifierProvider = StateNotifierProvider<MealNotifier, AsyncValue<void>>((ref) {
-  return MealNotifier(ref.watch(firestoreServiceProvider), ref.watch(notificationServiceProvider));
+final mealNotifierProvider =
+    StateNotifierProvider<MealNotifier, AsyncValue<void>>((ref) {
+  return MealNotifier(ref.watch(firestoreServiceProvider),
+      ref.watch(notificationServiceProvider));
 });
 
 // ─── Notification Notifier ────────────────────────────────────────────────────
@@ -452,7 +502,8 @@ class NotificationNotifier extends StateNotifier<void> {
   }
 }
 
-final notificationNotifierProvider = StateNotifierProvider<NotificationNotifier, void>((ref) {
+final notificationNotifierProvider =
+    StateNotifierProvider<NotificationNotifier, void>((ref) {
   return NotificationNotifier(ref.watch(firestoreServiceProvider));
 });
 
@@ -509,7 +560,8 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final appointmentNotifierProvider = StateNotifierProvider<AppointmentNotifier, AsyncValue<void>>((ref) {
+final appointmentNotifierProvider =
+    StateNotifierProvider<AppointmentNotifier, AsyncValue<void>>((ref) {
   return AppointmentNotifier(ref.watch(firestoreServiceProvider));
 });
 
@@ -519,7 +571,8 @@ class ActivityNotifier extends StateNotifier<AsyncValue<void>> {
   ActivityNotifier(this._db) : super(const AsyncValue.data(null));
 
   // P2: Added loading state and try/catch for proper error propagation.
-  Future<void> save(String patientId, {
+  Future<void> save(
+    String patientId, {
     required String type,
     required int durationSeconds,
     double? distanceKm,
@@ -549,7 +602,8 @@ class ActivityNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final activityNotifierProvider = StateNotifierProvider<ActivityNotifier, AsyncValue<void>>((ref) {
+final activityNotifierProvider =
+    StateNotifierProvider<ActivityNotifier, AsyncValue<void>>((ref) {
   return ActivityNotifier(ref.watch(firestoreServiceProvider));
 });
 

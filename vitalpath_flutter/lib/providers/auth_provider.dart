@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../core/auth/auth_repository.dart';
 import '../core/auth/firebase_auth_repository.dart';
@@ -65,9 +66,28 @@ final fcmTokenSyncProvider = Provider<void>((ref) {
     next.whenData((user) async {
       if (user == null) return;
       await ref.read(notificationServiceProvider).syncTokenForUser(
-        user.uid,
-        ref.read(firestoreServiceProvider),
-      );
+            user.uid,
+            ref.read(firestoreServiceProvider),
+          );
+    });
+  });
+});
+
+// Crashlytics user attribution: tag every crash report with the signed-in
+// user's uid + userType so we can filter and follow up. Clears on sign-out.
+final crashlyticsUserSyncProvider = Provider<void>((ref) {
+  ref.listen(currentUserProvider, (_, next) {
+    next.whenData((user) async {
+      final crashlytics = FirebaseCrashlytics.instance;
+      if (user == null) {
+        await crashlytics.setUserIdentifier('');
+        return;
+      }
+      await crashlytics.setUserIdentifier(user.uid);
+      await crashlytics.setCustomKey('userType', user.userType.name);
+      // Non-fatal session marker — first event per signed-in session, lets us
+      // confirm Crashlytics is alive in the dashboard without needing a crash.
+      await crashlytics.log('session start · userType=${user.userType.name}');
     });
   });
 });

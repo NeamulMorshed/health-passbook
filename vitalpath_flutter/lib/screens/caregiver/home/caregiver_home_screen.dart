@@ -12,6 +12,10 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/caregiver_provider.dart';
 import '../../../models/caregiver_connection.dart';
+import '../../../core/widgets/freshness_timestamp.dart';
+
+final _caregiverLastRefreshedProvider =
+    StateProvider<DateTime>((_) => DateTime.now());
 
 class CaregiverHomeScreen extends ConsumerWidget {
   const CaregiverHomeScreen({super.key});
@@ -20,9 +24,11 @@ class CaregiverHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
     return userAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) => const Scaffold(
-        body: Center(child: EmptyState(
+        body: Center(
+            child: EmptyState(
           icon: Icons.error_outline_rounded,
           title: 'Something went wrong',
           subtitle: 'Pull to refresh or try again.',
@@ -70,21 +76,26 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
 
   String _initials(String name) {
     final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    if (parts.length >= 2)
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
   @override
   Widget build(BuildContext context) {
     final membersAsync = ref.watch(familyMembersProvider(widget.user.uid));
-    final connectedPatientsAsync = ref.watch(caregiverPatientsProvider(widget.user.uid));
-    final pendingInvitesAsync = ref.watch(pendingInvitesForEmailProvider(widget.user.email ?? ''));
+    final connectedPatientsAsync =
+        ref.watch(caregiverPatientsProvider(widget.user.uid));
+    final pendingInvitesAsync =
+        ref.watch(pendingInvitesForEmailProvider(widget.user.email ?? ''));
     final today = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     return membersAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) => const Scaffold(
-        body: Center(child: EmptyState(
+        body: Center(
+            child: EmptyState(
           icon: Icons.error_outline_rounded,
           title: 'Something went wrong',
           subtitle: 'Pull to refresh or try again.',
@@ -96,7 +107,8 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
             (_) => setState(() => _selectedMemberId = members.first.id),
           );
         }
-        final selectedMember = members.where((m) => m.id == _selectedMemberId).firstOrNull;
+        final selectedMember =
+            members.where((m) => m.id == _selectedMemberId).firstOrNull;
 
         return Scaffold(
           backgroundColor: AppColors.pageBackground,
@@ -105,11 +117,19 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
             backgroundColor: AppColors.surface,
             elevation: 0,
             scrolledUnderElevation: 0,
-            title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            title:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_greeting(),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.mutedForeground)),
               Text(
-                widget.user.name.isNotEmpty ? widget.user.name : 'Family Member',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground),
+                widget.user.name.isNotEmpty
+                    ? widget.user.name
+                    : 'Family Member',
+                style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.foreground),
               ),
             ]),
             bottom: PreferredSize(
@@ -118,7 +138,9 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                 alignment: Alignment.centerLeft,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Text(today, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                  child: Text(today,
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground)),
                 ),
               ),
             ),
@@ -131,11 +153,18 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                 ref.invalidate(familyMemberMedicinesProvider(
                     (uid: widget.user.uid, memberId: _selectedMemberId!)));
               }
+              ref.read(_caregiverLastRefreshedProvider.notifier).state =
+                  DateTime.now();
             },
             child: CustomScrollView(slivers: [
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
-                sliver: SliverList(delegate: SliverChildListDelegate([
+                sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                  FreshnessTimestamp(
+                      lastUpdated:
+                          ref.watch(_caregiverLastRefreshedProvider)),
+                  const SizedBox(height: 12),
 
                   // ── Onboarding guidance (shown only when no connections yet) ──
                   if ((connectedPatientsAsync.asData?.value ?? []).isEmpty &&
@@ -145,56 +174,100 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                   ],
 
                   // ── Pending invite banners ────────────────────────────────
-                  ...((pendingInvitesAsync.asData?.value ?? []).map((inv) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: BentoCard(
-                      color: AppColors.inviteAccent.withValues(alpha: 0.08),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      onTap: () => context.go('/accept-invite', extra: inv),
-                      child: Row(children: [
-                        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: AppColors.inviteAccent, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(
-                          '${inv.patientName} wants to share their health with you (as your ${inv.relationship.relationshipLabel})',
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                        )),
-                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.inviteAccent, size: 16),
-                      ]),
-                    ),
-                  ))),
+                  ...((pendingInvitesAsync.asData?.value ?? []).map((inv) =>
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: BentoCard(
+                          color: AppColors.inviteAccent.withValues(alpha: 0.08),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          onTap: () => context.go('/accept-invite', extra: inv),
+                          child: Row(children: [
+                            HugeIcon(
+                                icon: HugeIcons.strokeRoundedShield01,
+                                color: AppColors.inviteAccent,
+                                size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                                child: Text(
+                              '${inv.patientName} wants to share their health with you (as your ${inv.relationship.relationshipLabel})',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                            )),
+                            HugeIcon(
+                                icon: HugeIcons.strokeRoundedArrowRight01,
+                                color: AppColors.inviteAccent,
+                                size: 16),
+                          ]),
+                        ),
+                      ))),
 
                   // ── Connected patients ────────────────────────────────────
-                  ...((connectedPatientsAsync.asData?.value ?? []).isNotEmpty ? [
-                    const Text('Connected Family',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
-                    const SizedBox(height: 10),
-                    ...((connectedPatientsAsync.asData?.value ?? []).map((conn) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: BentoCard(
-                        onTap: () => context.go('/caregiver-patient-profile', extra: conn),
-                        child: Row(children: [
-                          CircleAvatar(
-                            radius: 22,
-                            backgroundColor: AppColors.inviteAccent.withValues(alpha: 0.12),
-                            child: Text(_initials(conn.patientName),
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF7C3AED))),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(conn.patientName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                            Text(conn.relationship.relationshipLabel,
-                                style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-                          ])),
-                          HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
-                        ]),
-                      ),
-                    ))),
-                    const SizedBox(height: 12),
-                  ] : []),
+                  ...((connectedPatientsAsync.asData?.value ?? []).isNotEmpty
+                      ? [
+                          const Text('Connected Family',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.mutedForeground)),
+                          const SizedBox(height: 10),
+                          ...((connectedPatientsAsync.asData?.value ?? [])
+                              .map((conn) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: BentoCard(
+                                      onTap: () => context.go(
+                                          '/caregiver-patient-profile',
+                                          extra: conn),
+                                      child: Row(children: [
+                                        CircleAvatar(
+                                          radius: 22,
+                                          backgroundColor: AppColors
+                                              .inviteAccent
+                                              .withValues(alpha: 0.12),
+                                          child: Text(
+                                              _initials(conn.patientName),
+                                              style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFF7C3AED))),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                            child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                              Text(conn.patientName,
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w600)),
+                                              Text(
+                                                  conn.relationship
+                                                      .relationshipLabel,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AppColors
+                                                          .mutedForeground)),
+                                            ])),
+                                        HugeIcon(
+                                            icon: HugeIcons
+                                                .strokeRoundedArrowRight01,
+                                            color: AppColors.textTertiary,
+                                            size: 16),
+                                      ]),
+                                    ),
+                                  ))),
+                          const SizedBox(height: 12),
+                        ]
+                      : []),
 
                   // ── Family member selector ────────────────────────────────
                   const Text('Who are you looking after today?',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.mutedForeground)),
                   const SizedBox(height: 10),
 
                   if (members.isEmpty)
@@ -210,26 +283,34 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                           final m = members[i];
                           final selected = m.id == _selectedMemberId;
                           return GestureDetector(
-                            onTap: () => setState(() => _selectedMemberId = m.id),
+                            onTap: () =>
+                                setState(() => _selectedMemberId = m.id),
                             child: Column(children: [
                               Container(
-                                width: 48, height: 48,
+                                width: 48,
+                                height: 48,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: selected
                                       ? AppColors.caregiver
-                                      : AppColors.caregiver.withValues(alpha: 0.15),
+                                      : AppColors.caregiver
+                                          .withValues(alpha: 0.15),
                                   border: Border.all(
-                                    color: selected ? AppColors.caregiver : AppColors.border,
+                                    color: selected
+                                        ? AppColors.caregiver
+                                        : AppColors.border,
                                     width: selected ? 2.5 : 1,
                                   ),
                                 ),
-                                child: Center(child: Text(m.initials,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      color: selected ? Colors.white : AppColors.caregiver,
-                                    ))),
+                                child: Center(
+                                    child: Text(m.initials,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          color: selected
+                                              ? Colors.white
+                                              : AppColors.caregiver,
+                                        ))),
                               ),
                               const SizedBox(height: 6),
                               SizedBox(
@@ -240,8 +321,12 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                                      color: selected ? AppColors.caregiver : AppColors.mutedForeground,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                      color: selected
+                                          ? AppColors.caregiver
+                                          : AppColors.mutedForeground,
                                     )),
                               ),
                             ]),
@@ -268,7 +353,9 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                       memberName: selectedMember.name,
                     ),
                     const SizedBox(height: 12),
-                    _QuickActions(caregiverUid: widget.user.uid, memberId: selectedMember.id),
+                    _QuickActions(
+                        caregiverUid: widget.user.uid,
+                        memberId: selectedMember.id),
                   ] else if (members.isNotEmpty)
                     const Center(child: CircularProgressIndicator()),
 
@@ -291,27 +378,32 @@ class _EmptyMembersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => BentoCard(
-    child: Column(children: [
-      const SizedBox(height: 4),
-      HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.caregiver, size: 36),
-      const SizedBox(height: 10),
-      const Text('No family members yet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      const Text('Go to Family to add the people you look after.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-      const SizedBox(height: 14),
-      OutlinedButton(
-        onPressed: () => context.go('/caregiver/patients'),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppColors.caregiver),
-          foregroundColor: AppColors.caregiver,
-        ),
-        child: const Text('Go to Family', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-      const SizedBox(height: 4),
-    ]),
-  );
+        child: Column(children: [
+          const SizedBox(height: 4),
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedGroup,
+              color: AppColors.caregiver,
+              size: 36),
+          const SizedBox(height: 10),
+          const Text('No family members yet',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          const Text('Go to Family to add the people you look after.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+          const SizedBox(height: 14),
+          OutlinedButton(
+            onPressed: () => context.go('/caregiver/patients'),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.caregiver),
+              foregroundColor: AppColors.caregiver,
+            ),
+            child: const Text('Go to Family',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          const SizedBox(height: 4),
+        ]),
+      );
 }
 
 // ── Onboarding guidance card ──────────────────────────────────────────────────
@@ -319,30 +411,42 @@ class _EmptyMembersCard extends StatelessWidget {
 class _OnboardingGuidanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: AppColors.caregiver.withValues(alpha: 0.07),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: AppColors.caregiver.withValues(alpha: 0.25)),
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.caregiver, size: 22),
-        const SizedBox(width: 10),
-        const Text('Welcome to Family Care',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.caregiver)),
-      ]),
-      const SizedBox(height: 8),
-      const Text(
-        'This portal is for family members who look after their loved ones. You can monitor medicines, meals, vitals, and appointments for your family.',
-        style: TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4),
-      ),
-      const SizedBox(height: 12),
-      _GuidanceStep(icon: HugeIcons.strokeRoundedMail01, label: 'Wait for a family member to invite you, or'),
-      const SizedBox(height: 6),
-      _GuidanceStep(icon: HugeIcons.strokeRoundedUserAdd01, label: 'Ask them to invite you from their Health Circle'),
-    ]),
-  );
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.caregiver.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: AppColors.caregiver.withValues(alpha: 0.25)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedHeartCheck,
+                color: AppColors.caregiver,
+                size: 22),
+            const SizedBox(width: 10),
+            const Text('Welcome to Family Care',
+                style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.caregiver)),
+          ]),
+          const SizedBox(height: 8),
+          const Text(
+            'This portal is for family members who look after their loved ones. You can monitor medicines, meals, vitals, and appointments for your family.',
+            style: TextStyle(
+                fontSize: 13, color: AppColors.foreground, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          _GuidanceStep(
+              icon: HugeIcons.strokeRoundedMail01,
+              label: 'Wait for a family member to invite you, or'),
+          const SizedBox(height: 6),
+          _GuidanceStep(
+              icon: HugeIcons.strokeRoundedUserAdd01,
+              label: 'Ask them to invite you from their Health Circle'),
+        ]),
+      );
 }
 
 class _GuidanceStep extends StatelessWidget {
@@ -352,24 +456,31 @@ class _GuidanceStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      HugeIcon(icon: icon, size: 14, color: AppColors.caregiver),
-      const SizedBox(width: 8),
-      Expanded(child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground))),
-    ],
-  );
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HugeIcon(icon: icon, size: 14, color: AppColors.caregiver),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.mutedForeground))),
+        ],
+      );
 }
 
 // ── Medicine section ──────────────────────────────────────────────────────────
 
 class _MedSection extends ConsumerWidget {
   final String caregiverUid, memberId, memberName;
-  const _MedSection({required this.caregiverUid, required this.memberId, required this.memberName});
+  const _MedSection(
+      {required this.caregiverUid,
+      required this.memberId,
+      required this.memberName});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(familyMemberMedicinesProvider((uid: caregiverUid, memberId: memberId)));
+    final medsAsync = ref.watch(
+        familyMemberMedicinesProvider((uid: caregiverUid, memberId: memberId)));
     return medsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, __) => const SizedBox.shrink(),
@@ -377,11 +488,13 @@ class _MedSection extends ConsumerWidget {
         final activeMeds = meds.where((m) => m.isActive).toList();
         final takenToday = activeMeds.where((m) => m.takenToday).length;
         final dueMeds = activeMeds
-            .where((m) => m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)
+            .where((m) =>
+                m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)
             .toList();
 
-        final dueColor = dueMeds.isNotEmpty ? AppColors.warning : AppColors.success;
-        final dueIcon  = dueMeds.isNotEmpty
+        final dueColor =
+            dueMeds.isNotEmpty ? AppColors.warning : AppColors.success;
+        final dueIcon = dueMeds.isNotEmpty
             ? HugeIcons.strokeRoundedAlarmClock
             : HugeIcons.strokeRoundedCheckmarkCircle01;
 
@@ -389,29 +502,38 @@ class _MedSection extends ConsumerWidget {
           BentoCard(
             child: Row(children: [
               Container(
-                width: 40, height: 40,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: AppColors.caregiverLight,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 20),
+                  child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedMedicine01,
+                      color: AppColors.caregiver,
+                      size: 20),
                 ),
               ),
               const SizedBox(width: 14),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(
                   '$takenToday/${activeMeds.length}',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w700),
                 ),
                 const Text('taken today',
-                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.mutedForeground)),
               ]),
               const Spacer(),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(
                   '${dueMeds.length}',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: dueColor),
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: dueColor),
                 ),
                 Text(
                   dueMeds.isNotEmpty ? 'due now' : 'all done',
@@ -420,12 +542,14 @@ class _MedSection extends ConsumerWidget {
               ]),
               const SizedBox(width: 12),
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: dueColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Center(child: HugeIcon(icon: dueIcon, color: dueColor, size: 18)),
+                child: Center(
+                    child: HugeIcon(icon: dueIcon, color: dueColor, size: 18)),
               ),
             ]),
           ),
@@ -434,27 +558,40 @@ class _MedSection extends ConsumerWidget {
             BentoCard(
               child: Column(children: [
                 const SizedBox(height: 8),
-                HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 28),
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedMedicine01,
+                    color: AppColors.mutedForeground,
+                    size: 28),
                 const SizedBox(height: 8),
                 Text('No medicines for $memberName yet',
-                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.mutedForeground)),
                 const SizedBox(height: 8),
               ]),
             ),
           ] else if (dueMeds.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('Due now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const Text('Due now',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             ...dueMeds.take(3).map((m) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _MedTile(medicine: m, caregiverUid: caregiverUid, memberId: memberId, memberName: memberName),
-            )),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _MedTile(
+                      medicine: m,
+                      caregiverUid: caregiverUid,
+                      memberId: memberId,
+                      memberName: memberName),
+                )),
             if (dueMeds.length > 3)
               BentoCard(
                 onTap: () => context.go('/caregiver/patients'),
-                child: Center(child: Text(
+                child: Center(
+                    child: Text(
                   '+${dueMeds.length - 3} more — see all in Family',
-                  style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500),
                 )),
               ),
           ] else ...[
@@ -463,10 +600,16 @@ class _MedSection extends ConsumerWidget {
               color: AppColors.successLight,
               child: Column(children: [
                 const SizedBox(height: 4),
-                HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 28),
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                    color: AppColors.success,
+                    size: 28),
                 const SizedBox(height: 6),
                 const Text('All medicines taken!',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.success)),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.success)),
                 const SizedBox(height: 4),
               ]),
             ),
@@ -500,20 +643,25 @@ class _MedTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Log dose for ${medicine.name}?',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               Text(
                 "This will update $memberName's health record.",
-                style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground),
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.mutedForeground),
               ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.caregiver),
+                  style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.caregiver),
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    await ref.read(familyMedicinePatchProvider).logDose(caregiverUid, memberId, medicine.id);
+                    await ref
+                        .read(familyMedicinePatchProvider)
+                        .logDose(caregiverUid, memberId, medicine.id);
                   },
                   child: const Text('Log as Taken'),
                 ),
@@ -548,12 +696,21 @@ class _MedTile extends ConsumerWidget {
             color: AppColors.caregiver.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 22),
+          child: HugeIcon(
+              icon: HugeIcons.strokeRoundedMedicine01,
+              color: AppColors.caregiver,
+              size: 22),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(medicine.name,
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          Text(subtitle,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.mutedForeground)),
         ])),
         const SizedBox(width: 10),
         GestureDetector(
@@ -561,8 +718,14 @@ class _MedTile extends ConsumerWidget {
           child: Container(
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.caregiver, borderRadius: BorderRadius.circular(10)),
-            child: const Text('Log as Taken', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+            decoration: BoxDecoration(
+                color: AppColors.caregiver,
+                borderRadius: BorderRadius.circular(10)),
+            child: const Text('Log as Taken',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
           ),
         ),
       ]),
@@ -577,32 +740,45 @@ class _QuickActions extends StatelessWidget {
   const _QuickActions({required this.caregiverUid, required this.memberId});
 
   @override
-  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    const BentoSectionHeader(title: 'Quick Actions'),
-    const SizedBox(height: 12),
-    Row(children: [
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.caregiver, size: 22),
-        label: 'Check Medicines',
-        color: AppColors.caregiver,
-        onTap: () => context.go('/caregiver/patients'),
-      )),
-      const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.info, size: 22),
-        label: 'Appointments',
-        color: AppColors.info,
-        onTap: () => context.go('/caregiver/patients'),
-      )),
-      const SizedBox(width: 10),
-      Expanded(child: _ActionBtn(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.mutedForeground, size: 22),
-        label: 'My Profile',
-        color: AppColors.mutedForeground,
-        onTap: () => context.go('/caregiver/profile'),
-      )),
-    ]),
-  ]);
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const BentoSectionHeader(title: 'Quick Actions'),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+              child: _ActionBtn(
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedMedicine01,
+                color: AppColors.caregiver,
+                size: 22),
+            label: 'Check Medicines',
+            color: AppColors.caregiver,
+            onTap: () => context.go('/caregiver/patients'),
+          )),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _ActionBtn(
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedCalendar01,
+                color: AppColors.info,
+                size: 22),
+            label: 'Appointments',
+            color: AppColors.info,
+            onTap: () => context.go('/caregiver/patients'),
+          )),
+          const SizedBox(width: 10),
+          Expanded(
+              child: _ActionBtn(
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedUser,
+                color: AppColors.mutedForeground,
+                size: 22),
+            label: 'My Profile',
+            color: AppColors.mutedForeground,
+            onTap: () => context.go('/caregiver/profile'),
+          )),
+        ]),
+      ]);
 }
 
 class _ActionBtn extends StatelessWidget {
@@ -610,28 +786,33 @@ class _ActionBtn extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  const _ActionBtn({required this.icon, required this.label, required this.color, required this.onTap});
+  const _ActionBtn(
+      {required this.icon,
+      required this.label,
+      required this.color,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      constraints: const BoxConstraints(minHeight: 48),
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(children: [
-        icon,
-        const SizedBox(height: 6),
-        Text(label,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-      ]),
-    ),
-  );
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Column(children: [
+            icon,
+            const SizedBox(height: 6),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          ]),
+        ),
+      );
 }
 
 // ── Daily summary banner ──────────────────────────────────────────────────────
@@ -666,7 +847,8 @@ class _DailySummaryBanner extends ConsumerWidget {
     final List<List<dynamic>> statusIcon;
 
     if (meds == null) {
-      statusText = medsAsync.isLoading ? 'Loading today\'s status…' : 'Could not load';
+      statusText =
+          medsAsync.isLoading ? 'Loading today\'s status…' : 'Could not load';
       statusColor = AppColors.mutedForeground;
       statusIcon = HugeIcons.strokeRoundedClock01;
     } else {
@@ -676,8 +858,10 @@ class _DailySummaryBanner extends ConsumerWidget {
         statusColor = AppColors.mutedForeground;
         statusIcon = HugeIcons.strokeRoundedCheckmarkCircle01;
       } else {
-        final due = active.where((m) =>
-            m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot).length;
+        final due = active
+            .where((m) =>
+                m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)
+            .length;
         if (due == 0) {
           statusText = 'All caught up on medicines today';
           statusColor = AppColors.success;
@@ -717,7 +901,8 @@ class _DailySummaryBanner extends ConsumerWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
               memberName,
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
@@ -725,7 +910,8 @@ class _DailySummaryBanner extends ConsumerWidget {
             if (memberAge != null)
               Text(
                 '$memberAge yrs · $memberRelationship',
-                style: const TextStyle(fontSize: 11, color: AppColors.mutedForeground),
+                style: const TextStyle(
+                    fontSize: 11, color: AppColors.mutedForeground),
               ),
             const SizedBox(height: 4),
             Row(children: [

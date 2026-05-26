@@ -70,7 +70,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   }
 
   void _resumeTracking() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _seconds++));
+    _timer = Timer.periodic(
+        const Duration(seconds: 1), (_) => setState(() => _seconds++));
     _stepSub?.resume();
     _positionSub?.resume();
     setState(() => _isPaused = false);
@@ -84,8 +85,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     if (locPerm == LocationPermission.denied ||
         locPerm == LocationPermission.deniedForever) {
       if (mounted) {
-        showAppSnack(context,
-            'Location permission is required. Enable it in Settings.');
+        showAppSnack(
+            context, 'Location permission is required. Enable it in Settings.');
       }
       return;
     }
@@ -102,8 +103,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       _lastPosition = null;
     });
 
-    _timer =
-        Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _seconds++));
+    _timer = Timer.periodic(
+        const Duration(seconds: 1), (_) => setState(() => _seconds++));
 
     _positionSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -149,11 +150,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     await _stepSub?.cancel();
     setState(() => _isPaused = false);
 
-    final useStepEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
-    final finalSteps = _steps > 0 ? _steps : (useStepEstimate ? (_distanceKm * _kStepsPerKm).round() : 0);
-    final kcal = _steps > 0
-        ? (_steps * 0.04).round()
-        : (_distanceKm * 60).round();
+    final useStepEstimate =
+        _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    final finalSteps = _steps > 0
+        ? _steps
+        : (useStepEstimate ? (_distanceKm * _kStepsPerKm).round() : 0);
+    final kcal =
+        _steps > 0 ? (_steps * 0.04).round() : (_distanceKm * 60).round();
 
     setState(() => _isTracking = false);
 
@@ -171,7 +174,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
     int hp = 0;
     try {
-      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: finalSteps, type: _activityType);
+      hp = await ref
+          .read(gamificationServiceProvider)
+          .awardActivity(user.uid, steps: finalSteps, type: _activityType);
     } catch (_) {}
 
     if (mounted) {
@@ -201,14 +206,18 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           steps: null,
           distanceKm: null,
           caloriesBurned: calories,
-          notes: _manualNotesCtrl.text.trim().isEmpty ? null : _manualNotesCtrl.text.trim(),
+          notes: _manualNotesCtrl.text.trim().isEmpty
+              ? null
+              : _manualNotesCtrl.text.trim(),
         );
 
     if (!mounted) return;
 
     int hp = 0;
     try {
-      hp = await ref.read(gamificationServiceProvider).awardActivity(user.uid, steps: 0, type: _activityType);
+      hp = await ref
+          .read(gamificationServiceProvider)
+          .awardActivity(user.uid, steps: 0, type: _activityType);
     } catch (_) {}
 
     if (mounted) {
@@ -230,12 +239,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   static const _kStepsPerKm = 1333;
   int get _displaySteps {
     if (_steps > 0) return _steps;
-    final useEstimate = _activityType == ActivityType.walk || _activityType == ActivityType.run;
+    final useEstimate =
+        _activityType == ActivityType.walk || _activityType == ActivityType.run;
     return useEstimate ? (_distanceKm * _kStepsPerKm).round() : 0;
   }
-  int get _displayKcal => _steps > 0
-      ? (_steps * 0.04).round()
-      : (_distanceKm * 60).round();
+
+  int get _displayKcal =>
+      _steps > 0 ? (_steps * 0.04).round() : (_distanceKm * 60).round();
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +308,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: sel ? AppColors.primary : AppColors.muted,
+                                color:
+                                    sel ? AppColors.primary : AppColors.muted,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: sel
@@ -364,16 +375,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                           decoration: BoxDecoration(
                               color: AppColors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border:
-                                  Border.all(color: AppColors.border)),
+                              border: Border.all(color: AppColors.border)),
                           child: Row(children: [
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                  color: AppColors.success
-                                      .withValues(alpha: 0.1),
-                                  borderRadius:
-                                      BorderRadius.circular(8)),
+                                  color:
+                                      AppColors.success.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8)),
                               child: Icon(
                                 ActivityType.iconFor(log.type),
                                 color: AppColors.success,
@@ -383,15 +392,12 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                        ActivityType.labelFor(log.type),
+                                    Text(ActivityType.labelFor(log.type),
                                         style: const TextStyle(
                                             fontSize: 14,
-                                            fontWeight:
-                                                FontWeight.w600)),
+                                            fontWeight: FontWeight.w600)),
                                     Text(
                                       isGps
                                           ? '${log.distanceKm?.toStringAsFixed(2) ?? 0} km · ${log.steps ?? 0} steps · ${log.formattedDuration}'
@@ -400,8 +406,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                               : 'Manual log',
                                       style: const TextStyle(
                                           fontSize: 12,
-                                          color: AppColors
-                                              .mutedForeground),
+                                          color: AppColors.mutedForeground),
                                     ),
                                   ]),
                             ),
@@ -441,9 +446,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color:
-                  (_isTracking ? AppColors.success : AppColors.primary)
-                      .withValues(alpha: 0.3),
+              color: (_isTracking ? AppColors.success : AppColors.primary)
+                  .withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 6))
         ],
@@ -454,22 +458,18 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('GPS $label Tracker',
-                  style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13)),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
               if (_isTracking && _pedometerAvailable) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text('Step Sensor Active',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12)),
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
               ],
             ],
@@ -478,18 +478,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
           Text(
             _formatTime(_seconds),
             style: const TextStyle(
-                color: Colors.white,
-                fontSize: 56,
-                fontWeight: FontWeight.w700),
+                color: Colors.white, fontSize: 56, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
-          Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _WalkStat(_distanceKm.toStringAsFixed(2), 'km'),
-                _WalkStat('$_displaySteps', 'steps'),
-                _WalkStat('$_displayKcal', 'kcal'),
-              ]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            _WalkStat(_distanceKm.toStringAsFixed(2), 'km'),
+            _WalkStat('$_displaySteps', 'steps'),
+            _WalkStat('$_displayKcal', 'kcal'),
+          ]),
           const SizedBox(height: 24),
           if (_isTracking)
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -502,8 +498,14 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle),
                   child: _isPaused
-                      ? HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 34)
-                      : HugeIcon(icon: HugeIcons.strokeRoundedPause, color: Colors.white, size: 34),
+                      ? HugeIcon(
+                          icon: HugeIcons.strokeRoundedPlay,
+                          color: Colors.white,
+                          size: 34)
+                      : HugeIcon(
+                          icon: HugeIcons.strokeRoundedPause,
+                          color: Colors.white,
+                          size: 34),
                 ),
               ),
               const SizedBox(width: 24),
@@ -529,7 +531,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedPlay, color: Colors.white, size: 40),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedPlay,
+                    color: Colors.white,
+                    size: 40),
               ),
             ),
           const SizedBox(height: 12),
@@ -539,9 +544,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       ? 'Paused — tap to resume or stop'
                       : 'Tap pause or stop')
                   : 'Start ${ActivityType.labelFor(_activityType)}',
-              style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13)),
+              style: const TextStyle(color: Colors.white70, fontSize: 13)),
         ],
       ),
     );
@@ -564,9 +567,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             const SizedBox(width: 10),
             Text(
               'Log ${ActivityType.labelFor(_activityType)}',
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ]),
           const SizedBox(height: 16),
@@ -596,7 +597,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             decoration: const InputDecoration(
               labelText: 'Notes (optional)',
               hintText: 'e.g. Felt great, outdoor session',
-              prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.textSecondary, size: 24),
+              prefixIcon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedNote,
+                  color: AppColors.textSecondary,
+                  size: 24),
             ),
           ),
           const SizedBox(height: 16),
@@ -621,8 +625,7 @@ class _WalkStat extends StatelessWidget {
                 fontSize: 20,
                 fontWeight: FontWeight.w700)),
         Text(label,
-            style: const TextStyle(
-                color: Colors.white70, fontSize: 12)),
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ]);
 }
 
@@ -680,9 +683,7 @@ class _WeeklyActivityChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Weekly Activity',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
           const SizedBox(height: 14),
           SizedBox(
             height: 120,
@@ -705,8 +706,8 @@ class _WeeklyActivityChart extends StatelessWidget {
                       reservedSize: 22,
                       getTitlesWidget: (value, meta) {
                         final now = DateTime.now();
-                        final day = now.subtract(
-                            Duration(days: 6 - value.toInt()));
+                        final day =
+                            now.subtract(Duration(days: 6 - value.toInt()));
                         final label = _dayLabels[day.weekday];
                         final isToday = value.toInt() == 6;
                         return Padding(
@@ -718,9 +719,8 @@ class _WeeklyActivityChart extends StatelessWidget {
                               color: isToday
                                   ? AppColors.primary
                                   : AppColors.mutedForeground,
-                              fontWeight: isToday
-                                  ? FontWeight.w700
-                                  : FontWeight.w400,
+                              fontWeight:
+                                  isToday ? FontWeight.w700 : FontWeight.w400,
                             ),
                           ),
                         );
@@ -743,9 +743,7 @@ class _WeeklyActivityChart extends StatelessWidget {
                     barRods: [
                       BarChartRodData(
                         toY: s.toDouble(),
-                        color: s == 0
-                            ? AppColors.muted
-                            : barColor,
+                        color: s == 0 ? AppColors.muted : barColor,
                         width: 18,
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(4)),
@@ -771,8 +769,7 @@ class _WeeklyActivityChart extends StatelessWidget {
           const SizedBox(height: 12),
           // Weekly summary row
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.muted,
               borderRadius: BorderRadius.circular(8),

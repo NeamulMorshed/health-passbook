@@ -34,11 +34,25 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/patients/$(patientId)/caregivers/$(request.auth.uid));
     }
 
+    // Checks that the connected caregiver has permission for a specific section.
+    // Mirror doc carries a 'permissions' map written on accept + on each save.
+    // Defensive default: missing 'permissions' field or missing section key → true
+    // (preserves access for existing connections that pre-date this field).
+    function caregiverCanRead(patientId, section) {
+      return isCaregiverFor(patientId) &&
+        get(/databases/$(database)/documents/patients/$(patientId)/caregivers/$(request.auth.uid))
+          .data.get('permissions', {}).get(section, true) == true;
+    }
+
     // ── users ────────────────────────────────────────────────────────────────
 
     match /users/{uid} {
-      allow read:  if isSignedIn() && isOwner(uid);
-      allow write: if isSignedIn() && isOwner(uid);
+      allow read:   if isSignedIn() && isOwner(uid);
+      allow create: if isSignedIn() && isOwner(uid);
+      // S-02: block userType self-escalation — owner cannot change their own role after creation.
+      allow update: if isSignedIn() && isOwner(uid)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userType']);
+      allow delete: if isSignedIn() && isOwner(uid);
     }
 
     // ── patients ─────────────────────────────────────────────────────────────
@@ -48,18 +62,19 @@ service cloud.firestore {
       allow write: if isSignedIn() && isOwner(patientId);
 
       match /medicines/{medId} {
-        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)) || isCaregiverFor(patientId));
-        allow create:         if isSignedIn() && (isOwner(patientId) || isDoctor());
+        allow read:           if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)) || caregiverCanRead(patientId, 'medicines'));
+        // S-03: doctor must have an active connection to this patient before writing medicines.
+        allow create:         if isSignedIn() && (isOwner(patientId) || (isDoctor() && doctorHasPatient(patientId)));
         allow update, delete: if isSignedIn() && isOwner(patientId);
       }
 
       match /meals/{mealId} {
-        allow read:  if isSignedIn() && (isOwner(patientId) || isCaregiverFor(patientId));
+        allow read:  if isSignedIn() && (isOwner(patientId) || caregiverCanRead(patientId, 'mealLogs'));
         allow write: if isSignedIn() && isOwner(patientId);
       }
 
       match /activity_logs/{logId} {
-        allow read:  if isSignedIn() && (isOwner(patientId) || isCaregiverFor(patientId));
+        allow read:  if isSignedIn() && (isOwner(patientId) || caregiverCanRead(patientId, 'activityLogs'));
         allow write: if isSignedIn() && isOwner(patientId);
       }
 
@@ -113,16 +128,18 @@ service cloud.firestore {
     // ── appointments ─────────────────────────────────────────────────────────
 
     match /appointments/{apptId} {
-      // Single-document reads: resource.data is available.
       allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.doctorId  == request.auth.uid ||
-        isCaregiverFor(resource.data.patientId)
+        caregiverCanRead(resource.data.patientId, 'appointments')
       );
-      // Collection queries: resource.data is NOT available at query evaluation
-      // time. Allow any authenticated user — the SDK query always includes a
-      // patientId/doctorId == auth.uid filter so only their own docs are returned.
-      allow list: if isSignedIn();
+      // S-01: scope list queries — client must filter by patientId or doctorId equal to their own uid.
+      // Side-bug fix: appointments list rule was missing caregiver arm (prescriptions/vitals had it).
+      allow list: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId  == request.auth.uid ||
+        caregiverCanRead(resource.data.patientId, 'appointments')
+      );
 
       allow create: if isSignedIn() && isPatient() &&
         request.resource.data.patientId == request.auth.uid;
@@ -137,8 +154,32 @@ service cloud.firestore {
          resource.data.status == 'pending' &&
          request.resource.data.status == 'cancelled' &&
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['status', 'updatedAt']))
+           .hasOnly(['status', 'updatedAt'])) ||
+        // 7a: Either party may update message metadata (last message preview + ts)
+        // when a new chat message is sent. Limited to the message-related fields
+        // so nothing else can change.
+        ((resource.data.patientId == request.auth.uid ||
+          resource.data.doctorId == request.auth.uid) &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['lastMessageAt', 'lastMessagePreview']))
       );
+
+      // 7a: Messages subcollection — appointment-scoped chat.
+      // participants array (denormalized [patientId, doctorId]) makes the
+      // rule cheap (no get() lookup per message). senderId must equal auth.uid.
+      // Updates restricted to readAt-only so messages stay immutable.
+      match /messages/{msgId} {
+        allow read: if isSignedIn() &&
+          request.auth.uid in resource.data.participants;
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() &&
+          request.auth.uid in request.resource.data.participants &&
+          request.auth.uid == request.resource.data.senderId;
+        allow update: if isSignedIn() &&
+          request.auth.uid in resource.data.participants &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['readAt']);
+      }
     }
 
     // ── prescriptions ─────────────────────────────────────────────────────────
@@ -148,12 +189,19 @@ service cloud.firestore {
         resource.data.patientId == request.auth.uid ||
         resource.data.doctorId  == request.auth.uid ||
         (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
-        isCaregiverFor(resource.data.patientId)
+        caregiverCanRead(resource.data.patientId, 'prescriptions')
       );
-      allow list: if isSignedIn();
+      // S-01: scope list queries — patient, doctor (own), or connected caregiver with permission.
+      allow list: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId  == request.auth.uid ||
+        caregiverCanRead(resource.data.patientId, 'prescriptions')
+      );
 
+      // S-04: doctor must have an active connection to this patient before prescribing.
       allow create: if isSignedIn() && isDoctor() &&
-        request.resource.data.doctorId == request.auth.uid;
+        request.resource.data.doctorId == request.auth.uid &&
+        doctorHasPatient(request.resource.data.patientId);
     }
 
     // ── vitals ────────────────────────────────────────────────────────────────
@@ -162,9 +210,14 @@ service cloud.firestore {
       allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
-        isCaregiverFor(resource.data.patientId)
+        caregiverCanRead(resource.data.patientId, 'vitals')
       );
-      allow list: if isSignedIn();
+      // S-01: scope list queries — patient, connected doctor, or connected caregiver with permission.
+      allow list: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
+        caregiverCanRead(resource.data.patientId, 'vitals')
+      );
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
       allow delete: if isSignedIn() &&
@@ -176,24 +229,45 @@ service cloud.firestore {
     // can read their own and update to accept/decline an invite.
 
     match /caregiver_connections/{connId} {
+      // 7b: doctor may read patient's family members iff the patient opted-in
+      // via users/{patientId}.shareCircleWithDoctors == true. The get() in
+      // rules costs 1 billable read per evaluation; bounded because doctor
+      // patient view filters by patientId (~3–5 docs per query).
       allow get: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.caregiverUid == request.auth.uid ||
-        resource.data.caregiverEmail == request.auth.token.email ||
-        resource.data.caregiverEmail == request.auth.token.email.lower()
+        // S-05: lower() on both sides so "User@Example.com" stored == "user@example.com" token.
+        resource.data.caregiverEmail.lower() == request.auth.token.email.lower() ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId) &&
+          get(/databases/$(database)/documents/users/$(resource.data.patientId)).data.shareCircleWithDoctors == true)
       );
       allow list: if isSignedIn();
       allow create: if isSignedIn() &&
         request.resource.data.patientId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
-        resource.data.caregiverEmail == request.auth.token.email ||
-        resource.data.caregiverEmail == request.auth.token.email.lower() ||
+        resource.data.caregiverEmail.lower() == request.auth.token.email.lower() ||
         resource.data.caregiverUid == request.auth.uid
       );
       allow delete: if isSignedIn() && (
         resource.data.patientId == request.auth.uid ||
         resource.data.caregiverUid == request.auth.uid
+      );
+    }
+
+    // ── S-09: Collection-group guard for medicines ────────────────────────────
+    // The COLLECTION_GROUP index on medicines exists for Cloud Functions only
+    // (admin SDK bypasses these rules). This wildcard rule makes the access
+    // boundary explicit: client-side collection-group queries must include a
+    // patientId filter equal to the requester's own UID (or a doctor/caregiver
+    // with an active connection). Unconstrained cross-patient scans are rejected
+    // by Firestore at query evaluation time because the rule cannot be satisfied
+    // for documents belonging to other patients.
+    match /{path=**}/medicines/{medId} {
+      allow read: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        (isDoctor() && doctorHasPatient(resource.data.patientId)) ||
+        caregiverCanRead(resource.data.patientId, 'medicines')
       );
     }
 

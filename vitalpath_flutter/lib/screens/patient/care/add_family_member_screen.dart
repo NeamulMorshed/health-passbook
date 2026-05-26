@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../models/family_member.dart';
 import '../../../providers/patient_provider.dart';
@@ -22,8 +23,7 @@ class AddFamilyMemberScreen extends ConsumerStatefulWidget {
       _AddFamilyMemberScreenState();
 }
 
-class _AddFamilyMemberScreenState
-    extends ConsumerState<AddFamilyMemberScreen> {
+class _AddFamilyMemberScreenState extends ConsumerState<AddFamilyMemberScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   String? _relationship;
@@ -73,7 +73,10 @@ class _AddFamilyMemberScreenState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: AppColors.textPrimary, size: 20),
+              leading: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCamera01,
+                  color: AppColors.textPrimary,
+                  size: 20),
               title: const Text('Take a photo'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
@@ -84,7 +87,10 @@ class _AddFamilyMemberScreenState
             ),
             if (_photoFile != null || (_photoUrl != null && !_photoRemoved))
               ListTile(
-                leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18),
+                leading: HugeIcon(
+                    icon: HugeIcons.strokeRoundedDelete01,
+                    color: AppColors.destructive,
+                    size: 18),
                 title: const Text('Remove photo',
                     style: TextStyle(color: AppColors.destructive)),
                 onTap: () => Navigator.pop(ctx, null),
@@ -131,9 +137,7 @@ class _AddFamilyMemberScreenState
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_relationship == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a relationship')),
-      );
+      AppSnackBar.info(context, 'Please select a relationship');
       return;
     }
     setState(() => _isSaving = true);
@@ -163,16 +167,15 @@ class _AddFamilyMemberScreenState
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
-        );
+        AppSnackBar.error(context, 'Failed to save: $e');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = _photoFile != null || (_photoUrl != null && !_photoRemoved);
+    final hasPhoto =
+        _photoFile != null || (_photoUrl != null && !_photoRemoved);
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
@@ -202,7 +205,10 @@ class _AddFamilyMemberScreenState
                                 ? NetworkImage(_photoUrl!)
                                 : null) as ImageProvider?,
                         child: !hasPhoto
-                            ? HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 40)
+                            ? HugeIcon(
+                                icon: HugeIcons.strokeRoundedUser,
+                                color: AppColors.primary,
+                                size: 40)
                             : null,
                       ),
                       Positioned(
@@ -214,7 +220,10 @@ class _AddFamilyMemberScreenState
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: Colors.white, size: 14),
+                          child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedCamera01,
+                              color: Colors.white,
+                              size: 14),
                         ),
                       ),
                     ],
@@ -226,8 +235,7 @@ class _AddFamilyMemberScreenState
                 child: Text(
                   hasPhoto ? 'Tap to change or remove' : 'Add photo (optional)',
                   style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground),
+                      fontSize: 12, color: AppColors.mutedForeground),
                 ),
               ),
               const SizedBox(height: 28),
@@ -239,7 +247,10 @@ class _AddFamilyMemberScreenState
                 decoration: const InputDecoration(
                   labelText: 'Full Name *',
                   hintText: 'e.g. Aryan Ahmed',
-                  prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textSecondary, size: 24),
+                  prefixIcon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedUser,
+                      color: AppColors.textSecondary,
+                      size: 24),
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Name is required' : null,
@@ -273,7 +284,10 @@ class _AddFamilyMemberScreenState
                       if (_dob != null)
                         GestureDetector(
                           onTap: () => setState(() => _dob = null),
-                          child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
+                          child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedCancel01,
+                              color: AppColors.mutedForeground,
+                              size: 16),
                         ),
                     ],
                   ),
@@ -291,8 +305,7 @@ class _AddFamilyMemberScreenState
                           color: AppColors.mutedForeground)),
                   const Text(' *',
                       style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.destructive)),
+                          fontSize: 13, color: AppColors.destructive)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -317,9 +330,8 @@ class _AddFamilyMemberScreenState
                           style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: sel
-                                  ? Colors.white
-                                  : AppColors.foreground)),
+                              color:
+                                  sel ? Colors.white : AppColors.foreground)),
                     ),
                   );
                 }).toList(),
@@ -339,8 +351,7 @@ class _AddFamilyMemberScreenState
                               color: Colors.white, strokeWidth: 2),
                         )
                       : Text(_isEdit ? 'Save Changes' : 'Add Member',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600)),
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
 
@@ -372,9 +383,8 @@ class _AddFamilyMemberScreenState
                 const SizedBox(height: 2),
                 const Text(
                   'Link their account so you can both see each other\'s care circle.',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground),
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -424,10 +434,7 @@ class _AddFamilyMemberScreenState
                     if (mounted) nav.pop('deleted');
                   } catch (_) {
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('Failed to delete member. Please try again.'),
-                        behavior: SnackBarBehavior.floating,
-                      ));
+                      AppSnackBar.error(context, 'Failed to delete member. Please try again.');
                     }
                   }
                 },

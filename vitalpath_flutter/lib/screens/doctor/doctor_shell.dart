@@ -11,24 +11,52 @@ class DoctorShell extends StatelessWidget {
 
   static final _tabs = [
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease, color: AppColors.primary, size: _kSize),
-      label: 'Dashboard', route: '/doc/dashboard',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedChartIncrease,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedChartIncrease,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Dashboard',
+      route: '/doc/dashboard',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: _kSize),
-      label: 'Patients', route: '/doc/patients',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedGroup,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedGroup,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Patients',
+      route: '/doc/patients',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: _kSize),
-      label: 'Visits', route: '/doc/appointments',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedCalendar01,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedCalendar01,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Visits',
+      route: '/doc/appointments',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: _kSize),
-      label: 'Profile', route: '/doc/profile',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedUser,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedUser,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Profile',
+      route: '/doc/profile',
     ),
   ];
 
@@ -49,22 +77,26 @@ class DoctorShell extends StatelessWidget {
         decoration: const BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-          boxShadow: [BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          )],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            )
+          ],
         ),
         child: NavigationBar(
           selectedIndex: idx,
           onDestinationSelected: (i) => context.go(_tabs[i].route),
           backgroundColor: AppColors.surface,
           elevation: 0,
-          destinations: _tabs.map((t) => NavigationDestination(
-            icon: t.icon,
-            selectedIcon: t.selectedIcon,
-            label: t.label,
-          )).toList(),
+          destinations: _tabs
+              .map((t) => NavigationDestination(
+                    icon: t.icon,
+                    selectedIcon: t.selectedIcon,
+                    label: t.label,
+                  ))
+              .toList(),
         ),
       ),
     );
@@ -76,5 +108,9 @@ class _TabItem {
   final Widget selectedIcon;
   final String label;
   final String route;
-  const _TabItem({required this.icon, required this.selectedIcon, required this.label, required this.route});
+  const _TabItem(
+      {required this.icon,
+      required this.selectedIcon,
+      required this.label,
+      required this.route});
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -18,8 +19,7 @@ class ManageCaregiverScreen extends ConsumerStatefulWidget {
       _ManageCaregiverScreenState();
 }
 
-class _ManageCaregiverScreenState
-    extends ConsumerState<ManageCaregiverScreen> {
+class _ManageCaregiverScreenState extends ConsumerState<ManageCaregiverScreen> {
   late CaregiverPermissions _permissions;
   late CaregiverNotifSettings _notifSettings;
   bool _saving = false;
@@ -34,25 +34,39 @@ class _ManageCaregiverScreenState
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      // C-MC3: single atomic Firestore update instead of two separate calls
-      await _db
-          .collection('caregiver_connections')
-          .doc(widget.connection.id)
-          .update({
-        'permissions': _permissions.toMap(),
-        'notifSettings': _notifSettings.toMap(),
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved')),
+      // T-02: WriteBatch updates both the connection and the caregiver mirror doc
+      // atomically so Firestore rules (caregiverCanRead) stay in sync with UI permissions.
+      final batch = _db.batch();
+
+      batch.update(
+        _db.collection('caregiver_connections').doc(widget.connection.id),
+        {
+          'permissions': _permissions.toMap(),
+          'notifSettings': _notifSettings.toMap(),
+        },
+      );
+
+      // Only update mirror doc when caregiver has accepted (caregiverUid is known).
+      final caregiverUid = widget.connection.caregiverUid;
+      if (caregiverUid != null) {
+        batch.update(
+          _db
+              .collection('patients')
+              .doc(widget.connection.patientId)
+              .collection('caregivers')
+              .doc(caregiverUid),
+          {'permissions': _permissions.toMap()},
         );
+      }
+
+      await batch.commit();
+      if (mounted) {
+        AppSnackBar.success(context, 'Settings saved');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save settings. Please try again.')),
-        );
+        AppSnackBar.error(context, 'Failed to save settings. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -75,7 +89,8 @@ class _ManageCaregiverScreenState
             children: [
               ElevatedButton(
                   onPressed: () => Navigator.pop(dialogCtx, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.destructive),
                   child: const Text('Yes, Remove')),
               const SizedBox(height: 4),
               Center(
@@ -96,10 +111,8 @@ class _ManageCaregiverScreenState
         if (mounted) Navigator.pop(context);
       } catch (_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Failed to remove family member. Please try again.'),
-            behavior: SnackBarBehavior.floating,
-          ));
+          AppSnackBar.error(
+              context, 'Failed to remove family member. Please try again.');
         }
       }
     }
@@ -107,254 +120,258 @@ class _ManageCaregiverScreenState
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.connection.caregiverName ??
-        widget.connection.caregiverEmail;
+    final name =
+        widget.connection.caregiverName ?? widget.connection.caregiverEmail;
     // M-MC1: prevent navigation while saving
     return PopScope(
       canPop: !_saving,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop && _saving) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please wait, saving changes...')));
+          AppSnackBar.info(context, 'Please wait, saving changes...');
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.pageBackground,
-      appBar: AppBar(
-        title: Text('${name.split(' ').first}\'s Access'),
-        actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2)),
-            )
-          else
-            TextButton(
-                onPressed: _save,
-                child: const Text('Save',
-                    style: TextStyle(fontWeight: FontWeight.w600))),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // ── Permissions ──────────────────────────────────────────────────
-          _SectionTitle('What ${name.split(' ').first} can see'),
-          const SizedBox(height: 10),
+        backgroundColor: AppColors.pageBackground,
+        appBar: AppBar(
+          title: Text('${name.split(' ').first}\'s Access'),
+          actions: [
+            if (_saving)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              TextButton(
+                  onPressed: _save,
+                  child: const Text('Save',
+                      style: TextStyle(fontWeight: FontWeight.w600))),
+          ],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // ── Permissions ──────────────────────────────────────────────────
+            _SectionTitle('What ${name.split(' ').first} can see'),
+            const SizedBox(height: 10),
 
-          _PermSwitch(
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 20),
-            label: 'Medicines & dose tracking',
-            value: _permissions.medicines,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(medicines: v)),
-          ),
-          _PermSwitch(
-            icon: const Icon(Icons.monitor_heart_rounded, size: 20, color: AppColors.mutedForeground),
-            label: 'Vitals & readings',
-            value: _permissions.vitals,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(vitals: v)),
-          ),
-          _PermSwitch(
-            icon: const Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.mutedForeground),
-            label: 'Upcoming appointments',
-            value: _permissions.appointments,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(appointments: v)),
-          ),
-          _PermSwitch(
-            icon: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.mutedForeground),
-            label: 'Prescriptions',
-            value: _permissions.prescriptions,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(prescriptions: v)),
-          ),
-          _PermSwitch(
-            icon: const Icon(Icons.restaurant_rounded, size: 20, color: AppColors.mutedForeground),
-            label: 'Meal logs',
-            value: _permissions.mealLogs,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(mealLogs: v)),
-          ),
-          _PermSwitch(
-            icon: const Icon(Icons.directions_run_rounded, size: 20, color: AppColors.mutedForeground),
-            label: 'Activity logs',
-            value: _permissions.activityLogs,
-            onChanged: (v) =>
-                setState(() => _permissions = _permissions.copyWith(activityLogs: v)),
-          ),
+            _PermSwitch(
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMedicine01,
+                  color: AppColors.mutedForeground,
+                  size: 20),
+              label: 'Medicines & dose tracking',
+              value: _permissions.medicines,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(medicines: v)),
+            ),
+            _PermSwitch(
+              icon: const Icon(Icons.monitor_heart_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+              label: 'Vitals & readings',
+              value: _permissions.vitals,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(vitals: v)),
+            ),
+            _PermSwitch(
+              icon: const Icon(Icons.calendar_today_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+              label: 'Upcoming appointments',
+              value: _permissions.appointments,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(appointments: v)),
+            ),
+            _PermSwitch(
+              icon: const Icon(Icons.receipt_long_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+              label: 'Prescriptions',
+              value: _permissions.prescriptions,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(prescriptions: v)),
+            ),
+            _PermSwitch(
+              icon: const Icon(Icons.restaurant_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+              label: 'Meal logs',
+              value: _permissions.mealLogs,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(mealLogs: v)),
+            ),
+            _PermSwitch(
+              icon: const Icon(Icons.directions_run_rounded,
+                  size: 20, color: AppColors.mutedForeground),
+              label: 'Activity logs',
+              value: _permissions.activityLogs,
+              onChanged: (v) => setState(
+                  () => _permissions = _permissions.copyWith(activityLogs: v)),
+            ),
 
-          const SizedBox(height: 28),
+            const SizedBox(height: 28),
 
-          // ── Notifications ────────────────────────────────────────────────
-          _SectionTitle('Notifications'),
-          const SizedBox(height: 10),
+            // ── Notifications ────────────────────────────────────────────────
+            _SectionTitle('Notifications'),
+            const SizedBox(height: 10),
 
-          _NotifGroup(
-            title: 'Medicines',
-            children: [
-              _NotifSwitch(
-                label: 'Missed dose alerts',
-                value: _notifSettings.missedDose,
-                onChanged: (v) => setState(
-                    () => _notifSettings = _notifSettings.copyWith(missedDose: v)),
-              ),
-              _NotifSwitch(
-                label: 'Medicine added by doctor',
-                value: _notifSettings.newPrescription,
-                onChanged: (v) => setState(() =>
-                    _notifSettings =
-                        _notifSettings.copyWith(newPrescription: v)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          _NotifGroup(
-            title: 'Vitals',
-            children: [
-              _NotifSwitch(
-                label: 'Abnormal reading detected',
-                value: _notifSettings.abnormalVital,
-                onChanged: (v) => setState(() =>
-                    _notifSettings =
-                        _notifSettings.copyWith(abnormalVital: v)),
-              ),
-              if (_notifSettings.abnormalVital) ...[
-                const SizedBox(height: 8),
-                _ThresholdRow(
-                  label: 'Blood pressure systolic >',
-                  value: _notifSettings.bpSystolicThreshold,
-                  unit: 'mmHg',
-                  onTap: () => _editThreshold(
-                    label: 'BP Systolic threshold',
-                    unit: 'mmHg',
-                    current: _notifSettings.bpSystolicThreshold,
-                    onSave: (v) => setState(() => _notifSettings =
-                        _notifSettings.copyWith(bpSystolicThreshold: v)),
-                  ),
+            _NotifGroup(
+              title: 'Medicines',
+              children: [
+                _NotifSwitch(
+                  label: 'Missed dose alerts',
+                  value: _notifSettings.missedDose,
+                  onChanged: (v) => setState(() =>
+                      _notifSettings = _notifSettings.copyWith(missedDose: v)),
                 ),
-                _ThresholdRow(
-                  label: 'Blood glucose >',
-                  value: _notifSettings.glucoseThreshold,
-                  unit: 'mg/dL',
-                  onTap: () => _editThreshold(
-                    label: 'Blood glucose threshold',
-                    unit: 'mg/dL',
-                    current: _notifSettings.glucoseThreshold,
-                    onSave: (v) => setState(() => _notifSettings =
-                        _notifSettings.copyWith(glucoseThreshold: v)),
-                  ),
-                ),
-                // H-MC1: implement heart rate range tap
-                _ThresholdRow(
-                  label: 'Heart rate outside',
-                  value: null,
-                  unit:
-                      '${_notifSettings.heartRateMin.toInt()}–${_notifSettings.heartRateMax.toInt()} bpm',
-                  onTap: () => _pickThresholdRange(
-                    label: 'Heart rate range (bpm)',
-                    minLabel: 'Min BPM',
-                    maxLabel: 'Max BPM',
-                    currentMin: _notifSettings.heartRateMin,
-                    currentMax: _notifSettings.heartRateMax,
-                    onSave: (min, max) => setState(() => _notifSettings =
-                        _notifSettings.copyWith(
-                            heartRateMin: min, heartRateMax: max)),
-                  ),
+                _NotifSwitch(
+                  label: 'Medicine added by doctor',
+                  value: _notifSettings.newPrescription,
+                  onChanged: (v) => setState(() => _notifSettings =
+                      _notifSettings.copyWith(newPrescription: v)),
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          _NotifGroup(
-            title: 'Appointments',
-            children: [
-              _NotifSwitch(
-                label: 'Upcoming appointment reminder',
-                value: _notifSettings.upcomingAppointment,
-                onChanged: (v) => setState(() =>
-                    _notifSettings =
-                        _notifSettings.copyWith(upcomingAppointment: v)),
-              ),
-              _NotifSwitch(
-                label: 'Appointment confirmed / cancelled',
-                value: _notifSettings.appointmentStatusChange,
-                onChanged: (v) => setState(() =>
-                    _notifSettings = _notifSettings.copyWith(
-                        appointmentStatusChange: v)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          _NotifGroup(
-            title: 'General',
-            children: [
-              _NotifSwitch(
-                label: 'Weekly health summary',
-                value: _notifSettings.weeklySummary,
-                onChanged: (v) => setState(() =>
-                    _notifSettings =
-                        _notifSettings.copyWith(weeklySummary: v)),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // ── Quiet hours ──────────────────────────────────────────────────
-          _NotifGroup(
-            title: 'Quiet Hours',
-            children: [
-              if (_notifSettings.quietHoursStart != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(children: [
-                    Expanded(
-                      child: Text(
-                        '${_notifSettings.quietHoursStart} – ${_notifSettings.quietHoursEnd}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() =>
-                          _notifSettings = _notifSettings.copyWith(
-                              clearQuietHours: true)),
-                      child: const Text('Remove',
-                          style: TextStyle(color: AppColors.destructive)),
-                    ),
-                  ]),
-                )
-              else
-                TextButton.icon(
-                  onPressed: _pickQuietHours,
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: Colors.black, size: 18),
-                  label: const Text('Set quiet hours'),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 36),
-
-          // ── Remove ───────────────────────────────────────────────────────
-          OutlinedButton(
-            onPressed: _confirmRemove,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.destructive,
-              side: const BorderSide(color: AppColors.destructive),
             ),
-            child: Text('Remove ${name.split(' ').first} from Health Circle'),
-          ),
+            const SizedBox(height: 10),
 
-          const SizedBox(height: 24),
-        ],
-      ),
+            _NotifGroup(
+              title: 'Vitals',
+              children: [
+                _NotifSwitch(
+                  label: 'Abnormal reading detected',
+                  value: _notifSettings.abnormalVital,
+                  onChanged: (v) => setState(() => _notifSettings =
+                      _notifSettings.copyWith(abnormalVital: v)),
+                ),
+                if (_notifSettings.abnormalVital) ...[
+                  const SizedBox(height: 8),
+                  _ThresholdRow(
+                    label: 'Blood pressure systolic >',
+                    value: _notifSettings.bpSystolicThreshold,
+                    unit: 'mmHg',
+                    onTap: () => _editThreshold(
+                      label: 'BP Systolic threshold',
+                      unit: 'mmHg',
+                      current: _notifSettings.bpSystolicThreshold,
+                      onSave: (v) => setState(() => _notifSettings =
+                          _notifSettings.copyWith(bpSystolicThreshold: v)),
+                    ),
+                  ),
+                  _ThresholdRow(
+                    label: 'Blood glucose >',
+                    value: _notifSettings.glucoseThreshold,
+                    unit: 'mg/dL',
+                    onTap: () => _editThreshold(
+                      label: 'Blood glucose threshold',
+                      unit: 'mg/dL',
+                      current: _notifSettings.glucoseThreshold,
+                      onSave: (v) => setState(() => _notifSettings =
+                          _notifSettings.copyWith(glucoseThreshold: v)),
+                    ),
+                  ),
+                  // H-MC1: implement heart rate range tap
+                  _ThresholdRow(
+                    label: 'Heart rate outside',
+                    value: null,
+                    unit:
+                        '${_notifSettings.heartRateMin.toInt()}–${_notifSettings.heartRateMax.toInt()} bpm',
+                    onTap: () => _pickThresholdRange(
+                      label: 'Heart rate range (bpm)',
+                      minLabel: 'Min BPM',
+                      maxLabel: 'Max BPM',
+                      currentMin: _notifSettings.heartRateMin,
+                      currentMax: _notifSettings.heartRateMax,
+                      onSave: (min, max) => setState(() => _notifSettings =
+                          _notifSettings.copyWith(
+                              heartRateMin: min, heartRateMax: max)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            _NotifGroup(
+              title: 'Appointments',
+              children: [
+                _NotifSwitch(
+                  label: 'Upcoming appointment reminder',
+                  value: _notifSettings.upcomingAppointment,
+                  onChanged: (v) => setState(() => _notifSettings =
+                      _notifSettings.copyWith(upcomingAppointment: v)),
+                ),
+                _NotifSwitch(
+                  label: 'Appointment confirmed / cancelled',
+                  value: _notifSettings.appointmentStatusChange,
+                  onChanged: (v) => setState(() => _notifSettings =
+                      _notifSettings.copyWith(appointmentStatusChange: v)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            _NotifGroup(
+              title: 'General',
+              children: [
+                _NotifSwitch(
+                  label: 'Weekly health summary',
+                  value: _notifSettings.weeklySummary,
+                  onChanged: (v) => setState(() => _notifSettings =
+                      _notifSettings.copyWith(weeklySummary: v)),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Quiet hours ──────────────────────────────────────────────────
+            _NotifGroup(
+              title: 'Quiet Hours',
+              children: [
+                if (_notifSettings.quietHoursStart != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(children: [
+                      Expanded(
+                        child: Text(
+                          '${_notifSettings.quietHoursStart} – ${_notifSettings.quietHoursEnd}',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _notifSettings =
+                            _notifSettings.copyWith(clearQuietHours: true)),
+                        child: const Text('Remove',
+                            style: TextStyle(color: AppColors.destructive)),
+                      ),
+                    ]),
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: _pickQuietHours,
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedMoon,
+                        color: Colors.black,
+                        size: 18),
+                    label: const Text('Set quiet hours'),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 36),
+
+            // ── Remove ───────────────────────────────────────────────────────
+            OutlinedButton(
+              onPressed: _confirmRemove,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.destructive,
+                side: const BorderSide(color: AppColors.destructive),
+              ),
+              child: Text('Remove ${name.split(' ').first} from Health Circle'),
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ), // close Scaffold
     ); // close PopScope
   }
@@ -524,9 +541,7 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700));
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700));
 }
 
 class _PermSwitch extends StatelessWidget {
@@ -634,14 +649,12 @@ class _ThresholdRow extends StatelessWidget {
         Expanded(
           child: Text(label,
               style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.mutedForeground)),
+                  fontSize: 13, color: AppColors.mutedForeground)),
         ),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),

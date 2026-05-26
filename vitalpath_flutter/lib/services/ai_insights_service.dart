@@ -122,7 +122,9 @@ Be encouraging, positive, and specific. Do not diagnose or prescribe.''';
     return [
       HealthInsight(
         category: 'medication',
-        title: adherence >= 80 ? 'Great Medicine Adherence' : 'Improve Medicine Routine',
+        title: adherence >= 80
+            ? 'Great Medicine Adherence'
+            : 'Improve Medicine Routine',
         body: adherence >= 80
             ? 'You\'ve taken ${adherence.toStringAsFixed(0)}% of your medicines this week — excellent consistency!'
             : 'Your medicine adherence is at ${adherence.toStringAsFixed(0)}% this week. Consistency is key to effectiveness.',
@@ -143,8 +145,10 @@ Be encouraging, positive, and specific. Do not diagnose or prescribe.''';
       HealthInsight(
         category: 'nutrition',
         title: 'Calorie Awareness',
-        body: 'You\'re averaging $calories kcal/day. ${calories > 2500 ? 'That\'s on the higher side for most adults.' : 'Stay mindful of nutritional balance alongside calories.'}',
-        suggestion: 'Log every meal in the Care tab to get a clearer picture of your nutrition patterns.',
+        body:
+            'You\'re averaging $calories kcal/day. ${calories > 2500 ? 'That\'s on the higher side for most adults.' : 'Stay mindful of nutritional balance alongside calories.'}',
+        suggestion:
+            'Log every meal in the Care tab to get a clearer picture of your nutrition patterns.',
       ),
     ];
   }

@@ -45,6 +45,8 @@ import '../screens/caregiver/profile/caregiver_profile_screen.dart';
 import '../screens/onboarding/caregiver_setup_screen.dart';
 import '../screens/patient/vitals/vitals_screen.dart';
 import '../screens/patient/profile/patient_health_profile_screen.dart';
+import '../screens/messaging/appointment_messages_screen.dart';
+import '../models/appointment.dart';
 import '../models/caregiver_connection.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
@@ -58,15 +60,30 @@ class _AuthNotifier extends ChangeNotifier {
 
 // Routes only patients (not caregivers, not doctors) may access.
 const _patientOnlyRoutes = {
-  '/home', '/vitals', '/profile', '/my-doctors', '/prescriptions',
-  '/care-circle', '/activity', '/gamification', '/insights', '/health-profile',
+  '/home',
+  '/vitals',
+  '/profile',
+  '/my-doctors',
+  '/prescriptions',
+  '/care-circle',
+  '/activity',
+  '/gamification',
+  '/insights',
+  '/health-profile',
 };
 
 // Routes patients and caregivers share (doctors are blocked).
 const _sharedNonDoctorRoutes = {
-  '/care', '/appointments', '/notifications', '/notification-settings',
-  '/edit-profile', '/privacy-security', '/invite-family',
-  '/invite-caregiver', '/manage-caregiver', '/accept-invite',
+  '/care',
+  '/appointments',
+  '/notifications',
+  '/notification-settings',
+  '/edit-profile',
+  '/privacy-security',
+  '/invite-family',
+  '/invite-caregiver',
+  '/manage-caregiver',
+  '/accept-invite',
   '/caregiver-patient-profile',
 };
 
@@ -133,16 +150,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       final user = userState.asData?.value;
       if (user == null) return null;
 
-      final isDoctor    = user.userType == UserType.doctor;
+      final isDoctor = user.userType == UserType.doctor;
       final isCaregiver = user.userType == UserType.caregiver;
-      final isPatient   = user.userType == UserType.patient;
+      final isPatient = user.userType == UserType.patient;
 
       // Fix C1 — Role-based route guards.
 
       // Doctors may not access patient or caregiver areas.
       if (isDoctor) {
-        final inPatient   = _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'));
-        final inShared    = _sharedNonDoctorRoutes.any((r) => loc == r || loc.startsWith('$r/'));
+        final inPatient =
+            _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'));
+        final inShared = _sharedNonDoctorRoutes
+            .any((r) => loc == r || loc.startsWith('$r/'));
         final inCaregiver = loc.startsWith('/caregiver');
         if (inPatient || inShared || inCaregiver) return '/doc/dashboard';
       }
@@ -153,13 +172,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Caregivers may not access patient-only routes.
-      if (isCaregiver && _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
+      if (isCaregiver &&
+          _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
         return '/caregiver/home';
       }
 
       // Patients may not access caregiver portal.
       if (isPatient && loc.startsWith('/caregiver')) {
         return '/home';
+      }
+
+      // Safety net: incomplete patients on patient-only routes → resume onboarding.
+      if (isPatient &&
+          !user.onboardingComplete &&
+          _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
+        return '/onboarding/health-profile';
       }
 
       // Fix H2 — Guard onboarding routes by role and onboarding state.
@@ -234,22 +261,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
               path: '/appointments',
               builder: (_, __) => const AppointmentsScreen()),
-          GoRoute(
-              path: '/profile', builder: (_, __) => const ProfileScreen()),
+          GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
 
       // Care Circle is a push route accessible from Profile and Home
       GoRoute(
-          path: '/care-circle',
-          builder: (_, __) => const CareCircleScreen()),
+          path: '/care-circle', builder: (_, __) => const CareCircleScreen()),
 
       // Activity is a full-screen push route (accessible from Home)
-      GoRoute(
-          path: '/activity', builder: (_, __) => const ActivityScreen()),
+      GoRoute(path: '/activity', builder: (_, __) => const ActivityScreen()),
 
-      GoRoute(
-          path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
+      GoRoute(path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
       GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
@@ -257,17 +280,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/notification-settings',
           builder: (_, __) => const NotificationSettingsScreen()),
       GoRoute(
-          path: '/edit-profile',
-          builder: (_, __) => const EditProfileScreen()),
+          path: '/edit-profile', builder: (_, __) => const EditProfileScreen()),
       GoRoute(
           path: '/privacy-security',
           builder: (_, __) => const PrivacySecurityScreen()),
       GoRoute(
           path: '/gamification',
           builder: (_, __) => const GamificationScreen()),
-      GoRoute(
-          path: '/insights',
-          builder: (_, __) => const InsightsScreen()),
+      GoRoute(path: '/insights', builder: (_, __) => const InsightsScreen()),
       GoRoute(
           path: '/prescriptions',
           builder: (_, __) => const PrescriptionsScreen()),
@@ -280,6 +300,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/invite-caregiver',
           builder: (_, __) => const InviteCaregiverScreen()),
+
+      // 7a: Appointment-scoped messaging
+      GoRoute(
+        path: '/appointment-messages',
+        builder: (_, state) {
+          if (state.extra is! Appointment) {
+            return const Scaffold(
+              body: Center(child: Text('Page not found: /appointment-messages')),
+            );
+          }
+          return AppointmentMessagesScreen(
+              appointment: state.extra as Appointment);
+        },
+      ),
 
       // Fix C2 — Null-safe CaregiverConnection casts.
       GoRoute(
@@ -312,8 +346,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (state.extra is! CaregiverConnection) {
             return const Scaffold(
               body: Center(
-                  child: Text(
-                      'Page not found: /caregiver-patient-profile')),
+                  child: Text('Page not found: /caregiver-patient-profile')),
             );
           }
           return CaregiverPatientProfileScreen(
@@ -325,9 +358,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => CaregiverShell(child: child),
         routes: [
-          GoRoute(path: '/caregiver/home',     builder: (_, __) => const CaregiverHomeScreen()),
-          GoRoute(path: '/caregiver/patients', builder: (_, __) => const CaregiverPatientsScreen()),
-          GoRoute(path: '/caregiver/profile',  builder: (_, __) => const CaregiverProfileScreen()),
+          GoRoute(
+              path: '/caregiver/home',
+              builder: (_, __) => const CaregiverHomeScreen()),
+          GoRoute(
+              path: '/caregiver/patients',
+              builder: (_, __) => const CaregiverPatientsScreen()),
+          GoRoute(
+              path: '/caregiver/profile',
+              builder: (_, __) => const CaregiverProfileScreen()),
         ],
       ),
 
@@ -355,8 +394,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: '/doc/patient/:patientId',
-        builder: (_, state) => DocPatientViewScreen(
-            patientId: state.pathParameters['patientId']!),
+        builder: (_, state) =>
+            DocPatientViewScreen(patientId: state.pathParameters['patientId']!),
       ),
     ],
 

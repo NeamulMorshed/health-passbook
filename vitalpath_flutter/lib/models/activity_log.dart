@@ -16,24 +16,24 @@ class ActivityType {
   static const allTypes = [walk, run, cycle, yoga, swim, gym, other];
 
   static IconData iconFor(String type) => switch (type) {
-    run => Icons.directions_run_rounded,
-    cycle => Icons.directions_bike_rounded,
-    yoga => Icons.self_improvement_rounded,
-    swim => Icons.pool_rounded,
-    gym => Icons.fitness_center_rounded,
-    other => Icons.sports_rounded,
-    _ => Icons.directions_walk_rounded, // walk + fallback
-  };
+        run => Icons.directions_run_rounded,
+        cycle => Icons.directions_bike_rounded,
+        yoga => Icons.self_improvement_rounded,
+        swim => Icons.pool_rounded,
+        gym => Icons.fitness_center_rounded,
+        other => Icons.sports_rounded,
+        _ => Icons.directions_walk_rounded, // walk + fallback
+      };
 
   static String labelFor(String type) => switch (type) {
-    run => 'Run',
-    cycle => 'Cycle',
-    yoga => 'Yoga',
-    swim => 'Swim',
-    gym => 'Gym',
-    other => 'Other',
-    _ => 'Walk',
-  };
+        run => 'Run',
+        cycle => 'Cycle',
+        yoga => 'Yoga',
+        swim => 'Swim',
+        gym => 'Gym',
+        other => 'Other',
+        _ => 'Walk',
+      };
 }
 
 class ActivityLog {

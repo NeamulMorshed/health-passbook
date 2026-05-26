@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 export 'bento_card.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../theme/app_theme.dart';
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
@@ -31,9 +32,9 @@ class StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha:0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha:0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,17 +46,23 @@ class StatCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: value,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color),
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: color),
                   ),
                   TextSpan(
                     text: ' $unit',
-                    style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.mutedForeground),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 2),
-            Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground)),
           ],
         ),
       ),
@@ -69,18 +76,25 @@ class SectionHeader extends StatelessWidget {
   final String? action;
   final VoidCallback? onAction;
 
-  const SectionHeader({super.key, required this.title, this.action, this.onAction});
+  const SectionHeader(
+      {super.key, required this.title, this.action, this.onAction});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.foreground)),
+        Text(title,
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.foreground)),
         if (action != null)
           TextButton(
             onPressed: onAction,
-            child: Text(action!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            child: Text(action!,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.textSecondary)),
           ),
       ],
     );
@@ -93,7 +107,11 @@ class StatusBadge extends StatelessWidget {
   final Color backgroundColor;
   final Color textColor;
 
-  const StatusBadge({super.key, required this.label, required this.backgroundColor, required this.textColor});
+  const StatusBadge(
+      {super.key,
+      required this.label,
+      required this.backgroundColor,
+      required this.textColor});
 
   factory StatusBadge.success(String label) => StatusBadge(
         label: label,
@@ -115,7 +133,7 @@ class StatusBadge extends StatelessWidget {
 
   factory StatusBadge.info(String label) => StatusBadge(
         label: label,
-        backgroundColor: AppColors.primary.withValues(alpha:0.1),
+        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
         textColor: AppColors.primary,
       );
 
@@ -127,7 +145,9 @@ class StatusBadge extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: textColor)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: textColor)),
     );
   }
 }
@@ -138,7 +158,8 @@ class LoadingOverlay extends StatelessWidget {
   final Widget child;
   final String? message;
 
-  const LoadingOverlay({super.key, required this.isLoading, required this.child, this.message});
+  const LoadingOverlay(
+      {super.key, required this.isLoading, required this.child, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -150,8 +171,11 @@ class LoadingOverlay extends StatelessWidget {
             color: Colors.black45,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14)),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -177,11 +201,21 @@ class AppAvatar extends StatelessWidget {
   final double size;
   final Color? backgroundColor;
 
-  const AppAvatar({super.key, this.imageUrl, required this.name, this.size = 40, this.backgroundColor});
+  const AppAvatar(
+      {super.key,
+      this.imageUrl,
+      required this.name,
+      this.size = 40,
+      this.backgroundColor});
 
   @override
   Widget build(BuildContext context) {
-    final initials = name.trim().split(' ').take(2).map((w) => w.isNotEmpty ? w[0].toUpperCase() : '').join();
+    final initials = name
+        .trim()
+        .split(' ')
+        .take(2)
+        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
+        .join();
     final bgColor = backgroundColor ?? AppColors.primary;
 
     return Container(
@@ -189,16 +223,20 @@ class AppAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: bgColor.withValues(alpha:0.15),
+        color: bgColor.withValues(alpha: 0.15),
         image: imageUrl != null
-            ? DecorationImage(image: CachedNetworkImageProvider(imageUrl!), fit: BoxFit.cover)
+            ? DecorationImage(
+                image: CachedNetworkImageProvider(imageUrl!), fit: BoxFit.cover)
             : null,
       ),
       child: imageUrl == null
           ? Center(
               child: Text(
                 initials,
-                style: TextStyle(fontSize: size * 0.35, fontWeight: FontWeight.w700, color: bgColor),
+                style: TextStyle(
+                    fontSize: size * 0.35,
+                    fontWeight: FontWeight.w700,
+                    color: bgColor),
               ),
             )
           : null,
@@ -239,12 +277,18 @@ class EmptyState extends StatelessWidget {
                 color: AppColors.muted,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: iconWidget ?? Icon(icon, size: 40, color: AppColors.mutedForeground),
+              child: iconWidget ??
+                  Icon(icon, size: 40, color: AppColors.mutedForeground),
             ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+            Text(subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.mutedForeground)),
             if (actionLabel != null) ...[
               const SizedBox(height: 20),
               ElevatedButton(onPressed: onAction, child: Text(actionLabel!)),
@@ -257,16 +301,87 @@ class EmptyState extends StatelessWidget {
 }
 
 // ─── Snackbar helpers ─────────────────────────────────────────────────────────
+
+// AppSnackBar — standardised format per UX-14:
+//   icon (16px) + message (1 line, ellipsis) + optional [Retry] action on errors.
+class AppSnackBar {
+  static const _kDuration = Duration(seconds: 3);
+  static const _kErrorDuration = Duration(seconds: 5);
+
+  static void success(BuildContext context, String message) => _show(
+        context,
+        message: message,
+        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+        iconColor: AppColors.success,
+        duration: _kDuration,
+      );
+
+  static void error(BuildContext context, String message,
+          {VoidCallback? onRetry}) =>
+      _show(
+        context,
+        message: message,
+        icon: HugeIcons.strokeRoundedAlertCircle,
+        iconColor: AppColors.destructive,
+        duration: _kErrorDuration,
+        onRetry: onRetry,
+      );
+
+  static void info(BuildContext context, String message) => _show(
+        context,
+        message: message,
+        icon: HugeIcons.strokeRoundedInformationCircle,
+        iconColor: AppColors.info,
+        duration: _kDuration,
+      );
+
+  static void _show(
+    BuildContext context, {
+    required String message,
+    required List<List<dynamic>> icon,
+    required Color iconColor,
+    required Duration duration,
+    VoidCallback? onRetry,
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Row(children: [
+          HugeIcon(icon: icon, color: iconColor, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        ]),
+        backgroundColor: AppColors.foreground,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: duration,
+        action: onRetry != null
+            ? SnackBarAction(
+                label: 'Retry',
+                textColor: iconColor,
+                onPressed: onRetry,
+              )
+            : null,
+      ));
+  }
+}
+
+// Legacy helper — kept for call sites not yet migrated to AppSnackBar.
 void showAppSnack(BuildContext context, String msg, {bool isError = false}) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? AppColors.destructive : AppColors.foreground,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      margin: const EdgeInsets.all(16),
-    ),
-  );
+  if (isError) {
+    AppSnackBar.error(context, msg);
+  } else {
+    AppSnackBar.success(context, msg);
+  }
 }
 
 // ─── Gradient Button ──────────────────────────────────────────────────────────
@@ -293,12 +408,25 @@ class GradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: colors),
           borderRadius: BorderRadius.circular(100),
-          boxShadow: [BoxShadow(color: colors.first.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+                color: colors.first.withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: Center(
           child: isLoading
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : Text(label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : Text(label,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600)),
         ),
       ),
     );

@@ -222,7 +222,8 @@ class CaregiverConnection {
         'notifSettings': notifSettings.toMap(),
         'status': status,
         'invitedAt': Timestamp.fromDate(invitedAt),
-        if (connectedAt != null) 'connectedAt': Timestamp.fromDate(connectedAt!),
+        if (connectedAt != null)
+          'connectedAt': Timestamp.fromDate(connectedAt!),
         if (personalMessage != null) 'personalMessage': personalMessage,
       };
 }

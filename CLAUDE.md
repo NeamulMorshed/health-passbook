@@ -24,7 +24,7 @@
 ## App Identity
 - **Name:** Omra (package: vitalpath, old name VitalPath — fully replaced)
 - **Platform:** Flutter/Dart + Firebase backend
-- **Current version:** 2.11.0+35  ← update this after each pubspec bump
+- **Current version:** 2.12.0+38  ← update this after each pubspec bump
 - **Active branch:** feature/caregiver-ux-redesign
 - **Firebase Distribution App ID:** `1:768599207887:android:a365080e6a086985736cba`
 - **Deploy command:** `firebase appdistribution:distribute <path>.apk --app 1:768599207887:android:a365080e6a086985736cba --groups testers`

@@ -52,8 +52,12 @@ class _CareCircleBody extends ConsumerWidget {
     ref.invalidate(familyMembersProvider(uid));
     ref.invalidate(patientCaregiverConnectionsProvider(uid));
     await Future.wait([
-      ref.read(familyMembersProvider(uid).future).catchError((_) => <FamilyMember>[]),
-      ref.read(patientCaregiverConnectionsProvider(uid).future).catchError((_) => <CaregiverConnection>[]),
+      ref
+          .read(familyMembersProvider(uid).future)
+          .catchError((_) => <FamilyMember>[]),
+      ref
+          .read(patientCaregiverConnectionsProvider(uid).future)
+          .catchError((_) => <CaregiverConnection>[]),
     ]);
   }
 
@@ -63,9 +67,7 @@ class _CareCircleBody extends ConsumerWidget {
       MaterialPageRoute(builder: (_) => AddFamilyMemberScreen(uid: uid)),
     );
     if (result == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Family member added')),
-      );
+      AppSnackBar.success(context, 'Family member added');
     }
   }
 
@@ -75,8 +77,10 @@ class _CareCircleBody extends ConsumerWidget {
     final caregiversAsync = ref.watch(patientCaregiverConnectionsProvider(uid));
 
     final memberCount = membersAsync.asData?.value.length ?? 0;
-    final caregiverCount = caregiversAsync.asData?.value
-        .where((c) => c.isConnected).length ?? 0;
+    final caregiverCount =
+        caregiversAsync.asData?.value.where((c) => c.isConnected).length ?? 0;
+    final pendingCount =
+        caregiversAsync.asData?.value.where((c) => c.isPending).length ?? 0;
     final totalPeople = memberCount + caregiverCount;
     final isLoading = membersAsync.isLoading;
 
@@ -97,7 +101,11 @@ class _CareCircleBody extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$totalPeople ${totalPeople == 1 ? 'person' : 'people'}',
+                    totalPeople > 0
+                        ? '$totalPeople ${totalPeople == 1 ? 'person' : 'people'}${pendingCount > 0 ? ' · $pendingCount pending' : ''}'
+                        : pendingCount > 0
+                            ? '$pendingCount pending'
+                            : '0 people',
                     style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -117,7 +125,10 @@ class _CareCircleBody extends ConsumerWidget {
             BentoCard(
               padding: const EdgeInsets.all(16),
               child: Row(children: [
-                HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 32),
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedGroup,
+                    color: AppColors.primary,
+                    size: 32),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -136,6 +147,8 @@ class _CareCircleBody extends ConsumerWidget {
                                     '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                   if (caregiverCount > 0)
                                     '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
+                                  if (pendingCount > 0)
+                                    '$pendingCount invite ${pendingCount == 1 ? 'pending' : 'pending'}',
                                 ].isEmpty
                                   ? 'Invite family members to monitor you.'
                                   : [
@@ -143,10 +156,11 @@ class _CareCircleBody extends ConsumerWidget {
                                         '$memberCount ${memberCount == 1 ? 'family member' : 'family members'}',
                                       if (caregiverCount > 0)
                                         '$caregiverCount ${caregiverCount == 1 ? 'family member monitoring you' : 'family members monitoring you'}',
+                                      if (pendingCount > 0)
+                                        '$pendingCount invite ${pendingCount == 1 ? 'pending' : 'pending'}',
                                     ].join(' · '),
                           style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.mutedForeground),
+                              fontSize: 12, color: AppColors.mutedForeground),
                         ),
                       ]),
                 ),
@@ -163,9 +177,11 @@ class _CareCircleBody extends ConsumerWidget {
               color: AppColors.primary,
               action: TextButton.icon(
                 onPressed: () => _openAddMember(context, ref),
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 14),
-                label: const Text('Add',
-                    style: TextStyle(fontSize: 12)),
+                icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedPlusSign,
+                    color: Colors.black,
+                    size: 14),
+                label: const Text('Add', style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: EdgeInsets.zero,
@@ -204,17 +220,16 @@ class _CareCircleBody extends ConsumerWidget {
             _SectionHeader(
               icon: Icons.shield_rounded,
               title: 'Family Monitoring Me',
-              count: caregiversAsync.hasValue
-                  ? caregiversAsync.asData!.value
-                      .where((c) => c.isConnected)
-                      .length
-                  : null,
+              count: caregiversAsync.hasValue ? caregiverCount : null,
+              pendingCount: caregiversAsync.hasValue ? pendingCount : null,
               color: const Color(0xFF7C3AED),
               action: TextButton.icon(
                 onPressed: () => context.push('/invite-caregiver'),
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 14),
-                label: const Text('Invite',
-                    style: TextStyle(fontSize: 12)),
+                icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedPlusSign,
+                    color: Colors.black,
+                    size: 14),
+                label: const Text('Invite', style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF7C3AED),
                     padding: EdgeInsets.zero,
@@ -248,6 +263,14 @@ class _CareCircleBody extends ConsumerWidget {
               },
             ),
 
+            // ── Doctor visibility toggle (7b) ───────────────────────────────
+            // Only shown when there's at least one connected family member;
+            // otherwise there's nothing for doctors to see.
+            if (caregiverCount > 0) ...[
+              const SizedBox(height: 20),
+              _DoctorVisibilityCard(uid: uid),
+            ],
+
             const SizedBox(height: 32),
           ],
         ),
@@ -256,6 +279,61 @@ class _CareCircleBody extends ConsumerWidget {
   }
 }
 
+// ─── Doctor visibility toggle ─────────────────────────────────────────────────
+class _DoctorVisibilityCard extends ConsumerWidget {
+  final String uid;
+  const _DoctorVisibilityCard({required this.uid});
+
+  Future<void> _toggle(BuildContext context, bool next) async {
+    try {
+      await setShareCircleWithDoctors(uid, next);
+    } catch (_) {
+      if (context.mounted) {
+        AppSnackBar.error(context, 'Failed to update setting. Please try again.');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final shareAsync = ref.watch(shareCircleWithDoctorsProvider(uid));
+    final share = shareAsync.asData?.value ?? false;
+    return BentoCard(
+      padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+      child: Row(children: [
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedStethoscope,
+            color: AppColors.primary,
+            size: 22),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Share with my doctors',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(
+                share
+                    ? 'Your doctors can see who is in your care circle.'
+                    : 'Your care circle is private. Doctors cannot see who is monitoring you.',
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: share,
+          activeThumbColor: AppColors.primary,
+          onChanged: shareAsync.isLoading
+              ? null
+              : (v) => _toggle(context, v),
+        ),
+      ]),
+    );
+  }
+}
 
 // ─── Family member card ───────────────────────────────────────────────────────
 class _FamilyMemberCard extends ConsumerWidget {
@@ -283,9 +361,8 @@ class _FamilyMemberCard extends ConsumerWidget {
           CircleAvatar(
             radius: 24,
             backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-            backgroundImage: member.photoUrl != null
-                ? NetworkImage(member.photoUrl!)
-                : null,
+            backgroundImage:
+                member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
             child: member.photoUrl == null
                 ? Text(member.initials,
                     style: const TextStyle(
@@ -296,72 +373,69 @@ class _FamilyMemberCard extends ConsumerWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Expanded(
-                      child: Text(member.name,
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                  child: Text(member.name,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isLinked
+                        ? AppColors.caregiver.withValues(alpha: 0.15)
+                        : AppColors.muted,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isLinked ? AppColors.caregiver : AppColors.border,
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isLinked
-                            ? AppColors.caregiver.withValues(alpha: 0.15)
-                            : AppColors.muted,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isLinked
-                              ? AppColors.caregiver
-                              : AppColors.border,
-                        ),
-                      ),
-                      child: Text(
-                        isLinked ? 'Linked' : 'Dependent',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isLinked
-                                ? AppColors.caregiver
-                                : AppColors.mutedForeground),
-                      ),
-                    ),
-                  ]),
-                  Text(
-                    [
-                      member.relationship,
-                      if (member.age != null) '${member.age} yrs',
-                    ].join(' · '),
-                    style: const TextStyle(
+                  ),
+                  child: Text(
+                    isLinked ? 'Linked' : 'Dependent',
+                    style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.mutedForeground),
+                        fontWeight: FontWeight.w600,
+                        color: isLinked
+                            ? AppColors.caregiver
+                            : AppColors.mutedForeground),
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.muted,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'View details →',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.mutedForeground),
-                    ),
-                  ),
-                ]),
+                ),
+              ]),
+              Text(
+                [
+                  member.relationship,
+                  if (member.age != null) '${member.age} yrs',
+                ].join(' · '),
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.muted,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'View details →',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.mutedForeground),
+                ),
+              ),
+            ]),
           ),
           IconButton(
             tooltip: 'Edit member',
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.mutedForeground, size: 18),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedPencilEdit01,
+                color: AppColors.mutedForeground,
+                size: 18),
             onPressed: openEdit,
           ),
         ]),
@@ -389,8 +463,8 @@ class _MemberDetailSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(
-        familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
+    final medsAsync = ref
+        .watch(familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.6,
@@ -414,12 +488,10 @@ class _MemberDetailSheet extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 20),
-
             Row(children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor:
-                    AppColors.primary.withValues(alpha: 0.12),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
                 backgroundImage: member.photoUrl != null
                     ? NetworkImage(member.photoUrl!)
                     : null,
@@ -438,24 +510,19 @@ class _MemberDetailSheet extends ConsumerWidget {
                     children: [
                       Text(member.name,
                           style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700)),
+                              fontSize: 18, fontWeight: FontWeight.w700)),
                       Text(
                         [
                           member.relationship,
-                          if (member.age != null)
-                            '${member.age} years old',
+                          if (member.age != null) '${member.age} years old',
                         ].join(' · '),
                         style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mutedForeground),
+                            fontSize: 13, color: AppColors.mutedForeground),
                       ),
                     ]),
               ),
             ]),
-
             const SizedBox(height: 16),
-
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -469,7 +536,10 @@ class _MemberDetailSheet extends ConsumerWidget {
                     ),
                   );
                 },
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
+                icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedPencilEdit01,
+                    color: Colors.black,
+                    size: 16),
                 label: const Text('Edit member details'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -478,27 +548,20 @@ class _MemberDetailSheet extends ConsumerWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
             const Divider(height: 1, color: AppColors.border),
             const SizedBox(height: 16),
-
             const Text('Medicines',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-
             medsAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => BentoCard(
                 color: AppColors.muted,
                 padding: const EdgeInsets.all(14),
                 child: const Text('Could not load medicines.',
                     style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.mutedForeground)),
+                        fontSize: 13, color: AppColors.mutedForeground)),
               ),
               data: (meds) {
                 if (meds.isEmpty) {
@@ -507,8 +570,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                     padding: const EdgeInsets.all(14),
                     child: const Text('No medicines recorded yet.',
                         style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mutedForeground)),
+                            fontSize: 13, color: AppColors.mutedForeground)),
                   );
                 }
                 return Column(
@@ -526,7 +588,10 @@ class _MemberDetailSheet extends ConsumerWidget {
                                         .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 14),
+                                  child: HugeIcon(
+                                      icon: HugeIcons.strokeRoundedMedicine01,
+                                      color: AppColors.primary,
+                                      size: 14),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -538,8 +603,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                                             style: const TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600)),
-                                        Text(
-                                            '${med.dosage} · ${med.frequency}',
+                                        Text('${med.dosage} · ${med.frequency}',
                                             style: const TextStyle(
                                                 fontSize: 12,
                                                 color:
@@ -559,9 +623,7 @@ class _MemberDetailSheet extends ConsumerWidget {
                 );
               },
             ),
-
             const SizedBox(height: 20),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -571,14 +633,16 @@ class _MemberDetailSheet extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.15)),
               ),
               child: Row(children: [
-                HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.primary, size: 16),
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedInformationCircle,
+                    color: AppColors.primary,
+                    size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'To log doses or add medicines, open the Care tab and select ${member.name.split(' ').first} from the profile switcher.',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primary),
+                    style:
+                        const TextStyle(fontSize: 12, color: AppColors.primary),
                   ),
                 ),
               ]),
@@ -597,6 +661,7 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final Color color;
   final int? count;
+  final int? pendingCount;
   final Widget? action;
 
   const _SectionHeader({
@@ -604,6 +669,7 @@ class _SectionHeader extends StatelessWidget {
     required this.title,
     required this.color,
     this.count,
+    this.pendingCount,
     this.action,
   });
 
@@ -613,23 +679,33 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(title,
             style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color)),
+                fontSize: 14, fontWeight: FontWeight.w600, color: color)),
         if (count != null) ...[
           const SizedBox(width: 6),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text('$count',
                 style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          ),
+        ],
+        if ((pendingCount ?? 0) > 0) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text('$pendingCount pending',
+                style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: color)),
+                    color: AppColors.warning)),
           ),
         ],
         const Spacer(),
@@ -659,8 +735,7 @@ class _EmptyCard extends StatelessWidget {
           Expanded(
               child: Text(message,
                   style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mutedForeground))),
+                      fontSize: 13, color: AppColors.mutedForeground))),
           TextButton(
             onPressed: onAction,
             style: TextButton.styleFrom(
@@ -668,9 +743,7 @@ class _EmptyCard extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             child: Text(actionLabel,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primary)),
+                style: const TextStyle(fontSize: 12, color: AppColors.primary)),
           ),
         ]),
       );
@@ -692,8 +765,7 @@ class _ErrorCard extends StatelessWidget {
           Expanded(
               child: Text(message,
                   style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mutedForeground))),
+                      fontSize: 13, color: AppColors.mutedForeground))),
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
@@ -701,9 +773,7 @@ class _ErrorCard extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             child: const Text('Retry',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.primary)),
+                style: TextStyle(fontSize: 12, color: AppColors.primary)),
           ),
         ]),
       );
@@ -765,6 +835,9 @@ class _CaregiverCard extends ConsumerWidget {
     final name = connection.caregiverName ?? connection.caregiverEmail;
     final initials = _initials(name);
     final isPending = connection.isPending;
+    final isExpired = isPending &&
+        DateTime.now()
+            .isAfter(connection.invitedAt.add(const Duration(days: 7)));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -773,55 +846,88 @@ class _CaregiverCard extends ConsumerWidget {
             ? null
             : () => context.push('/manage-caregiver', extra: connection),
         padding: const EdgeInsets.all(14),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: _purple.withValues(alpha: 0.12),
-            child: Text(initials,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: _purple)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: (isExpired ? AppColors.destructive : _purple)
+                    .withValues(alpha: 0.12),
+                child: Text(initials,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color:
+                            isExpired ? AppColors.destructive : _purple)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                   Text(name,
                       style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
+                          fontSize: 14, fontWeight: FontWeight.w600)),
                   Text(connection.relationship.relationshipLabel,
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground)),
+                          fontSize: 12, color: AppColors.mutedForeground)),
                   if (!isPending)
                     Text(
                       'Connected ${connection.connectedAt != null ? DateFormat('MMM d, y').format(connection.connectedAt!) : ''}',
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground),
+                          fontSize: 12, color: AppColors.mutedForeground),
                     ),
                 ]),
-          ),
-          if (isPending)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('Pending',
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.warning)),
-          )
-          else
-            HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
-        ]),
+              if (isPending)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: (isExpired ? AppColors.destructive : AppColors.warning)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    isExpired ? 'Expired' : 'Pending',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isExpired
+                            ? AppColors.destructive
+                            : AppColors.warning),
+                  ),
+                )
+              else
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    color: AppColors.mutedForeground,
+                    size: 14),
+            ]),
+            if (isExpired) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/invite-caregiver'),
+                  icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedSent,
+                      color: AppColors.primary,
+                      size: 14),
+                  label: const Text('Re-invite',
+                      style: TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 36),
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(
+                        color: AppColors.primary.withValues(alpha: 0.4)),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

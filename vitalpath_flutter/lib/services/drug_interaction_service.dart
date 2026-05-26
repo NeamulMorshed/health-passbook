@@ -26,9 +26,9 @@ class DrugInteractionService {
   static DrugInteractionService get instance =>
       _instance ??= DrugInteractionService._();
 
-  static const _rxnavBase   = 'https://rxnav.nlm.nih.gov/REST';
+  static const _rxnavBase = 'https://rxnav.nlm.nih.gov/REST';
   static const _drugBankBase = 'https://api.drugbankplus.com/v1';
-  static const _timeout     = Duration(seconds: 15);
+  static const _timeout = Duration(seconds: 15);
 
   final _db = FirebaseFirestore.instance;
 
@@ -144,13 +144,13 @@ class DrugInteractionService {
 
       if (res.statusCode != 200) return [];
 
-      final body   = jsonDecode(res.body) as Map<String, dynamic>;
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
       final groups = body['fullInteractionTypeGroup'] as List? ?? [];
 
       final interactions = <DrugInteraction>[];
       for (final group in groups) {
         final source = group['sourceName'] as String? ?? 'RxNav';
-        final types  = group['fullInteractionType'] as List? ?? [];
+        final types = group['fullInteractionType'] as List? ?? [];
         for (final type in types) {
           final pairs = type['interactionPair'] as List? ?? [];
           for (final pair in pairs) {
@@ -165,9 +165,8 @@ class DrugInteractionService {
     }
   }
 
-  DrugInteraction? _parseRxNavPair(
-      Map<String, dynamic> pair, String source) {
-    final concepts    = pair['interactionConcept'] as List?;
+  DrugInteraction? _parseRxNavPair(Map<String, dynamic> pair, String source) {
+    final concepts = pair['interactionConcept'] as List?;
     final description = (pair['description'] as String?)?.trim() ?? '';
     if (concepts == null || concepts.length < 2 || description.isEmpty) {
       return null;
@@ -177,30 +176,33 @@ class DrugInteractionService {
     final b = (concepts[1]['minConceptItem'] as Map?)?.cast<String, dynamic>();
     if (a == null || b == null) return null;
 
-    final nameA   = a['name'] as String? ?? '';
-    final nameB   = b['name'] as String? ?? '';
-    final rxcuiA  = a['rxcui'] as String?;
-    final rxcuiB  = b['rxcui'] as String?;
-    final sevStr  = (pair['severity'] as String?) ?? '';
+    final nameA = a['name'] as String? ?? '';
+    final nameB = b['name'] as String? ?? '';
+    final rxcuiA = a['rxcui'] as String?;
+    final rxcuiB = b['rxcui'] as String?;
+    final sevStr = (pair['severity'] as String?) ?? '';
 
     if (nameA.isEmpty || nameB.isEmpty) return null;
 
     return DrugInteraction(
-      drugAName:   nameA,
-      drugBName:   nameB,
-      rxcuiA:      rxcuiA,
-      rxcuiB:      rxcuiB,
-      severity:    _parseSeverity(sevStr),
+      drugAName: nameA,
+      drugBName: nameB,
+      rxcuiA: rxcuiA,
+      rxcuiB: rxcuiB,
+      severity: _parseSeverity(sevStr),
       description: description,
-      source:      source,
+      source: source,
     );
   }
 
   InteractionSeverity _parseSeverity(String s) {
     final l = s.toLowerCase();
-    if (l.contains('high')   || l.contains('major'))    return InteractionSeverity.major;
-    if (l.contains('medium') || l.contains('moderate')) return InteractionSeverity.moderate;
-    if (l.contains('low')    || l.contains('minor'))    return InteractionSeverity.minor;
+    if (l.contains('high') || l.contains('major'))
+      return InteractionSeverity.major;
+    if (l.contains('medium') || l.contains('moderate'))
+      return InteractionSeverity.moderate;
+    if (l.contains('low') || l.contains('minor'))
+      return InteractionSeverity.minor;
     return InteractionSeverity.unknown;
   }
 
@@ -223,8 +225,10 @@ class DrugInteractionService {
     for (int i = 0; i < names.length - 1; i++) {
       for (int j = i + 1; j < names.length; j++) {
         final pair = await _drugBankDdiPair(
-          names[i], dbIds[names[i]]!,
-          names[j], dbIds[names[j]]!,
+          names[i],
+          dbIds[names[i]]!,
+          names[j],
+          dbIds[names[j]]!,
         );
         interactions.addAll(pair);
       }
@@ -250,8 +254,10 @@ class DrugInteractionService {
   }
 
   Future<List<DrugInteraction>> _drugBankDdiPair(
-    String nameA, String idA,
-    String nameB, String idB,
+    String nameA,
+    String idA,
+    String nameB,
+    String idB,
   ) async {
     try {
       final res = await http.get(
@@ -265,11 +271,11 @@ class DrugInteractionService {
       return interactions.map((ddi) {
         final sev = (ddi['severity'] as String?)?.toLowerCase() ?? '';
         return DrugInteraction(
-          drugAName:   nameA,
-          drugBName:   nameB,
-          severity:    _parseSeverity(sev),
+          drugAName: nameA,
+          drugBName: nameB,
+          severity: _parseSeverity(sev),
           description: ddi['description'] as String? ?? '',
-          source:      'DrugBank',
+          source: 'DrugBank',
         );
       }).toList();
     } catch (_) {
@@ -293,23 +299,24 @@ class DrugInteractionService {
     ).timeout(_timeout);
     if (res.statusCode != 200) return [];
 
-    final body  = jsonDecode(res.body) as Map<String, dynamic>;
-    final drug  = body['drug'] as Map<String, dynamic>?;
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final drug = body['drug'] as Map<String, dynamic>?;
     final doses = drug?['dosages'] as List? ?? [];
 
     final warnings = <DosageWarning>[];
     for (final dose in doses) {
-      final route  = dose['route']  as String? ?? '';
-      final form   = dose['form']   as String? ?? '';
+      final route = dose['route'] as String? ?? '';
+      final form = dose['form'] as String? ?? '';
       final strength = dose['strength'] as String? ?? '';
-      final isPed  = ageYears < 18;
+      final isPed = ageYears < 18;
 
       // Flag if a paediatric-specific note contradicts an adult-only dose.
       if (isPed && (dose['adult_only'] as bool? ?? false)) {
         warnings.add(DosageWarning(
-          drugName:         drugName,
-          message:          '$drugName ($form $route): dosage listed for adults only — verify paediatric dose.',
-          isCritical:       true,
+          drugName: drugName,
+          message:
+              '$drugName ($form $route): dosage listed for adults only — verify paediatric dose.',
+          isCritical: true,
           recommendedRange: strength,
         ));
       }
@@ -332,10 +339,11 @@ class DrugInteractionService {
     ).timeout(_timeout);
     if (res.statusCode != 200) return [];
 
-    final body             = jsonDecode(res.body) as Map<String, dynamic>;
-    final contraindications = (body['drug']?['contraindications'] as List?) ?? [];
-    final conditionsLower   = conditions.map((c) => c.toLowerCase()).toList();
-    final alerts            = <ContraindicationAlert>[];
+    final body = jsonDecode(res.body) as Map<String, dynamic>;
+    final contraindications =
+        (body['drug']?['contraindications'] as List?) ?? [];
+    final conditionsLower = conditions.map((c) => c.toLowerCase()).toList();
+    final alerts = <ContraindicationAlert>[];
 
     for (final ci in contraindications) {
       final ciName = (ci['condition'] as String? ?? '').toLowerCase();
@@ -344,10 +352,10 @@ class DrugInteractionService {
       );
       if (matches) {
         alerts.add(ContraindicationAlert(
-          drugName:    drugName,
-          condition:   ci['condition']   as String? ?? '',
+          drugName: drugName,
+          condition: ci['condition'] as String? ?? '',
           description: ci['description'] as String? ?? '',
-          severity:    ci['severity']    as String? ?? 'relative',
+          severity: ci['severity'] as String? ?? 'relative',
         ));
       }
     }

@@ -30,7 +30,10 @@ class GamificationScreen extends ConsumerWidget {
         title: const Text('Health Rewards'),
         actions: [
           IconButton(
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.textPrimary, size: 24),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedInformationCircle,
+                color: AppColors.textPrimary,
+                size: 24),
             tooltip: 'How to earn HP',
             onPressed: () => _showHowToEarn(context),
           ),
@@ -49,13 +52,16 @@ class GamificationScreen extends ConsumerWidget {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.mutedForeground),
+                const Icon(Icons.error_outline_rounded,
+                    size: 48, color: AppColors.mutedForeground),
                 const SizedBox(height: 12),
                 const Text('Failed to load rewards',
-                    style: TextStyle(fontSize: 15, color: AppColors.mutedForeground)),
+                    style: TextStyle(
+                        fontSize: 15, color: AppColors.mutedForeground)),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => ref.invalidate(gamificationProvider(user.uid)),
+                  onPressed: () =>
+                      ref.invalidate(gamificationProvider(user.uid)),
                   child: const Text('Retry'),
                 ),
               ]),
@@ -125,7 +131,10 @@ class _LevelCard extends StatelessWidget {
             center: Text(
               'Lv\n${profile.level}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800),
             ),
           ),
           const SizedBox(width: 20),
@@ -135,7 +144,10 @@ class _LevelCard extends StatelessWidget {
               children: [
                 Text(
                   profile.levelTitle,
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -153,7 +165,9 @@ class _LevelCard extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     widthFactor: profile.levelProgress.clamp(0.0, 1.0),
                     child: Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(3)),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(3)),
                     ),
                   ),
                 ),
@@ -183,11 +197,31 @@ class _StreakSection extends StatelessWidget {
         const BentoSectionHeader(title: 'Active Streaks'),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: _StreakTile(label: 'Medicine', streak: profile.medStreak, color: AppColors.primary, iconBuilder: (c) => HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: c, size: 22))),
+          Expanded(
+              child: _StreakTile(
+                  label: 'Medicine',
+                  streak: profile.medStreak,
+                  color: AppColors.primary,
+                  iconBuilder: (c) => HugeIcon(
+                      icon: HugeIcons.strokeRoundedMedicine01,
+                      color: c,
+                      size: 22))),
           const SizedBox(width: 10),
-          Expanded(child: _StreakTile(label: 'Meals', streak: profile.mealStreak, color: AppColors.success, iconBuilder: (c) => Icon(Icons.restaurant_rounded, color: c, size: 22))),
+          Expanded(
+              child: _StreakTile(
+                  label: 'Meals',
+                  streak: profile.mealStreak,
+                  color: AppColors.success,
+                  iconBuilder: (c) =>
+                      Icon(Icons.restaurant_rounded, color: c, size: 22))),
           const SizedBox(width: 10),
-          Expanded(child: _StreakTile(label: 'Activity', streak: profile.activityStreak, color: AppColors.warning, iconBuilder: (c) => Icon(Icons.directions_walk_rounded, color: c, size: 22))),
+          Expanded(
+              child: _StreakTile(
+                  label: 'Activity',
+                  streak: profile.activityStreak,
+                  color: AppColors.warning,
+                  iconBuilder: (c) =>
+                      Icon(Icons.directions_walk_rounded, color: c, size: 22))),
         ]),
       ],
     );
@@ -199,7 +233,11 @@ class _StreakTile extends StatelessWidget {
   final int streak;
   final Color color;
   final Widget Function(Color) iconBuilder;
-  const _StreakTile({required this.label, required this.streak, required this.color, required this.iconBuilder});
+  const _StreakTile(
+      {required this.label,
+      required this.streak,
+      required this.color,
+      required this.iconBuilder});
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +248,8 @@ class _StreakTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive ? color.withValues(alpha: 0.08) : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isActive ? color.withValues(alpha: 0.25) : AppColors.border),
+        border: Border.all(
+            color: isActive ? color.withValues(alpha: 0.25) : AppColors.border),
       ),
       child: Column(children: [
         iconBuilder(isActive ? color : AppColors.mutedForeground),
@@ -219,12 +258,21 @@ class _StreakTile extends StatelessWidget {
           if (isActive) const Text('🔥', style: TextStyle(fontSize: 12)),
           Text(
             '$streak',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isActive ? color : AppColors.mutedForeground),
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: isActive ? color : AppColors.mutedForeground),
           ),
         ]),
-        Text('days', style: TextStyle(fontSize: 12, color: isActive ? color : AppColors.mutedForeground)),
+        Text('days',
+            style: TextStyle(
+                fontSize: 12,
+                color: isActive ? color : AppColors.mutedForeground)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground), textAlign: TextAlign.center),
+        Text(label,
+            style:
+                const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+            textAlign: TextAlign.center),
       ]),
     );
   }
@@ -244,11 +292,23 @@ class _WeeklyChallenge extends StatelessWidget {
         BentoCard(
           padding: const EdgeInsets.all(16),
           child: Column(children: [
-            _ChallengeRow(label: 'Take medicine 5 days', current: profile.weeklyMedDays, target: 5, color: AppColors.primary),
+            _ChallengeRow(
+                label: 'Take medicine 5 days',
+                current: profile.weeklyMedDays,
+                target: 5,
+                color: AppColors.primary),
             const SizedBox(height: 14),
-            _ChallengeRow(label: 'Log meals 5 days', current: profile.weeklyMealDays, target: 5, color: AppColors.success),
+            _ChallengeRow(
+                label: 'Log meals 5 days',
+                current: profile.weeklyMealDays,
+                target: 5,
+                color: AppColors.success),
             const SizedBox(height: 14),
-            _ChallengeRow(label: 'Stay active 3 days', current: profile.weeklyActivityDays, target: 3, color: AppColors.warning),
+            _ChallengeRow(
+                label: 'Stay active 3 days',
+                current: profile.weeklyActivityDays,
+                target: 3,
+                color: AppColors.warning),
           ]),
         ),
       ],
@@ -261,7 +321,11 @@ class _ChallengeRow extends StatelessWidget {
   final int current;
   final int target;
   final Color color;
-  const _ChallengeRow({required this.label, required this.current, required this.target, required this.color});
+  const _ChallengeRow(
+      {required this.label,
+      required this.current,
+      required this.target,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -272,8 +336,15 @@ class _ChallengeRow extends StatelessWidget {
       children: [
         Row(children: [
           if (done) const Text('✅ ', style: TextStyle(fontSize: 14)),
-          Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: done ? AppColors.success : AppColors.foreground))),
-          Text('$current/$target', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: done ? AppColors.success : AppColors.foreground))),
+          Text('$current/$target',
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: color)),
         ]),
         const SizedBox(height: 6),
         ClipRRect(
@@ -282,7 +353,8 @@ class _ChallengeRow extends StatelessWidget {
             value: progress,
             minHeight: 6,
             backgroundColor: color.withValues(alpha: 0.12),
-            valueColor: AlwaysStoppedAnimation<Color>(done ? AppColors.success : color),
+            valueColor:
+                AlwaysStoppedAnimation<Color>(done ? AppColors.success : color),
           ),
         ),
       ],
@@ -299,7 +371,8 @@ class _BadgesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        BentoSectionHeader(title: 'Badges (${profile.badgeIds.length}/${kAllBadges.length})'),
+        BentoSectionHeader(
+            title: 'Badges (${profile.badgeIds.length}/${kAllBadges.length})'),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -318,14 +391,21 @@ class _BadgesSection extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: earned ? badge.color.withValues(alpha: 0.08) : AppColors.muted,
+                color: earned
+                    ? badge.color.withValues(alpha: 0.08)
+                    : AppColors.muted,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: earned ? badge.color.withValues(alpha: 0.3) : AppColors.border),
+                border: Border.all(
+                    color: earned
+                        ? badge.color.withValues(alpha: 0.3)
+                        : AppColors.border),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  badge.icon(earned ? badge.color : AppColors.mutedForeground.withValues(alpha: 0.4)),
+                  badge.icon(earned
+                      ? badge.color
+                      : AppColors.mutedForeground.withValues(alpha: 0.4)),
                   const SizedBox(height: 8),
                   Text(
                     badge.name,
@@ -333,7 +413,9 @@ class _BadgesSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: earned ? AppColors.foreground : AppColors.mutedForeground,
+                      color: earned
+                          ? AppColors.foreground
+                          : AppColors.mutedForeground,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -344,7 +426,9 @@ class _BadgesSection extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      color: earned ? AppColors.mutedForeground : AppColors.mutedForeground.withValues(alpha: 0.5),
+                      color: earned
+                          ? AppColors.mutedForeground
+                          : AppColors.mutedForeground.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -363,14 +447,64 @@ class _HowToEarnSheet extends StatelessWidget {
   const _HowToEarnSheet();
 
   static final _items = [
-    (icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01,     color: Color(0xFF6366F1), size: 18) as Widget, color: Color(0xFF6366F1), action: 'Log medicine on time',      hp: '+10 HP'),
-    (icon: Icon(Icons.restaurant_rounded,            color: Color(0xFF22C55E), size: 18) as Widget,            color: Color(0xFF22C55E), action: 'Log a meal',                hp: '+5 HP'),
-    (icon: Icon(Icons.directions_walk_rounded,       color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: 'Log an activity session',   hp: '+10 HP'),
-    (icon: Icon(Icons.local_fire_department_rounded, color: Color(0xFFEF4444), size: 18) as Widget,            color: Color(0xFFEF4444), action: '7-day medicine streak',     hp: '+50 HP'),
-    (icon: Icon(Icons.favorite_rounded,              color: Color(0xFF22C55E), size: 18) as Widget,            color: Color(0xFF22C55E), action: '7-day meal streak',         hp: '+50 HP'),
-    (icon: Icon(Icons.fitness_center_rounded,        color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: '5-day activity streak',     hp: '+30 HP'),
-    (icon: Icon(Icons.emoji_events_rounded,          color: Color(0xFF8B5CF6), size: 18) as Widget,            color: Color(0xFF8B5CF6), action: 'Complete weekly challenge', hp: '+100 HP'),
-    (icon: Icon(Icons.military_tech_rounded,         color: AppColors.caregiver, size: 18) as Widget,            color: AppColors.caregiver, action: 'Unlock a badge',            hp: '+50 HP'),
+    (
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedMedicine01,
+          color: Color(0xFF6366F1),
+          size: 18) as Widget,
+      color: Color(0xFF6366F1),
+      action: 'Log medicine on time',
+      hp: '+10 HP'
+    ),
+    (
+      icon: Icon(Icons.restaurant_rounded, color: Color(0xFF22C55E), size: 18)
+          as Widget,
+      color: Color(0xFF22C55E),
+      action: 'Log a meal',
+      hp: '+5 HP'
+    ),
+    (
+      icon: Icon(Icons.directions_walk_rounded,
+          color: AppColors.caregiver, size: 18) as Widget,
+      color: AppColors.caregiver,
+      action: 'Log an activity session',
+      hp: '+10 HP'
+    ),
+    (
+      icon: Icon(Icons.local_fire_department_rounded,
+          color: Color(0xFFEF4444), size: 18) as Widget,
+      color: Color(0xFFEF4444),
+      action: '7-day medicine streak',
+      hp: '+50 HP'
+    ),
+    (
+      icon: Icon(Icons.favorite_rounded, color: Color(0xFF22C55E), size: 18)
+          as Widget,
+      color: Color(0xFF22C55E),
+      action: '7-day meal streak',
+      hp: '+50 HP'
+    ),
+    (
+      icon: Icon(Icons.fitness_center_rounded,
+          color: AppColors.caregiver, size: 18) as Widget,
+      color: AppColors.caregiver,
+      action: '5-day activity streak',
+      hp: '+30 HP'
+    ),
+    (
+      icon: Icon(Icons.emoji_events_rounded, color: Color(0xFF8B5CF6), size: 18)
+          as Widget,
+      color: Color(0xFF8B5CF6),
+      action: 'Complete weekly challenge',
+      hp: '+100 HP'
+    ),
+    (
+      icon: Icon(Icons.military_tech_rounded,
+          color: AppColors.caregiver, size: 18) as Widget,
+      color: AppColors.caregiver,
+      action: 'Unlock a badge',
+      hp: '+50 HP'
+    ),
   ];
 
   @override
@@ -387,8 +521,11 @@ class _HowToEarnSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 20),
@@ -399,7 +536,10 @@ class _HowToEarnSheet extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: HugeIcon(icon: HugeIcons.strokeRoundedFlash, color: AppColors.primary, size: 20),
+              child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedFlash,
+                  color: AppColors.primary,
+                  size: 20),
             ),
             const SizedBox(width: 12),
             const Text(
@@ -447,7 +587,8 @@ class _EarnRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(item.action,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -456,7 +597,10 @@ class _EarnRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(item.hp,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary)),
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary)),
         ),
       ]),
     );

@@ -7,6 +7,7 @@ final gamificationServiceProvider = Provider<GamificationService>((ref) {
   return GamificationService(FirebaseFirestore.instance);
 });
 
-final gamificationProvider = StreamProvider.family<GamificationProfile, String>((ref, uid) {
+final gamificationProvider =
+    StreamProvider.family<GamificationProfile, String>((ref, uid) {
   return ref.watch(gamificationServiceProvider).watchProfile(uid);
 });

@@ -21,9 +21,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 // ── SharedPreferences keys ────────────────────────────────────────────────────
 // Maps each notification channel to the toggle key used in NotificationSettings.
 const _channelPrefKeys = {
-  AppConstants.notifChannelMedicine:    'notif_medicines',
+  AppConstants.notifChannelMedicine: 'notif_medicines',
   AppConstants.notifChannelAppointment: 'notif_appointments',
-  AppConstants.notifChannelGeneral:     'notif_doctors',
+  AppConstants.notifChannelGeneral: 'notif_doctors',
 };
 
 // Prefix for the per-channel set of scheduled notification IDs.
@@ -32,7 +32,8 @@ const _channelIdsPrefix = 'notif_ids_';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _local =
+      FlutterLocalNotificationsPlugin();
 
   Future<void> initialize() async {
     tz.initializeTimeZones();
@@ -43,7 +44,8 @@ class NotificationService {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     // ── Local notifications ───────────────────────────────────────────────
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -59,9 +61,12 @@ class NotificationService {
       },
     );
 
-    await _createChannel(AppConstants.notifChannelMedicine,    'Medicine Reminders',    'Reminders to take your medicine');
-    await _createChannel(AppConstants.notifChannelAppointment, 'Appointment Reminders', 'Appointment updates and reminders');
-    await _createChannel(AppConstants.notifChannelGeneral,     'General',               'General app notifications');
+    await _createChannel(AppConstants.notifChannelMedicine,
+        'Medicine Reminders', 'Reminders to take your medicine');
+    await _createChannel(AppConstants.notifChannelAppointment,
+        'Appointment Reminders', 'Appointment updates and reminders');
+    await _createChannel(AppConstants.notifChannelGeneral, 'General',
+        'General app notifications');
 
     // ── Foreground FCM messages ───────────────────────────────────────────
     FirebaseMessaging.onMessage.listen((message) {
@@ -125,10 +130,13 @@ class NotificationService {
     String channel = AppConstants.notifChannelGeneral,
   }) async {
     await _local.show(
-      id, title, body,
+      id,
+      title,
+      body,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          channel, channel,
+          channel,
+          channel,
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -159,23 +167,27 @@ class NotificationService {
         : title;
 
     final DateTimeComponents? components = switch (repeat) {
-      'daily'  => DateTimeComponents.time,
+      'daily' => DateTimeComponents.time,
       'weekly' => DateTimeComponents.dayOfWeekAndTime,
-      _        => null,
+      _ => null,
     };
 
     await _local.zonedSchedule(
-      id, effectiveTitle, body,
+      id,
+      effectiveTitle,
+      body,
       _nextInstanceOfTime(hour, minute),
       NotificationDetails(
         android: AndroidNotificationDetails(
-          channel, channel,
+          channel,
+          channel,
           importance: Importance.high,
           priority: Priority.high,
         ),
         iOS: const DarwinNotificationDetails(),
       ),
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: components,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: channel,
@@ -196,7 +208,8 @@ class NotificationService {
 
   // ── Medicine reminder helpers ─────────────────────────────────────────────
 
-  static String medicineReminderTitle(String medicineName, {String? familyMemberName}) {
+  static String medicineReminderTitle(String medicineName,
+      {String? familyMemberName}) {
     if (familyMemberName != null && familyMemberName.isNotEmpty) {
       return "$familyMemberName's medicine: $medicineName";
     }
@@ -207,13 +220,13 @@ class NotificationService {
     for (int i = 0; i < medicine.reminderTimes.length; i++) {
       final parts = medicine.reminderTimes[i].split(':');
       if (parts.length != 2) continue;
-      final hour   = int.tryParse(parts[0]) ?? 8;
+      final hour = int.tryParse(parts[0]) ?? 8;
       final minute = int.tryParse(parts[1]) ?? 0;
       await scheduleReminder(
-        id:     medicineNotifId(medicine.id, i),
-        title:  'Time to take ${medicine.name}',
-        body:   '${medicine.dosage} dose is due now.',
-        hour:   hour,
+        id: medicineNotifId(medicine.id, i),
+        title: 'Time to take ${medicine.name}',
+        body: '${medicine.dosage} dose is due now.',
+        hour: hour,
         minute: minute,
         repeat: medicine.reminderRepeat,
       );
@@ -222,16 +235,38 @@ class NotificationService {
 
   // Legacy wrappers kept for existing callers
   Future<void> scheduleDailyReminder({
-    required int id, required String title, required String body,
-    required int hour, required int minute,
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
     String channel = AppConstants.notifChannelMedicine,
-  }) => scheduleReminder(id: id, title: title, body: body, hour: hour, minute: minute, repeat: 'daily', channel: channel);
+  }) =>
+      scheduleReminder(
+          id: id,
+          title: title,
+          body: body,
+          hour: hour,
+          minute: minute,
+          repeat: 'daily',
+          channel: channel);
 
   Future<void> scheduleOnceReminder({
-    required int id, required String title, required String body,
-    required int hour, required int minute,
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
     String channel = AppConstants.notifChannelGeneral,
-  }) => scheduleReminder(id: id, title: title, body: body, hour: hour, minute: minute, repeat: 'once', channel: channel);
+  }) =>
+      scheduleReminder(
+          id: id,
+          title: title,
+          body: body,
+          hour: hour,
+          minute: minute,
+          repeat: 'once',
+          channel: channel);
 
   // ── Cancel helpers ────────────────────────────────────────────────────────
 
@@ -249,7 +284,8 @@ class NotificationService {
   // After a reinstall the OS clears all scheduled alarms. This runs once per
   // install (per uid) to restore them.  Called from the home screen.
 
-  Future<void> rescheduleAllRemindersIfNeeded(String uid, List<Medicine> medicines) async {
+  Future<void> rescheduleAllRemindersIfNeeded(
+      String uid, List<Medicine> medicines) async {
     final prefs = await SharedPreferences.getInstance();
     final flagKey = 'reminders_scheduled_$uid';
     if (prefs.getBool(flagKey) ?? false) return;
@@ -274,10 +310,14 @@ class NotificationService {
 
   Future<void> _createChannel(String id, String name, String desc) async {
     final channel = AndroidNotificationChannel(
-      id, name, description: desc, importance: Importance.high,
+      id,
+      name,
+      description: desc,
+      importance: Importance.high,
     );
     await _local
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
   }
 
@@ -319,7 +359,8 @@ class NotificationService {
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -329,9 +370,9 @@ class NotificationService {
   // Maps a notification channel (or FCM data key) to the in-app route to open.
   static String _routeForChannel(String? channel) {
     return switch (channel) {
-      AppConstants.notifChannelMedicine    => '/medicines',
+      AppConstants.notifChannelMedicine => '/medicines',
       AppConstants.notifChannelAppointment => '/appointments',
-      _                                    => '/notifications',
+      _ => '/notifications',
     };
   }
 

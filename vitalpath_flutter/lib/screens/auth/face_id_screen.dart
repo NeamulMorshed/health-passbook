@@ -57,16 +57,25 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
   }
 
   String get _biometricLabel => switch (_biometricType) {
-    BiometricType.face => 'Enable Face ID',
-    BiometricType.fingerprint => 'Enable Fingerprint',
-    _ => 'Enable Biometrics',
-  };
+        BiometricType.face => 'Enable Face ID',
+        BiometricType.fingerprint => 'Enable Fingerprint',
+        _ => 'Enable Biometrics',
+      };
 
   Widget get _biometricWidget => switch (_biometricType) {
-    BiometricType.face => HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 64),
-    BiometricType.fingerprint => HugeIcon(icon: HugeIcons.strokeRoundedFingerPrint, color: AppColors.primary, size: 64),
-    _ => HugeIcon(icon: HugeIcons.strokeRoundedLock, color: AppColors.primary, size: 64),
-  };
+        BiometricType.face => HugeIcon(
+            icon: HugeIcons.strokeRoundedUser,
+            color: AppColors.primary,
+            size: 64),
+        BiometricType.fingerprint => HugeIcon(
+            icon: HugeIcons.strokeRoundedFingerPrint,
+            color: AppColors.primary,
+            size: 64),
+        _ => HugeIcon(
+            icon: HugeIcons.strokeRoundedLock,
+            color: AppColors.primary,
+            size: 64),
+      };
 
   Future<void> _authenticate() async {
     setState(() {
@@ -171,9 +180,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
                 const SizedBox(height: 16),
                 Text(
                   _errorMessage!,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.red),
+                  style: const TextStyle(fontSize: 13, color: Colors.red),
                 ),
               ],
               const Spacer(),
@@ -185,8 +192,7 @@ class _FaceIdScreenState extends ConsumerState<FaceIdScreen> {
               TextButton(
                 onPressed: _checking ? null : _skip,
                 child: const Text('Skip for now',
-                    style: TextStyle(
-                        color: AppColors.mutedForeground)),
+                    style: TextStyle(color: AppColors.mutedForeground)),
               ),
               const SizedBox(height: 8),
             ],

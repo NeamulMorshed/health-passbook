@@ -6,7 +6,11 @@ class PrescribedMed {
   final String frequency;
   final String? instructions;
 
-  const PrescribedMed({required this.name, required this.dosage, required this.frequency, this.instructions});
+  const PrescribedMed(
+      {required this.name,
+      required this.dosage,
+      required this.frequency,
+      this.instructions});
 
   factory PrescribedMed.fromMap(Map<String, dynamic> map) => PrescribedMed(
         name: map['name'] ?? '',

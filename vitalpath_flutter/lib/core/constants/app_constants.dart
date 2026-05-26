@@ -14,7 +14,15 @@ class AppConstants {
   static const colVitals = 'vitals';
 
   // Family member relationships
-  static const relationships = ['Son', 'Daughter', 'Mother', 'Father', 'Spouse', 'Sibling', 'Other'];
+  static const relationships = [
+    'Son',
+    'Daughter',
+    'Mother',
+    'Father',
+    'Spouse',
+    'Sibling',
+    'Other'
+  ];
 
   // User types
   static const typePatient = 'patient';
@@ -59,5 +67,12 @@ class AppConstants {
   static const prefOnboardingTourDone = 'onboarding_tour_done';
 
   // Cities for doctor search
-  static const cities = ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna'];
+  static const cities = [
+    'All',
+    'Dhaka',
+    'Chittagong',
+    'Sylhet',
+    'Rajshahi',
+    'Khulna'
+  ];
 }

@@ -17,7 +17,7 @@ class RxNormService {
   static RxNormService? _instance;
   static RxNormService get instance => _instance ??= RxNormService._();
 
-  static const _base    = 'https://rxnav.nlm.nih.gov/REST';
+  static const _base = 'https://rxnav.nlm.nih.gov/REST';
   static const _timeout = Duration(seconds: 10);
 
   final _db = FirebaseFirestore.instance;
@@ -44,7 +44,8 @@ class RxNormService {
     try {
       final encoded = Uri.encodeComponent(rawName.trim());
       final approxRes = await http
-          .get(Uri.parse('$_base/approximateTerm.json?term=$encoded&maxEntries=3'))
+          .get(Uri.parse(
+              '$_base/approximateTerm.json?term=$encoded&maxEntries=3'))
           .timeout(_timeout);
 
       if (approxRes.statusCode != 200) {
@@ -52,8 +53,8 @@ class RxNormService {
         return null;
       }
 
-      final candidates = (jsonDecode(approxRes.body) as Map<String, dynamic>)
-          ['approximateGroup']?['candidate'] as List?;
+      final candidates = (jsonDecode(approxRes.body)
+          as Map<String, dynamic>)['approximateGroup']?['candidate'] as List?;
 
       if (candidates == null || candidates.isEmpty) {
         await _merge(key, {'query': rawName, 'generic': null});
@@ -107,8 +108,8 @@ class RxNormService {
         return null;
       }
 
-      final ids = (jsonDecode(res.body) as Map<String, dynamic>)
-          ['idGroup']?['rxnormId'] as List?;
+      final ids = (jsonDecode(res.body) as Map<String, dynamic>)['idGroup']
+          ?['rxnormId'] as List?;
       final rxcui = (ids?.isNotEmpty ?? false) ? ids!.first as String? : null;
 
       await _merge(key, {'query': rawName, 'rxcui': rxcui});
@@ -130,7 +131,7 @@ class RxNormService {
         as Map<String, dynamic>?;
     if (props == null) return null;
 
-    final tty  = props['tty']  as String?;
+    final tty = props['tty'] as String?;
     final name = props['name'] as String?;
 
     // IN = Ingredient, PIN = Precise Ingredient — these are generic names.
@@ -145,8 +146,8 @@ class RxNormService {
         .timeout(_timeout);
     if (res.statusCode != 200) return null;
 
-    final groups = (jsonDecode(res.body) as Map<String, dynamic>)['relatedGroup']
-            ?['conceptGroup'] as List?;
+    final groups = (jsonDecode(res.body)
+        as Map<String, dynamic>)['relatedGroup']?['conceptGroup'] as List?;
     if (groups == null) return null;
 
     for (final g in groups) {

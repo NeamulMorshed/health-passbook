@@ -1,5 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {Timestamp} from "firebase-admin/firestore";
 
 admin.initializeApp();
@@ -77,43 +79,210 @@ export const sendPushOnNotification = functions.firestore
   });
 
 /**
- * Runs every 30 minutes. For each patient's active medicines, checks whether
- * a scheduled reminder time fell in the past 30-minute window and the dose
- * was not logged. If so, writes a notification document for the patient
- * (which triggers sendPushOnNotification) and sends a direct push to any
- * connected caregivers who have missedDose notifications enabled.
+ * Runs every 30 minutes. Uses a collectionGroup query on medicines (S-07) so
+ * only patients who have at least one active medicine are touched — no O(n)
+ * full-patients scan. Patients with zero active medicines are skipped entirely.
  */
-export const checkMissedDoses = functions.pubsub
-  .schedule("every 30 minutes")
-  .onRun(async () => {
+export const checkMissedDoses = onSchedule("every 30 minutes", async () => {
     const now = new Date();
     const windowStart = new Date(now.getTime() - 30 * 60 * 1000);
 
-    // Load all patient medicine subcollections.
-    const patientsSnap = await db.collection("patients").get();
-    const tasks: Promise<void>[] = [];
+    // S-07: collectionGroup query replaces loading all patients.
+    const medsSnap = await db
+      .collectionGroup("medicines")
+      .where("isActive", "==", true)
+      .get();
 
-    for (const patientDoc of patientsSnap.docs) {
-      tasks.push(_checkPatientMissedDoses(patientDoc.id, now, windowStart));
+    // Group medicine docs by patient ID extracted from the subcollection path.
+    const byPatient = new Map<string, admin.firestore.QueryDocumentSnapshot[]>();
+    for (const medDoc of medsSnap.docs) {
+      const patientId = medDoc.ref.parent.parent?.id;
+      if (!patientId) continue;
+      const arr = byPatient.get(patientId) ?? [];
+      arr.push(medDoc);
+      byPatient.set(patientId, arr);
+    }
+
+    const tasks: Promise<void>[] = [];
+    for (const [patientId, medDocs] of byPatient) {
+      tasks.push(_checkPatientMissedDoses(patientId, medDocs, now, windowStart));
     }
     await Promise.allSettled(tasks);
   });
 
+// ─── Appointment Reminders (ADR-015) ──────────────────────────────────────────
+// Day-before fires when hoursUntil ∈ [23.5, 24.5).
+// "Soon" fires when minutesUntil ∈ [0, 30) — 30-min poll reliably catches the
+// 15-min mark. Future: read per-user appointmentReminderLeadMinutes from Firestore.
+// Idempotency: appointments/{id}.reminders.{dayBeforeSentAt|soonSentAt} guards duplicates.
+// Required composite index: appointments → (status ASC, scheduledAt ASC).
+
+interface _ApptReminderPayload {
+  apptId: string;
+  patientId: string;
+  doctorId: string;
+  patientName?: string;
+  patientTitle: string;
+  patientBody: string;
+  doctorTitle: string;
+  doctorBody: string;
+}
+
+export const sendAppointmentReminders = onSchedule("every 30 minutes", async () => {
+    const now = new Date();
+    // Query window: appointments in the next 25 hours (catches day-before + soon buckets).
+    const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+
+    const apptSnap = await db
+      .collection("appointments")
+      .where("status", "==", "confirmed")
+      .where("scheduledAt", ">=", Timestamp.fromDate(now))
+      .where("scheduledAt", "<=", Timestamp.fromDate(windowEnd))
+      .get();
+
+    const tasks: Promise<void>[] = apptSnap.docs.map((doc) =>
+      _processApptReminder(doc, now)
+    );
+    await Promise.allSettled(tasks);
+  });
+
+async function _processApptReminder(
+  apptDoc: admin.firestore.QueryDocumentSnapshot,
+  now: Date
+): Promise<void> {
+  const appt = apptDoc.data();
+  const scheduledAt = (appt.scheduledAt as Timestamp | undefined)?.toDate();
+  if (!scheduledAt) return;
+
+  const minutesUntil =
+    (scheduledAt.getTime() - now.getTime()) / (60 * 1000);
+  const hoursUntil = minutesUntil / 60;
+
+  const reminders = (appt.reminders ?? {}) as Record<string, unknown>;
+  const patientId = appt.patientId as string | undefined;
+  const doctorId = appt.doctorId as string | undefined;
+  const patientName = appt.patientName as string | undefined;
+
+  if (!patientId || !doctorId) return;
+
+  const updates: Record<string, unknown> = {};
+
+  // Day-before window: 23.5h ≤ hoursUntil < 24.5h
+  if (hoursUntil >= 23.5 && hoursUntil < 24.5 && !reminders.dayBeforeSentAt) {
+    await _writeApptReminder({
+      apptId: apptDoc.id,
+      patientId,
+      doctorId,
+      patientName,
+      patientTitle: "Appointment tomorrow",
+      patientBody: "You have an appointment tomorrow. Make sure you're ready.",
+      doctorTitle: "Appointment tomorrow",
+      doctorBody: `${patientName ?? "A patient"} has an appointment with you tomorrow.`,
+    });
+    updates["reminders.dayBeforeSentAt"] = Timestamp.fromDate(now);
+  }
+
+  // Soon window: 0 ≤ minutesUntil < 30 (fires the ~15-min reminder on each 30-min poll cycle)
+  if (minutesUntil >= 0 && minutesUntil < 30 && !reminders.soonSentAt) {
+    await _writeApptReminder({
+      apptId: apptDoc.id,
+      patientId,
+      doctorId,
+      patientName,
+      patientTitle: "Appointment in about 15 minutes",
+      patientBody: "Your appointment starts in about 15 minutes. Head over now.",
+      doctorTitle: "Appointment in about 15 minutes",
+      doctorBody: `${patientName ?? "A patient"}'s appointment starts in about 15 minutes.`,
+    });
+    updates["reminders.soonSentAt"] = Timestamp.fromDate(now);
+  }
+
+  if (Object.keys(updates).length > 0) {
+    await apptDoc.ref.update(updates);
+  }
+}
+
+async function _writeApptReminder(p: _ApptReminderPayload): Promise<void> {
+  const now = new Date();
+
+  // Patient path: write notification doc → triggers sendPushOnNotification pipeline.
+  await db
+    .collection("patients")
+    .doc(p.patientId)
+    .collection("notifications")
+    .add({
+      type: "appointment",
+      title: p.patientTitle,
+      body: p.patientBody,
+      apptId: p.apptId,
+      createdAt: Timestamp.fromDate(now),
+      read: false,
+      pushSent: false,
+    });
+
+  // Doctor path: direct FCM (doctor has no notifications subcollection).
+  const doctorDoc = await db.collection("users").doc(p.doctorId).get();
+  const fcmToken = doctorDoc.data()?.fcmToken as string | undefined;
+  if (!fcmToken) return;
+
+  try {
+    await messaging.send({
+      token: fcmToken,
+      notification: {title: p.doctorTitle, body: p.doctorBody},
+      data: {
+        channel: "appointment_reminders",
+        apptId: p.apptId,
+        patientId: p.patientId,
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "appointment_reminders",
+          priority: "high",
+          sound: "default",
+        },
+      },
+      apns: {payload: {aps: {sound: "default"}}},
+    });
+  } catch (err) {
+    functions.logger.warn("Doctor appointment FCM failed", {
+      doctorId: p.doctorId,
+      apptId: p.apptId,
+      err,
+    });
+  }
+}
+
+/**
+ * Clears reminders tracking fields when scheduledAt changes on a confirmed
+ * appointment, so the rescheduled time receives fresh reminders.
+ */
+export const resetRemindersOnReschedule = onDocumentUpdated(
+  "appointments/{apptId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const beforeMs = (before.scheduledAt as Timestamp | undefined)?.toMillis();
+    const afterMs = (after.scheduledAt as Timestamp | undefined)?.toMillis();
+    if (beforeMs === afterMs) return;
+
+    await event.data!.after.ref.update({
+      reminders: admin.firestore.FieldValue.delete(),
+    });
+  }
+);
+
 async function _checkPatientMissedDoses(
   patientId: string,
+  medDocs: admin.firestore.QueryDocumentSnapshot[],
   now: Date,
   windowStart: Date
 ): Promise<void> {
-  const medsSnap = await db
-    .collection("patients")
-    .doc(patientId)
-    .collection("medicines")
-    .where("isActive", "==", true)
-    .get();
-
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  for (const medDoc of medsSnap.docs) {
+  for (const medDoc of medDocs) {
     const med = medDoc.data();
     const reminderTimes: string[] = med.reminderTimes ?? [];
     if (reminderTimes.length === 0) continue;
@@ -171,7 +340,7 @@ async function _checkPatientMissedDoses(
       const conn = connDoc.data();
       if (!conn.notifSettings?.missedDose) continue;
 
-      const caregiverDoc = await db.collection("users").doc(conn.caregiverId).get();
+      const caregiverDoc = await db.collection("users").doc(conn.caregiverUid).get();
       const fcmToken = caregiverDoc.data()?.fcmToken as string | undefined;
       if (!fcmToken) continue;
 
@@ -193,7 +362,7 @@ async function _checkPatientMissedDoses(
           apns: {payload: {aps: {sound: "default"}}},
         });
       } catch (err) {
-        functions.logger.warn("Caregiver FCM send failed", {caregiverId: conn.caregiverId, err});
+        functions.logger.warn("Caregiver FCM send failed", {caregiverUid: conn.caregiverUid, err});
       }
     }
   }

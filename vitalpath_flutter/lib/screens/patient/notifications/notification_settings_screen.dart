@@ -18,16 +18,16 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
 
 class _NotificationSettingsScreenState
     extends ConsumerState<NotificationSettingsScreen> {
-  static const _keyMeds    = 'notif_medicines';
-  static const _keyMeals   = 'notif_meals';
-  static const _keyAppts   = 'notif_appointments';
+  static const _keyMeds = 'notif_medicines';
+  static const _keyMeals = 'notif_meals';
+  static const _keyAppts = 'notif_appointments';
   static const _keyDoctors = 'notif_doctors';
 
-  bool _medicines    = true;
-  bool _meals        = true;
+  bool _medicines = true;
+  bool _meals = true;
   bool _appointments = true;
-  bool _doctors      = true;
-  bool _loaded       = false;
+  bool _doctors = true;
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -38,11 +38,11 @@ class _NotificationSettingsScreenState
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _medicines    = prefs.getBool(_keyMeds)    ?? true;
-      _meals        = prefs.getBool(_keyMeals)   ?? true;
-      _appointments = prefs.getBool(_keyAppts)   ?? true;
-      _doctors      = prefs.getBool(_keyDoctors) ?? true;
-      _loaded       = true;
+      _medicines = prefs.getBool(_keyMeds) ?? true;
+      _meals = prefs.getBool(_keyMeals) ?? true;
+      _appointments = prefs.getBool(_keyAppts) ?? true;
+      _doctors = prefs.getBool(_keyDoctors) ?? true;
+      _loaded = true;
     });
   }
 
@@ -131,9 +131,7 @@ class _NotificationSettingsScreenState
                     ),
                   ]),
                 ),
-
                 const SizedBox(height: 16),
-
                 BentoSectionHeader(title: 'Health Updates'),
                 const SizedBox(height: 8),
                 BentoCard(
@@ -145,7 +143,8 @@ class _NotificationSettingsScreenState
                           color: AppColors.primary,
                           size: 20),
                       title: 'Appointment Alerts',
-                      subtitle: 'When a doctor confirms, reschedules or cancels',
+                      subtitle:
+                          'When a doctor confirms, reschedules or cancels',
                       trailing: Switch(
                         value: _appointments,
                         onChanged: _onAppointmentsToggle,
@@ -159,7 +158,8 @@ class _NotificationSettingsScreenState
                           color: AppColors.primary,
                           size: 20),
                       title: 'Doctor Updates',
-                      subtitle: 'New prescriptions and updates from your doctors',
+                      subtitle:
+                          'New prescriptions and updates from your doctors',
                       trailing: Switch(
                         value: _doctors,
                         onChanged: _onDoctorsToggle,
@@ -169,14 +169,12 @@ class _NotificationSettingsScreenState
                     ),
                   ]),
                 ),
-
                 const SizedBox(height: 24),
-
                 const Text(
                   'Turning off a category cancels its pending reminders '
                   'and prevents new ones from being scheduled.',
-                  style: TextStyle(
-                      fontSize: 12, color: AppColors.mutedForeground),
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                 ),
               ],
             ),

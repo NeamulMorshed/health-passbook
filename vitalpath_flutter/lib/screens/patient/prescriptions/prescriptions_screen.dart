@@ -9,6 +9,9 @@ import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 
+final _rxLimitProvider = StateProvider.autoDispose<int>((ref) => 20);
+const _rxPageSize = 20;
+
 class PrescriptionsScreen extends ConsumerWidget {
   const PrescriptionsScreen({super.key});
 
@@ -28,22 +31,31 @@ class PrescriptionsScreen extends ConsumerWidget {
         data: (user) {
           if (user == null) {
             WidgetsBinding.instance.addPostFrameCallback(
-              (_) { if (context.mounted) context.go('/user-select'); },
+              (_) {
+                if (context.mounted) context.go('/user-select');
+              },
             );
             return const SizedBox.shrink();
           }
           final patientId = user.uid;
-          final rxAsync = ref.watch(patientPrescriptionsProvider(patientId));
+          final limit = ref.watch(_rxLimitProvider);
+          final rxAsync = ref.watch(
+              patientPrescriptionsProvider((patientId: patientId, limit: limit + 1)));
           return rxAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const EmptyState(
                 icon: Icons.error_outline_rounded,
                 title: 'Something went wrong',
                 subtitle: 'Pull to refresh or try again.'),
-            data: (rxList) {
+            data: (rawList) {
+              final hasMore = rawList.length > limit;
+              final rxList =
+                  hasMore ? rawList.take(limit).toList() : rawList;
               if (rxList.isEmpty) {
                 return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
+                  onRefresh: () async => ref.invalidate(
+                      patientPrescriptionsProvider(
+                          (patientId: patientId, limit: limit + 1))),
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                     children: const [
@@ -51,19 +63,48 @@ class PrescriptionsScreen extends ConsumerWidget {
                       EmptyState(
                         icon: Icons.receipt_long_outlined,
                         title: 'No Prescriptions Yet',
-                        subtitle: 'Prescriptions from your doctors will appear here.',
+                        subtitle:
+                            'Prescriptions from your doctors will appear here.',
                       ),
                     ],
                   ),
                 );
               }
               return RefreshIndicator(
-                onRefresh: () async => ref.invalidate(patientPrescriptionsProvider(patientId)),
+                onRefresh: () async => ref.invalidate(
+                    patientPrescriptionsProvider(
+                        (patientId: patientId, limit: limit + 1))),
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                  itemCount: rxList.length,
+                  itemCount: rxList.length + 1,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, i) => _RxCard(rx: rxList[i]),
+                  itemBuilder: (_, i) {
+                    if (i == rxList.length) {
+                      return hasMore
+                          ? TextButton.icon(
+                              onPressed: () => ref
+                                  .read(_rxLimitProvider.notifier)
+                                  .state += _rxPageSize,
+                              icon: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedArrowDown01,
+                                  color: AppColors.primary,
+                                  size: 18),
+                              label: const Text('Load more'),
+                            )
+                          : Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Showing all ${rxList.length} prescription${rxList.length == 1 ? '' : 's'}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.mutedForeground),
+                              ),
+                            );
+                    }
+                    return _RxCard(rx: rxList[i]);
+                  },
                 ),
               );
             },
@@ -90,7 +131,8 @@ class _RxCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
+    final hasPhoto =
+        rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
     return BentoCard(
       onTap: () => _showDetail(context),
       padding: EdgeInsets.zero,
@@ -121,8 +163,7 @@ class _RxCard extends StatelessWidget {
                       SizedBox(width: 6),
                       Text('Could not load image',
                           style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.mutedForeground)),
+                              fontSize: 12, color: AppColors.mutedForeground)),
                     ],
                   ),
                 ),
@@ -141,7 +182,10 @@ class _RxCard extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
+                    child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedMedicine01,
+                        color: AppColors.primary,
+                        size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -150,19 +194,19 @@ class _RxCard extends StatelessWidget {
                         children: [
                           Text('Dr. ${rx.doctorName}',
                               style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
+                                  fontSize: 14, fontWeight: FontWeight.w600)),
                           Text(
                             DateFormat('MMM d, y').format(rx.issuedAt),
                             style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.mutedForeground),
+                                fontSize: 12, color: AppColors.mutedForeground),
                           ),
                         ]),
                   ),
-                  HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
+                  HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowRight01,
+                      color: AppColors.mutedForeground,
+                      size: 14),
                 ]),
-
                 if (rx.diagnosis != null &&
                     (rx.diagnosis as String).isNotEmpty) ...[
                   const SizedBox(height: 10),
@@ -176,7 +220,6 @@ class _RxCard extends StatelessWidget {
                             color: AppColors.mutedForeground)),
                   ),
                 ],
-
                 const SizedBox(height: 12),
                 const Text('Medicines',
                     style: TextStyle(
@@ -184,30 +227,27 @@ class _RxCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.mutedForeground)),
                 const SizedBox(height: 6),
-                ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(children: [
-                        const Icon(Icons.circle,
-                            size: 5, color: AppColors.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '${m.name}  ${m.dosage}  •  ${m.frequency}',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
-                      ]),
-                    )),
-
-                if (rx.notes != null &&
-                    (rx.notes as String).isNotEmpty) ...[
+                ...((rx.medicines as List?)?.cast<dynamic>() ?? [])
+                    .map<Widget>((m) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(children: [
+                            const Icon(Icons.circle,
+                                size: 5, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${m.name}  ${m.dosage}  •  ${m.frequency}',
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ]),
+                        )),
+                if (rx.notes != null && (rx.notes as String).isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text('Note: ${rx.notes}',
                       style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground)),
+                          fontSize: 12, color: AppColors.mutedForeground)),
                 ],
-
                 if (hasPhoto) ...[
                   const SizedBox(height: 10),
                   const Row(children: [
@@ -215,9 +255,8 @@ class _RxCard extends StatelessWidget {
                         size: 13, color: AppColors.primary),
                     SizedBox(width: 4),
                     Text('Tap to view prescription photo',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.primary)),
+                        style:
+                            TextStyle(fontSize: 12, color: AppColors.primary)),
                   ]),
                 ],
               ],
@@ -237,8 +276,8 @@ class _RxDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = rx.documentUrl != null &&
-        (rx.documentUrl as String).isNotEmpty;
+    final hasPhoto =
+        rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -272,7 +311,10 @@ class _RxDetailSheet extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.primary, size: 24),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedNote,
+                    color: AppColors.primary,
+                    size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -281,13 +323,11 @@ class _RxDetailSheet extends StatelessWidget {
                     children: [
                       Text('Dr. ${rx.doctorName}',
                           style: const TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700)),
+                              fontSize: 17, fontWeight: FontWeight.w700)),
                       Text(
                         DateFormat('MMMM d, y').format(rx.issuedAt),
                         style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mutedForeground),
+                            fontSize: 13, color: AppColors.mutedForeground),
                       ),
                     ]),
               ),
@@ -312,43 +352,43 @@ class _RxDetailSheet extends StatelessWidget {
             const SizedBox(height: 16),
 
             const Text('Medicines',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-            ...((rx.medicines as List?)?.cast<dynamic>() ?? []).map<Widget>((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: BentoCard(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(m.name,
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
-                          if ((m.dosage as String).isNotEmpty ||
-                              (m.frequency as String).isNotEmpty)
-                            Text(
-                              [
-                                if ((m.dosage as String).isNotEmpty) m.dosage,
-                                if ((m.frequency as String).isNotEmpty)
-                                  m.frequency,
-                              ].join('  •  '),
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.mutedForeground),
-                            ),
-                          if (m.instructions != null &&
-                              (m.instructions as String).isNotEmpty)
-                            Text(m.instructions as String,
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.mutedForeground,
-                                    fontStyle: FontStyle.italic)),
-                        ]),
-                  ),
-                )),
+            ...((rx.medicines as List?)?.cast<dynamic>() ?? [])
+                .map<Widget>((m) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: BentoCard(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(m.name,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                              if ((m.dosage as String).isNotEmpty ||
+                                  (m.frequency as String).isNotEmpty)
+                                Text(
+                                  [
+                                    if ((m.dosage as String).isNotEmpty)
+                                      m.dosage,
+                                    if ((m.frequency as String).isNotEmpty)
+                                      m.frequency,
+                                  ].join('  •  '),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.mutedForeground),
+                                ),
+                              if (m.instructions != null &&
+                                  (m.instructions as String).isNotEmpty)
+                                Text(m.instructions as String,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.mutedForeground,
+                                        fontStyle: FontStyle.italic)),
+                            ]),
+                      ),
+                    )),
 
             if (rx.notes != null && (rx.notes as String).isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -357,8 +397,7 @@ class _RxDetailSheet extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: Text('Note: ${rx.notes}',
                     style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground)),
+                        fontSize: 12, color: AppColors.mutedForeground)),
               ),
             ],
 
@@ -368,9 +407,7 @@ class _RxDetailSheet extends StatelessWidget {
               const Divider(height: 1, color: AppColors.border),
               const SizedBox(height: 16),
               const Text('Prescription Photo',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () => showDialog(
@@ -385,8 +422,7 @@ class _RxDetailSheet extends StatelessWidget {
                         errorWidget: (_, __, ___) => const Padding(
                           padding: EdgeInsets.all(32),
                           child: Icon(Icons.broken_image_rounded,
-                              size: 48,
-                              color: AppColors.mutedForeground),
+                              size: 48, color: AppColors.mutedForeground),
                         ),
                       ),
                     ),
@@ -401,8 +437,7 @@ class _RxDetailSheet extends StatelessWidget {
                     placeholder: (_, __) => Container(
                       height: 180,
                       color: AppColors.muted,
-                      child:
-                          const Center(child: CircularProgressIndicator()),
+                      child: const Center(child: CircularProgressIndicator()),
                     ),
                     errorWidget: (_, __, ___) => Container(
                       height: 80,
@@ -412,8 +447,7 @@ class _RxDetailSheet extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.broken_image_rounded,
-                                size: 18,
-                                color: AppColors.mutedForeground),
+                                size: 18, color: AppColors.mutedForeground),
                             SizedBox(width: 8),
                             Text('Could not load image',
                                 style: TextStyle(
@@ -429,8 +463,7 @@ class _RxDetailSheet extends StatelessWidget {
               const SizedBox(height: 4),
               const Text('Tap to view full size',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground)),
+                      fontSize: 12, color: AppColors.mutedForeground)),
             ],
           ],
         ),

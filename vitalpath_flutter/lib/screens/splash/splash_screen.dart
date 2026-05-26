@@ -116,9 +116,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // timeout so we never block the splash indefinitely.
     String? uid = ref.read(firebaseAuthStateProvider).asData?.value?.uid;
     if (uid == null) {
-      final streamFuture = ref
-          .read(firebaseAuthStateProvider.future)
-          .then((u) => u?.uid);
+      final streamFuture =
+          ref.read(firebaseAuthStateProvider.future).then((u) => u?.uid);
       final timeoutFuture =
           Future<String?>.delayed(const Duration(seconds: 3), () => null);
       uid = await Future.any([streamFuture, timeoutFuture]);
@@ -194,7 +193,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       _SplashData(
         color: AppColors.primary,
         title: 'Take Care of Your Health Every Day',
-        subtitle: 'Track medicines, meals, and appointments easily in one simple place.',
+        subtitle:
+            'Track medicines, meals, and appointments easily in one simple place.',
       ),
       _SplashData(
         color: AppColors.success,
@@ -204,7 +204,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       _SplashData(
         color: AppColors.primary,
         title: 'Care for Loved Ones Anytime',
-        subtitle: 'Stay updated on your family\'s health and daily care routines.',
+        subtitle:
+            'Stay updated on your family\'s health and daily care routines.',
       ),
     ];
 
@@ -217,17 +218,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         onTap: _nextStep,
         child: SafeArea(
           child: FadeTransition(
-          opacity: _fadeAnim,
-          child: ScaleTransition(
-            scale: _scaleAnim,
-            child: Column(
-              children: [
-                // ── Centre content ──────────────────────────────────────────
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(
+            opacity: _fadeAnim,
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Column(
+                children: [
+                  // ── Centre content ──────────────────────────────────────────
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
                           _step == 0
                               ? 'assets/icons/Take Care of Your Health Every Day.svg'
                               : _step == 1
@@ -236,106 +237,106 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           width: 280,
                           height: 220,
                         ),
-                      const SizedBox(height: 32),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          data.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.foreground,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          data.subtitle,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.mutedForeground,
-                            height: 1.55,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Bottom section: dots + buttons ──────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Page indicator dots
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          3,
-                          (i) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: i == _step ? 24 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: i == _step
-                                  ? data.color
-                                  : data.color.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(4),
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            data.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.foreground,
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // Next / Get Started button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          onPressed: _nextStep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100)),
-                          ),
-                          child: Text(
-                            _step < 2 ? 'Next' : 'Get Started',
-                            style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
-                          ),
-                        ),
-                      ),
-
-                      // Skip link — slides 0 and 1 only
-                      if (_step < 2) ...[
                         const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _navigate,
-                          child: const Text(
-                            'Skip',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.mutedForeground),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            data.subtitle,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: AppColors.mutedForeground,
+                              height: 1.55,
+                            ),
                           ),
                         ),
-                      ] else
-                        const SizedBox(height: 48),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  // ── Bottom section: dots + buttons ──────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Page indicator dots
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            3,
+                            (i) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: i == _step ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: i == _step
+                                    ? data.color
+                                    : data.color.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Next / Get Started button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _nextStep,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100)),
+                            ),
+                            child: Text(
+                              _step < 2 ? 'Next' : 'Get Started',
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ),
+
+                        // Skip link — slides 0 and 1 only
+                        if (_step < 2) ...[
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _navigate,
+                            child: const Text(
+                              'Skip',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.mutedForeground),
+                            ),
+                          ),
+                        ] else
+                          const SizedBox(height: 48),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
         ),
       ),
     );

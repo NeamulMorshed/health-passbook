@@ -51,10 +51,14 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
 
   String get _sortLabel {
     switch (_sort) {
-      case _SortOrder.nameAsc:  return 'Name A–Z';
-      case _SortOrder.nameDesc: return 'Name Z–A';
-      case _SortOrder.ageAsc:   return 'Age ↑';
-      case _SortOrder.ageDesc:  return 'Age ↓';
+      case _SortOrder.nameAsc:
+        return 'Name A–Z';
+      case _SortOrder.nameDesc:
+        return 'Name Z–A';
+      case _SortOrder.ageAsc:
+        return 'Age ↑';
+      case _SortOrder.ageDesc:
+        return 'Age ↓';
     }
   }
 
@@ -70,21 +74,32 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
         actions: [
           PopupMenuButton<_SortOrder>(
             tooltip: 'Sort',
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedSortByDown01, color: Colors.black, size: 24),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedSortByDown01,
+                color: Colors.black,
+                size: 24),
             initialValue: _sort,
             onSelected: (v) => setState(() => _sort = v),
             itemBuilder: (_) => [
-              const PopupMenuItem(value: _SortOrder.nameAsc,  child: Text('Name A–Z')),
-              const PopupMenuItem(value: _SortOrder.nameDesc, child: Text('Name Z–A')),
-              const PopupMenuItem(value: _SortOrder.ageAsc,   child: Text('Age (youngest first)')),
-              const PopupMenuItem(value: _SortOrder.ageDesc,  child: Text('Age (oldest first)')),
+              const PopupMenuItem(
+                  value: _SortOrder.nameAsc, child: Text('Name A–Z')),
+              const PopupMenuItem(
+                  value: _SortOrder.nameDesc, child: Text('Name Z–A')),
+              const PopupMenuItem(
+                  value: _SortOrder.ageAsc,
+                  child: Text('Age (youngest first)')),
+              const PopupMenuItem(
+                  value: _SortOrder.ageDesc, child: Text('Age (oldest first)')),
             ],
           ),
         ],
       ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+        error: (_, __) => const EmptyState(
+            icon: Icons.error_outline_rounded,
+            title: 'Something went wrong',
+            subtitle: 'Pull to refresh or try again.'),
         data: (user) {
           if (user == null || user.userType != UserType.doctor) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -99,17 +114,22 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
             });
             return const Center(child: SizedBox.shrink());
           }
-          final patientsAsync = ref.watch(doctorPatientsStreamProvider(user.uid));
+          final patientsAsync =
+              ref.watch(doctorPatientsStreamProvider(user.uid));
 
           return patientsAsync.when(
             loading: () => const _ShimmerPatientList(),
-            error: (_, __) => const EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'),
+            error: (_, __) => const EmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Something went wrong',
+                subtitle: 'Pull to refresh or try again.'),
             data: (patients) {
               if (patients.isEmpty) {
                 return const EmptyState(
                   icon: Icons.people_outline_rounded,
                   title: 'No Patients Yet',
-                  subtitle: 'Patients will appear here once they book an appointment with you or connect via My Doctors.',
+                  subtitle:
+                      'Patients will appear here once they book an appointment with you or connect via My Doctors.',
                 );
               }
 
@@ -121,10 +141,14 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                   Container(
                     width: double.infinity,
                     color: AppColors.primaryTint,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     child: const Text(
                       'Select a patient to write a prescription',
-                      style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
 
@@ -136,10 +160,16 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                     onChanged: (v) => setState(() => _query = v.trim()),
                     decoration: InputDecoration(
                       hintText: 'Search patients by name…',
-                      prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: Colors.black, size: 20),
+                      prefixIcon: HugeIcon(
+                          icon: HugeIcons.strokeRoundedSearch01,
+                          color: Colors.black,
+                          size: 20),
                       suffixIcon: _query.isNotEmpty
                           ? IconButton(
-                              icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: Colors.black, size: 18),
+                              icon: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedCancel01,
+                                  color: Colors.black,
+                                  size: 18),
                               onPressed: () {
                                 _searchCtrl.clear();
                                 setState(() => _query = '');
@@ -163,12 +193,14 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                   child: Row(children: [
                     Text(
                       '${visible.length} patient${visible.length == 1 ? '' : 's'}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground),
                     ),
                     const Spacer(),
                     Text(
                       'Sorted: $_sortLabel',
-                      style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground),
                     ),
                   ]),
                 ),
@@ -178,16 +210,20 @@ class _DocPatientsScreenState extends ConsumerState<DocPatientsScreen> {
                 Expanded(
                   child: visible.isEmpty
                       ? EmptyState(
-                          iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, color: AppColors.mutedForeground, size: 40),
+                          iconWidget: HugeIcon(
+                              icon: HugeIcons.strokeRoundedSearch01,
+                              color: AppColors.mutedForeground,
+                              size: 40),
                           title: 'No Match',
                           subtitle: 'Try a different name.',
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
                           itemCount: visible.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (_, i) =>
-                              _PatientCard(patient: visible[i], doctorId: user.uid),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (_, i) => _PatientCard(
+                              patient: visible[i], doctorId: user.uid),
                         ),
                 ),
               ]);
@@ -216,13 +252,13 @@ class _PatientCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(patient.name,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Row(children: [
                 if (patient.age != null) _InfoChip('${patient.age} yrs'),
                 if (patient.age != null) const SizedBox(width: 6),
-                if (patient.bloodType != null)
-                  _InfoChip(patient.bloodType!),
+                if (patient.bloodType != null) _InfoChip(patient.bloodType!),
                 if (patient.bloodType != null) const SizedBox(width: 6),
                 if (patient.conditions.isNotEmpty)
                   _InfoChip(patient.conditions.first),
@@ -236,7 +272,10 @@ class _PatientCard extends ConsumerWidget {
               size: 18, color: AppColors.destructive),
           onPressed: () => _confirmRemove(context, ref),
         ),
-        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedArrowRight01,
+            color: AppColors.mutedForeground,
+            size: 14),
       ]),
     );
   }
@@ -253,7 +292,8 @@ class _PatientCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.destructive),
                 onPressed: () async {
                   Navigator.pop(dialogCtx);
                   try {
@@ -261,11 +301,13 @@ class _PatientCard extends ConsumerWidget {
                         .read(connectionNotifierProvider.notifier)
                         .remove(patient.uid, doctorId);
                     if (context.mounted) {
-                      showAppSnack(context, '${patient.name} removed from your list.');
+                      showAppSnack(
+                          context, '${patient.name} removed from your list.');
                     }
                   } catch (_) {
                     if (context.mounted) {
-                      showAppSnack(context, 'Failed to remove patient. Please try again.');
+                      showAppSnack(context,
+                          'Failed to remove patient. Please try again.');
                     }
                   }
                 },
@@ -291,10 +333,13 @@ class _InfoChip extends StatelessWidget {
   const _InfoChip(this.label);
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
-    child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+            color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
+        child: Text(label,
+            style: const TextStyle(
+                fontSize: 12, color: AppColors.mutedForeground)),
+      );
 }
 
 class _ShimmerPatientList extends StatelessWidget {

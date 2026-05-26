@@ -40,14 +40,14 @@ class ScannedMedicine {
 
   factory ScannedMedicine.fromMap(Map<String, dynamic> map) {
     return ScannedMedicine(
-      name:      (map['name']      as String?)?.trim() ?? '',
-      dosage:    (map['dosage']    as String?)?.trim().isNotEmpty == true
-                     ? (map['dosage'] as String).trim()
-                     : 'As directed',
+      name: (map['name'] as String?)?.trim() ?? '',
+      dosage: (map['dosage'] as String?)?.trim().isNotEmpty == true
+          ? (map['dosage'] as String).trim()
+          : 'As directed',
       frequency: _normalise((map['frequency'] as String?) ?? ''),
-      duration:  (map['duration']  as String?)?.trim(),
-      notes:     (map['notes']     as String?)?.trim(),
-      uncertain: (map['uncertain'] as bool?)   ?? false,
+      duration: (map['duration'] as String?)?.trim(),
+      notes: (map['notes'] as String?)?.trim(),
+      uncertain: (map['uncertain'] as bool?) ?? false,
     );
   }
 
@@ -57,7 +57,10 @@ class ScannedMedicine {
     if (l.contains('twice') || l.contains('two') || l == 'bd' || l == 'bid') {
       return AppConstants.freqTwice;
     }
-    if (l.contains('three') || l.contains('thrice') || l == 'tds' || l == 'tid') {
+    if (l.contains('three') ||
+        l.contains('thrice') ||
+        l == 'tds' ||
+        l == 'tid') {
       return AppConstants.freqThrice;
     }
     if (l.contains('need') || l == 'prn' || l == 'sos') {
@@ -82,9 +85,9 @@ class PrescriptionAiService {
   String _mediaType(File file) {
     final ext = file.path.split('.').last.toLowerCase();
     const map = {
-      'jpg':  'image/jpeg',
+      'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
-      'png':  'image/png',
+      'png': 'image/png',
       'webp': 'image/webp',
       'heic': 'image/heic',
     };
@@ -112,19 +115,19 @@ class PrescriptionAiService {
       if (compressed != null) processFile = File(compressed.path);
     }
 
-    final bytes  = await processFile.readAsBytes();
-    final b64    = base64Encode(bytes);
+    final bytes = await processFile.readAsBytes();
+    final b64 = base64Encode(bytes);
 
     final response = await http
         .post(
           Uri.parse(_endpoint),
           headers: {
-            'Content-Type':      'application/json',
-            'x-api-key':         kClaudeApiKey,
+            'Content-Type': 'application/json',
+            'x-api-key': kClaudeApiKey,
             'anthropic-version': '2023-06-01',
           },
           body: jsonEncode({
-            'model':      _model,
+            'model': _model,
             'max_tokens': _maxTokens,
             'messages': [
               {
@@ -133,10 +136,10 @@ class PrescriptionAiService {
                   {
                     'type': 'image',
                     'source': {
-                      'type':       'base64',
+                      'type': 'base64',
                       // PR1: Use dynamic media type instead of hardcoded 'image/jpeg'.
                       'media_type': _mediaType(imageFile),
-                      'data':        b64,
+                      'data': b64,
                     },
                   },
                   {'type': 'text', 'text': _prompt},
@@ -151,7 +154,7 @@ class PrescriptionAiService {
       throw Exception('AI scan failed — HTTP ${response.statusCode}');
     }
 
-    final body    = jsonDecode(response.body) as Map<String, dynamic>;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
     final rawText = (body['content'] as List).first['text'] as String;
 
     // Claude is asked to return bare JSON, but add a safety net for fences.

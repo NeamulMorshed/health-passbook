@@ -11,46 +11,56 @@ import 'auth_provider.dart';
 const _uuid = Uuid();
 
 // ─── Doctor Profile ───────────────────────────────────────────────────────────
-final doctorProfileProvider = FutureProvider.family<DoctorProfile?, String>((ref, uid) async {
+final doctorProfileProvider =
+    FutureProvider.family<DoctorProfile?, String>((ref, uid) async {
   return ref.watch(firestoreServiceProvider).getDoctor(uid);
 });
 
 // ─── Doctor Appointments ──────────────────────────────────────────────────────
-final doctorAppointmentsProvider = StreamProvider.family<List<Appointment>, String>((ref, doctorId) {
+final doctorAppointmentsProvider =
+    StreamProvider.family<List<Appointment>, String>((ref, doctorId) {
   return ref.watch(firestoreServiceProvider).watchDoctorAppointments(doctorId);
 });
 
 // ─── My Doctors (patient's connected doctors via subcollection) ───────────────
-final myDoctorsProvider = StreamProvider.family<List<DoctorProfile>, String>((ref, patientId) {
+final myDoctorsProvider =
+    StreamProvider.family<List<DoctorProfile>, String>((ref, patientId) {
   return ref.watch(firestoreServiceProvider).watchMyDoctors(patientId);
 });
 
 // ─── Doctor's Patient List (stream via connections subcollection) ─────────────
-final doctorPatientsStreamProvider = StreamProvider.family<List<PatientProfile>, String>((ref, doctorId) {
+final doctorPatientsStreamProvider =
+    StreamProvider.family<List<PatientProfile>, String>((ref, doctorId) {
   return ref.watch(firestoreServiceProvider).watchDoctorPatients(doctorId);
 });
 
 // ─── Doctor's Patient Count (live badge on dashboard) ────────────────────────
-final doctorPatientCountProvider = StreamProvider.family<int, String>((ref, doctorId) {
+final doctorPatientCountProvider =
+    StreamProvider.family<int, String>((ref, doctorId) {
   return ref.watch(firestoreServiceProvider).watchDoctorPatientCount(doctorId);
 });
 
 // ─── Search Doctors (for patients) ───────────────────────────────────────────
 typedef DoctorSearchKey = ({String nameQuery, String specialty, String city});
 
-final doctorSearchProvider = FutureProvider.family<List<DoctorProfile>, DoctorSearchKey>((ref, key) async {
+final doctorSearchProvider =
+    FutureProvider.family<List<DoctorProfile>, DoctorSearchKey>(
+        (ref, key) async {
   return ref.watch(firestoreServiceProvider).searchDoctors(
-    specialty: key.specialty.isEmpty ? null : key.specialty,
-    nameQuery: key.nameQuery.isEmpty ? null : key.nameQuery,
-    city: key.city.isEmpty || key.city == 'All' ? null : key.city,
-  );
+        specialty: key.specialty.isEmpty ? null : key.specialty,
+        nameQuery: key.nameQuery.isEmpty ? null : key.nameQuery,
+        city: key.city.isEmpty || key.city == 'All' ? null : key.city,
+      );
 });
 
 // ─── Connection check (for patient view route guard) ─────────────────────────
 typedef ConnectionKey = ({String doctorId, String patientId});
 
-final connectionCheckProvider = StreamProvider.family<bool, ConnectionKey>((ref, key) {
-  return ref.watch(firestoreServiceProvider).watchConnection(key.doctorId, key.patientId);
+final connectionCheckProvider =
+    StreamProvider.family<bool, ConnectionKey>((ref, key) {
+  return ref
+      .watch(firestoreServiceProvider)
+      .watchConnection(key.doctorId, key.patientId);
 });
 
 // ─── Connection removal notifier ─────────────────────────────────────────────
@@ -133,7 +143,8 @@ class DoctorAppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final doctorAppointmentNotifierProvider = StateNotifierProvider<DoctorAppointmentNotifier, AsyncValue<void>>((ref) {
+final doctorAppointmentNotifierProvider =
+    StateNotifierProvider<DoctorAppointmentNotifier, AsyncValue<void>>((ref) {
   return DoctorAppointmentNotifier(ref.watch(firestoreServiceProvider));
 });
 
@@ -170,15 +181,20 @@ class PrescriptionNotifier extends StateNotifier<AsyncValue<void>> {
   }
 }
 
-final prescriptionNotifierProvider = StateNotifierProvider<PrescriptionNotifier, AsyncValue<void>>((ref) {
+final prescriptionNotifierProvider =
+    StateNotifierProvider<PrescriptionNotifier, AsyncValue<void>>((ref) {
   return PrescriptionNotifier(ref.watch(firestoreServiceProvider));
 });
 
 // ─── Consultation Notes ───────────────────────────────────────────────────────
 typedef ConsultationNotesKey = ({String patientId, String doctorId});
 
-final consultationNotesProvider = StreamProvider.family<List<ConsultationNote>, ConsultationNotesKey>((ref, key) {
-  return ref.watch(firestoreServiceProvider).watchConsultationNotes(key.patientId, key.doctorId);
+final consultationNotesProvider =
+    StreamProvider.family<List<ConsultationNote>, ConsultationNotesKey>(
+        (ref, key) {
+  return ref
+      .watch(firestoreServiceProvider)
+      .watchConsultationNotes(key.patientId, key.doctorId);
 });
 
 class ConsultationNoteNotifier extends StateNotifier<AsyncValue<void>> {

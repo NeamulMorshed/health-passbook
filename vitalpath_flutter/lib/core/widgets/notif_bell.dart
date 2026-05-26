@@ -16,30 +16,46 @@ class NotifBell extends ConsumerWidget {
     final uid = ref.watch(currentUserProvider).asData?.value?.uid;
     if (uid == null) return const SizedBox.shrink();
     final count = ref
-        .watch(notificationsProvider(uid))
-        .asData
-        ?.value
-        .where((n) => !n.isRead)
-        .length ?? 0;
+            .watch(notificationsProvider(uid))
+            .asData
+            ?.value
+            .where((n) => !n.isRead)
+            .length ??
+        0;
 
     return Stack(
       alignment: Alignment.center,
       children: [
         IconButton(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: Colors.black, size: 24),
+          icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedBellDot,
+              color: Colors.black,
+              size: 24),
           tooltip: 'Notifications',
           onPressed: () => context.push('/notifications'),
         ),
         if (count > 0)
           Positioned(
-            top: 10,
-            right: 10,
+            top: 8,
+            right: 8,
             child: Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
+              constraints:
+                  const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 5),
+              decoration: BoxDecoration(
                 color: AppColors.destructive,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  count > 9 ? '9+' : '$count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
               ),
             ),
           ),

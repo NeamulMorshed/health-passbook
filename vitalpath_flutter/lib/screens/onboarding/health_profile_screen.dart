@@ -13,7 +13,8 @@ import 'package:hugeicons/hugeicons.dart';
 class HealthProfileScreen extends ConsumerStatefulWidget {
   const HealthProfileScreen({super.key});
   @override
-  ConsumerState<HealthProfileScreen> createState() => _HealthProfileScreenState();
+  ConsumerState<HealthProfileScreen> createState() =>
+      _HealthProfileScreenState();
 }
 
 class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
@@ -32,9 +33,11 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
   // Step 3 fields
   final List<String> _selectedConditions = [];
-  final _allergiesCtrl   = TextEditingController();
-  final _ecNameCtrl      = TextEditingController();
-  final _ecPhoneCtrl     = TextEditingController();
+  final List<String> _selectedAllergies = [];
+  final _otherAllergiesCtrl = TextEditingController();
+  final _ecNameCtrl = TextEditingController();
+  final _ecPhoneCtrl = TextEditingController();
+  String? _selectedEcRelationship;
 
   Future<void> _pickDob() async {
     final now = DateTime.now();
@@ -54,7 +57,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
     _nameCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
-    _allergiesCtrl.dispose();
+    _otherAllergiesCtrl.dispose();
     _ecNameCtrl.dispose();
     _ecPhoneCtrl.dispose();
     super.dispose();
@@ -62,9 +65,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
 
   void _next() {
     if (_page == 0 && _nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your name to continue.')),
-      );
+      AppSnackBar.info(context, 'Please enter your name to continue.');
       return;
     }
     if (_page < 2) {
@@ -135,27 +136,34 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
       // Fix M — Build the profile map without including dateOfBirth when null
       // (omitting the key entirely avoids writing null to Firestore).
       final profileData = <String, dynamic>{
-        'name':             _nameCtrl.text.trim(),
-        'weight':           double.tryParse(_weightCtrl.text),
-        'height':           double.tryParse(_heightCtrl.text),
-        'bloodType':        _selectedBlood,
-        'conditions':       _selectedConditions,
-        'allergies':        _allergiesCtrl.text.trim().isEmpty
-            ? null
-            : _allergiesCtrl.text.trim(),
-        'emergencyContact': _ecNameCtrl.text.trim().isEmpty &&
-                _ecPhoneCtrl.text.trim().isEmpty
-            ? null
-            : EmergencyContact(
-                name: _ecNameCtrl.text.trim(),
-                phone: _ecPhoneCtrl.text.trim(),
-              ).toMap(),
+        'name': _nameCtrl.text.trim(),
+        'weight': double.tryParse(_weightCtrl.text),
+        'height': double.tryParse(_heightCtrl.text),
+        'bloodType': _selectedBlood,
+        'conditions': _selectedConditions,
+        'allergies': [
+          ..._selectedAllergies.where((a) => a != 'None'),
+          ..._otherAllergiesCtrl.text
+              .split(RegExp(r'[,;]'))
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty),
+        ],
+        'emergencyContact':
+            _ecNameCtrl.text.trim().isEmpty && _ecPhoneCtrl.text.trim().isEmpty
+                ? null
+                : EmergencyContact(
+                    name: _ecNameCtrl.text.trim(),
+                    phone: _ecPhoneCtrl.text.trim(),
+                    relationship: _selectedEcRelationship ?? '',
+                  ).toMap(),
       };
       if (_dob != null) {
         profileData['dateOfBirth'] = Timestamp.fromDate(_dob!);
       }
 
-      await ref.read(firestoreServiceProvider).updatePatientProfile(uid, profileData);
+      await ref
+          .read(firestoreServiceProvider)
+          .updatePatientProfile(uid, profileData);
       await ref.read(firestoreServiceProvider).updateUserProfile(uid, {
         'name': _nameCtrl.text.trim(),
       });
@@ -164,10 +172,7 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
     } catch (e) {
       // Fix H — surface Firestore errors to the user.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Failed to save profile. Please try again.')),
-        );
+        AppSnackBar.error(context, 'Failed to save profile. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -184,7 +189,8 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
         title: const Text('Health Profile'),
         automaticallyImplyLeading: false,
         leading: _page > 0
-            ? IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: _back)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded), onPressed: _back)
             : null,
       ),
       body: LoadingOverlay(
@@ -194,20 +200,27 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
           // ── Progress bar ──────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: List.generate(3, (i) => Expanded(
-                child: Container(
-                  height: 4,
-                  margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                  decoration: BoxDecoration(
-                    color: i <= _page ? AppColors.primary : AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ))),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(
+                  children: List.generate(
+                      3,
+                      (i) => Expanded(
+                            child: Container(
+                              height: 4,
+                              margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                              decoration: BoxDecoration(
+                                color: i <= _page
+                                    ? AppColors.primary
+                                    : AppColors.border,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ))),
               const SizedBox(height: 6),
               Text('Step ${_page + 1} of 3 — ${steps[_page]}',
-                  style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.mutedForeground)),
             ]),
           ),
 
@@ -226,9 +239,26 @@ class _HealthProfileScreenState extends ConsumerState<HealthProfileScreen> {
                 ),
                 _Step3(
                   selectedConditions: _selectedConditions,
-                  allergiesCtrl: _allergiesCtrl,
+                  selectedAllergies: _selectedAllergies,
+                  otherAllergiesCtrl: _otherAllergiesCtrl,
                   ecNameCtrl: _ecNameCtrl,
                   ecPhoneCtrl: _ecPhoneCtrl,
+                  ecRelationship: _selectedEcRelationship,
+                  onEcRelationshipChanged: (v) =>
+                      setState(() => _selectedEcRelationship = v),
+                  onAllergyChanged: (a, selected) => setState(() {
+                    if (a == 'None') {
+                      _selectedAllergies.clear();
+                      if (selected) _selectedAllergies.add('None');
+                    } else {
+                      _selectedAllergies.remove('None');
+                      if (selected) {
+                        _selectedAllergies.add(a);
+                      } else {
+                        _selectedAllergies.remove(a);
+                      }
+                    }
+                  }),
                   onConditionChanged: (c, selected) => setState(() {
                     if (c == 'None') {
                       _selectedConditions.clear();
@@ -279,11 +309,13 @@ class _Step1 extends StatelessWidget {
   final TextEditingController nameCtrl;
   final DateTime? dob;
   final VoidCallback onPickDob;
-  const _Step1({required this.nameCtrl, required this.dob, required this.onPickDob});
+  const _Step1(
+      {required this.nameCtrl, required this.dob, required this.onPickDob});
 
   @override
   Widget build(BuildContext context) {
-    final dobLabel = dob != null ? DateFormat('d MMM yyyy').format(dob!) : 'Tap to select';
+    final dobLabel =
+        dob != null ? DateFormat('d MMM yyyy').format(dob!) : 'Tap to select';
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
@@ -302,15 +334,19 @@ class _Step1 extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           child: InputDecorator(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.cake_outlined, size: 20, color: AppColors.mutedForeground),
+              prefixIcon: const Icon(Icons.cake_outlined,
+                  size: 20, color: AppColors.mutedForeground),
               border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               hintText: 'Tap to select',
             ),
             child: Text(
               dobLabel,
               style: TextStyle(
-                color: dob != null ? AppColors.foreground : AppColors.mutedForeground,
+                color: dob != null
+                    ? AppColors.foreground
+                    : AppColors.mutedForeground,
               ),
             ),
           ),
@@ -337,26 +373,35 @@ class _Step2 extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
-        _infoBox('Optional — helps calculate BMI and personalise health insights.'),
+        _infoBox(
+            'Optional — helps calculate BMI and personalise health insights.'),
         const SizedBox(height: 24),
         Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _label('Weight (kg)'),
-            TextField(
-              controller: weightCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: 'e.g. 65'),
-            ),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                _label('Weight (kg)'),
+                TextField(
+                  controller: weightCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(hintText: 'e.g. 65'),
+                ),
+              ])),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _label('Height (cm)'),
-            TextField(
-              controller: heightCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: 'e.g. 170'),
-            ),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                _label('Height (cm)'),
+                TextField(
+                  controller: heightCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(hintText: 'e.g. 170'),
+                ),
+              ])),
         ]),
         const SizedBox(height: 16),
         _label('Blood Type'),
@@ -377,21 +422,46 @@ class _Step2 extends StatelessWidget {
 // ── Step 3: Medical Details ────────────────────────────────────────────────────
 class _Step3 extends StatelessWidget {
   final List<String> selectedConditions;
-  final TextEditingController allergiesCtrl;
+  final List<String> selectedAllergies;
+  final TextEditingController otherAllergiesCtrl;
   final TextEditingController ecNameCtrl;
   final TextEditingController ecPhoneCtrl;
+  final String? ecRelationship;
+  final ValueChanged<String?> onEcRelationshipChanged;
+  final void Function(String allergy, bool selected) onAllergyChanged;
   final void Function(String condition, bool selected) onConditionChanged;
 
   static const _conditions = [
-    'Diabetes', 'Hypertension', 'Asthma', 'Heart Disease',
-    'Thyroid', 'Kidney Disease', 'Arthritis', 'None',
+    'Diabetes',
+    'Hypertension',
+    'Asthma',
+    'Heart Disease',
+    'Thyroid',
+    'Kidney Disease',
+    'Arthritis',
+    'None',
+  ];
+
+  static const _commonAllergies = [
+    'Penicillin',
+    'Aspirin',
+    'NSAIDs',
+    'Sulfa',
+    'Latex',
+    'Peanuts',
+    'Shellfish',
+    'None',
   ];
 
   const _Step3({
     required this.selectedConditions,
-    required this.allergiesCtrl,
+    required this.selectedAllergies,
+    required this.otherAllergiesCtrl,
     required this.ecNameCtrl,
     required this.ecPhoneCtrl,
+    required this.ecRelationship,
+    required this.onEcRelationshipChanged,
+    required this.onAllergyChanged,
     required this.onConditionChanged,
   });
 
@@ -400,7 +470,8 @@ class _Step3 extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
-        _infoBox('Optional — helps your doctor understand your background at a glance.'),
+        _infoBox(
+            'Optional — helps your doctor understand your background at a glance.'),
         const SizedBox(height: 24),
         _label('Medical Conditions'),
         Wrap(
@@ -423,9 +494,31 @@ class _Step3 extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _label('Allergies (optional)'),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _commonAllergies.map((a) {
+            final selected = selectedAllergies.contains(a);
+            return FilterChip(
+              label: Text(a),
+              selected: selected,
+              onSelected: (v) => onAllergyChanged(a, v),
+              selectedColor: AppColors.warning.withValues(alpha: 0.15),
+              checkmarkColor: AppColors.warning,
+              labelStyle: TextStyle(
+                color: selected ? AppColors.warning : AppColors.foreground,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 10),
         TextField(
-          controller: allergiesCtrl,
-          decoration: const InputDecoration(hintText: 'e.g. Penicillin, Peanuts'),
+          controller: otherAllergiesCtrl,
+          decoration: const InputDecoration(
+            hintText: 'Other (comma-separated)',
+            labelText: 'Other allergies',
+          ),
         ),
         const SizedBox(height: 16),
         _label('Emergency Contact (optional)'),
@@ -446,6 +539,16 @@ class _Step3 extends StatelessWidget {
             hintText: 'e.g. +1 555 0000',
           ),
         ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          initialValue: ecRelationship,
+          hint: const Text('Relationship (optional)'),
+          decoration: const InputDecoration(labelText: 'Relationship'),
+          items: AppConstants.relationships
+              .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+              .toList(),
+          onChanged: onEcRelationshipChanged,
+        ),
       ],
     );
   }
@@ -456,7 +559,9 @@ Widget _label(String t) => Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(t,
           style: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.foreground)),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.foreground)),
     );
 
 Widget _infoBox(String text) => Container(
@@ -465,11 +570,14 @@ Widget _infoBox(String text) => Container(
           color: AppColors.primary.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.primary, size: 18),
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedInformationCircle,
+            color: AppColors.primary,
+            size: 18),
         const SizedBox(width: 10),
         Expanded(
             child: Text(text,
-                style: const TextStyle(
-                    fontSize: 13, color: AppColors.primary))),
+                style:
+                    const TextStyle(fontSize: 13, color: AppColors.primary))),
       ]),
     );

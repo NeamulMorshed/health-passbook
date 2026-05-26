@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/gamification_provider.dart';
+import '../../../models/gamification.dart';
 import '../../../models/app_user.dart';
 import '../../../models/family_member.dart';
 import '../../../models/medicine.dart';
@@ -21,6 +22,19 @@ import '../care/care_screen.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../core/widgets/onboarding_tour.dart';
 import '../../../providers/caregiver_provider.dart';
+import '../../../core/widgets/freshness_timestamp.dart';
+
+// Session-only: dismissed state resets each app launch — no SharedPreferences needed.
+final _statusLegendDismissedProvider = StateProvider<bool>((_) => false);
+
+final _homeLastRefreshedProvider =
+    StateProvider<DateTime>((_) => DateTime.now());
+
+class _MemberStatus {
+  final Color color;
+  final String tooltip;
+  const _MemberStatus({required this.color, required this.tooltip});
+}
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -30,21 +44,25 @@ class HomeScreen extends ConsumerWidget {
     final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (_, __) => const Scaffold(
           body: Center(
               child: EmptyState(
                   icon: Icons.wifi_off_rounded,
                   title: 'Can\'t connect right now',
-                  subtitle: 'Check your internet connection and pull to refresh.'))),
+                  subtitle:
+                      'Check your internet connection and pull to refresh.'))),
       data: (user) {
         if (user == null) {
-          WidgetsBinding.instance.addPostFrameCallback(
-              (_) { if (context.mounted) context.go('/user-select'); });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) context.go('/user-select');
+          });
           return const Scaffold(body: SizedBox.shrink());
         }
-        WidgetsBinding.instance.addPostFrameCallback(
-            (_) { if (context.mounted) maybeShowOnboardingTour(context); });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) maybeShowOnboardingTour(context);
+        });
         return _HomeContent(user: user);
       },
     );
@@ -73,15 +91,20 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
         color: AppColors.warningLight,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.warning, size: 18),
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedAlertDiamond,
+              color: AppColors.warning,
+              size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Notifications off',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 2),
               const Text('Enable to receive medicine reminders.',
-                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.mutedForeground)),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: () async {
@@ -89,15 +112,23 @@ class _NotifPermBannerState extends ConsumerState<_NotifPermBanner> {
                   ref.invalidate(notifPermGrantedProvider);
                 },
                 child: const Text('Open Settings',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary, decoration: TextDecoration.underline)),
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline)),
               ),
             ]),
           ),
           IconButton(
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.textTertiary, size: 16),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedCancel01,
+                color: AppColors.textTertiary,
+                size: 16),
             onPressed: () => setState(() => _dismissed = true),
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             padding: EdgeInsets.zero,
+            tooltip: 'Dismiss',
           ),
         ]),
       ),
@@ -113,32 +144,48 @@ class _PendingInviteBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (email.isEmpty) return const SizedBox.shrink();
-    final invites = ref.watch(pendingInvitesForEmailProvider(email)).asData?.value ?? [];
+    final invites =
+        ref.watch(pendingInvitesForEmailProvider(email)).asData?.value ?? [];
     if (invites.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      children: invites.map((inv) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: BentoCard(
-          color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          onTap: () => context.go('/accept-invite', extra: inv),
-          child: Row(children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${inv.patientName} invited you to their Care Circle',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                const SizedBox(height: 2),
-                const Text('Tap to view and accept or decline',
-                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-              ]),
-            ),
-            HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: const Color(0xFF7C3AED), size: 16),
-          ]),
-        ),
-      )).toList(),
+      children: invites
+          .map((inv) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: BentoCard(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  onTap: () => context.go('/accept-invite', extra: inv),
+                  child: Row(children: [
+                    HugeIcon(
+                        icon: HugeIcons.strokeRoundedShield01,
+                        color: const Color(0xFF7C3AED),
+                        size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                '${inv.patientName} invited you to their Care Circle',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 2),
+                            const Text('Tap to view and accept or decline',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.mutedForeground)),
+                          ]),
+                    ),
+                    HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        color: const Color(0xFF7C3AED),
+                        size: 16),
+                  ]),
+                ),
+              ))
+          .toList(),
     );
   }
 }
@@ -155,14 +202,16 @@ class _HomeContent extends ConsumerWidget {
     final medsAsync = ref.watch(medicinesProvider(user.uid));
     final mealsAsync = ref.watch(todayMealsProvider(user.uid));
     ref.watch(activityLogsProvider(user.uid));
-    final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
+    final apptsAsync = ref
+        .watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
     ref.watch(vitalsProvider(user.uid));
     final gamAsync = ref.watch(gamificationProvider(user.uid));
 
     // Bug 6 fix: restore medicine reminders after a reinstall (OS wipes alarms).
     ref.listen(medicinesProvider(user.uid), (_, next) {
       next.whenData((medicines) {
-        ref.read(notificationServiceProvider)
+        ref
+            .read(notificationServiceProvider)
             .rescheduleAllRemindersIfNeeded(user.uid, medicines);
       });
     });
@@ -178,11 +227,16 @@ class _HomeContent extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_greeting(), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+            Text(_greeting(),
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground)),
             const SizedBox(height: 1),
             Text(
               user.name.isNotEmpty ? user.name : 'Patient',
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.foreground),
+              style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.foreground),
             ),
           ],
         ),
@@ -193,9 +247,11 @@ class _HomeContent extends ConsumerWidget {
           ref.invalidate(medicinesProvider(user.uid));
           ref.invalidate(todayMealsProvider(user.uid));
           ref.invalidate(activityLogsProvider(user.uid));
-          ref.invalidate(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
+          ref.invalidate(
+              patientAppointmentsProvider((patientId: user.uid, limit: 50)));
           ref.invalidate(vitalsProvider(user.uid));
           ref.invalidate(gamificationProvider(user.uid));
+          ref.read(_homeLastRefreshedProvider.notifier).state = DateTime.now();
         },
         child: CustomScrollView(
           slivers: [
@@ -203,9 +259,29 @@ class _HomeContent extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 90),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  // ── FRESHNESS ─────────────────────────────────────────────
+                  FreshnessTimestamp(
+                      lastUpdated: ref.watch(_homeLastRefreshedProvider)),
+                  const SizedBox(height: 12),
+
+                  // ── GET STARTED (new users only) ─────────────────────────
+                  if ((medsAsync.asData?.value.isEmpty ?? false) &&
+                      (apptsAsync.asData?.value.isEmpty ?? false)) ...[
+                    _GetStartedGuide(),
+                    const SizedBox(height: 12),
+                  ],
 
                   // ── AWARENESS CARD ────────────────────────────────────────
                   _DailyAwarenessCard(uid: user.uid),
+                  const SizedBox(height: 12),
+
+                  // ── TODAY'S ACTIONS ───────────────────────────────────────
+                  _UpcomingTasksCard(uid: user.uid),
+                  const SizedBox(height: 12),
+
+                  // ── ALERTS ────────────────────────────────────────────────
+                  const _NotifPermBanner(),
+                  _PendingInviteBanner(email: user.email ?? ''),
 
                   // ── SNAPSHOT ──────────────────────────────────────────────
                   _DailySnapshotRow(
@@ -215,20 +291,15 @@ class _HomeContent extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // ── ALERTS ────────────────────────────────────────────────
-                  const _NotifPermBanner(),
-                  _PendingInviteBanner(email: user.email ?? ''),
-
-                  // ── TODAY'S ACTIONS ───────────────────────────────────────
-                  _UpcomingTasksCard(uid: user.uid),
-                  const SizedBox(height: 12),
-
                   // ── DAILY STATUS ──────────────────────────────────────────
                   _CaregiversActiveBanner(uid: user.uid),
                   const SizedBox(height: 12),
 
                   // ── CONTEXT ───────────────────────────────────────────────
-                  _TimeContextualCard(uid: user.uid, medsAsync: medsAsync, mealsAsync: mealsAsync),
+                  _TimeContextualCard(
+                      uid: user.uid,
+                      medsAsync: medsAsync,
+                      mealsAsync: mealsAsync),
                   const SizedBox(height: 12),
                   _RefillCountdownCard(medsAsync: medsAsync),
 
@@ -245,18 +316,36 @@ class _HomeContent extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [const Color(0xFF0EA5E9).withValues(alpha: 0.85), const Color(0xFF6366F1).withValues(alpha: 0.85)],
+                          colors: [
+                            const Color(0xFF0EA5E9).withValues(alpha: 0.85),
+                            const Color(0xFF6366F1).withValues(alpha: 0.85)
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(children: [
-                        HugeIcon(icon: HugeIcons.strokeRoundedSparkles, color: Colors.white, size: 24),
+                        HugeIcon(
+                            icon: HugeIcons.strokeRoundedSparkles,
+                            color: Colors.white,
+                            size: 24),
                         const SizedBox(width: 14),
-                        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('AI Health Insights', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                          Text('Personalised suggestions from Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        ])),
-                        HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: Colors.white70, size: 14),
+                        const Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('AI Health Insights',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                              Text('Personalised suggestions from Claude AI',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                            ])),
+                        HugeIcon(
+                            icon: HugeIcons.strokeRoundedArrowRight01,
+                            color: Colors.white70,
+                            size: 14),
                       ]),
                     ),
                   ),
@@ -286,25 +375,38 @@ class _CaregiversActiveBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connections = ref.watch(patientCaregiverConnectionsProvider(uid)).asData?.value ?? [];
-    final connected = connections.where((c) => c.status == 'connected').toList();
+    final connections =
+        ref.watch(patientCaregiverConnectionsProvider(uid)).asData?.value ?? [];
+    final connected =
+        connections.where((c) => c.status == 'connected').toList();
     if (connected.isEmpty) return const SizedBox.shrink();
 
-    final names = connected.map((c) => c.caregiverName?.split(' ').first ?? c.caregiverEmail).take(2).join(' & ');
+    final names = connected
+        .map((c) => c.caregiverName?.split(' ').first ?? c.caregiverEmail)
+        .take(2)
+        .join(' & ');
     final verb = connected.length == 1 ? 'is' : 'are';
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedShield01, color: const Color(0xFF7C3AED), size: 13),
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedShield01,
+            color: const Color(0xFF7C3AED),
+            size: 13),
         const SizedBox(width: 6),
         Expanded(
           child: Text('$names $verb in your care circle',
-              style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.mutedForeground)),
         ),
         GestureDetector(
           onTap: () => context.push('/care-circle'),
-          child: const Text('Manage', style: TextStyle(fontSize: 12, color: Color(0xFF7C3AED), fontWeight: FontWeight.w600)),
+          child: const Text('Manage',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF7C3AED),
+                  fontWeight: FontWeight.w600)),
         ),
       ]),
     );
@@ -316,7 +418,8 @@ class _TimeContextualCard extends StatelessWidget {
   final String uid;
   final AsyncValue<List<Medicine>> medsAsync;
   final AsyncValue<List<MealLog>> mealsAsync;
-  const _TimeContextualCard({required this.uid, required this.medsAsync, required this.mealsAsync});
+  const _TimeContextualCard(
+      {required this.uid, required this.medsAsync, required this.mealsAsync});
 
   @override
   Widget build(BuildContext context) {
@@ -328,48 +431,87 @@ class _TimeContextualCard extends StatelessWidget {
     if (h >= 5 && h < 11) {
       final dueMeds = meds.where((m) => m.isActive && m.hasDueSlot).toList();
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: AppColors.caregiver, size: 18),
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedSun01,
+            color: AppColors.caregiver,
+            size: 18),
         color: AppColors.caregiver,
         heading: 'Morning routine',
         actionLabel: dueMeds.isNotEmpty ? 'View Medicines' : 'Log Breakfast',
-        body: dueMeds.isNotEmpty ? 'You have ${dueMeds.length} medicine${dueMeds.length == 1 ? '' : 's'} to take this morning.' : loggedTypes.contains(AppConstants.mealBreakfast) ? 'Breakfast done! Morning medicines all taken.' : 'Start your day — take your medicines and log breakfast.',
-        onAction: () => dueMeds.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealBreakfast),
+        body: dueMeds.isNotEmpty
+            ? 'You have ${dueMeds.length} medicine${dueMeds.length == 1 ? '' : 's'} to take this morning.'
+            : loggedTypes.contains(AppConstants.mealBreakfast)
+                ? 'Breakfast done! Morning medicines all taken.'
+                : 'Start your day — take your medicines and log breakfast.',
+        onAction: () => dueMeds.isNotEmpty
+            ? context.go('/care')
+            : showLogMealSheet(context, uid,
+                initialType: AppConstants.mealBreakfast),
       );
     } else if (h >= 11 && h < 14) {
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: AppColors.primary, size: 18),
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedSun01,
+            color: AppColors.primary,
+            size: 18),
         color: AppColors.primary,
         heading: 'Midday check-in',
-        actionLabel: loggedTypes.contains(AppConstants.mealLunch) ? 'Log Vitals' : 'Log Lunch',
-        body: loggedTypes.contains(AppConstants.mealLunch) ? 'Lunch logged! A good time to check your blood pressure.' : 'Lunchtime — logging meals helps track your daily nutrition.',
-        onAction: () => loggedTypes.contains(AppConstants.mealLunch) ? context.go('/vitals') : showLogMealSheet(context, uid, initialType: AppConstants.mealLunch),
+        actionLabel: loggedTypes.contains(AppConstants.mealLunch)
+            ? 'Log Vitals'
+            : 'Log Lunch',
+        body: loggedTypes.contains(AppConstants.mealLunch)
+            ? 'Lunch logged! A good time to check your blood pressure.'
+            : 'Lunchtime — logging meals helps track your daily nutrition.',
+        onAction: () => loggedTypes.contains(AppConstants.mealLunch)
+            ? context.go('/vitals')
+            : showLogMealSheet(context, uid,
+                initialType: AppConstants.mealLunch),
       );
     } else if (h >= 14 && h < 17) {
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedRunningShoes, color: AppColors.success, size: 18),
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedRunningShoes,
+            color: AppColors.success,
+            size: 18),
         color: AppColors.success,
         heading: 'Afternoon boost',
         actionLabel: 'Log Activity',
-        body: 'Good time for a walk or light activity. Logging steps keeps you on track.',
+        body:
+            'Good time for a walk or light activity. Logging steps keeps you on track.',
         onAction: () => context.push('/activity'),
       );
     } else if (h >= 17 && h < 21) {
       final eveningDue = meds.where((m) => m.isActive && m.hasDueSlot).toList();
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: const Color(0xFF7C3AED), size: 18),
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedMoon,
+            color: const Color(0xFF7C3AED),
+            size: 18),
         color: const Color(0xFF7C3AED),
         heading: 'Evening routine',
         actionLabel: eveningDue.isNotEmpty ? 'View Medicines' : 'Log Dinner',
-        body: eveningDue.isNotEmpty ? '${eveningDue.length} evening medicine${eveningDue.length == 1 ? '' : 's'} still due.' : loggedTypes.contains(AppConstants.mealDinner) ? 'Evening all done — great health day!' : 'Log dinner to complete your daily record.',
-        onAction: () => eveningDue.isNotEmpty ? context.go('/care') : showLogMealSheet(context, uid, initialType: AppConstants.mealDinner),
+        body: eveningDue.isNotEmpty
+            ? '${eveningDue.length} evening medicine${eveningDue.length == 1 ? '' : 's'} still due.'
+            : loggedTypes.contains(AppConstants.mealDinner)
+                ? 'Evening all done — great health day!'
+                : 'Log dinner to complete your daily record.',
+        onAction: () => eveningDue.isNotEmpty
+            ? context.go('/care')
+            : showLogMealSheet(context, uid,
+                initialType: AppConstants.mealDinner),
       );
     } else {
       final allDone = meds.where((m) => m.isActive).every((m) => m.takenToday);
       return _ContextCard(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedBed, color: AppColors.mutedForeground, size: 18),
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedBed,
+            color: AppColors.mutedForeground,
+            size: 18),
         color: AppColors.mutedForeground,
         heading: 'End of day',
-        body: allDone ? 'All medicines taken today — excellent health day!' : 'Check your medicines before bed to complete today\'s log.',
+        body: allDone
+            ? 'All medicines taken today — excellent health day!'
+            : 'Check your medicines before bed to complete today\'s log.',
         actionLabel: 'View Summary',
         onAction: () => context.go('/care'),
       );
@@ -382,7 +524,13 @@ class _ContextCard extends StatelessWidget {
   final Color color;
   final String heading, body, actionLabel;
   final VoidCallback onAction;
-  const _ContextCard({required this.icon, required this.color, required this.heading, required this.body, required this.actionLabel, required this.onAction});
+  const _ContextCard(
+      {required this.icon,
+      required this.color,
+      required this.heading,
+      required this.body,
+      required this.actionLabel,
+      required this.onAction});
 
   @override
   Widget build(BuildContext context) {
@@ -391,15 +539,24 @@ class _ContextCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-          width: 38, height: 38,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10)),
           child: Center(child: icon),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(heading, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(heading,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: color)),
           const SizedBox(height: 4),
-          Text(body, style: const TextStyle(fontSize: 12, color: AppColors.foreground, height: 1.4)),
+          Text(body,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.foreground, height: 1.4)),
           const SizedBox(height: 10),
           SizedBox(
             height: 36,
@@ -409,8 +566,10 @@ class _ContextCard extends StatelessWidget {
                 backgroundColor: color,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(100)),
+                textStyle:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 minimumSize: const Size(0, 36),
               ),
               child: Text(actionLabel),
@@ -436,7 +595,8 @@ class _RefillCountdownCard extends StatelessWidget {
       if (!m.isActive) continue;
       final remaining = m.pillsRemaining;
       if (remaining == null || remaining <= 0) continue;
-      final dailyDoses = m.reminderTimes.isNotEmpty ? m.reminderTimes.length : 1;
+      final dailyDoses =
+          m.reminderTimes.isNotEmpty ? m.reminderTimes.length : 1;
       final daysLeft = (remaining / dailyDoses).floor();
       if (daysLeft <= 14) low.add((name: m.name, daysLeft: daysLeft));
     }
@@ -452,24 +612,38 @@ class _RefillCountdownCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: cardColor, size: 15),
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedMedicine01,
+              color: cardColor,
+              size: 15),
           const SizedBox(width: 6),
           Text(urgent ? 'Refill urgently needed' : 'Medicine refill needed',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cardColor)),
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: cardColor)),
         ]),
         const SizedBox(height: 8),
         ...low.take(3).map((med) {
-          final c = med.daysLeft <= 3 ? AppColors.destructive : med.daysLeft <= 7 ? AppColors.warning : AppColors.primary;
+          final c = med.daysLeft <= 3
+              ? AppColors.destructive
+              : med.daysLeft <= 7
+                  ? AppColors.warning
+                  : AppColors.primary;
           return Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(children: [
-              Expanded(child: Text(med.name, style: const TextStyle(fontSize: 12))),
+              Expanded(
+                  child: Text(med.name, style: const TextStyle(fontSize: 12))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(
+                    color: c.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20)),
                 child: Text(
-                  med.daysLeft == 0 ? 'Out today' : '~${med.daysLeft} day${med.daysLeft == 1 ? '' : 's'} left',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c),
+                  med.daysLeft == 0
+                      ? 'Out today'
+                      : '~${med.daysLeft} day${med.daysLeft == 1 ? '' : 's'} left',
+                  style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600, color: c),
                 ),
               ),
             ]),
@@ -486,7 +660,10 @@ class _DailySnapshotRow extends StatelessWidget {
   final int? medStreak;
   final AsyncValue<List<Appointment>> apptsAsync;
 
-  const _DailySnapshotRow({required this.medsAsync, required this.medStreak, required this.apptsAsync});
+  const _DailySnapshotRow(
+      {required this.medsAsync,
+      required this.medStreak,
+      required this.apptsAsync});
 
   @override
   Widget build(BuildContext context) {
@@ -496,31 +673,62 @@ class _DailySnapshotRow extends StatelessWidget {
 
     final appts = apptsAsync.asData?.value ?? [];
     final now = DateTime.now();
-    final upcoming = appts.where((a) => (a.isConfirmed || a.isPending) && a.scheduledAt != null && a.scheduledAt!.isAfter(now)).toList()
+    final upcoming = appts
+        .where((a) =>
+            (a.isConfirmed || a.isPending) &&
+            a.scheduledAt != null &&
+            a.scheduledAt!.isAfter(now))
+        .toList()
       ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
 
     int? daysToAppt;
     if (upcoming.isNotEmpty) {
-      final apptDay = DateTime(upcoming.first.scheduledAt!.year, upcoming.first.scheduledAt!.month, upcoming.first.scheduledAt!.day);
-      daysToAppt = apptDay.difference(DateTime(now.year, now.month, now.day)).inDays;
+      final apptDay = DateTime(upcoming.first.scheduledAt!.year,
+          upcoming.first.scheduledAt!.month, upcoming.first.scheduledAt!.day);
+      daysToAppt =
+          apptDay.difference(DateTime(now.year, now.month, now.day)).inDays;
     }
 
-    final medColor = active.isEmpty ? AppColors.mutedForeground : taken == active.length ? AppColors.success : AppColors.primary;
-    final streakColor = (medStreak ?? 0) > 0 ? AppColors.caregiver : AppColors.mutedForeground;
-    final visitColor = daysToAppt == null ? AppColors.mutedForeground : daysToAppt == 0 ? AppColors.success : daysToAppt <= 6 ? AppColors.warning : AppColors.primary;
+    final medColor = active.isEmpty
+        ? AppColors.mutedForeground
+        : taken == active.length
+            ? AppColors.success
+            : AppColors.primary;
+    final streakColor =
+        (medStreak ?? 0) > 0 ? AppColors.caregiver : AppColors.mutedForeground;
+    final visitColor = daysToAppt == null
+        ? AppColors.mutedForeground
+        : daysToAppt == 0
+            ? AppColors.success
+            : daysToAppt <= 6
+                ? AppColors.warning
+                : AppColors.primary;
 
     return Row(children: [
-      Expanded(child: GestureDetector(
+      Expanded(
+          child: GestureDetector(
         onTap: () => context.go('/care'),
-        child: _SnapshotChip(value: active.isEmpty ? '--' : '$taken/${active.length}', label: 'medicines', color: medColor),
+        child: _SnapshotChip(
+            value: active.isEmpty ? '--' : '$taken/${active.length}',
+            label: 'medicines',
+            color: medColor),
       )),
       const SizedBox(width: 8),
-      Expanded(child: _SnapshotChip(value: '${medStreak ?? 0}', label: 'day streak', color: streakColor)),
+      Expanded(
+          child: _SnapshotChip(
+              value: '${medStreak ?? 0}',
+              label: 'day streak',
+              color: streakColor)),
       const SizedBox(width: 8),
-      Expanded(child: GestureDetector(
+      Expanded(
+          child: GestureDetector(
         onTap: () => context.go('/appointments'),
         child: _SnapshotChip(
-          value: daysToAppt == null ? '--' : daysToAppt == 0 ? 'today' : '${daysToAppt}d',
+          value: daysToAppt == null
+              ? '--'
+              : daysToAppt == 0
+                  ? 'today'
+                  : '${daysToAppt}d',
           label: 'next visit',
           color: visitColor,
         ),
@@ -532,7 +740,8 @@ class _DailySnapshotRow extends StatelessWidget {
 class _SnapshotChip extends StatelessWidget {
   final String value, label;
   final Color color;
-  const _SnapshotChip({required this.value, required this.label, required this.color});
+  const _SnapshotChip(
+      {required this.value, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -542,17 +751,23 @@ class _SnapshotChip extends StatelessWidget {
         Row(children: [
           Expanded(
             child: Text(label,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.mutedForeground),
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.mutedForeground),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
           ),
           Container(
-            width: 8, height: 8,
+            width: 8,
+            height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
         ]),
         const SizedBox(height: 10),
-        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: color)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.w700, color: color)),
       ]),
     );
   }
@@ -591,9 +806,14 @@ class _AdherenceRingCard extends ConsumerWidget {
           radius: 38.0,
           lineWidth: 7.0,
           percent: percent,
-          center: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Text('$weeklyMedDays', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color)),
-            Text('/7', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+          center:
+              Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text('$weeklyMedDays',
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.w700, color: color)),
+            Text('/7',
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground)),
           ]),
           progressColor: color,
           backgroundColor: color.withValues(alpha: 0.12),
@@ -602,28 +822,204 @@ class _AdherenceRingCard extends ConsumerWidget {
           animationDuration: 800,
         ),
         const SizedBox(width: 16),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Weekly Adherence', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Text('Weekly Adherence',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 4),
+            // Phase 9 (a11y): 44dp tap target + Semantics label
+            Semantics(
+              button: true,
+              label: 'About Health Points',
+              child: InkWell(
+                onTap: () => _showHPInfoSheet(context, gamProfile),
+                borderRadius: BorderRadius.circular(22),
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(Icons.info_outline_rounded,
+                      size: 16, color: AppColors.mutedForeground),
+                ),
+              ),
+            ),
+          ]),
           const SizedBox(height: 4),
-          Text(message, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground, height: 1.4)),
+          Text(message,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.mutedForeground, height: 1.4)),
           const SizedBox(height: 10),
-          Row(mainAxisSize: MainAxisSize.min, children: List.generate(7, (i) {
-            final filled = i < weeklyMedDays;
-            const days = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
-            return Container(
-              width: 24, height: 24,
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: filled ? color.withValues(alpha: 0.15) : AppColors.muted,
-                border: Border.all(color: filled ? color.withValues(alpha: 0.4) : AppColors.border),
-              ),
-              child: Center(
-                child: Text(days[i], style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: filled ? color : AppColors.mutedForeground)),
-              ),
-            );
-          })),
+          Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(7, (i) {
+                final filled = i < weeklyMedDays;
+                const days = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
+                return Container(
+                  width: 24,
+                  height: 24,
+                  margin: const EdgeInsets.only(right: 4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: filled
+                        ? color.withValues(alpha: 0.15)
+                        : AppColors.muted,
+                    border: Border.all(
+                        color: filled
+                            ? color.withValues(alpha: 0.4)
+                            : AppColors.border),
+                  ),
+                  child: Center(
+                    child: Text(days[i],
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: filled ? color : AppColors.mutedForeground)),
+                  ),
+                );
+              })),
         ])),
+      ]),
+    );
+  }
+}
+
+void _showHPInfoSheet(BuildContext context, GamificationProfile? gamProfile) {
+  final hp = gamProfile?.hp ?? 0;
+  final level = gamProfile?.level ?? 1;
+  final progress = gamProfile?.levelProgress ?? 0.0;
+  final hpToNext = gamProfile?.hpToNextLevel ?? GamificationProfile.hpPerLevel;
+  final streak = gamProfile?.medStreak ?? 0;
+
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                    color: AppColors.primaryTint,
+                    borderRadius: BorderRadius.circular(12)),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedAward01,
+                    color: AppColors.primary,
+                    size: 22),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Health Points (HP)',
+                          style: TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.w700)),
+                      Text('Your health engagement score',
+                          style: TextStyle(
+                              fontSize: 13, color: AppColors.mutedForeground)),
+                    ]),
+              ),
+            ]),
+            const SizedBox(height: 20),
+            BentoCard(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Level $level',
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text('$hp HP total',
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.mutedForeground)),
+                        ]),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 8,
+                        backgroundColor:
+                            AppColors.primary.withValues(alpha: 0.1),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('$hpToNext HP to Level ${level + 1}',
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.mutedForeground)),
+                  ]),
+            ),
+            const SizedBox(height: 16),
+            const Text('How you earn HP',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            _HPInfoRow(
+                icon: HugeIcons.strokeRoundedMedicine01,
+                label: 'Log a dose on time',
+                value: '+10 HP'),
+            _HPInfoRow(
+                icon: HugeIcons.strokeRoundedFire,
+                label: '$streak-day streak bonus',
+                value: streak > 0 ? '+${streak * 2} HP/day' : 'Start a streak'),
+            _HPInfoRow(
+                icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                label: 'All doses taken today',
+                value: '+25 HP'),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
+                child: const Text('Got it'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _HPInfoRow extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final String label;
+  final String value;
+  const _HPInfoRow(
+      {required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(children: [
+        HugeIcon(icon: icon, color: AppColors.primary, size: 16),
+        const SizedBox(width: 10),
+        Expanded(
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.textSecondary))),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary)),
       ]),
     );
   }
@@ -639,16 +1035,30 @@ class _FamilyStatusBar extends ConsumerWidget {
     final members = ref.watch(familyMembersProvider(uid)).asData?.value ?? [];
     if (members.isEmpty) return const SizedBox.shrink();
 
+    final legendDismissed = ref.watch(_statusLegendDismissedProvider);
+
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Your Family', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mutedForeground)),
+      const Text('Your Family',
+          style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.mutedForeground)),
       const SizedBox(height: 10),
+      if (!legendDismissed) ...[
+        _StatusLegendCard(
+          onDismiss: () =>
+              ref.read(_statusLegendDismissedProvider.notifier).state = true,
+        ),
+        const SizedBox(height: 8),
+      ],
       SizedBox(
         height: 84,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: members.length,
           separatorBuilder: (_, __) => const SizedBox(width: 10),
-          itemBuilder: (_, i) => _FamilyStatusChip(uid: uid, member: members[i]),
+          itemBuilder: (_, i) =>
+              _FamilyStatusChip(uid: uid, member: members[i]),
         ),
       ),
       const SizedBox(height: 12),
@@ -663,8 +1073,9 @@ class _FamilyStatusChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
-    final dotColor = _statusColor(medsAsync);
+    final medsAsync = ref
+        .watch(familyMemberMedicinesProvider((uid: uid, memberId: member.id)));
+    final status = _memberStatus(medsAsync);
 
     return GestureDetector(
       onTap: () => context.go('/care', extra: {'memberId': member.id}),
@@ -675,39 +1086,222 @@ class _FamilyStatusChip extends ConsumerWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-              backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
+              backgroundImage: member.photoUrl != null
+                  ? NetworkImage(member.photoUrl!)
+                  : null,
               child: member.photoUrl == null
-                  ? Text(member.initials, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary))
+                  ? Text(member.initials,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary))
                   : null,
             ),
             Positioned(
-              bottom: -1, right: -1,
-              child: Container(
-                width: 11, height: 11,
-                decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle, border: Border.all(color: AppColors.surface, width: 1.5)),
+              bottom: -1,
+              right: -1,
+              child: Tooltip(
+                message: status.tooltip,
+                child: Container(
+                  width: 11,
+                  height: 11,
+                  decoration: BoxDecoration(
+                      color: status.color,
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: AppColors.surface, width: 1.5)),
+                ),
               ),
             ),
           ]),
           const SizedBox(height: 5),
           SizedBox(
             width: 52,
-            child: Text(member.name.split(' ').first, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(member.name.split(' ').first,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           ),
         ]),
       ),
     );
   }
 
-  Color _statusColor(AsyncValue<List<Medicine>> medsAsync) {
+  _MemberStatus _memberStatus(AsyncValue<List<Medicine>> medsAsync) {
     final meds = medsAsync.asData?.value;
-    if (meds == null) return AppColors.mutedForeground;
+    if (meds == null) {
+      return const _MemberStatus(
+          color: AppColors.mutedForeground, tooltip: 'Loading medicines');
+    }
     final active = meds.where((m) => m.isActive).toList();
-    if (active.isEmpty) return AppColors.mutedForeground;
-    if (active.any((m) => m.hasMissedSlot && !m.hasDueSlot)) return AppColors.destructive;
-    if (active.any((m) => m.hasDueSlot)) return AppColors.warning;
-    if (active.every((m) => m.takenToday)) return AppColors.success;
-    return AppColors.mutedForeground;
+    if (active.isEmpty) {
+      return const _MemberStatus(
+          color: AppColors.mutedForeground, tooltip: 'No active medicines');
+    }
+    if (active.any((m) => m.hasMissedSlot && !m.hasDueSlot)) {
+      return const _MemberStatus(
+          color: AppColors.destructive, tooltip: 'Missed dose');
+    }
+    if (active.any((m) => m.hasDueSlot)) {
+      return const _MemberStatus(
+          color: AppColors.warning, tooltip: 'Dose due soon');
+    }
+    if (active.every((m) => m.takenToday)) {
+      return const _MemberStatus(
+          color: AppColors.success, tooltip: 'All doses taken');
+    }
+    return const _MemberStatus(
+        color: AppColors.mutedForeground, tooltip: 'No reminders scheduled');
+  }
+}
+
+// ── Get Started Guide (shown to new users with 0 medicines + 0 appointments) ──
+class _GetStartedGuide extends StatelessWidget {
+  const _GetStartedGuide();
+
+  @override
+  Widget build(BuildContext context) {
+    return BentoCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Welcome to Omra!',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        const Text('Get set up in 3 quick steps.',
+            style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+        const SizedBox(height: 16),
+        _GetStartedStep(
+          icon: HugeIcons.strokeRoundedMedicine01,
+          title: 'Add your first medicine',
+          subtitle: 'Track doses and set reminders.',
+          onTap: () => context.go('/care'),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+        _GetStartedStep(
+          icon: HugeIcons.strokeRoundedDoctor02,
+          title: 'Connect a doctor',
+          subtitle: 'Book appointments and receive prescriptions.',
+          onTap: () => context.go('/care'),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+        _GetStartedStep(
+          icon: HugeIcons.strokeRoundedUserAdd01,
+          title: 'Invite a family member',
+          subtitle: 'Let someone you trust keep an eye on your health.',
+          onTap: () => context.go('/care'),
+        ),
+      ]),
+    );
+  }
+}
+
+class _GetStartedStep extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  const _GetStartedStep(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: AppColors.primaryTint,
+                borderRadius: BorderRadius.circular(8)),
+            child: HugeIcon(icon: icon, color: AppColors.primary, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+              child:
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(subtitle,
+                style: const TextStyle(
+                    fontSize: 11, color: AppColors.mutedForeground)),
+          ])),
+          const Icon(Icons.arrow_forward_ios_rounded,
+              size: 14, color: AppColors.mutedForeground),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Status Legend (dismissible, once per launch) ──────────────────────────────
+class _StatusLegendCard extends StatelessWidget {
+  final VoidCallback onDismiss;
+  const _StatusLegendCard({required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    return BentoCard(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      child: Row(children: [
+        Expanded(
+          child: Wrap(
+            spacing: 14,
+            runSpacing: 6,
+            children: const [
+              _LegendDot(color: AppColors.success, label: 'On track'),
+              _LegendDot(color: AppColors.warning, label: 'Due soon'),
+              _LegendDot(color: AppColors.destructive, label: 'Missed'),
+              _LegendDot(color: AppColors.mutedForeground, label: 'No schedule'),
+            ],
+          ),
+        ),
+        const SizedBox(width: 4),
+        // Phase 9 (a11y): 44dp tap target + Semantics label
+        Semantics(
+          button: true,
+          label: 'Dismiss',
+          child: InkWell(
+            onTap: onDismiss,
+            borderRadius: BorderRadius.circular(22),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(Icons.close_rounded,
+                  size: 16, color: AppColors.mutedForeground),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 5),
+      Text(label,
+          style: const TextStyle(
+              fontSize: 11, color: AppColors.textSecondary)),
+    ]);
   }
 }
 
@@ -717,7 +1311,8 @@ class _DailyAwarenessCard extends ConsumerStatefulWidget {
   const _DailyAwarenessCard({required this.uid});
 
   @override
-  ConsumerState<_DailyAwarenessCard> createState() => _DailyAwarenessCardState();
+  ConsumerState<_DailyAwarenessCard> createState() =>
+      _DailyAwarenessCardState();
 }
 
 class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
@@ -730,7 +1325,9 @@ class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
     // needing a Firestore event to trigger a rebuild.
     _ticker = Timer.periodic(
       const Duration(minutes: 1),
-      (_) { if (mounted) setState(() {}); },
+      (_) {
+        if (mounted) setState(() {});
+      },
     );
   }
 
@@ -757,18 +1354,21 @@ class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
     final loggedTypes = meals.map((m) => m.mealType).toSet();
     final hasMissedMeal =
         (h >= 11 && !loggedTypes.contains(AppConstants.mealBreakfast)) ||
-        (h >= 16 && !loggedTypes.contains(AppConstants.mealLunch)) ||
-        (h >= 21 && !loggedTypes.contains(AppConstants.mealDinner));
+            (h >= 16 && !loggedTypes.contains(AppConstants.mealLunch)) ||
+            (h >= 21 && !loggedTypes.contains(AppConstants.mealDinner));
 
     if (!hasMissedMed && !hasMissedMeal) return const SizedBox.shrink();
 
     final String message;
     if (hasMissedMed && hasMissedMeal) {
-      message = 'You missed your medicine and a meal — please ensure you take them on time to stay on track.';
+      message =
+          'You missed your medicine and a meal — please ensure you take them on time to stay on track.';
     } else if (hasMissedMed) {
-      message = 'You missed one or more scheduled medicine doses. Please take them as soon as possible to stay on track.';
+      message =
+          'You missed one or more scheduled medicine doses. Please take them as soon as possible to stay on track.';
     } else {
-      message = "You haven't logged a meal on time. Keeping track of your meals helps you stay on top of your health.";
+      message =
+          "You haven't logged a meal on time. Keeping track of your meals helps you stay on top of your health.";
     }
 
     return Padding(
@@ -783,16 +1383,24 @@ class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
               color: AppColors.warning.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: AppColors.warning, size: 20),
+            child: HugeIcon(
+                icon: HugeIcons.strokeRoundedAlertDiamond,
+                color: AppColors.warning,
+                size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Stay on track',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.warning)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warning)),
               const SizedBox(height: 4),
               Text(message,
-                  style: const TextStyle(fontSize: 12, color: AppColors.foreground, height: 1.4)),
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.foreground, height: 1.4)),
               const SizedBox(height: 10),
               SizedBox(
                 height: 34,
@@ -802,8 +1410,10 @@ class _DailyAwarenessCardState extends ConsumerState<_DailyAwarenessCard> {
                     backgroundColor: AppColors.warning,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100)),
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600),
                     minimumSize: const Size(0, 34),
                   ),
                   child: const Text('Go to Medicines & Meals'),
@@ -831,7 +1441,9 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
   @override
   void initState() {
     super.initState();
-    _ticker = Timer.periodic(const Duration(minutes: 1), (_) { if (mounted) setState(() {}); });
+    _ticker = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -845,31 +1457,53 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
     final meds = ref.watch(medicinesProvider(widget.uid)).asData?.value ?? [];
     final meals = ref.watch(todayMealsProvider(widget.uid)).asData?.value ?? [];
 
-    final actionableMeds = meds.where((m) =>
-      m.isActive && (m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot || m.hasMissedSlot)
-    ).toList();
+    final actionableMeds = meds
+        .where((m) =>
+            m.isActive &&
+            (m.hasNoScheduledTimes
+                ? !m.fullyTakenToday
+                : m.hasDueSlot || m.hasMissedSlot))
+        .toList();
 
     final currentMeal = _currentMealType();
     final loggedTypes = meals.map((m) => m.mealType).toSet();
-    final hasActionableMeal = currentMeal != null && !loggedTypes.contains(currentMeal);
+    final hasActionableMeal =
+        currentMeal != null && !loggedTypes.contains(currentMeal);
     final totalPending = actionableMeds.length + (hasActionableMeal ? 1 : 0);
 
     final header = Row(children: [
-      const Expanded(child: Text('What needs to be done now', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
+      const Expanded(
+          child: Text('What needs to be done now',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
       if (totalPending > 0)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-          child: Text('$totalPending left', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+          decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20)),
+          child: Text('$totalPending left',
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary)),
         )
       else
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: AppColors.success, size: 12),
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedTick01,
+                color: AppColors.success,
+                size: 12),
             SizedBox(width: 4),
-            Text('All done', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
+            Text('All done',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success)),
           ]),
         ),
     ]);
@@ -883,11 +1517,17 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
           child: BentoCard(
             child: Column(children: [
               const SizedBox(height: 8),
-              HugeIcon(icon: HugeIcons.strokeRoundedAward01, color: AppColors.success, size: 32),
+              HugeIcon(
+                  icon: HugeIcons.strokeRoundedAward01,
+                  color: AppColors.success,
+                  size: 32),
               SizedBox(height: 8),
-              Text("You're all caught up!", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              Text("You're all caught up!",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
               SizedBox(height: 2),
-              Text('Great job keeping up with your health today.', style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+              Text('Great job keeping up with your health today.',
+                  style: TextStyle(
+                      fontSize: 12, color: AppColors.mutedForeground)),
               SizedBox(height: 8),
             ]),
           ),
@@ -905,7 +1545,8 @@ class _UpcomingTasksCardState extends ConsumerState<_UpcomingTasksCard> {
       _MealStatusCard(
         meals: meals,
         currentMeal: currentMeal,
-        onLogMeal: (type) => showLogMealSheet(context, widget.uid, initialType: type),
+        onLogMeal: (type) =>
+            showLogMealSheet(context, widget.uid, initialType: type),
       ),
       const SizedBox(height: 12),
     ]);
@@ -947,7 +1588,10 @@ class _MedsGroupCard extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 child: Center(
                   child: Text('+$overflow more — see all in Medicines',
-                      style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500)),
+                      style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500)),
                 ),
               ),
             ),
@@ -971,7 +1615,9 @@ class _MedRow extends ConsumerWidget {
         ? medicine.todaySlots.where((s) => s.isMissed).firstOrNull
         : medicine.nextPendingSlot;
     final subtitle = slot != null
-        ? (isMissed ? 'Missed · ${slot.displayTime}' : '${medicine.dosage} · Due at ${slot.displayTime}')
+        ? (isMissed
+            ? 'Missed · ${slot.displayTime}'
+            : '${medicine.dosage} · Due at ${slot.displayTime}')
         : '${medicine.dosage} · ${medicine.frequency}';
     final totalSlots = medicine.todaySlots.length;
     final takenSlots = medicine.todaySlots.where((s) => s.isTaken).length;
@@ -982,42 +1628,63 @@ class _MedRow extends ConsumerWidget {
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: iconColor, size: 20),
+          decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8)),
+          child: HugeIcon(
+              icon: HugeIcons.strokeRoundedMedicine01,
+              color: iconColor,
+              size: 20),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(medicine.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+            Expanded(
+                child: Text(medicine.name,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600))),
             if (totalSlots > 1)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
-                child: Text('$takenSlots/$totalSlots', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
+                decoration: BoxDecoration(
+                    color: AppColors.muted,
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text('$takenSlots/$totalSlots',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.mutedForeground)),
               ),
           ]),
           const SizedBox(height: 2),
-          Text(subtitle, style: TextStyle(fontSize: 12, color: isMissed ? AppColors.warning : AppColors.mutedForeground)),
+          Text(subtitle,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: isMissed
+                      ? AppColors.warning
+                      : AppColors.mutedForeground)),
         ])),
         const SizedBox(width: 10),
         GestureDetector(
           onTap: () async {
-            final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, medicine.id);
+            final hp = await ref
+                .read(medicineNotifierProvider.notifier)
+                .logDose(uid, medicine.id);
             if (hp > 0 && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('+$hp HP  Dose logged!'),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ));
+              AppSnackBar.success(context, '+$hp HP  Dose logged!');
             }
           },
           child: Container(
             height: 36,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: iconColor, borderRadius: BorderRadius.circular(100)),
+            decoration: BoxDecoration(
+                color: iconColor, borderRadius: BorderRadius.circular(100)),
             child: Text(isMissed ? 'Log' : 'Take',
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600)),
           ),
         ),
       ]),
@@ -1030,13 +1697,24 @@ class _MealStatusCard extends StatelessWidget {
   final List<MealLog> meals;
   final String? currentMeal;
   final void Function(String) onLogMeal;
-  const _MealStatusCard({required this.meals, required this.currentMeal, required this.onLogMeal});
+  const _MealStatusCard(
+      {required this.meals,
+      required this.currentMeal,
+      required this.onLogMeal});
 
-  static const _allMeals = [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner];
+  static const _allMeals = [
+    AppConstants.mealBreakfast,
+    AppConstants.mealLunch,
+    AppConstants.mealDinner
+  ];
 
   static Widget _mealIcon(String meal, Color color) {
-    if (meal == AppConstants.mealBreakfast) return HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
-    if (meal == AppConstants.mealLunch) return HugeIcon(icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
+    if (meal == AppConstants.mealBreakfast)
+      return HugeIcon(
+          icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
+    if (meal == AppConstants.mealLunch)
+      return HugeIcon(
+          icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
     return HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: color, size: 18);
   }
 
@@ -1097,14 +1775,23 @@ class _MealRow extends StatelessWidget {
         child: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8)),
             child: iconBuilder(mealType, AppColors.success),
           ),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(mealType, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            const Text("Haven't logged yet", style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(mealType,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600)),
+                const Text("Haven't logged yet",
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.mutedForeground)),
+              ])),
           const SizedBox(width: 10),
           GestureDetector(
             onTap: onLog,
@@ -1112,8 +1799,14 @@ class _MealRow extends StatelessWidget {
               height: 36,
               padding: const EdgeInsets.symmetric(horizontal: 18),
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(100)),
-              child: const Text('Log', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+              decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: BorderRadius.circular(100)),
+              child: const Text('Log',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
             ),
           ),
         ]),
@@ -1138,11 +1831,20 @@ class _MealRow extends StatelessWidget {
       child: Row(children: [
         iconBuilder(mealType, AppColors.mutedForeground),
         const SizedBox(width: 10),
-        Expanded(child: Text(mealType, style: const TextStyle(fontSize: 13, color: AppColors.foreground))),
+        Expanded(
+            child: Text(mealType,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.foreground))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(100)),
-          child: Text(statusLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor)),
+          decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(100)),
+          child: Text(statusLabel,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor)),
         ),
       ]),
     );
