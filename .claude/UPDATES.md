@@ -3,6 +3,15 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-05-26 · hotfix (missing /invites Firestore rule)
+**Bug:** "Failed to send invite" SnackBar on the Invite Family Member screen
+**Root cause:** `InviteFamilyMemberScreen._sendInvite()` writes to the `invites` collection (telemetry for external clipboard-shares) but `firestore.rules` had **no rule** for that collection. Firestore denies by default when no match → write throws PERMISSION_DENIED → catch block renders the error SnackBar.
+**Fix:**
+- `vitalpath_flutter/firestore.rules` — added `match /invites/{inviteId}` rule: create allowed when `fromUid == request.auth.uid`; read restricted to the inviter for their own history (no third party reads this collection)
+**Deployed:** `firebase deploy --only firestore:rules` ✓ — fix is live, no app rebuild needed
+**Also:** `vitalpath_flutter/functions/tsconfig.json` — removed `"compileOnSave": true` (legacy Visual Studio option flagged by modern VS Code TS Language Service; not needed since the editor auto-watches). Best guess at the remaining 1 IDE warning the user reported. `tsc --noEmit` still clean.
+
+---
 ## 2026-05-26 · v2.12.0+38 (Crashlytics fully activated)
 **Focus:** auto-activate Crashlytics with user attribution + boot breadcrumb so the dashboard receives signal on first launch (no crash needed to verify)
 **Changed:**

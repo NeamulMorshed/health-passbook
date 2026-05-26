@@ -289,5 +289,17 @@ service cloud.firestore {
     match /drug_interaction_cache/{doc} {
       allow read, write: if isSignedIn();
     }
+
+    // ── invites ───────────────────────────────────────────────────────────────
+    // External-share telemetry: when a patient uses "Invite Family Member" to
+    // share the app with someone outside it, we record the intent here.
+    // Write-only from the inviter; readable only by the inviter for their own
+    // history (no third party ever queries this collection).
+    match /invites/{inviteId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.fromUid == request.auth.uid;
+      allow read: if isSignedIn() &&
+        resource.data.fromUid == request.auth.uid;
+    }
   }
 }
