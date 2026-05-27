@@ -3,6 +3,21 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-05-27 · Play Store compliance (signing, disclaimer, privacy policy)
+**Focus:** Resolve all blockers and high-risk items identified in Play Store policy audit before submission
+**Changed:**
+- `android/app/build.gradle` — replaced `signingConfigs.debug` with `signingConfigs.release` loaded from `android/key.properties`. Release keystore generated at `android/app/omra-release.jks` (PKCS12, 10 000-day validity, SHA256withRSA). `.gitignore` updated to exclude both files.
+- `lib/screens/onboarding/disclaimer_screen.dart` — NEW. First-launch medical disclaimer screen. Shows 4 disclaimer points (not a medical device, not professional advice, drug alerts are informational, doctor accounts are self-declared). SharedPreferences-gated via `disclaimerAccepted` key. "I Understand & Agree" button + link to Privacy Policy.
+- `lib/providers/disclaimer_provider.dart` — NEW. `disclaimerAcceptedProvider` StateProvider<bool> initialized from SharedPreferences before runApp.
+- `lib/main.dart` — reads `disclaimerAccepted` from SharedPreferences before runApp; overrides `disclaimerAcceptedProvider` in ProviderScope.
+- `lib/app/router.dart` — added `/disclaimer` and `/privacy-policy` routes; redirect gate: unauthenticated OR uncompleted disclaimer redirects to `/disclaimer` first.
+- `lib/screens/legal/privacy_policy_screen.dart` — NEW. Full in-app Privacy Policy (10 sections: data collected, use, sharing, storage, permissions, retention, children, rights, changes, contact).
+- `lib/screens/patient/profile/privacy_screen.dart` — added "Legal" section with Privacy Policy tile; fixed version string from v2.0.0 → v2.12.0.
+- `docs/privacy-policy.html` — NEW. Hosted privacy policy page for Play Console URL field. Enable GitHub Pages on `docs/` folder to publish at `https://<user>.github.io/<repo>/privacy-policy.html`.
+**Build:** `flutter build appbundle --release` → `build/app/outputs/bundle/release/app-release.aab` (68.4 MB), signed with release key (verified via keytool -printcert).
+**Next:** Enable GitHub Pages on repo `docs/` folder → paste URL into Play Console Privacy Policy field. Complete Data Safety form. Upload AAB to Play Console internal test track.
+
+---
 ## 2026-05-26 · hotfix (missing /invites Firestore rule)
 **Bug:** "Failed to send invite" SnackBar on the Invite Family Member screen
 **Root cause:** `InviteFamilyMemberScreen._sendInvite()` writes to the `invites` collection (telemetry for external clipboard-shares) but `firestore.rules` had **no rule** for that collection. Firestore denies by default when no match → write throws PERMISSION_DENIED → catch block renders the error SnackBar.

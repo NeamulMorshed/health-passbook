@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../screens/legal/privacy_policy_screen.dart';
 
 const _kBiometricPref = 'biometric_enabled';
 
@@ -162,6 +163,25 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
             ]),
           ),
           const SizedBox(height: 16),
+          const BentoSectionHeader(title: 'Legal'),
+          const SizedBox(height: 8),
+          BentoCard(
+            padding: EdgeInsets.zero,
+            child: BentoSettingsTile(
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedFile01,
+                  color: AppColors.primary,
+                  size: 20),
+              title: 'Privacy Policy',
+              subtitle: 'How we collect, use and protect your data',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (_) => const PrivacyPolicyScreen()),
+              ),
+              showDivider: false,
+            ),
+          ),
+          const SizedBox(height: 16),
           const BentoSectionHeader(title: 'Account'),
           const SizedBox(height: 8),
           BentoCard(
@@ -181,7 +201,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text('Omra v2.0.0',
+              child: Text('Omra v2.12.0',
                   style: TextStyle(
                       fontSize: 12, color: AppColors.mutedForeground)),
             ),

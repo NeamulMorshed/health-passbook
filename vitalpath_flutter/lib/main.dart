@@ -7,10 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'app/router.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
+import 'providers/disclaimer_provider.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
@@ -63,10 +65,16 @@ Future<void> main() async {
     final notificationService = NotificationService();
     await notificationService.initialize();
 
+    // Load disclaimer state before runApp so the router redirect can read it
+    // synchronously on first navigation evaluation.
+    final prefs = await SharedPreferences.getInstance();
+    final disclaimerAccepted = prefs.getBool('disclaimerAccepted') ?? false;
+
     runApp(
       ProviderScope(
         overrides: [
           notificationServiceProvider.overrideWithValue(notificationService),
+          disclaimerAcceptedProvider.overrideWith((ref) => disclaimerAccepted),
         ],
         child: const OmraApp(),
       ),

@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'navigation_key.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/disclaimer_provider.dart';
 import '../models/app_user.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/onboarding/disclaimer_screen.dart';
+import '../screens/legal/privacy_policy_screen.dart';
 import '../screens/user_select/user_select_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/face_id_screen.dart';
@@ -119,6 +122,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: notifier,
 
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+
+      // Disclaimer gate — must accept before anything else is reachable.
+      final disclaimerAccepted = ref.read(disclaimerAcceptedProvider);
+      if (!disclaimerAccepted && loc != '/disclaimer' && loc != '/privacy-policy') {
+        return '/disclaimer';
+      }
+      if (disclaimerAccepted && loc == '/disclaimer') return '/splash';
+
       final authState = ref.read(firebaseAuthStateProvider);
 
       // If we are still loading the auth state, don't redirect yet.
@@ -126,7 +138,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authState.isLoading) return null;
 
       final isAuthenticated = authState.asData?.value != null;
-      final loc = state.matchedLocation;
 
       // Splash is always reachable — no redirect.
       if (loc == '/splash') return null;
@@ -207,6 +218,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
+      GoRoute(path: '/disclaimer', builder: (_, __) => const DisclaimerScreen()),
+      GoRoute(path: '/privacy-policy', builder: (_, __) => const PrivacyPolicyScreen()),
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(
           path: '/user-select', builder: (_, __) => const UserSelectScreen()),
