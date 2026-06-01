@@ -227,7 +227,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Auth routes
       GoRoute(
         path: '/auth',
-        redirect: (_, __) => '/auth/login',
+        // Only redirect the bare /auth path to /auth/login. Without the guard
+        // this parent redirect also fires for the /auth/login child match,
+        // producing an infinite redirect loop → "Page not found" error screen.
+        redirect: (_, state) =>
+            state.uri.path == '/auth' ? '/auth/login' : null,
         routes: [
           GoRoute(
             path: 'login',
