@@ -79,6 +79,8 @@ Future<PatientAttention?> _computeAttention(
       adherencePct: adherencePct,
       abnormalVitalsCount: abnormal.length,
       mostRecentAbnormalLabel: mostRecentLabel,
+      mostRecentAbnormalAt:
+          abnormal.isNotEmpty ? abnormal.first.recordedAt : null,
     );
   } catch (_) {
     return null;

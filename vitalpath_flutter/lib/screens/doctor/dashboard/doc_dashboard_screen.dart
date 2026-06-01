@@ -458,13 +458,12 @@ class _PatientAttentionTile extends ConsumerWidget {
                         attention.adherencePct! < 50)
                       _Pill(
                         label:
-                            '${attention.adherencePct!.toStringAsFixed(0)}% adherence',
+                            '${attention.adherencePct!.toStringAsFixed(0)}% adherence · 7-day',
                         color: AppColors.warning,
                       ),
                     if (attention.abnormalVitalsCount > 0)
                       _Pill(
-                        label: attention.mostRecentAbnormalLabel ??
-                            '${attention.abnormalVitalsCount} abnormal vitals',
+                        label: _abnormalPillLabel(attention),
                         color: AppColors.warning,
                       ),
                   ],
@@ -481,6 +480,22 @@ class _PatientAttentionTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+// G-5 explainability: surface the most-recent abnormal reading + when it happened.
+String _abnormalPillLabel(PatientAttention a) {
+  final base = a.mostRecentAbnormalLabel ??
+      '${a.abnormalVitalsCount} abnormal vital${a.abnormalVitalsCount == 1 ? '' : 's'}';
+  final at = a.mostRecentAbnormalAt;
+  return at == null ? base : '$base · ${_relativeTime(at)}';
+}
+
+String _relativeTime(DateTime t) {
+  final d = DateTime.now().difference(t);
+  if (d.inMinutes < 60) return 'just now';
+  if (d.inHours < 24) return '${d.inHours}h ago';
+  if (d.inDays == 1) return 'yesterday';
+  return '${d.inDays}d ago';
 }
 
 class _Pill extends StatelessWidget {
