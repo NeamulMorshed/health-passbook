@@ -3,6 +3,22 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-02 · v2.12.0+41 (P1 flow/heuristic gaps — tier 2 of P0–P3)
+**Focus:** Second tier of the UX-audit program (brainstorm→spec→plan→build via superpowers). Branch `feature/ux-audit-improvements` (continues from P0). Spec/plan: `docs/superpowers/specs/2026-06-02-p1-flow-heuristic-design.md`, `docs/superpowers/plans/2026-06-02-p1-flow-heuristic.md`.
+**Changed (NEW):**
+- `lib/core/widgets/dose_undo.dart` — NEW. `logDoseWithUndo` — records a dose, shows an "Undo" SnackBar (~4s), then reverses it (if undone) or awards HP. **Deferred-HP** design: HP/streak awarded only after the undo window closes → no HP-farming, no gamification reverse needed.
+- `lib/core/widgets/skeleton.dart` — NEW. `SkeletonBox` (shimmer, truly static under reduced motion) + `DashboardSkeleton`. 3 widget tests.
+**Changed (G-2 undo plumbing):**
+- `lib/services/firestore_service.dart` — `logDose(at:)`, NEW `unlogDose` (arrayRemove), `incrementPillCount` (txn) + family `logFamilyMemberDose(at:)` / `unlogFamilyMemberDose`.
+- `lib/providers/patient_provider.dart` — `recordDose`→DateTime (no HP), `awardDoseHp`, `unlogDose`; family `recordDose`/`unlogDose`.
+- `lib/screens/patient/care/care_screen.dart`, `patient/home/home_screen.dart`, `caregiver/home/caregiver_home_screen.dart` — dose buttons now use `logDoseWithUndo` (patient = HP, family = no HP).
+**Changed (Nielsen #1 + G-1):**
+- 3 dashboards — bare `CircularProgressIndicator` first-load → `DashboardSkeleton`.
+- `patient/home/home_screen.dart` — light reorder: Upcoming Tasks #2, Refill #3, Awareness #4 (most-urgent above fold).
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info. `flutter test` → 11/11 pass.
+**Next:** P2 (consistency debt: 194 Material icons→HugeIcons, 44 raw hex→tokens, dedupe greeting helpers), then P3 (multi-role without forced sign-out, needs-attention explainability). Manual smoke: undo (log→undo removes dose + no HP; log→wait awards HP), skeletons on cold load.
+
+---
 ## 2026-06-02 · v2.12.0+41 (P0 emotion/generic-UI uplift — tier 1 of P0–P3)
 **Focus:** First tier of the UX-audit improvement program. New deep audit (`50 - UX + Design/UX_Audit_2026-06-01.md`, fresh score 7.4/10) drove a brainstorm→spec→plan→build cycle via superpowers skills + ui-ux-pro-max visual companion. Branch: `feature/ux-audit-improvements`.
 **Spec/plan:** `docs/superpowers/specs/2026-06-01-p0-emotion-ui-design.md`, `docs/superpowers/plans/2026-06-01-p0-emotion-ui.md`
