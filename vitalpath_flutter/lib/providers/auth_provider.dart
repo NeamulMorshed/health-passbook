@@ -65,10 +65,14 @@ final fcmTokenSyncProvider = Provider<void>((ref) {
   ref.listen(currentUserProvider, (_, next) {
     next.whenData((user) async {
       if (user == null) return;
-      await ref.read(notificationServiceProvider).syncTokenForUser(
-            user.uid,
-            ref.read(firestoreServiceProvider),
-          );
+      try {
+        await ref.read(notificationServiceProvider).syncTokenForUser(
+              user.uid,
+              ref.read(firestoreServiceProvider),
+            );
+      } catch (e, st) {
+        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      }
     });
   });
 });

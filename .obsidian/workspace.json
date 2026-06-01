@@ -191,6 +191,8 @@
   },
   "active": "ea272d85e5344106",
   "lastOpenFiles": [
+    "vitalpath_flutter/lib/app/router.dart.tmp.83765.fabb82e7a408",
+    "vitalpath_flutter/lib/providers/auth_provider.dart.tmp.83765.679ca1064f41",
     "vitalpath_flutter/build/app/intermediates/bundle_ide_redirect_file/release/createReleaseBundleListingFileRedirect/redirect.txt",
     "vitalpath_flutter/build/app/intermediates/bundle_ide_redirect_file/release/createReleaseBundleListingFileRedirect",
     "vitalpath_flutter/build/app/intermediates/bundle_ide_redirect_file/release",
@@ -200,8 +202,6 @@
     "vitalpath_flutter/build/app/intermediates/bundle_ide_model/release",
     "vitalpath_flutter/build/app/intermediates/bundle_ide_model",
     "vitalpath_flutter/build/app/outputs/bundle/release/app-release.aab",
-    "vitalpath_flutter/build/app/outputs/bundle/release",
-    "vitalpath_flutter/build/app/outputs/bundle",
     "WORKFLOW_STRATEGY_REPORT.md",
     "Untitled.canvas",
     "60 - Sessions/2026-06-01.md",

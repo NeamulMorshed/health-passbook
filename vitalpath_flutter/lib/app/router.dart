@@ -156,8 +156,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated) return null;
 
       final userState = ref.read(currentUserProvider);
-      // Still loading the AppUser — let the route render, guard will re-run.
       if (userState.isLoading) return null;
+      // If provider errored, send to splash so auth state is re-evaluated cleanly.
+      if (userState.hasError) return loc == '/splash' ? null : '/splash';
       final user = userState.asData?.value;
       if (user == null) return null;
 
@@ -193,21 +194,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/home';
       }
 
-      // Safety net: incomplete patients on patient-only routes → resume onboarding.
-      if (isPatient &&
-          !user.onboardingComplete &&
-          _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
-        return '/onboarding/health-profile';
+      // Safety net: incomplete patients may only access onboarding/auth/legal routes.
+      if (isPatient && !user.onboardingComplete) {
+        final isPermitted = loc.startsWith('/onboarding') ||
+            loc.startsWith('/auth') ||
+            loc == '/splash' ||
+            loc == '/user-select' ||
+            loc == '/disclaimer' ||
+            loc == '/privacy-policy';
+        if (!isPermitted) return '/onboarding/health-profile';
       }
 
-      // Fix H2 — Guard onboarding routes by role and onboarding state.
-      if (loc == '/onboarding/permissions' ||
-          loc == '/onboarding/health-profile' ||
-          loc == '/onboarding/caregiver-setup') {
+      // Guard patient onboarding routes — doctors and caregivers may not access them.
+      if (loc == '/onboarding/permissions' || loc == '/onboarding/health-profile') {
         if (isDoctor) return '/doc/dashboard';
-        if (user.onboardingComplete) {
-          return isCaregiver ? '/caregiver/home' : '/home';
-        }
+        if (isCaregiver) return '/onboarding/caregiver-setup';
+        if (isPatient && user.onboardingComplete) return '/home';
+      }
+      // Guard caregiver onboarding — doctors and patients may not access it.
+      if (loc == '/onboarding/caregiver-setup') {
+        if (isDoctor) return '/doc/dashboard';
+        if (isPatient) return user.onboardingComplete ? '/home' : '/onboarding/health-profile';
+        if (isCaregiver && user.onboardingComplete) return '/caregiver/home';
       }
       if (loc == '/doc/onboarding/profile') {
         if (!isDoctor) return '/home';

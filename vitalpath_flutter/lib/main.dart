@@ -10,6 +10,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'app/router.dart';
+import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/disclaimer_provider.dart';
@@ -52,7 +53,7 @@ Future<void> main() async {
 
     // App-boot breadcrumb — shows up in the Crashlytics dashboard within
     // ~5 min of first launch, confirms the SDK is wired before any login.
-    await FirebaseCrashlytics.instance.log('app boot · v2.12.0+38');
+    await FirebaseCrashlytics.instance.log('app boot · v${AppConstants.appVersion}');
 
     // Enable offline persistence so the app works on poor / no connection
     FirebaseFirestore.instance.settings = const Settings(
