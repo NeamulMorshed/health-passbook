@@ -94,7 +94,7 @@ class CaregiverPatientsScreen extends ConsumerWidget {
                                         style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w700,
-                                            color: Color(0xFF7C3AED))),
+                                            color: AppColors.inviteAccent)),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(

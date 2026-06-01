@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:go_router/go_router.dart';
@@ -106,9 +107,13 @@ class NotificationService {
       _fcm.onTokenRefresh.listen((newToken) async {
         try {
           await db.saveFcmToken(uid, newToken);
-        } catch (_) {}
+        } catch (e) {
+          debugPrint('[NotificationService] FCM token refresh save failed: $e');
+        }
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[NotificationService] FCM token sync failed: $e');
+    }
   }
 
   // ── Permission check ──────────────────────────────────────────────────────
@@ -219,7 +224,10 @@ class NotificationService {
   Future<void> scheduleMedicineReminders(String uid, Medicine medicine) async {
     for (int i = 0; i < medicine.reminderTimes.length; i++) {
       final parts = medicine.reminderTimes[i].split(':');
-      if (parts.length != 2) continue;
+      if (parts.length != 2) {
+        debugPrint('[NotificationService] Malformed reminderTime "${medicine.reminderTimes[i]}" for ${medicine.name} — skipping slot $i');
+        continue;
+      }
       final hour = int.tryParse(parts[0]) ?? 8;
       final minute = int.tryParse(parts[1]) ?? 0;
       await scheduleReminder(

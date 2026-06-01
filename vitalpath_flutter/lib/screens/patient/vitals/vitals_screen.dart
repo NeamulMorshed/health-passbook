@@ -271,16 +271,18 @@ class _TrendsSection extends StatelessWidget {
 // ─── Borderline helpers ───────────────────────────────────────────────────────
 double _borderlineLow(String type, double min) {
   if (type == VitalType.temp) return min - 0.5;
-  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic)
+  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic) {
     return min - 5;
+  }
   if (type == VitalType.glucose) return min - 5;
   return min * 0.9;
 }
 
 double _borderlineHigh(String type, double max) {
   if (type == VitalType.temp) return max + 0.5;
-  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic)
+  if (type == VitalType.bpSystolic || type == VitalType.bpDiastolic) {
     return max + 5;
+  }
   if (type == VitalType.glucose) return max + 5;
   return max * 1.1;
 }

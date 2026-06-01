@@ -25,6 +25,8 @@ import '../../../services/drug_interaction_service.dart';
 import 'package:intl/intl.dart';
 
 const _uuid = Uuid();
+// Prescription CTA gradient endpoint — purple-800, complements AppColors.primary teal.
+const _prescriptionGradientEnd = Color(0xFF5B21B6);
 
 class DocPatientViewScreen extends ConsumerWidget {
   final String patientId;
@@ -991,7 +993,7 @@ class _PrescriptionsTabState extends ConsumerState<_PrescriptionsTab> {
         // Write prescription CTA at top of tab
         GradientButton(
           label: 'Write New Prescription',
-          colors: const [AppColors.primary, Color(0xFF5B21B6)],
+          colors: const [AppColors.primary, _prescriptionGradientEnd],
           onPressed: () => _showPrescribeSheet(context),
         ),
         const SizedBox(height: 20),
@@ -1664,7 +1666,7 @@ class _PrescribeSheetState extends ConsumerState<_PrescribeSheet> {
             const SizedBox(height: 20),
             GradientButton(
               label: 'Review & Save',
-              colors: const [AppColors.primary, Color(0xFF5B21B6)],
+              colors: const [AppColors.primary, _prescriptionGradientEnd],
               onPressed: _showConfirmation,
             ),
           ],

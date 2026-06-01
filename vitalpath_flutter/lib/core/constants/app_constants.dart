@@ -69,6 +69,7 @@ class AppConstants {
   static const prefOnboardingDone = 'onboarding_done';
   static const prefFaceIdEnabled = 'face_id_enabled';
   static const prefOnboardingTourDone = 'onboarding_tour_done';
+  static const prefDisclaimerAccepted = 'disclaimerAccepted';
 
   // Cities for doctor search
   static const cities = [

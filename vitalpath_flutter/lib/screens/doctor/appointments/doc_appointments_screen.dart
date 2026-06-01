@@ -559,7 +559,7 @@ class _ConfirmApptSheetState extends ConsumerState<_ConfirmApptSheet> {
                 ? const Center(child: CircularProgressIndicator())
                 : GradientButton(
                     label: 'Confirm Appointment',
-                    colors: [AppColors.success, const Color(0xFF15803D)],
+                    colors: [AppColors.success, AppColors.primaryDark],
                     onPressed: _confirm,
                   ),
             const SizedBox(height: 8),

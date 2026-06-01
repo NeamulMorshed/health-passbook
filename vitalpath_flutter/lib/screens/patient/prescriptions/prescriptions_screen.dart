@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../models/prescription.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/patient_provider.dart';
 
@@ -116,7 +117,7 @@ class PrescriptionsScreen extends ConsumerWidget {
 }
 
 class _RxCard extends StatelessWidget {
-  final dynamic rx;
+  final Prescription rx;
   const _RxCard({required this.rx});
 
   void _showDetail(BuildContext context) {
@@ -132,7 +133,7 @@ class _RxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPhoto =
-        rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
+        rx.documentUrl != null && rx.documentUrl!.isNotEmpty;
     return BentoCard(
       onTap: () => _showDetail(context),
       padding: EdgeInsets.zero,
@@ -142,7 +143,7 @@ class _RxCard extends StatelessWidget {
           // Prescription photo thumbnail
           if (hasPhoto)
             CachedNetworkImage(
-              imageUrl: rx.documentUrl as String,
+              imageUrl: rx.documentUrl!,
               height: 140,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -208,12 +209,12 @@ class _RxCard extends StatelessWidget {
                       size: 14),
                 ]),
                 if (rx.diagnosis != null &&
-                    (rx.diagnosis as String).isNotEmpty) ...[
+                    rx.diagnosis!.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   BentoCard(
                     color: AppColors.muted,
                     padding: const EdgeInsets.all(10),
-                    child: Text(rx.diagnosis as String,
+                    child: Text(rx.diagnosis!,
                         style: const TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
@@ -227,8 +228,7 @@ class _RxCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.mutedForeground)),
                 const SizedBox(height: 6),
-                ...((rx.medicines as List?)?.cast<dynamic>() ?? [])
-                    .map<Widget>((m) => Padding(
+                ...rx.medicines.map<Widget>((m) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
                           child: Row(children: [
                             const Icon(Icons.circle,
@@ -242,7 +242,7 @@ class _RxCard extends StatelessWidget {
                             ),
                           ]),
                         )),
-                if (rx.notes != null && (rx.notes as String).isNotEmpty) ...[
+                if (rx.notes != null && rx.notes!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text('Note: ${rx.notes}',
                       style: const TextStyle(
@@ -271,13 +271,13 @@ class _RxCard extends StatelessWidget {
 // ── Prescription detail bottom sheet ──────────────────────────────────────────
 
 class _RxDetailSheet extends StatelessWidget {
-  final dynamic rx;
+  final Prescription rx;
   const _RxDetailSheet({required this.rx});
 
   @override
   Widget build(BuildContext context) {
     final hasPhoto =
-        rx.documentUrl != null && (rx.documentUrl as String).isNotEmpty;
+        rx.documentUrl != null && rx.documentUrl!.isNotEmpty;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -334,12 +334,12 @@ class _RxDetailSheet extends StatelessWidget {
             ]),
 
             if (rx.diagnosis != null &&
-                (rx.diagnosis as String).isNotEmpty) ...[
+                rx.diagnosis!.isNotEmpty) ...[
               const SizedBox(height: 14),
               BentoCard(
                 color: AppColors.muted,
                 padding: const EdgeInsets.all(12),
-                child: Text(rx.diagnosis as String,
+                child: Text(rx.diagnosis!,
                     style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
@@ -354,8 +354,7 @@ class _RxDetailSheet extends StatelessWidget {
             const Text('Medicines',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
-            ...((rx.medicines as List?)?.cast<dynamic>() ?? [])
-                .map<Widget>((m) => Padding(
+            ...rx.medicines.map<Widget>((m) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: BentoCard(
                         padding: const EdgeInsets.all(12),
@@ -366,22 +365,19 @@ class _RxDetailSheet extends StatelessWidget {
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600)),
-                              if ((m.dosage as String).isNotEmpty ||
-                                  (m.frequency as String).isNotEmpty)
+                              if (m.dosage.isNotEmpty || m.frequency.isNotEmpty)
                                 Text(
                                   [
-                                    if ((m.dosage as String).isNotEmpty)
-                                      m.dosage,
-                                    if ((m.frequency as String).isNotEmpty)
-                                      m.frequency,
+                                    if (m.dosage.isNotEmpty) m.dosage,
+                                    if (m.frequency.isNotEmpty) m.frequency,
                                   ].join('  •  '),
                                   style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.mutedForeground),
                                 ),
                               if (m.instructions != null &&
-                                  (m.instructions as String).isNotEmpty)
-                                Text(m.instructions as String,
+                                  m.instructions!.isNotEmpty)
+                                Text(m.instructions!,
                                     style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.mutedForeground,
@@ -390,7 +386,7 @@ class _RxDetailSheet extends StatelessWidget {
                       ),
                     )),
 
-            if (rx.notes != null && (rx.notes as String).isNotEmpty) ...[
+            if (rx.notes != null && rx.notes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               BentoCard(
                 color: AppColors.muted,

@@ -1714,7 +1714,7 @@ class _MealStatusCard extends StatelessWidget {
           icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
     if (meal == AppConstants.mealLunch)
       return HugeIcon(
-          icon: HugeIcons.strokeRoundedSun01, color: color, size: 18);
+          icon: HugeIcons.strokeRoundedSunCloud01, color: color, size: 18);
     return HugeIcon(icon: HugeIcons.strokeRoundedMoon, color: color, size: 18);
   }
 

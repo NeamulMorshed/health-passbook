@@ -69,7 +69,7 @@ Future<void> main() async {
     // Load disclaimer state before runApp so the router redirect can read it
     // synchronously on first navigation evaluation.
     final prefs = await SharedPreferences.getInstance();
-    final disclaimerAccepted = prefs.getBool('disclaimerAccepted') ?? false;
+    final disclaimerAccepted = prefs.getBool(AppConstants.prefDisclaimerAccepted) ?? false;
 
     runApp(
       ProviderScope(

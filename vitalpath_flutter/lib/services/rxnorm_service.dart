@@ -122,41 +122,49 @@ class RxNormService {
   // ── Private helpers ───────────────────────────────────────────────────────
 
   Future<String?> _resolveToIngredient(String rxcui) async {
-    final res = await http
-        .get(Uri.parse('$_base/rxcui/$rxcui/properties.json'))
-        .timeout(_timeout);
-    if (res.statusCode != 200) return null;
+    try {
+      final res = await http
+          .get(Uri.parse('$_base/rxcui/$rxcui/properties.json'))
+          .timeout(_timeout);
+      if (res.statusCode != 200) return null;
 
-    final props = (jsonDecode(res.body) as Map<String, dynamic>)['properties']
-        as Map<String, dynamic>?;
-    if (props == null) return null;
+      final props = (jsonDecode(res.body) as Map<String, dynamic>)['properties']
+          as Map<String, dynamic>?;
+      if (props == null) return null;
 
-    final tty = props['tty'] as String?;
-    final name = props['name'] as String?;
+      final tty = props['tty'] as String?;
+      final name = props['name'] as String?;
 
-    // IN = Ingredient, PIN = Precise Ingredient — these are generic names.
-    if (tty == 'IN' || tty == 'PIN') return name;
+      // IN = Ingredient, PIN = Precise Ingredient — these are generic names.
+      if (tty == 'IN' || tty == 'PIN') return name;
 
-    return await _fetchRelatedIngredient(rxcui) ?? name;
+      return await _fetchRelatedIngredient(rxcui) ?? name;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<String?> _fetchRelatedIngredient(String rxcui) async {
-    final res = await http
-        .get(Uri.parse('$_base/rxcui/$rxcui/related.json?tty=IN'))
-        .timeout(_timeout);
-    if (res.statusCode != 200) return null;
+    try {
+      final res = await http
+          .get(Uri.parse('$_base/rxcui/$rxcui/related.json?tty=IN'))
+          .timeout(_timeout);
+      if (res.statusCode != 200) return null;
 
-    final groups = (jsonDecode(res.body)
-        as Map<String, dynamic>)['relatedGroup']?['conceptGroup'] as List?;
-    if (groups == null) return null;
+      final groups = (jsonDecode(res.body)
+          as Map<String, dynamic>)['relatedGroup']?['conceptGroup'] as List?;
+      if (groups == null) return null;
 
-    for (final g in groups) {
-      final props = g['conceptProperties'] as List?;
-      if (props != null && props.isNotEmpty) {
-        return props.first['name'] as String?;
+      for (final g in groups) {
+        final props = g['conceptProperties'] as List?;
+        if (props != null && props.isNotEmpty) {
+          return props.first['name'] as String?;
+        }
       }
+      return null;
+    } catch (_) {
+      return null;
     }
-    return null;
   }
 
   Future<void> _merge(String key, Map<String, dynamic> fields) async {

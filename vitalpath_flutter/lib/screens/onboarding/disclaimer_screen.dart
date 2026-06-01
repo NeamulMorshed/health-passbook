@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/disclaimer_provider.dart';
-
-const _kDisclaimerPref = 'disclaimerAccepted';
 
 class DisclaimerScreen extends ConsumerWidget {
   const DisclaimerScreen({super.key});
@@ -124,7 +123,7 @@ class DisclaimerScreen extends ConsumerWidget {
                   ),
                   onPressed: () async {
                     final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool(_kDisclaimerPref, true);
+                    await prefs.setBool(AppConstants.prefDisclaimerAccepted, true);
                     ref.read(disclaimerAcceptedProvider.notifier).state = true;
                     if (context.mounted) context.go('/splash');
                   },

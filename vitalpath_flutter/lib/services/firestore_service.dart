@@ -206,10 +206,21 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .where('isActive', isEqualTo: true)
-        .orderBy('startDate', descending: true)
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Medicine.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Medicine>()
+              .toList()
+            ..sort((a, b) => b.startDate.compareTo(a.startDate));
+          return list;
+        });
   }
 
   Future<void> addMedicine(String patientId, Medicine medicine) async {
@@ -265,8 +276,16 @@ class FirestoreService {
         .collection(AppConstants.colFamilyMembers)
         .orderBy('createdAt')
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => FamilyMember.fromMap(d.data(), d.id)).toList());
+        .map((s) => s.docs
+            .map((d) {
+              try {
+                return FamilyMember.fromMap(d.data(), d.id);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<FamilyMember>()
+            .toList());
   }
 
   Future<void> addFamilyMember(String uid, FamilyMember member) async {
@@ -338,10 +357,21 @@ class FirestoreService {
         .doc(memberId)
         .collection(AppConstants.colMedicines)
         .where('isActive', isEqualTo: true)
-        .orderBy('startDate', descending: true)
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Medicine.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Medicine>()
+              .toList()
+            ..sort((a, b) => b.startDate.compareTo(a.startDate));
+          return list;
+        });
   }
 
   Future<void> addFamilyMemberMedicine(
@@ -411,7 +441,6 @@ class FirestoreService {
         .collection(AppConstants.colMeals)
         .where('loggedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .where('loggedAt', isLessThan: Timestamp.fromDate(end))
-        .orderBy('loggedAt', descending: true)
         .snapshots()
         .map((s) {
       // Re-evaluate today's boundaries on each emission so stale data is filtered
@@ -420,10 +449,18 @@ class FirestoreService {
       final todayStart = DateTime(now.year, now.month, now.day);
       final todayEnd = todayStart.add(const Duration(days: 1));
       return s.docs
-          .map((d) => MealLog.fromMap(d.data(), d.id))
+          .map((d) {
+            try {
+              return MealLog.fromMap(d.data(), d.id);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<MealLog>()
           .where((m) =>
               !m.loggedAt.isBefore(todayStart) && m.loggedAt.isBefore(todayEnd))
-          .toList();
+          .toList()
+        ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
     });
   }
 
@@ -466,7 +503,14 @@ class FirestoreService {
         .limit(50)
         .snapshots()
         .map((s) => s.docs
-            .map((d) => AppNotification.fromMap(d.data(), d.id))
+            .map((d) {
+              try {
+                return AppNotification.fromMap(d.data(), d.id);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<AppNotification>()
             .toList());
   }
 
@@ -523,11 +567,22 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colActivityLogs)
         .where('loggedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(weekAgo))
-        .orderBy('loggedAt', descending: true)
         .limit(20)
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => ActivityLog.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return ActivityLog.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<ActivityLog>()
+              .toList()
+            ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
+          return list;
+        });
   }
 
   // ─── Appointments ─────────────────────────────────────────────────────────
@@ -724,19 +779,22 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colPrescriptions)
         .where('patientId', isEqualTo: patientId)
-        .orderBy('issuedAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) {
-              try {
-                return Prescription.fromMap(d.data(), d.id);
-              } catch (_) {
-                return null;
-              }
-            })
-            .whereType<Prescription>()
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Prescription.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Prescription>()
+              .toList()
+            ..sort((a, b) => b.issuedAt.compareTo(a.issuedAt));
+          return list;
+        });
   }
 
   /// Writes the prescription and all derived medicine entries in a single
@@ -849,11 +907,21 @@ class FirestoreService {
         .doc(patientId)
         .collection(_colConsultationNotes)
         .where('doctorId', isEqualTo: doctorId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => ConsultationNote.fromMap(d.data(), d.id))
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return ConsultationNote.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<ConsultationNote>()
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
   }
 
   Future<void> addConsultationNote(ConsultationNote note) async {
@@ -880,11 +948,22 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colVitals)
         .where('patientId', isEqualTo: patientId)
-        .orderBy('recordedAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => VitalReading.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return VitalReading.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<VitalReading>()
+              .toList()
+            ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+          return list;
+        });
   }
 
   Future<void> addVitalReading(VitalReading reading) => _db
