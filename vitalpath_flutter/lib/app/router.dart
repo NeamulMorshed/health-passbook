@@ -224,14 +224,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/user-select', builder: (_, __) => const UserSelectScreen()),
 
-      // Auth routes
+      // Auth routes — no parent-level redirect.
+      // go_router fires a GoRoute's redirect for the parent path AND every child
+      // path. Any unconditional redirect here causes /auth/login to redirect to
+      // itself infinitely → "Page not found" crash. The top-level redirect
+      // already sends unauthenticated users to /auth/login; bare /auth is never
+      // navigated to directly.
       GoRoute(
         path: '/auth',
-        // Only redirect the bare /auth path to /auth/login. Without the guard
-        // this parent redirect also fires for the /auth/login child match,
-        // producing an infinite redirect loop → "Page not found" error screen.
-        redirect: (_, state) =>
-            state.uri.path == '/auth' ? '/auth/login' : null,
+        redirect: (_, state) => null,
         routes: [
           GoRoute(
             path: 'login',
