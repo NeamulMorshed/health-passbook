@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "13743a737ac5d6e3",
+        "id": "a3ff34e5b8a786d8",
         "type": "tabs",
         "children": [
           {
-            "id": "5790e040d4c75721",
+            "id": "ea272d85e5344106",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -157,6 +157,16 @@
               "icon": "lucide-list",
               "title": "Outline"
             }
+          },
+          {
+            "id": "e401794a54c40e56",
+            "type": "leaf",
+            "state": {
+              "type": "calendar",
+              "state": {},
+              "icon": "calendar-with-checkmark",
+              "title": "Calendar"
+            }
           }
         ]
       }
@@ -173,18 +183,23 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "templater-obsidian:Templater": false,
+      "obsidian-kanban:Create new board": false,
+      "obsidian-git:Open Git source control": false
     }
   },
-  "active": "fdec6ac3cd937dfd",
+  "active": "ea272d85e5344106",
   "lastOpenFiles": [
+    "90 - Business/Business Overview.md",
+    "vitalpath_flutter/functions/node_modules/jose/README.md",
+    "40 - Security/Security Overview.md",
     "20 - Features/Kanban Board.md",
     "20 - Features/Kanban Board.md.tmp.65549.1c15733854f3",
     "70 - Reference/Quick Reference.md",
     "80 - Decisions/ADR-004 Firestore Security Rules.md",
     "80 - Decisions/ADR-004 Firestore Security Rules.md.tmp.65549.ee28b23970be",
     "80 - Decisions/ADR-001 Client-Side Sorting.md",
-    "90 - Business/Business Overview.md",
     "50 - UX + Design/Design System.md",
     "60 - Sessions/Session Log.md",
     "70 - Reference/Templates/Session.md",
@@ -200,7 +215,6 @@
     "40 - Security/S-02 Role Self-Escalation.md",
     "40 - Security/S-01 Medical Data Exposure.md",
     "40 - Security/S-01 Medical Data Exposure.md.tmp.65549.7c57dc84f275",
-    "40 - Security/Security Overview.md",
     "10 - Project/Three Portals.md",
     "10 - Project/File Map.md",
     "10 - Project/Tech Stack.md",

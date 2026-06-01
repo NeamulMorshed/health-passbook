@@ -1,4 +1,8 @@
 class AppConstants {
+  // App version — single source of truth for UI display.
+  // Keep in sync with pubspec.yaml version on every release.
+  static const appVersion = '2.12.0';
+
   // Firestore collections
   static const colUsers = 'users';
   static const colPatients = 'patients';

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hugeicons/hugeicons.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
 import '../../../providers/auth_provider.dart';
@@ -201,8 +202,8 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text('Omra v2.12.0',
-                  style: TextStyle(
+              child: Text('Omra v${AppConstants.appVersion}',
+                  style: const TextStyle(
                       fontSize: 12, color: AppColors.mutedForeground)),
             ),
           ),

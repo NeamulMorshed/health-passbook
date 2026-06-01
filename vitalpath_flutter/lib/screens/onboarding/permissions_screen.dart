@@ -51,6 +51,18 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       why: 'So you never miss a dose or appointment',
       permission: Permission.notification,
     ),
+    _PermData(
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedRunning,
+          color: AppColors.primary,
+          size: 50),
+      color: AppColors.primary,
+      title: 'Step Counting',
+      subtitle:
+          'Count your daily steps automatically so you can track activity and reach your fitness goals.',
+      why: 'So we can count your steps for activity tracking',
+      permission: Permission.activityRecognition,
+    ),
   ];
 
   void _allow() async {
