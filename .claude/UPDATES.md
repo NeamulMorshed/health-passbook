@@ -3,6 +3,17 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-01 · v2.12.0+41 (Play Store permission + screen support fixes)
+**Focus:** Clean up uncommitted Play Store fixes before submission
+**Changed:**
+- `android/AndroidManifest.xml` — removed `USE_EXACT_ALARM` (Play Store policy violation); kept `SCHEDULE_EXACT_ALARM`; added `<supports-screens>` restricting to phone-only (320–480dp)
+- `android/local.properties` — versionCode 38 → 41 (synced with pubspec)
+- `pubspec.yaml` — version 2.12.0+38 → 2.12.0+41 (skipped 39–40, failed local builds)
+- `lib/screens/splash/splash_screen.dart` — wrapped logo in `GestureDetector`; tap anywhere calls `_navigate` immediately
+- `CLAUDE.md` — version reference updated to 2.12.0+41
+**Next:** Enable GitHub Pages on `docs/` folder → paste URL into Play Console Privacy Policy field → complete Data Safety form → upload AAB to internal test track
+
+---
 ## 2026-05-27 · Play Store compliance (signing, disclaimer, privacy policy)
 **Focus:** Resolve all blockers and high-risk items identified in Play Store policy audit before submission
 **Changed:**
