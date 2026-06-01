@@ -335,12 +335,16 @@ class _HomeContent extends ConsumerWidget {
                     );
                   }),
 
-                  // ── AWARENESS CARD ────────────────────────────────────────
-                  _DailyAwarenessCard(uid: user.uid),
+                  // ── TODAY'S ACTIONS (G-1: most-urgent above fold) ─────────
+                  _UpcomingTasksCard(uid: user.uid),
                   const SizedBox(height: 12),
 
-                  // ── TODAY'S ACTIONS ───────────────────────────────────────
-                  _UpcomingTasksCard(uid: user.uid),
+                  // ── REFILL ────────────────────────────────────────────────
+                  _RefillCountdownCard(medsAsync: medsAsync),
+                  const SizedBox(height: 12),
+
+                  // ── AWARENESS CARD ────────────────────────────────────────
+                  _DailyAwarenessCard(uid: user.uid),
                   const SizedBox(height: 12),
 
                   // ── ALERTS ────────────────────────────────────────────────
@@ -357,10 +361,8 @@ class _HomeContent extends ConsumerWidget {
                       medsAsync: medsAsync,
                       mealsAsync: mealsAsync),
                   const SizedBox(height: 12),
-                  _RefillCountdownCard(medsAsync: medsAsync),
 
                   // ── NUMBERS ───────────────────────────────────────────────
-                  const SizedBox(height: 12),
                   _AdherenceRingCard(uid: user.uid),
                   const SizedBox(height: 12),
                   _FamilyStatusBar(uid: user.uid),
