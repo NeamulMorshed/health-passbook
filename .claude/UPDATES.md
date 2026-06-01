@@ -3,6 +3,17 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-02 · v2.12.0+41 (P3 explainability — tier 4 of P0–P3; multi-role deferred)
+**Focus:** Final tier. Per scope decision, implemented the low-risk explainability piece; **multi-role (G-8) deferred** to its own brainstorm→spec→build cycle (architectural change to recently-stabilized auth/routing — high regression risk, warrants isolated effort + careful auth testing).
+**Changed (G-5 needs-attention explainability):**
+- `lib/models/patient_attention.dart` — added `mostRecentAbnormalAt` (DateTime?, optional).
+- `lib/providers/doctor_attention_provider.dart` — populates it from `abnormal.first.recordedAt`.
+- `lib/screens/doctor/dashboard/doc_dashboard_screen.dart` — adherence pill now reads "…% adherence · 7-day"; abnormal-vital pill appends relative time ("BP 165/95 · 2d ago"). Added `_relativeTime` helper. Doctor now sees *why now / since when*, not just a flag.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 info. `flutter test` → 11/11.
+**Deferred to dedicated efforts:** (1) Multi-role accounts without forced sign-out (G-8). (2) Full Material→HugeIcons migration (258 usages, see P2 entry).
+**Next:** PR for P0+P1+P2+P3 (branch `feature/ux-audit-improvements`).
+
+---
 ## 2026-06-02 · v2.12.0+41 (P2 consistency debt — tier 3 of P0–P3)
 **Focus:** Mechanical consistency cleanup (safe/verifiable scope). Plan: `docs/superpowers/plans/2026-06-02-p2-consistency.md`. Branch `feature/ux-audit-improvements`.
 **Audit correction:** The original audit's "194 Material icons" was a grep artifact (`grep Icons.` also matched `HugeIcons.strokeRounded*`). Real Material-icon usage = **258 across 40 files / ~110 distinct glyphs**.
