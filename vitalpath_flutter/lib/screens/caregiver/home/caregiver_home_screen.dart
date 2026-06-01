@@ -156,6 +156,7 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
               }
               ref.read(_caregiverLastRefreshedProvider.notifier).state =
                   DateTime.now();
+              if (context.mounted) AppSnackBar.info(context, 'Updated just now');
             },
             child: CustomScrollView(slivers: [
               SliverPadding(

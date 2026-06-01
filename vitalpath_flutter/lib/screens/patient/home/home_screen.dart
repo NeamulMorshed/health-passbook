@@ -298,6 +298,7 @@ class _HomeContent extends ConsumerWidget {
           ref.invalidate(vitalsProvider(user.uid));
           ref.invalidate(gamificationProvider(user.uid));
           ref.read(_homeLastRefreshedProvider.notifier).state = DateTime.now();
+          if (context.mounted) AppSnackBar.info(context, 'Updated just now');
         },
         child: CustomScrollView(
           slivers: [
