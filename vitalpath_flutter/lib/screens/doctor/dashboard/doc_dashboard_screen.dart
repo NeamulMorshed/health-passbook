@@ -12,6 +12,7 @@ import '../../../models/app_user.dart';
 import '../../../models/appointment.dart';
 import '../../../models/patient_attention.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
+import '../../../core/widgets/status_hero_card.dart';
 
 final _docLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -118,6 +119,22 @@ class DocDashboardScreen extends ConsumerWidget {
                       a.scheduledAt!.isBefore(todayEnd))
                   .length;
 
+              final todayAppts = [...confirmed, ...pending]
+                  .where((a) =>
+                      a.scheduledAt != null &&
+                      !a.scheduledAt!.isBefore(todayStart) &&
+                      a.scheduledAt!.isBefore(todayEnd))
+                  .toList()
+                ..sort((x, y) => x.scheduledAt!.compareTo(y.scheduledAt!));
+              final scheduleRows = todayAppts
+                  .map((a) => ScheduleRow(
+                        time: DateFormat('HH:mm').format(a.scheduledAt!),
+                        name: a.patientName,
+                        status: a.isConfirmed ? 'Confirmed' : 'Pending',
+                        confirmed: a.isConfirmed,
+                      ))
+                  .toList();
+
               return RefreshIndicator(
                 color: AppColors.primary,
                 onRefresh: () async {
@@ -125,6 +142,9 @@ class DocDashboardScreen extends ConsumerWidget {
                   ref.invalidate(doctorAppointmentsProvider(user.uid));
                   ref.read(_docLastRefreshedProvider.notifier).state =
                       DateTime.now();
+                  if (context.mounted) {
+                    AppSnackBar.info(context, 'Updated just now');
+                  }
                 },
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
@@ -181,6 +201,14 @@ class DocDashboardScreen extends ConsumerWidget {
                         iconColor: AppColors.warning,
                       )),
                     ]),
+                    const SizedBox(height: 16),
+
+                    // Today's schedule hero (closes G-4: list, not just a count)
+                    StatusHeroCard.schedule(
+                      dateLabel: DateFormat('EEE, MMM d').format(DateTime.now()),
+                      rows: scheduleRows,
+                      onOpen: () => context.go('/doc/appointments'),
+                    ),
                     const SizedBox(height: 24),
 
                     // Needs Attention (position #3 per Dr. Rahman persona)
