@@ -1,0 +1,215 @@
+{
+  "main": {
+    "id": "6b47e4e4f549debc",
+    "type": "split",
+    "children": [
+      {
+        "id": "13743a737ac5d6e3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5790e040d4c75721",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a6f7a752095925d4",
+    "type": "split",
+    "children": [
+      {
+        "id": "a5275c4c7a37c2bf",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fdec6ac3cd937dfd",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2950a4b92d174e6a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "c9c1d86c86732bb6",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "ef8cc734e224263e",
+    "type": "split",
+    "children": [
+      {
+        "id": "45a1106efa72637e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b4db50f7d632bec7",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "3499e1ca5de7ea98",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "15c39320f52d42a8",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "e734341b1ecf6eb0",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "1d2b54953d494c7d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "fdec6ac3cd937dfd",
+  "lastOpenFiles": [
+    "20 - Features/Kanban Board.md",
+    "20 - Features/Kanban Board.md.tmp.65549.1c15733854f3",
+    "70 - Reference/Quick Reference.md",
+    "80 - Decisions/ADR-004 Firestore Security Rules.md",
+    "80 - Decisions/ADR-004 Firestore Security Rules.md.tmp.65549.ee28b23970be",
+    "80 - Decisions/ADR-001 Client-Side Sorting.md",
+    "90 - Business/Business Overview.md",
+    "50 - UX + Design/Design System.md",
+    "60 - Sessions/Session Log.md",
+    "70 - Reference/Templates/Session.md",
+    "30 - Architecture/Architecture Overview.md",
+    "80 - Decisions/ADR Index.md",
+    "80 - Decisions/ADR Index.md.tmp.65549.4c2cb5ce37e8",
+    "20 - Features/Backlog.md",
+    "50 - UX + Design/Personas.md",
+    "40 - Security/S-06 FCM Caregiver UID Bug.md",
+    "40 - Security/S-04 Doctor Patient Check — Prescriptions.md",
+    "40 - Security/S-04 Doctor Patient Check — Prescriptions.md.tmp.65549.02dddb932ce5",
+    "40 - Security/S-03 Doctor Patient Check — Medicines.md",
+    "40 - Security/S-02 Role Self-Escalation.md",
+    "40 - Security/S-01 Medical Data Exposure.md",
+    "40 - Security/S-01 Medical Data Exposure.md.tmp.65549.7c57dc84f275",
+    "40 - Security/Security Overview.md",
+    "10 - Project/Three Portals.md",
+    "10 - Project/File Map.md",
+    "10 - Project/Tech Stack.md",
+    "00 - Home/Dashboard.md",
+    "90 - Business",
+    "80 - Decisions",
+    "70 - Reference/Templates",
+    "70 - Reference",
+    "60 - Sessions",
+    "CLAUDE.md"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "command_timeout": 5,
+  "templates_folder": "70 - Reference/Templates",
+  "auto_jump_to_cursor": true,
+  "use_system_commands": false,
+  "trigger_on_file_creation": false,
+  "auto_jump_to_cursor_on_all": false,
+  "enable_ribbon_icon": true,
+  "default_new_note_template": "70 - Reference/Templates/Session",
+  "folder_templates": [
+    {
+      "folder": "60 - Sessions",
+      "template": "70 - Reference/Templates/Session"
+    }
+  ],
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": false,
+  "enabled_templates_hotkeys": [],
+  "startup_templates": []
+}
