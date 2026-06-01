@@ -3,6 +3,17 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-02 · v2.12.0+41 (P2 consistency debt — tier 3 of P0–P3)
+**Focus:** Mechanical consistency cleanup (safe/verifiable scope). Plan: `docs/superpowers/plans/2026-06-02-p2-consistency.md`. Branch `feature/ux-audit-improvements`.
+**Audit correction:** The original audit's "194 Material icons" was a grep artifact (`grep Icons.` also matched `HugeIcons.strokeRounded*`). Real Material-icon usage = **258 across 40 files / ~110 distinct glyphs**.
+**Changed:**
+- `lib/core/utils/greeting.dart` — NEW. `greetingForHour()`. Replaced 3 duplicated `_greeting()` helpers (patient/caregiver/doctor). Doctor gains the 4th "Good Night" branch (cross-portal consistency).
+- Exact raw-hex → `AppColors` tokens across 5 screens: `0xFF7C3AED`→inviteAccent (×10), `0xFFD97706`→warning, `0xFF3B82F6`→info, `0xFFEFF6FF`→infoLight. Google brand colors + decorative-gradient hex (5B21B6/8B5CF6/6366F1/0EA5E9/4338CA/22C55E/…) intentionally left raw (no exact token).
+**Deferred (own dedicated pass):** the 258 Material-icon → HugeIcons migration. `Icon(Icons.X)` → `HugeIcon(icon:…, color:, size:)` is an API change (not a rename) with `const` cascades + appearance-preservation needs across 40 files; a *partial* swap creates a worse half-consistent state. Needs a verified Material→HugeIcons mapping table. ~110 distinct glyphs; many niche (medical/food/fitness) lack clean twins.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 info. `flutter test` → 11/11.
+**Next:** P3 (multi-role without forced sign-out; needs-attention explainability), then the dedicated icon-migration pass, then PR.
+
+---
 ## 2026-06-02 · v2.12.0+41 (P1 flow/heuristic gaps — tier 2 of P0–P3)
 **Focus:** Second tier of the UX-audit program (brainstorm→spec→plan→build via superpowers). Branch `feature/ux-audit-improvements` (continues from P0). Spec/plan: `docs/superpowers/specs/2026-06-02-p1-flow-heuristic-design.md`, `docs/superpowers/plans/2026-06-02-p1-flow-heuristic.md`.
 **Changed (NEW):**
