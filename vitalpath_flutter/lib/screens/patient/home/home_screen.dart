@@ -23,6 +23,7 @@ import '../../../core/widgets/onboarding_tour.dart';
 import '../../../providers/caregiver_provider.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
+import '../../../core/widgets/dose_undo.dart';
 
 // Session-only: dismissed state resets each app launch — no SharedPreferences needed.
 
@@ -1600,12 +1601,15 @@ class _MedRow extends ConsumerWidget {
         const SizedBox(width: 10),
         GestureDetector(
           onTap: () async {
-            final hp = await ref
-                .read(medicineNotifierProvider.notifier)
-                .logDose(uid, medicine.id);
-            if (hp > 0 && context.mounted) {
-              AppSnackBar.success(context, '+$hp HP  Dose logged!');
-            }
+            final notifier = ref.read(medicineNotifierProvider.notifier);
+            await logDoseWithUndo(
+              context,
+              record: () =>
+                  notifier.recordDose(uid, medicine.id, medicine: medicine),
+              undo: (ts) =>
+                  notifier.unlogDose(uid, medicine.id, ts, medicine: medicine),
+              awardHp: () => notifier.awardDoseHp(uid),
+            );
           },
           child: Container(
             height: 36,

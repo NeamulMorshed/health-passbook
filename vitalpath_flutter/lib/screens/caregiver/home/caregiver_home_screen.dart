@@ -14,6 +14,7 @@ import '../../../providers/caregiver_provider.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
+import '../../../core/widgets/dose_undo.dart';
 
 final _caregiverLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -661,9 +662,15 @@ class _MedTile extends ConsumerWidget {
                       backgroundColor: AppColors.caregiver),
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    await ref
-                        .read(familyMedicinePatchProvider)
-                        .logDose(caregiverUid, memberId, medicine.id);
+                    final patch = ref.read(familyMedicinePatchProvider);
+                    if (!context.mounted) return;
+                    await logDoseWithUndo(
+                      context,
+                      record: () =>
+                          patch.recordDose(caregiverUid, memberId, medicine.id),
+                      undo: (ts) => patch.unlogDose(
+                          caregiverUid, memberId, medicine.id, ts),
+                    );
                   },
                   child: const Text('Log as Taken'),
                 ),
