@@ -126,10 +126,18 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Disclaimer gate — must accept before anything else is reachable.
       final disclaimerAccepted = ref.read(disclaimerAcceptedProvider);
-      if (!disclaimerAccepted && loc != '/disclaimer' && loc != '/privacy-policy') {
+      if (!disclaimerAccepted) {
+        // Until accepted, only the disclaimer and privacy screens are reachable.
+        // We MUST return here (not fall through to the auth/role logic below):
+        // an unauthenticated user sitting on /disclaimer would otherwise be
+        // redirected to /auth/login by the auth guard, which the gate bounces
+        // straight back to /disclaimer — a redirect loop that exhausts
+        // go_router's redirect limit and renders the errorBuilder
+        // ("Page not found: /auth/login").
+        if (loc == '/disclaimer' || loc == '/privacy-policy') return null;
         return '/disclaimer';
       }
-      if (disclaimerAccepted && loc == '/disclaimer') return '/splash';
+      if (loc == '/disclaimer') return '/splash';
 
       final authState = ref.read(firebaseAuthStateProvider);
 
