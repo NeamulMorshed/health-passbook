@@ -191,6 +191,10 @@
   },
   "active": "ea272d85e5344106",
   "lastOpenFiles": [
+    "WORKFLOW_STRATEGY_REPORT.md",
+    "Untitled.canvas",
+    "60 - Sessions/2026-06-01.md",
+    "vitalpath_flutter/functions/node_modules/bignumber.js/CHANGELOG.md",
     "vitalpath_flutter/firebase-debug.log",
     "vitalpath_flutter/build/app/intermediates/cxx/release/546e18r2/logs/x86_64/generate_cxx_metadata_1145_timing.txt",
     "vitalpath_flutter/build/app/intermediates/cxx/release/546e18r2/logs/armeabi-v7a/generate_cxx_metadata_1145_timing.txt",
@@ -201,7 +205,6 @@
     "vitalpath_flutter/build/jni/intermediates/cxx/RelWithDebInfo/4x6d6l51/logs/arm64-v8a/generate_cxx_metadata_1142_timing.txt",
     "vitalpath_flutter/build/app/intermediates/incremental/release-mergeJavaRes/zip-cache/NdcaHaDdCUYIGxpY_ZYQif1S_BM=",
     "vitalpath_flutter/build/app/intermediates/cxx/release/546e18r2/logs/x86_64/generate_cxx_metadata_914_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/cxx/release/546e18r2/logs/armeabi-v7a/generate_cxx_metadata_911_timing.txt",
     "90 - Business/Business Overview.md",
     "vitalpath_flutter/functions/node_modules/jose/README.md",
     "40 - Security/Security Overview.md",
@@ -224,7 +227,6 @@
     "10 - Project/Three Portals.md",
     "10 - Project/File Map.md",
     "10 - Project/Tech Stack.md",
-    "00 - Home/Dashboard.md",
-    "CLAUDE.md"
+    "00 - Home/Dashboard.md"
   ]
 }
