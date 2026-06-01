@@ -25,6 +25,7 @@ import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
 import '../../../core/widgets/dose_undo.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../../core/utils/greeting.dart';
 
 // Session-only: dismissed state resets each app launch — no SharedPreferences needed.
 
@@ -275,7 +276,7 @@ class _HomeContent extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_greeting(),
+            Text(greetingForHour(),
                 style: const TextStyle(
                     fontSize: 12, color: AppColors.mutedForeground)),
             const SizedBox(height: 1),
@@ -415,13 +416,6 @@ class _HomeContent extends ConsumerWidget {
     );
   }
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return 'Good Morning';
-    if (h >= 12 && h < 17) return 'Good Afternoon';
-    if (h >= 17 && h < 23) return 'Good Evening';
-    return 'Good Night';
-  }
 }
 
 // ── TIER 3: Caregiver active banner ──────────────────────────────────────────

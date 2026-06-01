@@ -16,6 +16,7 @@ import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
 import '../../../core/widgets/dose_undo.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../../core/utils/greeting.dart';
 
 final _caregiverLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -69,14 +70,6 @@ class _HomeContent extends ConsumerStatefulWidget {
 class _HomeContentState extends ConsumerState<_HomeContent> {
   String? _selectedMemberId;
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h >= 5 && h < 12) return 'Good Morning';
-    if (h >= 12 && h < 17) return 'Good Afternoon';
-    if (h >= 17 && h < 23) return 'Good Evening';
-    return 'Good Night';
-  }
-
   String _initials(String name) {
     final parts = name.trim().split(' ');
     if (parts.length >= 2)
@@ -122,7 +115,7 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
             scrolledUnderElevation: 0,
             title:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_greeting(),
+              Text(greetingForHour(),
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.mutedForeground)),
               Text(

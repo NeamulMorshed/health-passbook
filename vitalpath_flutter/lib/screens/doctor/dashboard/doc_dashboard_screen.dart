@@ -14,6 +14,7 @@ import '../../../models/patient_attention.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
 import '../../../core/widgets/skeleton.dart';
+import '../../../core/utils/greeting.dart';
 
 final _docLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -62,7 +63,7 @@ class DocDashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _greeting(),
+                  greetingForHour(),
                   style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -303,12 +304,6 @@ class DocDashboardScreen extends ConsumerWidget {
     );
   }
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
 }
 
 class _ActionTile extends StatelessWidget {
