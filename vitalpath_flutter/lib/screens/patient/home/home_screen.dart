@@ -24,6 +24,7 @@ import '../../../providers/caregiver_provider.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
 import '../../../core/widgets/dose_undo.dart';
+import '../../../core/widgets/skeleton.dart';
 
 // Session-only: dismissed state resets each app launch — no SharedPreferences needed.
 
@@ -92,7 +93,7 @@ class HomeScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+          const Scaffold(body: SafeArea(child: DashboardSkeleton())),
       error: (_, __) => const Scaffold(
           body: Center(
               child: EmptyState(

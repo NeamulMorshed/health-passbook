@@ -13,6 +13,7 @@ import '../../../models/appointment.dart';
 import '../../../models/patient_attention.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
 import '../../../core/widgets/status_hero_card.dart';
+import '../../../core/widgets/skeleton.dart';
 
 final _docLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -26,7 +27,7 @@ class DocDashboardScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+          const Scaffold(body: SafeArea(child: DashboardSkeleton())),
       error: (_, __) => const Scaffold(
           body: Center(
               child: EmptyState(
@@ -98,7 +99,7 @@ class DocDashboardScreen extends ConsumerWidget {
             ],
           ),
           body: apptsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const DashboardSkeleton(),
             error: (e, __) => Center(
                 child: EmptyState(
               icon: Icons.error_outline_rounded,
