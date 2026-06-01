@@ -53,7 +53,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     ),
     _PermData(
       icon: HugeIcon(
-          icon: HugeIcons.strokeRoundedRunning,
+          icon: HugeIcons.strokeRoundedWorkoutRun,
           color: AppColors.primary,
           size: 50),
       color: AppColors.primary,

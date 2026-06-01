@@ -203,7 +203,7 @@ class _PrivacySecurityScreenState extends ConsumerState<PrivacySecurityScreen> {
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text('Omra v${AppConstants.appVersion}',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12, color: AppColors.mutedForeground)),
             ),
           ),

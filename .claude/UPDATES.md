@@ -3,6 +3,18 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-01 · v2.12.0+41 (Play Store readiness audit + 3 code fixes)
+**Focus:** Full Play Console policy audit before submission; fix code-level blockers
+**Audit findings:** 3 blockers (B1 privacy URL not live, B2 Data Safety form, B3 supports-screens phone-only restriction), 2 code fixes (F1 missing ACTIVITY_RECOGNITION rationale, F2 hardcoded version string). Signing/google-services/icons/account-deletion/disclaimer all PASS.
+**Changed (code fixes executed):**
+- `android/app/src/main/AndroidManifest.xml` — B3: `<supports-screens>` now `largeScreens="true"` + `xlargeScreens="true"`, removed `compatibleWidthLimitDp="480"` (was excluding tablets/foldables → Play large-screen policy flag). Phone + tablet now supported.
+- `lib/screens/onboarding/permissions_screen.dart` — F1: added 4th onboarding permission step "Step Counting" → `Permission.activityRecognition` with rationale (manifest declared + pedometer used it but no runtime rationale screen). Icon `strokeRoundedWorkoutRun`.
+- `lib/core/constants/app_constants.dart` — F2: new `appVersion = '2.12.0'` const (single source of truth; sync on each release)
+- `lib/screens/patient/profile/privacy_screen.dart` — F2: replaced hardcoded `'Omra v2.12.0'` with `'Omra v${AppConstants.appVersion}'`; added app_constants import
+**Build:** `flutter build appbundle --release` ✓ → `build/app/outputs/bundle/release/app-release.aab` (68.4 MB), signed release key. `flutter analyze` on changed files: 0 issues.
+**Next (manual, not publishable until done):** (1) Enable GitHub Pages on `docs/` → paste live privacy-policy.html URL into Play Console. (2) Complete Data Safety form (health, location, photos, biometrics, device IDs — see audit table). (3) Upload AAB to internal test track.
+
+---
 ## 2026-06-01 · v2.12.0+41 (Play Store permission + screen support fixes)
 **Focus:** Clean up uncommitted Play Store fixes before submission
 **Changed:**
