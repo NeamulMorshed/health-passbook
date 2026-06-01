@@ -232,27 +232,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/user-select', builder: (_, __) => const UserSelectScreen()),
 
-      // Auth routes — no parent-level redirect.
-      // go_router fires a GoRoute's redirect for the parent path AND every child
-      // path. Any unconditional redirect here causes /auth/login to redirect to
-      // itself infinitely → "Page not found" crash. The top-level redirect
-      // already sends unauthenticated users to /auth/login; bare /auth is never
-      // navigated to directly.
+      // Auth routes — flat top-level paths, no parent container.
+      // Previously nested under /auth GoRoute, but any parent-level redirect
+      // (even null-returning) in go_router 14.x fires for child paths too and
+      // can leave /auth/login unresolvable → "Page not found" crash.
       GoRoute(
-        path: '/auth',
-        redirect: (_, state) => null,
-        routes: [
-          GoRoute(
-            path: 'login',
-            builder: (_, state) {
-              final extra = state.extra as Map<String, dynamic>?;
-              return LoginScreen(userType: extra?['userType'] as String?);
-            },
-          ),
-          GoRoute(
-              path: 'faceid',
-              builder: (_, __) => const FaceIdScreen(isSetupMode: false)),
-        ],
+        path: '/auth/login',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return LoginScreen(userType: extra?['userType'] as String?);
+        },
+      ),
+      GoRoute(
+        path: '/auth/faceid',
+        builder: (_, __) => const FaceIdScreen(isSetupMode: false),
       ),
 
       // Patient onboarding
