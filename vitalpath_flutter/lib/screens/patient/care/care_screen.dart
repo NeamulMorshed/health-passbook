@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/anim/reduced_motion.dart';
+import '../../../core/widgets/dose_undo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
@@ -655,16 +656,23 @@ class _MedCardState extends ConsumerState<_MedCard> {
     try {
       final fm = widget.familyMember;
       if (fm != null) {
-        await ref
-            .read(familyMedicinePatchProvider)
-            .logDose(widget.uid, fm.id, widget.med.id);
+        final patch = ref.read(familyMedicinePatchProvider);
+        await logDoseWithUndo(
+          context,
+          record: () => patch.recordDose(widget.uid, fm.id, widget.med.id),
+          undo: (ts) => patch.unlogDose(widget.uid, fm.id, widget.med.id, ts),
+          // family path: no HP
+        );
       } else {
-        final hp = await ref
-            .read(medicineNotifierProvider.notifier)
-            .logDose(widget.uid, widget.med.id);
-        if (hp > 0 && mounted) {
-          AppSnackBar.success(context, '+$hp HP  Dose logged!');
-        }
+        final notifier = ref.read(medicineNotifierProvider.notifier);
+        await logDoseWithUndo(
+          context,
+          record: () => notifier.recordDose(widget.uid, widget.med.id,
+              medicine: widget.med),
+          undo: (ts) => notifier.unlogDose(widget.uid, widget.med.id, ts,
+              medicine: widget.med),
+          awardHp: () => notifier.awardDoseHp(widget.uid),
+        );
       }
     } finally {
       if (mounted) setState(() => _isTaking = false);
