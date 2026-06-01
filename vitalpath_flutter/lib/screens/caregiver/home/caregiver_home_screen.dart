@@ -13,6 +13,7 @@ import '../../../providers/patient_provider.dart';
 import '../../../providers/caregiver_provider.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
+import '../../../core/widgets/status_hero_card.dart';
 
 final _caregiverLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -841,95 +842,76 @@ class _DailySummaryBanner extends ConsumerWidget {
     );
 
     final meds = medsAsync.asData?.value;
+    final firstName = memberName.split(' ').first;
+    final relationLine =
+        memberAge != null ? '$memberAge yrs · $memberRelationship' : memberRelationship;
 
-    final String statusText;
-    final Color statusColor;
-    final List<List<dynamic>> statusIcon;
-
+    // Loading / error → calm neutral hero, no ring fill.
     if (meds == null) {
-      statusText =
-          medsAsync.isLoading ? 'Loading today\'s status…' : 'Could not load';
-      statusColor = AppColors.mutedForeground;
-      statusIcon = HugeIcons.strokeRoundedClock01;
-    } else {
-      final active = meds.where((m) => m.isActive).toList();
-      if (active.isEmpty) {
-        statusText = 'No medicines scheduled today';
-        statusColor = AppColors.mutedForeground;
-        statusIcon = HugeIcons.strokeRoundedCheckmarkCircle01;
-      } else {
-        final due = active
-            .where((m) =>
-                m.hasNoScheduledTimes ? !m.fullyTakenToday : m.hasDueSlot)
-            .length;
-        if (due == 0) {
-          statusText = 'All caught up on medicines today';
-          statusColor = AppColors.success;
-          statusIcon = HugeIcons.strokeRoundedCheckmarkCircle01;
+      return StatusHeroCard(
+        data: StatusHeroData(
+          fraction: 0,
+          ringLabel: '…',
+          pillLabel: 'CHECKING',
+          tone: HeroTone.positive,
+          title: memberName,
+          subtitle: medsAsync.isLoading
+              ? 'Loading today\'s status…'
+              : 'Could not load status. Pull to refresh.',
+        ),
+      );
+    }
+
+    // Tally today's dose slots (handles meds with no scheduled times).
+    final active = meds.where((m) => m.isActive).toList();
+    var total = 0;
+    var taken = 0;
+    var due = 0;
+    for (final m in active) {
+      if (m.hasNoScheduledTimes) {
+        total += 1;
+        if (m.fullyTakenToday) {
+          taken += 1;
         } else {
-          statusText = '$due medicine${due > 1 ? 's' : ''} to take today';
-          statusColor = AppColors.caregiver;
-          statusIcon = HugeIcons.strokeRoundedMedicine01;
+          due += 1;
         }
+      } else {
+        final slots = m.todaySlots;
+        total += slots.length;
+        taken += slots.where((s) => s.isTaken).length;
+        if (m.hasDueSlot) due += 1;
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+    // No meds scheduled → reassuring all-clear.
+    if (total == 0) {
+      return StatusHeroCard(
+        data: StatusHeroData(
+          fraction: 1,
+          ringLabel: '✓',
+          pillLabel: 'ALL CLEAR',
+          tone: HeroTone.positive,
+          title: '$firstName is all set today',
+          subtitle: '$relationLine · no medicines scheduled',
+        ),
+      );
+    }
+
+    final frac = total == 0 ? 1.0 : taken / total;
+    final caughtUp = due == 0;
+    return StatusHeroCard(
+      data: StatusHeroData(
+        fraction: frac,
+        ringLabel: caughtUp ? '✓' : '$taken/$total',
+        pillLabel: caughtUp ? 'ON TRACK' : 'TO DO',
+        tone: caughtUp ? HeroTone.positive : HeroTone.warning,
+        title: caughtUp
+            ? '$firstName is on track today'
+            : '$firstName has ${total - taken} dose${total - taken == 1 ? '' : 's'} to take',
+        subtitle: caughtUp
+            ? '$relationLine · all caught up on medicines'
+            : '$relationLine · tap Check Medicines below',
       ),
-      child: Row(children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.caregiver.withValues(alpha: 0.15),
-          ),
-          child: Center(
-            child: Text(
-              memberInitials,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: AppColors.caregiver),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              memberName,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-            if (memberAge != null)
-              Text(
-                '$memberAge yrs · $memberRelationship',
-                style: const TextStyle(
-                    fontSize: 11, color: AppColors.mutedForeground),
-              ),
-            const SizedBox(height: 4),
-            Row(children: [
-              HugeIcon(icon: statusIcon, color: statusColor, size: 12),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: statusColor,
-                      fontWeight: FontWeight.w600),
-                ),
-              ),
-            ]),
-          ]),
-        ),
-      ]),
     );
   }
 }
