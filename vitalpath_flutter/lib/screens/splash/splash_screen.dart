@@ -176,13 +176,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (_onboardingShown) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SvgPicture.asset(
-              'assets/icons/Starting logo.svg',
-              width: 184,
-              height: 36,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _navigate,
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SvgPicture.asset(
+                'assets/icons/Starting logo.svg',
+                width: 184,
+                height: 36,
+              ),
             ),
           ),
         ),
