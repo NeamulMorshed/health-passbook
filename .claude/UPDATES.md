@@ -3,6 +3,23 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-02 · v2.12.0+41 (P0 emotion/generic-UI uplift — tier 1 of P0–P3)
+**Focus:** First tier of the UX-audit improvement program. New deep audit (`50 - UX + Design/UX_Audit_2026-06-01.md`, fresh score 7.4/10) drove a brainstorm→spec→plan→build cycle via superpowers skills + ui-ux-pro-max visual companion. Branch: `feature/ux-audit-improvements`.
+**Spec/plan:** `docs/superpowers/specs/2026-06-01-p0-emotion-ui-design.md`, `docs/superpowers/plans/2026-06-01-p0-emotion-ui.md`
+**Changed (NEW):**
+- `lib/core/widgets/status_hero_card.dart` — NEW. `StatusHeroCard` + `StatusHeroData` + `.schedule` variant + `ScheduleRow`. The single elevated daily-status hero per home screen (animated ring, status pill, all-done pulse). 5 widget tests.
+- `lib/core/anim/reduced_motion.dart` — NEW. `prefersReducedMotion(context)` + `safeHaptic(context)`. 2 unit tests.
+- `lib/core/theme/app_theme.dart` — `AppShadows.hero` / `.heroWarning` depth tokens.
+**Changed (screens):**
+- `lib/screens/patient/home/home_screen.dart` — status hero at top (ring + "mark dose" action, on-track/all-done/catch-up states); removed redundant `_DailySnapshotRow` + `_SnapshotChip` (folded into hero); AI insights card de-gradiented → `primaryXLight` on-brand + below fold; refresh toast.
+- `lib/screens/caregiver/home/caregiver_home_screen.dart` — `_DailySummaryBanner` upgraded to `StatusHeroCard` (G-6: dominant "is she OK" glance); refresh toast.
+- `lib/screens/doctor/dashboard/doc_dashboard_screen.dart` — `StatusHeroCard.schedule` today's-appointments hero (G-4 closed); refresh toast.
+- `lib/screens/patient/care/care_screen.dart` — `HapticFeedback.mediumImpact` → reduced-motion-safe `safeHaptic`; status badge scale/fade on state change (check-off feedback).
+- `.claude/DESIGN_SYSTEM.md` — documented StatusHeroCard, AppShadows elevation tier (one-hero-per-screen rule), Motion & Haptics section.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info (baseline unchanged). `flutter test` → 8/8 pass.
+**Next:** P1 (flow/heuristic gaps — mark-taken undo, skeleton loaders, patient-home reorder), then P2 (consistency debt: 194 Material icons→HugeIcons, 44 raw hex→tokens), then P3 (multi-role, needs-attention explainability). Manual visual smoke on 3 home screens before merge.
+
+---
 ## 2026-06-01 · v2.12.0+41 (QA audit + 32-issue fix sweep)
 **Focus:** Full QA audit via 5 parallel investigator agents, then systematic fix of all real bugs found
 **QA findings (verified false positives — NOT fixed):** C-04 gamification null crash (single-statement if/return is correct Dart), H-15 stale HP (resetWeek doesn't reset HP), H-14 FCM payload null (already handled), C-03 disclaimer race (already fixed via main.dart prefs pre-load)
