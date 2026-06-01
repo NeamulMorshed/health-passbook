@@ -232,15 +232,29 @@ class FirestoreService {
         .set(medicine.toMap());
   }
 
-  Future<void> logDose(String patientId, String medicineId) async {
+  Future<void> logDose(String patientId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses':
-          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogDose(
+      String patientId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -411,7 +425,9 @@ class FirestoreService {
   }
 
   Future<void> logFamilyMemberDose(
-      String uid, String memberId, String medicineId) async {
+      String uid, String memberId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(uid)
@@ -420,8 +436,22 @@ class FirestoreService {
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses':
-          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogFamilyMemberDose(
+      String uid, String memberId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -1032,6 +1062,21 @@ class FirestoreService {
       final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
       if (current == null || current <= 0) return;
       tx.update(ref, {'pillsRemaining': current - 1});
+    });
+  }
+
+  Future<void> incrementPillCount(String patientId, String medicineId) async {
+    final ref = _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+      final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
+      if (current == null) return;
+      tx.update(ref, {'pillsRemaining': current + 1});
     });
   }
 }

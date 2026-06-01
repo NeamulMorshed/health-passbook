@@ -185,6 +185,18 @@ class FamilyMedicinePatch {
   Future<void> logDose(String uid, String memberId, String medicineId) =>
       _db.logFamilyMemberDose(uid, memberId, medicineId);
 
+  /// Records a family-member dose and returns the logged timestamp (no HP).
+  Future<DateTime> recordDose(
+      String uid, String memberId, String medicineId) async {
+    final ts = DateTime.now();
+    await _db.logFamilyMemberDose(uid, memberId, medicineId, at: ts);
+    return ts;
+  }
+
+  Future<void> unlogDose(
+          String uid, String memberId, String medicineId, DateTime at) =>
+      _db.unlogFamilyMemberDose(uid, memberId, medicineId, at);
+
   Future<void> delete(String uid, String memberId, String medicineId) =>
       _db.deleteFamilyMemberMedicine(uid, memberId, medicineId);
 
@@ -321,6 +333,36 @@ class MedicineNotifier extends StateNotifier<AsyncValue<void>> {
       return await _gamification.awardMedicineDose(patientId);
     } catch (_) {
       return 0;
+    }
+  }
+
+  /// Records a dose (loggedDoses + pill decrement) WITHOUT awarding HP.
+  /// Returns the exact timestamp written, so it can be reversed via [unlogDose].
+  Future<DateTime> recordDose(String patientId, String medicineId,
+      {Medicine? medicine}) async {
+    final ts = DateTime.now();
+    await _db.logDose(patientId, medicineId, at: ts);
+    if (medicine != null && medicine.pillsRemaining != null) {
+      await _db.decrementPillCount(patientId, medicineId);
+    }
+    return ts;
+  }
+
+  /// Awards HP for a recorded dose. Never throws (returns 0 on failure).
+  Future<int> awardDoseHp(String patientId) async {
+    try {
+      return await _gamification.awardMedicineDose(patientId);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Reverses [recordDose]: removes the timestamp + restores pill count.
+  Future<void> unlogDose(String patientId, String medicineId, DateTime at,
+      {Medicine? medicine}) async {
+    await _db.unlogDose(patientId, medicineId, at);
+    if (medicine != null && medicine.pillsRemaining != null) {
+      await _db.incrementPillCount(patientId, medicineId);
     }
   }
 
