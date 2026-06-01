@@ -133,9 +133,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final authState = ref.read(firebaseAuthStateProvider);
 
-      // If we are still loading the auth state, don't redirect yet.
-      // This prevents bouncing users back to login while the stream is initializing.
-      if (authState.isLoading) return null;
+      // If auth stream is loading or errored, hold position.
+      // Error guard is critical: a failing stream sets isLoading=false but
+      // asData=null, making isAuthenticated=false, which loops every rapid
+      // retry emission back to /auth/login → GoRouter redirect-count overflow.
+      if (authState.isLoading || authState.hasError) return null;
 
       final isAuthenticated = authState.asData?.value != null;
 
