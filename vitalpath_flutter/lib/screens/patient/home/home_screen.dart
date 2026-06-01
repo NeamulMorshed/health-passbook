@@ -202,14 +202,14 @@ class _PendingInviteBanner extends ConsumerWidget {
           .map((inv) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: BentoCard(
-                  color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+                  color: AppColors.inviteAccent.withValues(alpha: 0.08),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   onTap: () => context.go('/accept-invite', extra: inv),
                   child: Row(children: [
                     HugeIcon(
                         icon: HugeIcons.strokeRoundedShield01,
-                        color: const Color(0xFF7C3AED),
+                        color: AppColors.inviteAccent,
                         size: 20),
                     const SizedBox(width: 10),
                     Expanded(
@@ -229,7 +229,7 @@ class _PendingInviteBanner extends ConsumerWidget {
                     ),
                     HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowRight01,
-                        color: const Color(0xFF7C3AED),
+                        color: AppColors.inviteAccent,
                         size: 16),
                   ]),
                 ),
@@ -442,7 +442,7 @@ class _CaregiversActiveBanner extends ConsumerWidget {
       child: Row(children: [
         HugeIcon(
             icon: HugeIcons.strokeRoundedShield01,
-            color: const Color(0xFF7C3AED),
+            color: AppColors.inviteAccent,
             size: 13),
         const SizedBox(width: 6),
         Expanded(
@@ -455,7 +455,7 @@ class _CaregiversActiveBanner extends ConsumerWidget {
           child: const Text('Manage',
               style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF7C3AED),
+                  color: AppColors.inviteAccent,
                   fontWeight: FontWeight.w600)),
         ),
       ]),
@@ -535,9 +535,9 @@ class _TimeContextualCard extends StatelessWidget {
       return _ContextCard(
         icon: HugeIcon(
             icon: HugeIcons.strokeRoundedMoon,
-            color: const Color(0xFF7C3AED),
+            color: AppColors.inviteAccent,
             size: 18),
-        color: const Color(0xFF7C3AED),
+        color: AppColors.inviteAccent,
         heading: 'Evening routine',
         actionLabel: eveningDue.isNotEmpty ? 'View Medicines' : 'Log Dinner',
         body: eveningDue.isNotEmpty

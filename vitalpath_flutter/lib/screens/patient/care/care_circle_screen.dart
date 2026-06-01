@@ -222,7 +222,7 @@ class _CareCircleBody extends ConsumerWidget {
               title: 'Family Monitoring Me',
               count: caregiversAsync.hasValue ? caregiverCount : null,
               pendingCount: caregiversAsync.hasValue ? pendingCount : null,
-              color: const Color(0xFF7C3AED),
+              color: AppColors.inviteAccent,
               action: TextButton.icon(
                 onPressed: () => context.push('/invite-caregiver'),
                 icon: HugeIcon(
@@ -231,7 +231,7 @@ class _CareCircleBody extends ConsumerWidget {
                     size: 14),
                 label: const Text('Invite', style: TextStyle(fontSize: 12)),
                 style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: AppColors.inviteAccent,
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap),
@@ -827,7 +827,7 @@ class _CaregiverCard extends ConsumerWidget {
   final CaregiverConnection connection;
   const _CaregiverCard({required this.connection});
 
-  static const _purple = Color(0xFF7C3AED);
+  static const _purple = AppColors.inviteAccent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
