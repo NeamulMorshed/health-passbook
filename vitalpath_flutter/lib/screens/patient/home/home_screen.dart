@@ -16,15 +16,61 @@ import '../../../models/app_user.dart';
 import '../../../models/family_member.dart';
 import '../../../models/medicine.dart';
 import '../../../models/meal.dart';
-import '../../../models/appointment.dart';
 import '../../../core/constants/app_constants.dart';
 import '../care/care_screen.dart';
 import '../../../providers/vitals_provider.dart';
 import '../../../core/widgets/onboarding_tour.dart';
 import '../../../providers/caregiver_provider.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
+import '../../../core/widgets/status_hero_card.dart';
 
 // Session-only: dismissed state resets each app launch — no SharedPreferences needed.
+
+/// Derives the daily status hero from today's medicine slots.
+/// Returns null when the patient has no active scheduled doses (hero hidden;
+/// the Get Started guide shows instead).
+StatusHeroData? _patientHero(List<Medicine> meds) {
+  final active = meds.where((m) => m.isActive).toList();
+  var total = 0;
+  var taken = 0;
+  var overdue = false;
+  for (final m in active) {
+    final slots = m.todaySlots;
+    total += slots.length;
+    taken += slots.where((s) => s.isTaken).length;
+    if (m.hasDueSlot) overdue = true;
+  }
+  if (total == 0) return null;
+  final frac = taken / total;
+  if (taken >= total) {
+    return const StatusHeroData(
+        fraction: 1,
+        ringLabel: '✓',
+        pillLabel: 'ALL DONE',
+        tone: HeroTone.positive,
+        title: 'Everything\'s logged today',
+        subtitle: 'All doses taken. Rest easy tonight.');
+  }
+  final left = total - taken;
+  if (overdue) {
+    return StatusHeroData(
+        fraction: frac,
+        ringLabel: '$taken/$total',
+        pillLabel: 'LET\'S CATCH UP',
+        tone: HeroTone.warning,
+        title: '$left dose${left == 1 ? '' : 's'} waiting',
+        subtitle: 'Tap below to log your next dose.',
+        actionLabel: 'Mark next dose taken');
+  }
+  return StatusHeroData(
+      fraction: frac,
+      ringLabel: '$taken/$total',
+      pillLabel: 'ON TRACK',
+      tone: HeroTone.positive,
+      title: '$left more to go today',
+      subtitle: 'You\'re on track with your medicines.',
+      actionLabel: 'Mark next dose taken');
+}
 final _statusLegendDismissedProvider = StateProvider<bool>((_) => false);
 
 final _homeLastRefreshedProvider =
@@ -205,7 +251,7 @@ class _HomeContent extends ConsumerWidget {
     final apptsAsync = ref
         .watch(patientAppointmentsProvider((patientId: user.uid, limit: 50)));
     ref.watch(vitalsProvider(user.uid));
-    final gamAsync = ref.watch(gamificationProvider(user.uid));
+    ref.watch(gamificationProvider(user.uid));
 
     // Bug 6 fix: restore medicine reminders after a reinstall (OS wipes alarms).
     ref.listen(medicinesProvider(user.uid), (_, next) {
@@ -271,6 +317,21 @@ class _HomeContent extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ],
 
+                  // ── STATUS HERO ───────────────────────────────────────────
+                  Builder(builder: (_) {
+                    final hero = _patientHero(medsAsync.asData?.value ?? []);
+                    if (hero == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: StatusHeroCard(
+                        data: hero,
+                        onAction: hero.actionLabel == null
+                            ? null
+                            : () => context.go('/care'),
+                      ),
+                    );
+                  }),
+
                   // ── AWARENESS CARD ────────────────────────────────────────
                   _DailyAwarenessCard(uid: user.uid),
                   const SizedBox(height: 12),
@@ -282,14 +343,6 @@ class _HomeContent extends ConsumerWidget {
                   // ── ALERTS ────────────────────────────────────────────────
                   const _NotifPermBanner(),
                   _PendingInviteBanner(email: user.email ?? ''),
-
-                  // ── SNAPSHOT ──────────────────────────────────────────────
-                  _DailySnapshotRow(
-                    medsAsync: medsAsync,
-                    medStreak: gamAsync.asData?.value.medStreak,
-                    apptsAsync: apptsAsync,
-                  ),
-                  const SizedBox(height: 12),
 
                   // ── DAILY STATUS ──────────────────────────────────────────
                   _CaregiversActiveBanner(uid: user.uid),
@@ -315,19 +368,16 @@ class _HomeContent extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF0EA5E9).withValues(alpha: 0.85),
-                            const Color(0xFF6366F1).withValues(alpha: 0.85)
-                          ],
-                        ),
+                        color: AppColors.primaryXLight,
+                        border: Border.all(
+                            color: AppColors.border, width: 0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(children: [
                         HugeIcon(
                             icon: HugeIcons.strokeRoundedSparkles,
-                            color: Colors.white,
-                            size: 24),
+                            color: AppColors.primary,
+                            size: 22),
                         const SizedBox(width: 14),
                         const Expanded(
                             child: Column(
@@ -335,16 +385,17 @@ class _HomeContent extends ConsumerWidget {
                                 children: [
                               Text('AI Health Insights',
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.primaryDark,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600)),
                               Text('Personalised suggestions from Claude AI',
                                   style: TextStyle(
-                                      color: Colors.white70, fontSize: 12)),
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12)),
                             ])),
                         HugeIcon(
                             icon: HugeIcons.strokeRoundedArrowRight01,
-                            color: Colors.white70,
+                            color: AppColors.textTertiary,
                             size: 14),
                       ]),
                     ),
@@ -649,125 +700,6 @@ class _RefillCountdownCard extends StatelessWidget {
             ]),
           );
         }),
-      ]),
-    );
-  }
-}
-
-// ── Daily snapshot row ────────────────────────────────────────────────────────
-class _DailySnapshotRow extends StatelessWidget {
-  final AsyncValue<List<Medicine>> medsAsync;
-  final int? medStreak;
-  final AsyncValue<List<Appointment>> apptsAsync;
-
-  const _DailySnapshotRow(
-      {required this.medsAsync,
-      required this.medStreak,
-      required this.apptsAsync});
-
-  @override
-  Widget build(BuildContext context) {
-    final meds = medsAsync.asData?.value ?? [];
-    final active = meds.where((m) => m.isActive).toList();
-    final taken = active.where((m) => m.takenToday).length;
-
-    final appts = apptsAsync.asData?.value ?? [];
-    final now = DateTime.now();
-    final upcoming = appts
-        .where((a) =>
-            (a.isConfirmed || a.isPending) &&
-            a.scheduledAt != null &&
-            a.scheduledAt!.isAfter(now))
-        .toList()
-      ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
-
-    int? daysToAppt;
-    if (upcoming.isNotEmpty) {
-      final apptDay = DateTime(upcoming.first.scheduledAt!.year,
-          upcoming.first.scheduledAt!.month, upcoming.first.scheduledAt!.day);
-      daysToAppt =
-          apptDay.difference(DateTime(now.year, now.month, now.day)).inDays;
-    }
-
-    final medColor = active.isEmpty
-        ? AppColors.mutedForeground
-        : taken == active.length
-            ? AppColors.success
-            : AppColors.primary;
-    final streakColor =
-        (medStreak ?? 0) > 0 ? AppColors.caregiver : AppColors.mutedForeground;
-    final visitColor = daysToAppt == null
-        ? AppColors.mutedForeground
-        : daysToAppt == 0
-            ? AppColors.success
-            : daysToAppt <= 6
-                ? AppColors.warning
-                : AppColors.primary;
-
-    return Row(children: [
-      Expanded(
-          child: GestureDetector(
-        onTap: () => context.go('/care'),
-        child: _SnapshotChip(
-            value: active.isEmpty ? '--' : '$taken/${active.length}',
-            label: 'medicines',
-            color: medColor),
-      )),
-      const SizedBox(width: 8),
-      Expanded(
-          child: _SnapshotChip(
-              value: '${medStreak ?? 0}',
-              label: 'day streak',
-              color: streakColor)),
-      const SizedBox(width: 8),
-      Expanded(
-          child: GestureDetector(
-        onTap: () => context.go('/appointments'),
-        child: _SnapshotChip(
-          value: daysToAppt == null
-              ? '--'
-              : daysToAppt == 0
-                  ? 'today'
-                  : '${daysToAppt}d',
-          label: 'next visit',
-          color: visitColor,
-        ),
-      )),
-    ]);
-  }
-}
-
-class _SnapshotChip extends StatelessWidget {
-  final String value, label;
-  final Color color;
-  const _SnapshotChip(
-      {required this.value, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return BentoCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.mutedForeground),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-          ),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        Text(value,
-            style: TextStyle(
-                fontSize: 22, fontWeight: FontWeight.w700, color: color)),
       ]),
     );
   }
