@@ -3,6 +3,32 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-01 · v2.12.0+41 (QA audit + 32-issue fix sweep)
+**Focus:** Full QA audit via 5 parallel investigator agents, then systematic fix of all real bugs found
+**QA findings (verified false positives — NOT fixed):** C-04 gamification null crash (single-statement if/return is correct Dart), H-15 stale HP (resetWeek doesn't reset HP), H-14 FCM payload null (already handled), C-03 disclaimer race (already fixed via main.dart prefs pre-load)
+**Changed (16 files):**
+- `lib/app/router.dart` — C-02: userState.hasError redirects to splash; H-03: incomplete patient blocked from ALL routes not just patient-only; H-05: patient/caregiver onboarding routes now separately guarded (caregiver can't reach /onboarding/health-profile)
+- `lib/providers/auth_provider.dart` — H-13: fcmTokenSyncProvider wraps syncTokenForUser in try-catch with Crashlytics non-fatal logging
+- `lib/main.dart` — L-01: Crashlytics boot log uses AppConstants.appVersion; L-02: disclaimer prefs key uses AppConstants.prefDisclaimerAccepted; added app_constants import
+- `lib/core/constants/app_constants.dart` — L-02: added prefDisclaimerAccepted = 'disclaimerAccepted' constant
+- `lib/screens/onboarding/disclaimer_screen.dart` — L-02: removed local _kDisclaimerPref const, uses AppConstants.prefDisclaimerAccepted; added app_constants import
+- `lib/services/firestore_service.dart` — H-01 (×7): removed .where()+.orderBy() combos from watchMedicines, watchFamilyMemberMedicines, watchTodayMeals, watchRecentActivity, watchPatientPrescriptions, watchConsultationNotes, watchVitals; H-02 (×8): added try-catch+whereType to all 8 undefended stream .map() calls
+- `lib/services/gamification_service.dart` — (no changes — C-04 and H-15 were false positives, code already correct)
+- `lib/services/ai_insights_service.dart` — H-07: guards (data['content'] as List).first crash (empty list check); guards 'insights' key missing crash
+- `lib/services/prescription_ai_service.dart` — H-08: readAsBytes wrapped in FileSystemException catch; HTTP call wrapped with TimeoutException catch; content list null/empty guard; added dart:async import
+- `lib/services/rxnorm_service.dart` — H-09: _resolveToIngredient and _fetchRelatedIngredient both wrapped in try-catch returning null on any failure
+- `lib/services/notification_service.dart` — L-06: silent catch(_){} replaced with debugPrint logging; M-05: malformed reminderTime now logs instead of silently skipping; added flutter/foundation import
+- `lib/screens/patient/vitals/vitals_screen.dart` — H-12: _borderlineLow and _borderlineHigh got curly braces on bpSystolic||bpDiastolic branch (fixing glucose check being unreachable for bpDiastolic)
+- `lib/screens/patient/prescriptions/prescriptions_screen.dart` — M-07: _RxCard and _RxDetailSheet now use typed Prescription instead of dynamic; all unsafe `as String`/`as List?` casts removed; added prescription model import
+- `lib/screens/patient/home/home_screen.dart` — L-04: lunch _mealIcon now uses strokeRoundedSunCloud01 (distinct from breakfast Sun01)
+- `lib/screens/doctor/appointments/doc_appointments_screen.dart` — H-11: Color(0xFF15803D) → AppColors.primaryDark
+- `lib/screens/doctor/patient_view/doc_patient_view_screen.dart` — H-11: Color(0xFF5B21B6) ×2 → file-level const _prescriptionGradientEnd
+- `lib/screens/caregiver/home/caregiver_home_screen.dart` — H-11: Color(0xFF7C3AED) → AppColors.inviteAccent
+- `lib/screens/caregiver/patients/caregiver_patients_screen.dart` — H-11: Color(0xFF7C3AED) → AppColors.inviteAccent
+**Build:** `flutter analyze --no-pub` → 0 errors, 32 info-level style warnings (pre-existing, not introduced)
+**Next:** Build APK and distribute to testers; complete Play Store submission (GitHub Pages privacy URL + Data Safety form)
+
+---
 ## 2026-06-01 · v2.12.0+41 (Play Store readiness audit + 3 code fixes)
 **Focus:** Full Play Console policy audit before submission; fix code-level blockers
 **Audit findings:** 3 blockers (B1 privacy URL not live, B2 Data Safety form, B3 supports-screens phone-only restriction), 2 code fixes (F1 missing ACTIVITY_RECOGNITION rationale, F2 hardcoded version string). Signing/google-services/icons/account-deletion/disclaimer all PASS.
