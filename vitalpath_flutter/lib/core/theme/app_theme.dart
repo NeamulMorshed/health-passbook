@@ -55,6 +55,18 @@ class AppColors {
   static const doctorLight = primaryTint;
 }
 
+class AppShadows {
+  /// Soft ambient shadow for the single elevated hero card per screen (green states).
+  static const List<BoxShadow> hero = [
+    BoxShadow(color: Color(0x1A0F9D77), blurRadius: 16, offset: Offset(0, 4)),
+  ];
+
+  /// Amber-tinted variant for the "catch up" hero state.
+  static const List<BoxShadow> heroWarning = [
+    BoxShadow(color: Color(0x1AD97706), blurRadius: 16, offset: Offset(0, 4)),
+  ];
+}
+
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
