@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "a3ff34e5b8a786d8",
+        "id": "1e100278c4595c2f",
         "type": "tabs",
         "children": [
           {
-            "id": "ea272d85e5344106",
+            "id": "de293f1d8cb97574",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "50 - UX + Design/UX_Audit_2026-06-01.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "UX_Audit_2026-06-01"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -193,31 +189,36 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "ea272d85e5344106",
+  "active": "de293f1d8cb97574",
   "lastOpenFiles": [
-    "docs/superpowers/specs",
-    "docs/superpowers",
-    "80 - Decisions/ADR-004 Firestore Security Rules.md",
+    "00 - Home/Dashboard.md",
     "50 - UX + Design/UX_Audit_2026-06-01.md",
-    "vitalpath_flutter/build/app/intermediates/cxx/debug/75ba5m6g/logs/x86_64/generate_cxx_metadata_3523_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/cxx/debug/75ba5m6g/logs/armeabi-v7a/generate_cxx_metadata_3523_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/cxx/debug/75ba5m6g/logs/arm64-v8a/generate_cxx_metadata_3523_timing.txt",
-    "vitalpath_flutter/build/jni/intermediates/cxx/Debug/6y1e4918/logs/x86_64/generate_cxx_metadata_3521_timing.txt",
-    "vitalpath_flutter/build/jni/intermediates/cxx/Debug/6y1e4918/logs/x86/generate_cxx_metadata_3521_timing.txt",
-    "vitalpath_flutter/build/jni/intermediates/cxx/Debug/6y1e4918/logs/armeabi-v7a/generate_cxx_metadata_3521_timing.txt",
-    "vitalpath_flutter/build/jni/intermediates/cxx/Debug/6y1e4918/logs/arm64-v8a/generate_cxx_metadata_3523_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/cxx/debug/75ba5m6g/logs/x86_64/generate_cxx_metadata_3349_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/cxx/debug/75ba5m6g/logs/armeabi-v7a/generate_cxx_metadata_3349_timing.txt",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/app_icon.png",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Take%20Care%20of%20Your%20Health%20Every%20Day.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Stay%20Close%20to%20Your%20Patients.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Starting%20logo.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Installed%20Icon.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Icon.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Dashboard%20logo.svg",
-    "vitalpath_flutter/build/app/intermediates/assets/debug/mergeDebugAssets/flutter_assets/assets/icons/Care%20for%20Loved%20Ones%20Anytime.svg",
-    "vitalpath_flutter/build/app/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxxhdpi-v4/ic_launcher_round.png",
-    "vitalpath_flutter/build/app/intermediates/packaged_res/debug/packageDebugResources/mipmap-xxhdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/firebase-debug.log",
+    "vitalpath_flutter/build/app/outputs/flutter-apk/app-release.apk.sha1",
+    "vitalpath_flutter/build/app/outputs/flutter-apk/app-release.apk",
+    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release/createReleaseApkListingFileRedirect/redirect.txt",
+    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release/createReleaseApkListingFileRedirect",
+    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release",
+    "vitalpath_flutter/build/app/outputs/apk/release/output-metadata.json",
+    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/1/app-release.dm",
+    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/0/app-release.dm",
+    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/1",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxxhdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxxhdpi-v4/ic_launcher.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxhdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxhdpi-v4/ic_launcher.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xhdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xhdpi-v4/ic_launcher.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-mdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-mdpi-v4/ic_launcher.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-hdpi-v4/ic_launcher_round.png",
+    "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-hdpi-v4/ic_launcher.png",
+    "docs/superpowers/plans/2026-06-02-p2-consistency.md",
+    "docs/superpowers/plans/2026-06-02-p1-flow-heuristic.md",
+    "docs/superpowers/specs/2026-06-02-p1-flow-heuristic-design.md",
+    "docs/superpowers/plans/2026-06-01-p0-emotion-ui.md",
+    "docs/superpowers/specs/2026-06-01-p0-emotion-ui-design.md",
+    "80 - Decisions/ADR-004 Firestore Security Rules.md",
     "80 - Decisions/ADR-001 Client-Side Sorting.md",
     "80 - Decisions/ADR Index.md",
     "90 - Business/Business Overview.md",
@@ -236,11 +237,6 @@
     "30 - Architecture/Architecture Overview.md",
     "20 - Features/Backlog.md",
     "50 - UX + Design/Personas.md",
-    "40 - Security/S-06 FCM Caregiver UID Bug.md",
-    "40 - Security/S-04 Doctor Patient Check — Prescriptions.md",
-    "40 - Security/S-03 Doctor Patient Check — Medicines.md",
-    "40 - Security/S-02 Role Self-Escalation.md",
-    "40 - Security/S-01 Medical Data Exposure.md",
-    "10 - Project/Three Portals.md"
+    "40 - Security/S-06 FCM Caregiver UID Bug.md"
   ]
 }
