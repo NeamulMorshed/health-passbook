@@ -565,6 +565,8 @@ class FirestoreService {
   Future<void> markAllNotificationsRead(String patientId) async {
     // F10: Filter by createdAt <= now() so notifications that arrive between
     // the query and batch write are not incorrectly marked as read.
+    // Requires composite index: notifications collection, isRead ASC + createdAt ASC.
+    // If missing, this query throws failed-precondition and markAllRead silently fails.
     final snap = await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)

@@ -537,9 +537,10 @@ class NotificationNotifier extends StateNotifier<void> {
     try {
       await _db.markAllNotificationsRead(patientId);
     } catch (e, s) {
-      // Intentionally silent — log for debugging but don't propagate.
+      // Log for debugging, then propagate to screen for error snack.
       // ignore: avoid_print
       print('[NotificationNotifier] markAllRead failed: $e\n$s');
+      rethrow;
     }
   }
 }

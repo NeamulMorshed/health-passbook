@@ -3,6 +3,24 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-03 · v2.12.0+42 (8-bug fix: notifications + visits page)
+**Focus:** Fix all 8 bugs found in previous audit session. No features added.
+**Changed:**
+- `lib/services/firestore_service.dart` — V2: added `.orderBy('createdAt', descending: true)` before `.limit()` in `watchPatientAppointments` and `watchDoctorAppointments` (removed redundant client-side sort). V3: `updateAppointmentStatus` now writes in-app notification for `completed` status. V4: `updateAppointmentStatus` now accepts and uses `doctorName` for cancel notification body. N3: added composite index comment above dual-where query in `markAllNotificationsRead`.
+- `lib/providers/doctor_provider.dart` — V3+V4: `DoctorAppointmentNotifier.cancel()` + `.complete()` now accept and pass `doctorName`/`patientId` through to firestore layer.
+- `lib/screens/doctor/appointments/doc_appointments_screen.dart` — V3+V4: `_confirmCancel` passes `appt.doctorName`; `_confirmComplete` passes `appt.patientId` + `appt.doctorName`.
+- `lib/screens/patient/appointments/appointments_screen.dart` — V1: patient cancel now checks `state is AsyncError` before showing success snack. V5: confirmed appointments within 24h now show info row "Cancellations require 24h notice."
+- `lib/screens/patient/notifications/notifications_screen.dart` — N4: `_onNotifTap` now navigates on tap (appointment→/appointments, medicine/meal→/care). N3: error snack now fires when `markAllRead` fails (via rethrow in provider).
+- `lib/providers/patient_provider.dart` — N3: `NotificationNotifier.markAllRead` now rethrows after logging so screen's catch block can show error snack.
+- `lib/core/constants/app_constants.dart` — N2: added `notifChannelMeal = 'meal_reminders'` constant.
+- `lib/services/notification_service.dart` — N2: added `notifChannelMeal` to `_channelPrefKeys` (mapped to `'notif_meals'`), added `_createChannel` call in `initialize()`, added route mapping to `_routeForChannel`.
+- `lib/providers/patient_provider.dart` — N2: meal reminder scheduling now uses `notifChannelMeal` instead of `notifChannelGeneral`.
+- `lib/screens/patient/notifications/notification_settings_screen.dart` — N2: `_onMealsToggle` cancels `notifChannelMeal` (not `notifChannelGeneral`).
+- `lib/core/widgets/notif_bell.dart` — N1: returns `SizedBox.shrink()` for non-patient users (prevents PERMISSION_DENIED for caregiver/doctor UIDs).
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info. No pubspec changes.
+**Next:** PR for entire `feature/ux-audit-improvements` branch (covers P0–P3 UX audit + crash fixes + 8 bug fixes).
+
+---
 ## 2026-06-03 · v2.12.0+42 (bug audit — read-only, no code changes)
 **Focus:** Full bug audit of in-app notification system and Visits (appointments) page. No code changes this session.
 **Findings (8 bugs, no fixes applied yet):**
