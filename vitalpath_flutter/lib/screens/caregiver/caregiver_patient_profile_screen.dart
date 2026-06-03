@@ -1,775 +1,409 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:intl/intl.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_widgets.dart';
+import '../../../models/app_notification.dart';
 import '../../../models/appointment.dart';
 import '../../../models/caregiver_connection.dart';
+import '../../../models/meal.dart';
 import '../../../models/medicine.dart';
+import '../../../models/prescription.dart';
 import '../../../models/vital_reading.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/caregiver_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/vitals_provider.dart';
 
-class CaregiverPatientProfileScreen extends ConsumerWidget {
+part '_cg_profile_date_strip.dart';
+part '_cg_profile_sections.dart';
+part '_cg_profile_nudge.dart';
+
+// ── Local provider: meals for an arbitrary date (caregiver view only) ─────────
+
+typedef _MealsKey = ({String patientId, DateTime date});
+
+final _cgMealsProvider =
+    StreamProvider.family<List<MealLog>, _MealsKey>((ref, key) {
+  final start = DateTime(key.date.year, key.date.month, key.date.day);
+  final end = start.add(const Duration(days: 1));
+  return FirebaseFirestore.instance
+      .collection(AppConstants.colPatients)
+      .doc(key.patientId)
+      .collection(AppConstants.colMeals)
+      .where('loggedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+      .where('loggedAt', isLessThan: Timestamp.fromDate(end))
+      .orderBy('loggedAt', descending: true)
+      .snapshots()
+      .map((s) => s.docs.map((d) => MealLog.fromMap(d.data(), d.id)).toList());
+});
+
+// ── Accent colours — warm amber, distinct from doctor (primary blue) ──────────
+
+const _kAmber = AppColors.caregiver;
+const _kAmberDark = AppColors.warning;
+
+String _timeAgo(DateTime dt) {
+  final diff = DateTime.now().difference(dt);
+  if (diff.inDays == 0) return 'Today';
+  if (diff.inDays == 1) return 'Yesterday';
+  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  return DateFormat('MMM d').format(dt);
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+
+class CaregiverPatientProfileScreen extends ConsumerStatefulWidget {
   final CaregiverConnection connection;
   const CaregiverPatientProfileScreen({super.key, required this.connection});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DefaultTabController(
-      length: _tabCount(connection.permissions),
-      child: Scaffold(
-        backgroundColor: AppColors.pageBackground,
-        body: NestedScrollView(
-          headerSliverBuilder: (_, __) => [
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 140,
-              flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsets.fromLTRB(60, 0, 16, 56),
-                title: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(connection.patientName,
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white)),
-                    Text(
-                      connection.relationship.relationshipLabel,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70),
-                    ),
-                  ],
-                ),
-                background: Container(color: AppColors.primary),
-              ),
-              bottom: TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                indicatorColor: Colors.white,
-                labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13),
-                tabs: _tabs(connection.permissions),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            children: _tabViews(context, ref, connection),
-          ),
-        ),
+  ConsumerState<CaregiverPatientProfileScreen> createState() =>
+      _CaregiverPatientProfileScreenState();
+}
+
+class _CaregiverPatientProfileScreenState
+    extends ConsumerState<CaregiverPatientProfileScreen> {
+  late DateTime _selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = _dateOnly(DateTime.now());
+  }
+
+  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  void _showNudgeSheet(BuildContext context) {
+    final conn = widget.connection;
+    final caregiverUid = ref.read(currentUserProvider).asData?.value?.uid;
+    if (caregiverUid == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _NudgeSheet(
+        patientName: conn.patientName,
+        caregiverUid: caregiverUid,
+        onSend: (message) async {
+          await _sendNudge(message);
+          if (context.mounted) {
+            AppSnackBar.success(context, 'Nudge sent to ${conn.patientName}');
+          }
+        },
       ),
     );
   }
 
-  int _tabCount(CaregiverPermissions p) {
-    int count = 1;
-    if (p.vitals) count++;
-    if (p.medicines) count++;
-    if (p.prescriptions) count++;
-    if (p.appointments) count++;
-    if (p.mealLogs || p.activityLogs) count++;
-    return count;
-  }
+  Future<void> _sendNudge(String message) async {
+    final conn = widget.connection;
+    final senderName = ref.read(currentUserProvider).asData?.value?.name ??
+        'Your family member';
+    final db = FirebaseFirestore.instance;
+    final batch = db.batch();
 
-  List<Tab> _tabs(CaregiverPermissions p) {
-    return [
-      const Tab(text: 'Overview'),
-      if (p.vitals) const Tab(text: 'Vitals'),
-      if (p.medicines) const Tab(text: 'Medicines'),
-      if (p.prescriptions) const Tab(text: 'Prescriptions'),
-      if (p.appointments) const Tab(text: 'Appointments'),
-      if (p.mealLogs || p.activityLogs) const Tab(text: 'Logs'),
-    ];
-  }
-
-  List<Widget> _tabViews(
-      BuildContext context, WidgetRef ref, CaregiverConnection conn) {
-    return [
-      _OverviewTab(patientId: conn.patientId),
-      if (conn.permissions.vitals) _VitalsTab(patientId: conn.patientId),
-      if (conn.permissions.medicines) _MedicinesTab(patientId: conn.patientId),
-      if (conn.permissions.prescriptions)
-        _PrescriptionsTab(patientId: conn.patientId),
-      if (conn.permissions.appointments)
-        _AppointmentsTab(patientId: conn.patientId),
-      if (conn.permissions.mealLogs || conn.permissions.activityLogs)
-        _LogsTab(
-          patientId: conn.patientId,
-          showMeals: conn.permissions.mealLogs,
-          showActivity: conn.permissions.activityLogs,
-        ),
-    ];
-  }
-}
-
-// ── Overview tab ──────────────────────────────────────────────────────────────
-
-class _OverviewTab extends ConsumerWidget {
-  final String patientId;
-  const _OverviewTab({required this.patientId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(patientProfileProvider(patientId));
-
-    return profileAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Could not load profile',
-          subtitle: 'Pull to refresh'),
-      data: (profile) {
-        if (profile == null) {
-          return const EmptyState(
-              icon: Icons.person_off_rounded,
-              title: 'Profile not found',
-              subtitle: '');
-        }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-          children: [
-            _InfoCard(children: [
-              _InfoRow('Blood Type', profile.bloodType ?? '—'),
-              _InfoRow('Age', profile.age != null ? '${profile.age} years' : '—'),
-              _InfoRow(
-                  'Height',
-                  profile.height != null
-                      ? '${profile.height!.toStringAsFixed(0)} cm'
-                      : '—'),
-              _InfoRow(
-                  'Weight',
-                  profile.weight != null
-                      ? '${profile.weight!.toStringAsFixed(1)} kg'
-                      : '—'),
-            ]),
-            const SizedBox(height: 14),
-            if (profile.conditions.isNotEmpty) ...[
-              _SubTitle('Conditions'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: profile.conditions
-                    .map((c) => Chip(
-                          label: Text(c,
-                              style: const TextStyle(fontSize: 12)),
-                          backgroundColor:
-                              AppColors.primary.withValues(alpha: 0.08),
-                          side: BorderSide.none,
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 14),
-            ],
-            if (profile.allergies != null &&
-                profile.allergies!.isNotEmpty) ...[
-              _SubTitle('Allergies'),
-              const SizedBox(height: 8),
-              _InfoCard(children: [
-                Text(profile.allergies!,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.destructive)),
-              ]),
-            ],
-          ],
-        );
+    batch.set(
+      db
+          .collection('users')
+          .doc(conn.patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(),
+      {
+        'title': 'Family Care',
+        'body': message,
+        'type': 'nudge',
+        'fromName': senderName,
+        'fromUid': conn.caregiverUid,
+        'read': false,
+        'createdAt': FieldValue.serverTimestamp(),
       },
     );
+
+    // Mirror nudge timestamp on the caregiver mirror doc so _NudgeFollowUp
+    // can compare against loggedDoses without reading patient notifications
+    // (which caregivers cannot read by Firestore rule).
+    if (conn.caregiverUid != null) {
+      batch.update(
+        db
+            .collection('patients')
+            .doc(conn.patientId)
+            .collection('caregivers')
+            .doc(conn.caregiverUid!),
+        {
+          'lastNudgeSentAt': FieldValue.serverTimestamp(),
+          'lastNudgeMessage': message,
+        },
+      );
+    }
+
+    await batch.commit();
   }
-}
 
-// ── Vitals tab ────────────────────────────────────────────────────────────────
-
-class _VitalsTab extends ConsumerWidget {
-  final String patientId;
-  const _VitalsTab({required this.patientId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final vitalsAsync = ref.watch(vitalsProvider(patientId));
-
-    return vitalsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Could not load vitals',
-          subtitle: ''),
-      data: (readings) {
-        if (readings.isEmpty) {
-          return const EmptyState(
-              icon: Icons.monitor_heart_outlined,
-              title: 'No vitals recorded yet',
-              subtitle: '');
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-          itemCount: readings.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (_, i) => _VitalCard(reading: readings[i]),
-        );
-      },
-    );
+  bool get _isToday {
+    final t = _dateOnly(DateTime.now());
+    return _selectedDate == t;
   }
-}
 
-class _VitalCard extends StatelessWidget {
-  final VitalReading reading;
-  const _VitalCard({required this.reading});
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final label = VitalType.labelFor(reading.type);
-    final unit = VitalType.unitFor(reading.type);
-    final normal = VitalType.isNormal(reading.type, reading.value);
-    return BentoCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: (normal ? AppColors.success : AppColors.warning)
-                .withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: normal ? AppColors.success : AppColors.warning, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
-              Text(
-                  DateFormat('MMM d, y · h:mm a').format(reading.recordedAt),
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground)),
-            ],
-          ),
-        ),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('${reading.value} $unit',
-              style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700)),
-          if (!normal)
-            const Text('⚠️ Abnormal',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.warning)),
-        ]),
-      ]),
-    );
-  }
-}
+    final conn = widget.connection;
+    final p = conn.permissions;
 
-// ── Medicines tab ─────────────────────────────────────────────────────────────
-
-class _MedicinesTab extends ConsumerWidget {
-  final String patientId;
-  const _MedicinesTab({required this.patientId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final medsAsync = ref.watch(medicinesProvider(patientId));
-
-    return medsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Could not load medicines',
-          subtitle: ''),
-      data: (meds) {
-        final active = meds.where((m) => m.isActive).toList();
-        if (active.isEmpty) {
-          return const EmptyState(
-              icon: Icons.medication_outlined,
-              iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 40),
-              title: 'No active medicines',
-              subtitle: '');
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-          itemCount: active.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (_, i) => _MedCard(medicine: active[i]),
-        );
-      },
-    );
-  }
-}
-
-class _MedCard extends StatelessWidget {
-  final Medicine medicine;
-  const _MedCard({required this.medicine});
-
-  @override
-  Widget build(BuildContext context) {
-    final takenCount = medicine.loggedDoses
-        .where((d) {
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
-          return d.isAfter(today);
-        })
-        .length;
-    final totalSlots = medicine.reminderTimes.isEmpty
-        ? 1
-        : medicine.reminderTimes.length;
-
-    return BentoCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+    return Scaffold(
+      backgroundColor: AppColors.pageBackground,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showNudgeSheet(context),
+        backgroundColor: _kAmber,
+        foregroundColor: Colors.white,
+        icon: HugeIcon(
+            icon: HugeIcons.strokeRoundedSent, color: Colors.white, size: 18),
+        label: const Text('Send a nudge',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          // ── Warm amber header — intentionally different from doctor portal ──
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 130,
+            backgroundColor: _kAmber,
+            foregroundColor: Colors.white,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.fromLTRB(64, 0, 16, 16),
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(medicine.name,
+                  Text(conn.patientName,
                       style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600)),
-                  Text('${medicine.dosage}  •  ${medicine.frequency}',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedForeground)),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white)),
+                  Text(conn.relationship.relationshipLabel,
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white70)),
                 ],
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: takenCount >= totalSlots
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [_kAmber, _kAmberDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Align(
+                  alignment: const Alignment(-0.82, 0.4),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _initials(conn.patientName),
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
               ),
+            ),
+          ),
+
+          // ── Date strip ───────────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _DateStrip(
+              selected: _selectedDate,
+              onSelect: (d) => setState(() => _selectedDate = d),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
               child: Text(
-                '$takenCount/$totalSlots today',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: takenCount >= totalSlots
-                        ? AppColors.success
-                        : AppColors.warning),
+                'Tap a date to review that day\'s health activity',
+                style: const TextStyle(
+                    fontSize: 11, color: AppColors.textTertiary),
               ),
             ),
-          ]),
-          if (medicine.notes != null && medicine.notes!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(medicine.notes!,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground,
-                    fontStyle: FontStyle.italic)),
-          ],
+          ),
+
+          // ── Dashboard ────────────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Date label
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    _isToday
+                        ? 'Today — ${DateFormat('EEEE, MMMM d').format(_selectedDate)}'
+                        : DateFormat('EEEE, MMMM d').format(_selectedDate),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _isToday ? _kAmber : AppColors.mutedForeground,
+                    ),
+                  ),
+                ),
+
+                if (p.medicines) ...[
+                  if (conn.caregiverUid != null)
+                    _NudgeFollowUp(
+                      patientId: conn.patientId,
+                      caregiverUid: conn.caregiverUid!,
+                      patientName: conn.patientName,
+                    ),
+                  _MissedDoseNudge(patientId: conn.patientId),
+                  _MedicinesSection(
+                      patientId: conn.patientId, selectedDate: _selectedDate),
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedMedicine01,
+                    title: 'Medicines',
+                    patientName: conn.patientName,
+                    section: 'medicines',
+                    connectionId: conn.id,
+                    patientUid: conn.patientId,
+                    caregiverName:
+                        conn.caregiverName ?? 'Your family member',
+                  ),
+                const SizedBox(height: 18),
+
+                if (p.appointments) ...[
+                  _AppointmentSection(patientId: conn.patientId),
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedCalendar01,
+                    title: 'Upcoming Visits',
+                    patientName: conn.patientName,
+                    section: 'appointments',
+                    connectionId: conn.id,
+                    patientUid: conn.patientId,
+                    caregiverName:
+                        conn.caregiverName ?? 'Your family member',
+                  ),
+                const SizedBox(height: 18),
+
+                if (p.mealLogs) ...[
+                  _MealsSection(
+                      patientId: conn.patientId, selectedDate: _selectedDate),
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedRestaurant01,
+                    title: 'Meals',
+                    patientName: conn.patientName,
+                    section: 'mealLogs',
+                    connectionId: conn.id,
+                    patientUid: conn.patientId,
+                    caregiverName:
+                        conn.caregiverName ?? 'Your family member',
+                  ),
+                const SizedBox(height: 18),
+
+                if (p.vitals) ...[
+                  _VitalsSection(patientId: conn.patientId),
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedPulse01,
+                    title: 'Recent Readings',
+                    patientName: conn.patientName,
+                    section: 'vitals',
+                    connectionId: conn.id,
+                    patientUid: conn.patientId,
+                    caregiverName:
+                        conn.caregiverName ?? 'Your family member',
+                  ),
+                const SizedBox(height: 18),
+
+                if (p.prescriptions) ...[
+                  _PrescriptionsSection(patientId: conn.patientId),
+                ] else
+                  _LockedSection(
+                    icon: HugeIcons.strokeRoundedMedicalFile,
+                    title: 'Prescriptions',
+                    patientName: conn.patientName,
+                    section: 'prescriptions',
+                    connectionId: conn.id,
+                    patientUid: conn.patientId,
+                    caregiverName:
+                        conn.caregiverName ?? 'Your family member',
+                  ),
+                const SizedBox(height: 18),
+              ]),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-// ── Prescriptions tab ─────────────────────────────────────────────────────────
+// ── Shared small widgets ──────────────────────────────────────────────────────
 
-class _PrescriptionsTab extends ConsumerWidget {
-  final String patientId;
-  const _PrescriptionsTab({required this.patientId});
-
+class _SectionSkeleton extends StatelessWidget {
+  const _SectionSkeleton();
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rxAsync = ref.watch(patientPrescriptionsProvider(patientId));
-
-    return rxAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Could not load prescriptions',
-          subtitle: ''),
-      data: (list) {
-        if (list.isEmpty) {
-          return const EmptyState(
-              icon: Icons.receipt_long_outlined,
-              title: 'No prescriptions yet',
-              subtitle: '');
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-          itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (_, i) {
-            final rx = list[i];
-            return BentoCard(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    HugeIcon(icon: HugeIcons.strokeRoundedNote, color: AppColors.primary, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Dr. ${rx.doctorName}',
-                              style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600)),
-                          Text(
-                              DateFormat('MMM d, y').format(rx.issuedAt),
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.mutedForeground)),
-                        ],
-                      ),
-                    ),
-                  ]),
-                  if (rx.diagnosis != null && rx.diagnosis!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(rx.diagnosis!,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.mutedForeground)),
-                  ],
-                  const SizedBox(height: 10),
-                  ...rx.medicines.map((m) => Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Row(children: [
-                          const Icon(Icons.circle,
-                              size: 5, color: AppColors.primary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${m.name}  ${m.dosage}  •  ${m.frequency}',
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        ]),
-                      )),
-                  if (rx.documentUrl != null && rx.documentUrl!.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: rx.documentUrl!,
-                        height: 120,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) =>
-                            Container(height: 120, color: AppColors.muted),
-                        errorWidget: (_, __, ___) => const SizedBox(),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => Container(
+        height: 72,
+        decoration: BoxDecoration(
+          color: AppColors.muted,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2, color: _kAmber),
+        ),
+      );
 }
 
-// ── Appointments tab ──────────────────────────────────────────────────────────
-
-class _AppointmentsTab extends ConsumerWidget {
-  final String patientId;
-  const _AppointmentsTab({required this.patientId});
-
+class _ErrorTile extends StatelessWidget {
+  final String message;
+  const _ErrorTile(this.message);
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final apptAsync = ref.watch(
-        patientAppointmentsProvider((patientId: patientId, limit: 20)));
-
-    return apptAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const EmptyState(
-          icon: Icons.error_outline_rounded,
-          title: 'Could not load appointments',
-          subtitle: ''),
-      data: (list) {
-        final upcoming =
-            list.where((a) => a.isConfirmed || a.isPending).toList();
-        final past =
-            list.where((a) => a.isCompleted || a.isCancelled).toList();
-
-        if (list.isEmpty) {
-          return const EmptyState(
-              icon: Icons.calendar_today_outlined,
-              title: 'No appointments',
-              subtitle: '');
-        }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-          children: [
-            if (upcoming.isNotEmpty) ...[
-              _SubTitle('Upcoming'),
-              const SizedBox(height: 8),
-              ...upcoming.map((a) => _ApptCard(appt: a)),
-              const SizedBox(height: 20),
-            ],
-            if (past.isNotEmpty) ...[
-              _SubTitle('Past'),
-              const SizedBox(height: 8),
-              ...past.map((a) => _ApptCard(appt: a)),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ApptCard extends StatelessWidget {
-  final Appointment appt;
-  const _ApptCard({required this.appt});
-
-  @override
-  Widget build(BuildContext context) {
-    final statusColor = appt.isConfirmed
-        ? AppColors.success
-        : appt.isPending
-            ? AppColors.warning
-            : appt.isCancelled
-                ? AppColors.destructive
-                : AppColors.mutedForeground;
-    final statusLabel =
-        appt.status.value[0].toUpperCase() + appt.status.value.substring(1);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: BentoCard(
+  Widget build(BuildContext context) => BentoCard(
         padding: const EdgeInsets.all(14),
         child: Row(children: [
-          HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: 18),
-          const SizedBox(width: 12),
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedAlertCircle,
+              size: 16,
+              color: AppColors.destructive),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Dr. ${appt.doctorName}',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600)),
-                Text(
-                    appt.scheduledAt != null
-                        ? DateFormat('MMM d, y · h:mm a')
-                            .format(appt.scheduledAt!)
-                        : 'Date TBD',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              statusLabel,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor),
-            ),
+            child: Text(message,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.destructive)),
           ),
         ]),
-      ),
-    );
-  }
+      );
 }
 
-// ── Logs tab ──────────────────────────────────────────────────────────────────
-
-class _LogsTab extends ConsumerWidget {
-  final String patientId;
-  final bool showMeals;
-  final bool showActivity;
-
-  const _LogsTab({
-    required this.patientId,
-    required this.showMeals,
-    required this.showActivity,
-  });
-
+class _EmptyTile extends StatelessWidget {
+  final String message;
+  const _EmptyTile(this.message);
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mealsAsync =
-        showMeals ? ref.watch(todayMealsProvider(patientId)) : null;
-    final activityAsync =
-        showActivity ? ref.watch(activityLogsProvider(patientId)) : null;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-      children: [
-        if (showMeals && mealsAsync != null) ...[
-          _SubTitle('Today\'s Meals'),
-          const SizedBox(height: 8),
-          mealsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Could not load meals'),
-            data: (meals) {
-              if (meals.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Text('No meals logged today',
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.mutedForeground)),
-                );
-              }
-              return Column(
-                children: meals
-                    .map((m) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: BentoCard(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(children: [
-                              const Icon(Icons.restaurant_rounded,
-                                  size: 16, color: AppColors.warning),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '${m.mealType}: ${m.description.isNotEmpty ? m.description : "Logged"}',
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                              if (m.calories != null)
-                                Text('${m.calories} kcal',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.mutedForeground)),
-                            ]),
-                          ),
-                        ))
-                    .toList(),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-        ],
-        if (showActivity && activityAsync != null) ...[
-          _SubTitle('Recent Activity'),
-          const SizedBox(height: 8),
-          activityAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Could not load activity'),
-            data: (logs) {
-              final recent = logs.take(5).toList();
-              if (recent.isEmpty) {
-                return const Text('No activity logged recently',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.mutedForeground));
-              }
-              return Column(
-                children: recent
-                    .map((l) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: BentoCard(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(children: [
-                              HugeIcon(icon: HugeIcons.strokeRoundedRunningShoes, color: AppColors.success, size: 16),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  l.type,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                              if (l.steps != null)
-                                Text('${l.steps} steps',
-                                    style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.mutedForeground)),
-                            ]),
-                          ),
-                        ))
-                    .toList(),
-              );
-            },
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-// ── Shared helpers ────────────────────────────────────────────────────────────
-
-class _InfoCard extends StatelessWidget {
-  final List<Widget> children;
-  const _InfoCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return BentoCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(children: children),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(children: [
-        Expanded(
-          child: Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.mutedForeground)),
-        ),
-        Text(value,
+  Widget build(BuildContext context) => BentoCard(
+        padding: const EdgeInsets.all(14),
+        child: Text(message,
             style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600)),
-      ]),
-    );
-  }
-}
-
-class _SubTitle extends StatelessWidget {
-  final String text;
-  const _SubTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700));
-  }
+                fontSize: 13, color: AppColors.mutedForeground)),
+      );
 }

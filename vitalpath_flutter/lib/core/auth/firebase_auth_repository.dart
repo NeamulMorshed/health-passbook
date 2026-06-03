@@ -138,8 +138,7 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<AuthResult> getUserState(String uid) async {
     try {
-      final doc =
-          await _db.collection(AppConstants.colUsers).doc(uid).get();
+      final doc = await _db.collection(AppConstants.colUsers).doc(uid).get();
       if (!doc.exists || doc.data() == null) {
         // No profile yet — caller must complete onboarding.
         final fbUser = _auth.currentUser;
@@ -250,20 +249,15 @@ class FirebaseAuthRepository implements AuthRepository {
         'invalid-credential' ||
         'wrong-password' =>
           'Email or password is incorrect.',
-        'user-not-found' =>
-          'No account found with this email.',
+        'user-not-found' => 'No account found with this email.',
         'email-already-in-use' =>
           'An account already exists with this email. Try signing in instead.',
-        'weak-password' =>
-          'Password must be at least 6 characters.',
-        'invalid-email' =>
-          'Please enter a valid email address.',
+        'weak-password' => 'Password must be at least 6 characters.',
+        'invalid-email' => 'Please enter a valid email address.',
         'too-many-requests' =>
           'Too many attempts. Please wait a moment and try again.',
-        'network-request-failed' =>
-          'No internet connection. Please try again.',
-        'user-disabled' =>
-          'This account has been disabled. Contact support.',
+        'network-request-failed' => 'No internet connection. Please try again.',
+        'user-disabled' => 'This account has been disabled. Contact support.',
         'cancelled-popup-request' ||
         'popup-closed-by-user' =>
           'Sign-in was cancelled.',

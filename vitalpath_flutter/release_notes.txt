@@ -1,4 +1,5 @@
-VitalPath v2.6.0+20 — UI Redesign (in progress)
+Omra v2.11.0+35 — Family member medicine card layout fix
 
-UI Redesign:
-- Work in progress
+• Medicines card on family member home is now a single full-width card showing
+  "taken today" count on the left and "due now / all done" count on the right,
+  replacing the two narrow side-by-side half-width stat cards

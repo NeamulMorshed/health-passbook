@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../core/auth/auth_repository.dart';
 import '../core/auth/firebase_auth_repository.dart';
@@ -44,6 +45,10 @@ final firestoreServiceProvider = Provider<FirestoreService>(
   (_) => FirestoreService(),
 );
 
+// Bug 1 fix: declared with a placeholder factory; main.dart overrides this with
+// the already-initialized instance via ProviderScope.overrides so the same
+// object (with its initialized _local plugin and onMessage listener) is shared
+// everywhere.
 final notificationServiceProvider = Provider<NotificationService>(
   (_) => NotificationService(),
 );
@@ -52,4 +57,41 @@ final notificationServiceProvider = Provider<NotificationService>(
 // Re-evaluated each time the provider is watched (i.e. on screen mount).
 final notifPermGrantedProvider = FutureProvider<bool>((ref) {
   return ref.read(notificationServiceProvider).isPermissionGranted();
+});
+
+// Bug 2 fix: save the FCM device token to Firestore whenever the signed-in
+// user changes, so Cloud Functions can address push notifications to this device.
+final fcmTokenSyncProvider = Provider<void>((ref) {
+  ref.listen(currentUserProvider, (_, next) {
+    next.whenData((user) async {
+      if (user == null) return;
+      try {
+        await ref.read(notificationServiceProvider).syncTokenForUser(
+              user.uid,
+              ref.read(firestoreServiceProvider),
+            );
+      } catch (e, st) {
+        FirebaseCrashlytics.instance.recordError(e, st, fatal: false);
+      }
+    });
+  });
+});
+
+// Crashlytics user attribution: tag every crash report with the signed-in
+// user's uid + userType so we can filter and follow up. Clears on sign-out.
+final crashlyticsUserSyncProvider = Provider<void>((ref) {
+  ref.listen(currentUserProvider, (_, next) {
+    next.whenData((user) async {
+      final crashlytics = FirebaseCrashlytics.instance;
+      if (user == null) {
+        await crashlytics.setUserIdentifier('');
+        return;
+      }
+      await crashlytics.setUserIdentifier(user.uid);
+      await crashlytics.setCustomKey('userType', user.userType.name);
+      // Non-fatal session marker — first event per signed-in session, lets us
+      // confirm Crashlytics is alive in the dashboard without needing a crash.
+      await crashlytics.log('session start · userType=${user.userType.name}');
+    });
+  });
 });

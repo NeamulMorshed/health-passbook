@@ -1,4 +1,3 @@
-
 class DoctorProfile {
   final String uid;
   final String name;

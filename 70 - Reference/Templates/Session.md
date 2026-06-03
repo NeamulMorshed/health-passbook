@@ -1,0 +1,26 @@
+# Session — {{date}}
+
+#session
+
+**Version:** 2.12.0+41  
+**Branch:**  
+**Model:** Sonnet (default) / Opus (planning) / Haiku (quick lookups)  
+
+---
+
+## Goal
+<!-- What are we building today? -->
+
+## Files Touched
+<!-- path/to/file.dart — what changed -->
+
+## Decisions Made
+<!-- Any ADR-worthy? Link to 80 - Decisions/ -->
+
+## Commands Run
+<!-- deploy commands, build commands, etc. -->
+
+## Blockers / Open Questions
+
+## Next Session
+<!-- What's the immediate next step? -->

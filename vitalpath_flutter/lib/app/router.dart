@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'navigation_key.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/disclaimer_provider.dart';
 import '../models/app_user.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/onboarding/disclaimer_screen.dart';
+import '../screens/legal/privacy_policy_screen.dart';
 import '../screens/user_select/user_select_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/face_id_screen.dart';
@@ -37,8 +41,15 @@ import '../screens/patient/care/invite_caregiver_screen.dart';
 import '../screens/patient/care/manage_caregiver_screen.dart';
 import '../screens/caregiver/accept_invite_screen.dart';
 import '../screens/caregiver/caregiver_patient_profile_screen.dart';
+import '../screens/caregiver/caregiver_shell.dart';
+import '../screens/caregiver/home/caregiver_home_screen.dart';
+import '../screens/caregiver/patients/caregiver_patients_screen.dart';
+import '../screens/caregiver/profile/caregiver_profile_screen.dart';
 import '../screens/onboarding/caregiver_setup_screen.dart';
 import '../screens/patient/vitals/vitals_screen.dart';
+import '../screens/patient/profile/patient_health_profile_screen.dart';
+import '../screens/messaging/appointment_messages_screen.dart';
+import '../models/appointment.dart';
 import '../models/caregiver_connection.dart';
 
 // ── Auth-change notifier ──────────────────────────────────────────────────
@@ -50,12 +61,33 @@ class _AuthNotifier extends ChangeNotifier {
   void ping() => notifyListeners();
 }
 
-// ── Patient shell routes ──────────────────────────────────────────────────
-// All routes that should only be accessible to patients / caregivers.
-const _patientRoutes = {
-  '/home', '/vitals', '/care', '/appointments', '/profile',
-  '/medicines', '/activity', '/gamification', '/insights',
-  '/notifications', '/care-circle', '/my-doctors', '/prescriptions',
+// Routes only patients (not caregivers, not doctors) may access.
+const _patientOnlyRoutes = {
+  '/home',
+  '/vitals',
+  '/profile',
+  '/my-doctors',
+  '/prescriptions',
+  '/care-circle',
+  '/activity',
+  '/gamification',
+  '/insights',
+  '/health-profile',
+};
+
+// Routes patients and caregivers share (doctors are blocked).
+const _sharedNonDoctorRoutes = {
+  '/care',
+  '/appointments',
+  '/notifications',
+  '/notification-settings',
+  '/edit-profile',
+  '/privacy-security',
+  '/invite-family',
+  '/invite-caregiver',
+  '/manage-caregiver',
+  '/accept-invite',
+  '/caregiver-patient-profile',
 };
 
 // ── Router provider ───────────────────────────────────────────────────────
@@ -85,32 +117,46 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: notifier,
 
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+
+      // Disclaimer gate — must accept before anything else is reachable.
+      final disclaimerAccepted = ref.read(disclaimerAcceptedProvider);
+      if (!disclaimerAccepted) {
+        // Until accepted, only the disclaimer and privacy screens are reachable.
+        // We MUST return here (not fall through to the auth/role logic below):
+        // an unauthenticated user sitting on /disclaimer would otherwise be
+        // redirected to /auth/login by the auth guard, which the gate bounces
+        // straight back to /disclaimer — a redirect loop that exhausts
+        // go_router's redirect limit and renders the errorBuilder
+        // ("Page not found: /auth/login").
+        if (loc == '/disclaimer' || loc == '/privacy-policy') return null;
+        return '/disclaimer';
+      }
+      if (loc == '/disclaimer') return '/splash';
+
       final authState = ref.read(firebaseAuthStateProvider);
 
-      // If we are still loading the auth state, don't redirect yet.
-      // This prevents bouncing users back to login while the stream is initializing.
-      if (authState.isLoading) return null;
+      // If auth stream is loading or errored, hold position.
+      // Error guard is critical: a failing stream sets isLoading=false but
+      // asData=null, making isAuthenticated=false, which loops every rapid
+      // retry emission back to /auth/login → GoRouter redirect-count overflow.
+      if (authState.isLoading || authState.hasError) return null;
 
       final isAuthenticated = authState.asData?.value != null;
-      final loc = state.matchedLocation;
 
       // Splash is always reachable — no redirect.
       if (loc == '/splash') return null;
 
-      // Fix H1 — Block authenticated users from /user-select.
-      if (loc == '/user-select') {
-        if (!isAuthenticated) return null;
-        // User is logged in — redirect to role-appropriate home.
-        final userState = ref.read(currentUserProvider);
-        if (userState.isLoading) return null;
-        final user = userState.asData?.value;
-        if (user == null) return null;
-        return user.userType == UserType.doctor ? '/doc/dashboard' : '/home';
-      }
+      // /user-select is always accessible — authenticated users can visit it
+      // to switch roles or sign out. The screen itself handles role-aware
+      // navigation via _handleRoleSelected and shows a mismatch dialog when
+      // the tapped role differs from the stored userType.
+      if (loc == '/user-select') return null;
 
       // Redirect unauthenticated users away from protected routes.
       final isAuthRoute = loc.startsWith('/auth');
@@ -120,30 +166,66 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!isAuthenticated) return null;
 
       final userState = ref.read(currentUserProvider);
-      // Still loading the AppUser — let the route render, guard will re-run.
       if (userState.isLoading) return null;
+      // If provider errored, send to splash so auth state is re-evaluated cleanly.
+      if (userState.hasError) return loc == '/splash' ? null : '/splash';
       final user = userState.asData?.value;
       if (user == null) return null;
 
       final isDoctor = user.userType == UserType.doctor;
-      final isPatientOrCaregiver =
-          user.userType == UserType.patient || user.userType == UserType.caregiver;
+      final isCaregiver = user.userType == UserType.caregiver;
+      final isPatient = user.userType == UserType.patient;
 
       // Fix C1 — Role-based route guards.
-      if (loc.startsWith('/doc/') && !isDoctor) {
-        return '/home';
-      }
-      if (_patientRoutes.any((r) => loc == r || loc.startsWith('$r/')) &&
-          !isPatientOrCaregiver) {
-        return '/doc/dashboard';
+
+      // Doctors may not access patient or caregiver areas.
+      if (isDoctor) {
+        final inPatient =
+            _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'));
+        final inShared = _sharedNonDoctorRoutes
+            .any((r) => loc == r || loc.startsWith('$r/'));
+        final inCaregiver = loc.startsWith('/caregiver');
+        if (inPatient || inShared || inCaregiver) return '/doc/dashboard';
       }
 
-      // Fix H2 — Guard onboarding routes by role and onboarding state.
-      if (loc == '/onboarding/permissions' ||
-          loc == '/onboarding/health-profile' ||
-          loc == '/onboarding/caregiver-setup') {
-        if (!isPatientOrCaregiver) return '/doc/dashboard';
-        if (user.onboardingComplete) return '/home';
+      // Non-doctors may not access doctor area.
+      if (!isDoctor && loc.startsWith('/doc/')) {
+        return isCaregiver ? '/caregiver/home' : '/home';
+      }
+
+      // Caregivers may not access patient-only routes.
+      if (isCaregiver &&
+          _patientOnlyRoutes.any((r) => loc == r || loc.startsWith('$r/'))) {
+        return '/caregiver/home';
+      }
+
+      // Patients may not access caregiver portal.
+      if (isPatient && loc.startsWith('/caregiver')) {
+        return '/home';
+      }
+
+      // Safety net: incomplete patients may only access onboarding/auth/legal routes.
+      if (isPatient && !user.onboardingComplete) {
+        final isPermitted = loc.startsWith('/onboarding') ||
+            loc.startsWith('/auth') ||
+            loc == '/splash' ||
+            loc == '/user-select' ||
+            loc == '/disclaimer' ||
+            loc == '/privacy-policy';
+        if (!isPermitted) return '/onboarding/health-profile';
+      }
+
+      // Guard patient onboarding routes — doctors and caregivers may not access them.
+      if (loc == '/onboarding/permissions' || loc == '/onboarding/health-profile') {
+        if (isDoctor) return '/doc/dashboard';
+        if (isCaregiver) return '/onboarding/caregiver-setup';
+        if (isPatient && user.onboardingComplete) return '/home';
+      }
+      // Guard caregiver onboarding — doctors and patients may not access it.
+      if (loc == '/onboarding/caregiver-setup') {
+        if (isDoctor) return '/doc/dashboard';
+        if (isPatient) return user.onboardingComplete ? '/home' : '/onboarding/health-profile';
+        if (isCaregiver && user.onboardingComplete) return '/caregiver/home';
       }
       if (loc == '/doc/onboarding/profile') {
         if (!isDoctor) return '/home';
@@ -154,26 +236,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
 
     routes: [
+      GoRoute(path: '/disclaimer', builder: (_, __) => const DisclaimerScreen()),
+      GoRoute(path: '/privacy-policy', builder: (_, __) => const PrivacyPolicyScreen()),
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(
           path: '/user-select', builder: (_, __) => const UserSelectScreen()),
 
-      // Auth routes
+      // Auth routes — flat top-level paths, no parent container.
+      // Previously nested under /auth GoRoute, but any parent-level redirect
+      // (even null-returning) in go_router 14.x fires for child paths too and
+      // can leave /auth/login unresolvable → "Page not found" crash.
       GoRoute(
-        path: '/auth',
-        redirect: (_, __) => '/auth/login',
-        routes: [
-          GoRoute(
-            path: 'login',
-            builder: (_, state) {
-              final extra = state.extra as Map<String, dynamic>?;
-              return LoginScreen(userType: extra?['userType'] as String?);
-            },
-          ),
-          GoRoute(
-              path: 'faceid',
-              builder: (_, __) => const FaceIdScreen(isSetupMode: false)),
-        ],
+        path: '/auth/login',
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return LoginScreen(userType: extra?['userType'] as String?);
+        },
+      ),
+      GoRoute(
+        path: '/auth/faceid',
+        builder: (_, __) => const FaceIdScreen(isSetupMode: false),
       ),
 
       // Patient onboarding
@@ -192,32 +274,34 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/doc/onboarding/profile',
           builder: (_, __) => const DocProfileSetupScreen()),
 
-      // Patient shell — 5 tabs: Home, Medicines, Vitals, Appointments, Profile
+      // Patient shell — 5 tabs: Home, Care, Vitals, Appointments, Profile
       ShellRoute(
         builder: (context, state, child) => PatientShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
-          GoRoute(path: '/care', builder: (_, __) => const CareScreen()),
+          GoRoute(
+            path: '/care',
+            builder: (_, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return CareScreen(initialMemberId: extra?['memberId'] as String?);
+            },
+          ),
           GoRoute(path: '/vitals', builder: (_, __) => const VitalsScreen()),
           GoRoute(
               path: '/appointments',
               builder: (_, __) => const AppointmentsScreen()),
-          GoRoute(
-              path: '/profile', builder: (_, __) => const ProfileScreen()),
+          GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
         ],
       ),
 
       // Care Circle is a push route accessible from Profile and Home
       GoRoute(
-          path: '/care-circle',
-          builder: (_, __) => const CareCircleScreen()),
+          path: '/care-circle', builder: (_, __) => const CareCircleScreen()),
 
       // Activity is a full-screen push route (accessible from Home)
-      GoRoute(
-          path: '/activity', builder: (_, __) => const ActivityScreen()),
+      GoRoute(path: '/activity', builder: (_, __) => const ActivityScreen()),
 
-      GoRoute(
-          path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
+      GoRoute(path: '/my-doctors', builder: (_, __) => const MyDoctorsScreen()),
       GoRoute(
           path: '/notifications',
           builder: (_, __) => const NotificationsScreen()),
@@ -225,26 +309,40 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/notification-settings',
           builder: (_, __) => const NotificationSettingsScreen()),
       GoRoute(
-          path: '/edit-profile',
-          builder: (_, __) => const EditProfileScreen()),
+          path: '/edit-profile', builder: (_, __) => const EditProfileScreen()),
       GoRoute(
           path: '/privacy-security',
           builder: (_, __) => const PrivacySecurityScreen()),
       GoRoute(
           path: '/gamification',
           builder: (_, __) => const GamificationScreen()),
-      GoRoute(
-          path: '/insights',
-          builder: (_, __) => const InsightsScreen()),
+      GoRoute(path: '/insights', builder: (_, __) => const InsightsScreen()),
       GoRoute(
           path: '/prescriptions',
           builder: (_, __) => const PrescriptionsScreen()),
+      GoRoute(
+          path: '/health-profile',
+          builder: (_, __) => const PatientHealthProfileScreen()),
       GoRoute(
           path: '/invite-family',
           builder: (_, __) => const InviteFamilyMemberScreen()),
       GoRoute(
           path: '/invite-caregiver',
           builder: (_, __) => const InviteCaregiverScreen()),
+
+      // 7a: Appointment-scoped messaging
+      GoRoute(
+        path: '/appointment-messages',
+        builder: (_, state) {
+          if (state.extra is! Appointment) {
+            return const Scaffold(
+              body: Center(child: Text('Page not found: /appointment-messages')),
+            );
+          }
+          return AppointmentMessagesScreen(
+              appointment: state.extra as Appointment);
+        },
+      ),
 
       // Fix C2 — Null-safe CaregiverConnection casts.
       GoRoute(
@@ -277,13 +375,28 @@ final routerProvider = Provider<GoRouter>((ref) {
           if (state.extra is! CaregiverConnection) {
             return const Scaffold(
               body: Center(
-                  child: Text(
-                      'Page not found: /caregiver-patient-profile')),
+                  child: Text('Page not found: /caregiver-patient-profile')),
             );
           }
           return CaregiverPatientProfileScreen(
               connection: state.extra as CaregiverConnection);
         },
+      ),
+
+      // Caregiver shell — 3 tabs: Home, Family, Profile
+      ShellRoute(
+        builder: (context, state, child) => CaregiverShell(child: child),
+        routes: [
+          GoRoute(
+              path: '/caregiver/home',
+              builder: (_, __) => const CaregiverHomeScreen()),
+          GoRoute(
+              path: '/caregiver/patients',
+              builder: (_, __) => const CaregiverPatientsScreen()),
+          GoRoute(
+              path: '/caregiver/profile',
+              builder: (_, __) => const CaregiverProfileScreen()),
+        ],
       ),
 
       // Doctor shell
@@ -295,7 +408,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (_, __) => const DocDashboardScreen()),
           GoRoute(
               path: '/doc/patients',
-              builder: (_, __) => const DocPatientsScreen()),
+              builder: (_, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                return DocPatientsScreen(mode: extra?['mode'] as String?);
+              }),
           GoRoute(
               path: '/doc/appointments',
               builder: (_, __) => const DocAppointmentsScreen()),
@@ -307,8 +423,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: '/doc/patient/:patientId',
-        builder: (_, state) => DocPatientViewScreen(
-            patientId: state.pathParameters['patientId']!),
+        builder: (_, state) =>
+            DocPatientViewScreen(patientId: state.pathParameters['patientId']!),
       ),
     ],
 

@@ -33,6 +33,13 @@ class FirestoreService {
     });
   }
 
+  Future<void> saveFcmToken(String uid, String token) async {
+    await _db.collection(AppConstants.colUsers).doc(uid).update({
+      'fcmToken': token,
+      'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ─── Patient ──────────────────────────────────────────────────────────────
 
   Future<PatientProfile?> getPatient(String uid) async {
@@ -41,7 +48,8 @@ class FirestoreService {
     return PatientProfile.fromMap(doc.data()!, uid);
   }
 
-  Future<void> updatePatientProfile(String uid, Map<String, dynamic> data) async {
+  Future<void> updatePatientProfile(
+      String uid, Map<String, dynamic> data) async {
     await _db.collection(AppConstants.colPatients).doc(uid).set(
       {...data, 'updatedAt': FieldValue.serverTimestamp()},
       SetOptions(merge: true),
@@ -56,7 +64,8 @@ class FirestoreService {
     return DoctorProfile.fromMap(doc.data()!, uid);
   }
 
-  Future<void> updateDoctorProfile(String uid, Map<String, dynamic> data) async {
+  Future<void> updateDoctorProfile(
+      String uid, Map<String, dynamic> data) async {
     await _db.collection(AppConstants.colDoctors).doc(uid).set(
       {...data, 'updatedAt': FieldValue.serverTimestamp()},
       SetOptions(merge: true),
@@ -75,7 +84,8 @@ class FirestoreService {
           .collection(AppConstants.colDoctors)
           .where(FieldPath.documentId, whereIn: chunk)
           .get();
-      results.addAll(snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)));
+      results
+          .addAll(snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)));
     }
     return results;
   }
@@ -89,7 +99,8 @@ class FirestoreService {
           .collection(AppConstants.colPatients)
           .where(FieldPath.documentId, whereIn: chunk)
           .get();
-      results.addAll(snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)));
+      results
+          .addAll(snap.docs.map((d) => PatientProfile.fromMap(d.data(), d.id)));
     }
     return results;
   }
@@ -105,7 +116,8 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colConnections)
         .snapshots()
-        .asyncMap((snap) => _fetchDoctorsByIds(snap.docs.map((d) => d.id).toList()));
+        .asyncMap(
+            (snap) => _fetchDoctorsByIds(snap.docs.map((d) => d.id).toList()));
   }
 
   Stream<List<PatientProfile>> watchDoctorPatients(String doctorId) {
@@ -114,7 +126,8 @@ class FirestoreService {
         .doc(doctorId)
         .collection(AppConstants.colConnections)
         .snapshots()
-        .asyncMap((snap) => _fetchPatientsByIds(snap.docs.map((d) => d.id).toList()));
+        .asyncMap(
+            (snap) => _fetchPatientsByIds(snap.docs.map((d) => d.id).toList()));
   }
 
   Stream<int> watchDoctorPatientCount(String doctorId) {
@@ -126,7 +139,8 @@ class FirestoreService {
         .map((s) => s.docs.length);
   }
 
-  Future<List<DoctorProfile>> searchDoctors({String? specialty, String? nameQuery, String? city}) async {
+  Future<List<DoctorProfile>> searchDoctors(
+      {String? specialty, String? nameQuery, String? city}) async {
     Query<Map<String, dynamic>> query = _db.collection(AppConstants.colDoctors);
     if (specialty != null && specialty.isNotEmpty) {
       query = query.where('specialty', isEqualTo: specialty);
@@ -135,7 +149,8 @@ class FirestoreService {
       query = query.where('city', isEqualTo: city);
     }
     final snap = await query.limit(50).get();
-    var results = snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
+    var results =
+        snap.docs.map((d) => DoctorProfile.fromMap(d.data(), d.id)).toList();
     if (nameQuery != null && nameQuery.isNotEmpty) {
       final lower = nameQuery.toLowerCase();
       results = results
@@ -191,9 +206,21 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .where('isActive', isEqualTo: true)
-        .orderBy('startDate', descending: true)
         .snapshots()
-        .map((s) => s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Medicine.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Medicine>()
+              .toList()
+            ..sort((a, b) => b.startDate.compareTo(a.startDate));
+          return list;
+        });
   }
 
   Future<void> addMedicine(String patientId, Medicine medicine) async {
@@ -205,14 +232,29 @@ class FirestoreService {
         .set(medicine.toMap());
   }
 
-  Future<void> logDose(String patientId, String medicineId) async {
+  Future<void> logDose(String patientId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogDose(
+      String patientId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -249,7 +291,14 @@ class FirestoreService {
         .orderBy('createdAt')
         .snapshots()
         .map((s) => s.docs
-            .map((d) => FamilyMember.fromMap(d.data(), d.id))
+            .map((d) {
+              try {
+                return FamilyMember.fromMap(d.data(), d.id);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<FamilyMember>()
             .toList());
   }
 
@@ -298,7 +347,8 @@ class FirestoreService {
 
     for (var i = 0; i < medicineDocs.length; i += chunkSize) {
       final batch = _db.batch();
-      final chunk = medicineDocs.sublist(i, min(i + chunkSize, medicineDocs.length));
+      final chunk =
+          medicineDocs.sublist(i, min(i + chunkSize, medicineDocs.length));
       for (final doc in chunk) {
         batch.delete(doc.reference);
       }
@@ -321,10 +371,21 @@ class FirestoreService {
         .doc(memberId)
         .collection(AppConstants.colMedicines)
         .where('isActive', isEqualTo: true)
-        .orderBy('startDate', descending: true)
         .snapshots()
-        .map((s) =>
-            s.docs.map((d) => Medicine.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Medicine.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Medicine>()
+              .toList()
+            ..sort((a, b) => b.startDate.compareTo(a.startDate));
+          return list;
+        });
   }
 
   Future<void> addFamilyMemberMedicine(
@@ -364,7 +425,9 @@ class FirestoreService {
   }
 
   Future<void> logFamilyMemberDose(
-      String uid, String memberId, String medicineId) async {
+      String uid, String memberId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(uid)
@@ -373,8 +436,22 @@ class FirestoreService {
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses':
-          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogFamilyMemberDose(
+      String uid, String memberId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -394,20 +471,27 @@ class FirestoreService {
         .collection(AppConstants.colMeals)
         .where('loggedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
         .where('loggedAt', isLessThan: Timestamp.fromDate(end))
-        .orderBy('loggedAt', descending: true)
         .snapshots()
         .map((s) {
-          // Re-evaluate today's boundaries on each emission so stale data is filtered
-          // when the stream runs past midnight without re-subscribing.
-          final now = DateTime.now();
-          final todayStart = DateTime(now.year, now.month, now.day);
-          final todayEnd = todayStart.add(const Duration(days: 1));
-          return s.docs
-              .map((d) => MealLog.fromMap(d.data(), d.id))
-              .where((m) =>
-                  !m.loggedAt.isBefore(todayStart) && m.loggedAt.isBefore(todayEnd))
-              .toList();
-        });
+      // Re-evaluate today's boundaries on each emission so stale data is filtered
+      // when the stream runs past midnight without re-subscribing.
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final todayEnd = todayStart.add(const Duration(days: 1));
+      return s.docs
+          .map((d) {
+            try {
+              return MealLog.fromMap(d.data(), d.id);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<MealLog>()
+          .where((m) =>
+              !m.loggedAt.isBefore(todayStart) && m.loggedAt.isBefore(todayEnd))
+          .toList()
+        ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
+    });
   }
 
   Future<void> addMeal(String patientId, MealLog meal) async {
@@ -448,7 +532,16 @@ class FirestoreService {
         .orderBy('createdAt', descending: true)
         .limit(50)
         .snapshots()
-        .map((s) => s.docs.map((d) => AppNotification.fromMap(d.data(), d.id)).toList());
+        .map((s) => s.docs
+            .map((d) {
+              try {
+                return AppNotification.fromMap(d.data(), d.id);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<AppNotification>()
+            .toList());
   }
 
   Future<void> addNotification(String patientId, AppNotification notif) async {
@@ -472,6 +565,8 @@ class FirestoreService {
   Future<void> markAllNotificationsRead(String patientId) async {
     // F10: Filter by createdAt <= now() so notifications that arrive between
     // the query and batch write are not incorrectly marked as read.
+    // Requires composite index: notifications collection, isRead ASC + createdAt ASC.
+    // If missing, this query throws failed-precondition and markAllRead silently fails.
     final snap = await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
@@ -504,22 +599,47 @@ class FirestoreService {
         .doc(patientId)
         .collection(AppConstants.colActivityLogs)
         .where('loggedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(weekAgo))
-        .orderBy('loggedAt', descending: true)
         .limit(20)
         .snapshots()
-        .map((s) => s.docs.map((d) => ActivityLog.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return ActivityLog.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<ActivityLog>()
+              .toList()
+            ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
+          return list;
+        });
   }
 
   // ─── Appointments ─────────────────────────────────────────────────────────
 
-  Stream<List<Appointment>> watchPatientAppointments(String patientId, {int limit = 20}) {
+  Stream<List<Appointment>> watchPatientAppointments(String patientId,
+      {int limit = 20}) {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+      final appts = s.docs
+          .map((d) {
+            try {
+              return Appointment.fromMap(d.data(), d.id);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<Appointment>()
+          .toList();
+      return appts;
+    });
   }
 
   Stream<List<Appointment>> watchDoctorAppointments(String doctorId) {
@@ -527,14 +647,29 @@ class FirestoreService {
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
         .orderBy('createdAt', descending: true)
-        .limit(50)
+        .limit(100)
         .snapshots()
-        .map((s) => s.docs.map((d) => Appointment.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+      final appts = s.docs
+          .map((d) {
+            try {
+              return Appointment.fromMap(d.data(), d.id);
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<Appointment>()
+          .toList();
+      return appts;
+    });
   }
 
   // Booking only creates the appointment — connection is established on confirmation.
   Future<void> bookAppointment(Appointment appt) async {
-    await _db.collection(AppConstants.colAppointments).doc(appt.id).set(appt.toMap());
+    await _db
+        .collection(AppConstants.colAppointments)
+        .doc(appt.id)
+        .set(appt.toMap());
   }
 
   // Confirm appointment: update status, fan-out connection, notify patient.
@@ -557,23 +692,33 @@ class FirestoreService {
 
     // Bidirectional connection — created only after doctor accepts.
     batch.set(
-      _db.collection(AppConstants.colPatients).doc(patientId)
-          .collection(AppConstants.colConnections).doc(doctorId),
+      _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colConnections)
+          .doc(doctorId),
       {'connectedAt': FieldValue.serverTimestamp()},
     );
     batch.set(
-      _db.collection(AppConstants.colDoctors).doc(doctorId)
-          .collection(AppConstants.colConnections).doc(patientId),
+      _db
+          .collection(AppConstants.colDoctors)
+          .doc(doctorId)
+          .collection(AppConstants.colConnections)
+          .doc(patientId),
       {'connectedAt': FieldValue.serverTimestamp()},
     );
 
     // In-app notification for the patient.
     batch.set(
-      _db.collection(AppConstants.colPatients).doc(patientId)
-          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4()),
       {
         'title': 'Appointment Confirmed',
-        'body': 'Dr. $doctorName confirmed your appointment for ${_fmtDt(scheduledAt)}.',
+        'body':
+            'Dr. $doctorName confirmed your appointment for ${_fmtDt(scheduledAt)}.',
         'type': NotificationType.appointment.value,
         'isRead': false,
         'createdAt': Timestamp.fromDate(DateTime.now()),
@@ -597,7 +742,8 @@ class FirestoreService {
       'status': status.value,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    if (scheduledAt != null) data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+    if (scheduledAt != null)
+      data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
     if (notes != null) data['notes'] = notes;
     await _db.collection(AppConstants.colAppointments).doc(apptId).update(data);
 
@@ -623,22 +769,54 @@ class FirestoreService {
         await _cleanupConnectionIfInactive(patientId, doctorId);
       }
     }
+
+    if (status == AppointmentStatus.completed && patientId != null) {
+      // Write in-app notification to patient
+      final completedNotif = <String, dynamic>{
+        'title': 'Appointment Completed',
+        'body': doctorName != null
+            ? 'Dr. $doctorName has completed your appointment.'
+            : 'Your appointment has been completed.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+      await _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4())
+          .set(completedNotif);
+    }
   }
 
-  Future<void> _cleanupConnectionIfInactive(String patientId, String doctorId) async {
+  Future<void> _cleanupConnectionIfInactive(
+      String patientId, String doctorId) async {
     final remaining = await _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
         .where('doctorId', isEqualTo: doctorId)
-        .where('status', whereIn: ['pending', 'confirmed'])
-        .get();
+        .where('status', whereIn: ['pending', 'confirmed']).get();
     if (remaining.docs.isEmpty) {
       await removeConnection(patientId, doctorId);
     }
   }
 
   String _fmtDt(DateTime dt) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
     final m = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour >= 12 ? 'PM' : 'AM';
@@ -647,15 +825,27 @@ class FirestoreService {
 
   // ─── Prescriptions ────────────────────────────────────────────────────────
 
-  Stream<List<Prescription>> watchPatientPrescriptions(String patientId) {
-    // TODO: implement pagination for patients with >50 prescriptions
+  Stream<List<Prescription>> watchPatientPrescriptions(String patientId,
+      {int limit = 20}) {
     return _db
         .collection(AppConstants.colPrescriptions)
         .where('patientId', isEqualTo: patientId)
-        .orderBy('issuedAt', descending: true)
-        .limit(50)
+        .limit(limit)
         .snapshots()
-        .map((s) => s.docs.map((d) => Prescription.fromMap(d.data(), d.id)).toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return Prescription.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<Prescription>()
+              .toList()
+            ..sort((a, b) => b.issuedAt.compareTo(a.issuedAt));
+          return list;
+        });
   }
 
   /// Writes the prescription and all derived medicine entries in a single
@@ -677,15 +867,15 @@ class FirestoreService {
       batch.set(
         medRef,
         Medicine(
-          id:           medRef.id,
-          patientId:    rx.patientId,
-          name:         med.name,
-          dosage:       med.dosage,
-          frequency:    med.frequency,
+          id: medRef.id,
+          patientId: rx.patientId,
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.frequency,
           prescribedBy: rx.doctorName,
-          doctorId:     rx.doctorId,
-          notes:        med.instructions,
-          startDate:    rx.issuedAt,
+          doctorId: rx.doctorId,
+          notes: med.instructions,
+          startDate: rx.issuedAt,
         ).toMap(),
       );
     }
@@ -693,8 +883,11 @@ class FirestoreService {
     // In-app notification for the patient
     final medCount = rx.medicines.length;
     batch.set(
-      _db.collection(AppConstants.colPatients).doc(rx.patientId)
-          .collection(AppConstants.colNotifications).doc(_uuid.v4()),
+      _db
+          .collection(AppConstants.colPatients)
+          .doc(rx.patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4()),
       {
         'title': 'New Prescription',
         'body': 'Dr. ${rx.doctorName} prescribed $medCount '
@@ -722,7 +915,8 @@ class FirestoreService {
 
     await _db.runTransaction((tx) async {
       final doctorRef = _db.collection(AppConstants.colDoctors).doc(doctorId);
-      final apptRef   = _db.collection(AppConstants.colAppointments).doc(appointmentId);
+      final apptRef =
+          _db.collection(AppConstants.colAppointments).doc(appointmentId);
 
       final doctorSnap = await tx.get(doctorRef);
       if (!doctorSnap.exists) return;
@@ -732,17 +926,21 @@ class FirestoreService {
       if (!apptSnap.exists) throw Exception('Appointment not found');
       final apptData = apptSnap.data();
       if (apptData == null || apptData['patientId'] != uid) {
-        throw Exception('Unauthorised: appointment does not belong to current user');
+        throw Exception(
+            'Unauthorised: appointment does not belong to current user');
       }
 
-      final currentRating     = (doctorSnap.data()?['rating'] as num?)?.toDouble() ?? 0.0;
-      final currentReviewCount = (doctorSnap.data()?['reviewCount'] as int?) ?? 0;
+      final currentRating =
+          (doctorSnap.data()?['rating'] as num?)?.toDouble() ?? 0.0;
+      final currentReviewCount =
+          (doctorSnap.data()?['reviewCount'] as int?) ?? 0;
 
-      final newCount  = currentReviewCount + 1;
-      final newRating = ((currentRating * currentReviewCount) + rating) / newCount;
+      final newCount = currentReviewCount + 1;
+      final newRating =
+          ((currentRating * currentReviewCount) + rating) / newCount;
 
       tx.update(doctorRef, {
-        'rating':      newRating,
+        'rating': newRating,
         'reviewCount': newCount,
       });
       tx.update(apptRef, {
@@ -753,17 +951,28 @@ class FirestoreService {
 
   // ─── Consultation Notes ───────────────────────────────────────────────────
 
-  Stream<List<ConsultationNote>> watchConsultationNotes(String patientId, String doctorId) {
+  Stream<List<ConsultationNote>> watchConsultationNotes(
+      String patientId, String doctorId) {
     return _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(_colConsultationNotes)
         .where('doctorId', isEqualTo: doctorId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => ConsultationNote.fromMap(d.data(), d.id))
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return ConsultationNote.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<ConsultationNote>()
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
   }
 
   Future<void> addConsultationNote(ConsultationNote note) async {
@@ -786,23 +995,78 @@ class FirestoreService {
 
   // ─── Vitals ───────────────────────────────────────────────────────────────
 
-  Stream<List<VitalReading>> watchVitals(String patientId, {int limit = 50}) {
+  Stream<List<VitalReading>> watchVitals(String patientId, {int limit = 200}) {
     return _db
         .collection(AppConstants.colVitals)
         .where('patientId', isEqualTo: patientId)
-        .orderBy('recordedAt', descending: true)
         .limit(limit)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => VitalReading.fromMap(d.data(), d.id))
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) {
+                try {
+                  return VitalReading.fromMap(d.data(), d.id);
+                } catch (_) {
+                  return null;
+                }
+              })
+              .whereType<VitalReading>()
+              .toList()
+            ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+          return list;
+        });
   }
 
-  Future<void> addVitalReading(VitalReading reading) =>
-      _db.collection(AppConstants.colVitals).doc(reading.id).set(reading.toMap());
+  Future<void> addVitalReading(VitalReading reading) => _db
+      .collection(AppConstants.colVitals)
+      .doc(reading.id)
+      .set(reading.toMap());
 
   Future<void> deleteVitalReading(String readingId) =>
       _db.collection(AppConstants.colVitals).doc(readingId).delete();
+
+  // One-shot fetch for doctor "Needs Attention" aggregator (ADR-014).
+  // Uses get() instead of snapshots() to avoid N concurrent subscriptions.
+
+  Future<List<Medicine>> getMedicinesOnce(String patientId) async {
+    final snap = await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .where('isActive', isEqualTo: true)
+        .get();
+    return snap.docs
+        .map((d) {
+          try {
+            return Medicine.fromMap(d.data(), d.id);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<Medicine>()
+        .toList();
+  }
+
+  Future<List<VitalReading>> getVitalsLastNDays(String patientId,
+      {int days = 7}) async {
+    final cutoff =
+        Timestamp.fromDate(DateTime.now().subtract(Duration(days: days)));
+    final snap = await _db
+        .collection(AppConstants.colVitals)
+        .where('patientId', isEqualTo: patientId)
+        .where('recordedAt', isGreaterThanOrEqualTo: cutoff)
+        .get();
+    return snap.docs
+        .map((d) {
+          try {
+            return VitalReading.fromMap(d.data(), d.id);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<VitalReading>()
+        .toList();
+  }
 
   // ─── Pill Count ───────────────────────────────────────────────────────────
 
@@ -819,6 +1083,21 @@ class FirestoreService {
       final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
       if (current == null || current <= 0) return;
       tx.update(ref, {'pillsRemaining': current - 1});
+    });
+  }
+
+  Future<void> incrementPillCount(String patientId, String medicineId) async {
+    final ref = _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+      final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
+      if (current == null) return;
+      tx.update(ref, {'pillsRemaining': current + 1});
     });
   }
 }

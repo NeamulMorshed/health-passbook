@@ -10,6 +10,7 @@ class FamilyMember {
   final DateTime createdAt;
   final String profileType; // 'dependent' | 'linked'
   final String? linkedUid;
+
   /// Free-text note, e.g. a doctor name recorded during caregiver onboarding.
   final String? note;
 
@@ -57,7 +58,8 @@ class FamilyMember {
   Map<String, dynamic> toMap() => {
         'name': name,
         'relationship': relationship,
-        'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
+        'dateOfBirth':
+            dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
         'age': age,
         'photoUrl': photoUrl,
         'createdAt': Timestamp.fromDate(createdAt),

@@ -9,10 +9,10 @@ class DoseSlot {
   final int hour;
   final int minute;
   final DateTime windowStart; // grace period opens 30 min before scheduled time
-  final DateTime windowEnd;   // closes when the next slot's window starts
-  final bool isTaken;         // a logged dose falls inside this window
-  final bool isDue;           // current time >= windowStart
-  final bool isMissed;        // window has closed and dose was not logged
+  final DateTime windowEnd; // closes when the next slot's window starts
+  final bool isTaken; // a logged dose falls inside this window
+  final bool isDue; // current time >= windowStart
+  final bool isMissed; // window has closed and dose was not logged
 
   const DoseSlot({
     required this.index,
@@ -37,7 +37,9 @@ class DoseSlot {
   String get shortTime {
     final period = hour >= 12 ? 'PM' : 'AM';
     final h = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-    return minute == 0 ? '$h $period' : '$h:${minute.toString().padLeft(2, '0')} $period';
+    return minute == 0
+        ? '$h $period'
+        : '$h:${minute.toString().padLeft(2, '0')} $period';
   }
 }
 
@@ -57,9 +59,11 @@ class Medicine {
   final DateTime? endDate;
   final List<DateTime> loggedDoses;
   final List<String> reminderTimes; // "HH:mm" e.g. ["08:00", "20:00"]
-  final String reminderRepeat;      // 'daily' | 'weekly' (legacy, use reminderDays for day selection)
-  final List<int> reminderDays;     // 0=Sun, 1=Mon, …, 6=Sat; empty = use reminderRepeat default
-  final String? scannedPhotoUrl;    // original prescription photo from OCR scan
+  final String
+      reminderRepeat; // 'daily' | 'weekly' (legacy, use reminderDays for day selection)
+  final List<int>
+      reminderDays; // 0=Sun, 1=Mon, …, 6=Sat; empty = use reminderRepeat default
+  final String? scannedPhotoUrl; // original prescription photo from OCR scan
   final int? pillsRemaining;
 
   const Medicine({
@@ -99,7 +103,8 @@ class Medicine {
     if (reminderTimes.isEmpty) return [];
 
     // Skip days not in the schedule (0=Sun, 1=Mon, …, 6=Sat)
-    final todayDow = DateTime.now().weekday % 7; // Mon=1..Sun=7 → %7 gives Mon=1..Sat=6, Sun=0
+    final todayDow = DateTime.now().weekday %
+        7; // Mon=1..Sun=7 → %7 gives Mon=1..Sat=6, Sun=0
     if (reminderDays.isNotEmpty && !reminderDays.contains(todayDow)) return [];
 
     final now = DateTime.now();
@@ -113,8 +118,10 @@ class Medicine {
       ..sort();
 
     // Today's logged doses only
-    final todayDoses = loggedDoses.where((d) =>
-        d.year == base.year && d.month == base.month && d.day == base.day).toList();
+    final todayDoses = loggedDoses
+        .where((d) =>
+            d.year == base.year && d.month == base.month && d.day == base.day)
+        .toList();
 
     return List.generate(scheduled.length, (i) {
       final slotTime = scheduled[i];
@@ -128,8 +135,8 @@ class Medicine {
           ? scheduled[i + 1].subtract(_gracePeriod)
           : DateTime(base.year, base.month, base.day, 23, 59, 59);
 
-      final isTaken = todayDoses.any(
-          (d) => !d.isBefore(windowStart) && d.isBefore(windowEnd));
+      final isTaken = todayDoses
+          .any((d) => !d.isBefore(windowStart) && d.isBefore(windowEnd));
       final isDue = !now.isBefore(windowStart);
       final isMissed = isDue && now.isAfter(windowEnd) && !isTaken;
 
@@ -213,7 +220,7 @@ class Medicine {
         // Backward compat: derive from reminderRepeat
         final repeat = map['reminderRepeat'] ?? 'daily';
         if (repeat == 'weekly') return [1]; // legacy weekly → Monday
-        return [0, 1, 2, 3, 4, 5, 6];      // legacy daily → every day
+        return [0, 1, 2, 3, 4, 5, 6]; // legacy daily → every day
       })(),
       scannedPhotoUrl: map['scannedPhotoUrl'] as String?,
       pillsRemaining: map['pillsRemaining'] as int?,

@@ -61,14 +61,14 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
   }) {
     setState(() => _generating = true);
     ref.read(insightsNotifierProvider.notifier).generate(
-      medicines: meds,
-      meals: meals,
-      activities: activities,
-      patient: patient,
-      pendingAppointments: appts.where((a) => a.isPending).length,
-      medStreak: gamProfile?.medStreak ?? 0,
-      activityStreak: gamProfile?.activityStreak ?? 0,
-    );
+          medicines: meds,
+          meals: meals,
+          activities: activities,
+          patient: patient,
+          pendingAppointments: appts.where((a) => a.isPending).length,
+          medStreak: gamProfile?.medStreak ?? 0,
+          activityStreak: gamProfile?.activityStreak ?? 0,
+        );
   }
 
   @override
@@ -79,14 +79,16 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
     final activityAsync = ref.watch(activityLogsProvider(widget.uid));
     final patientAsync = ref.watch(patientProfileProvider(widget.uid));
     final gamAsync = ref.watch(gamificationProvider(widget.uid));
-    final apptsAsync = ref.watch(patientAppointmentsProvider((patientId: widget.uid, limit: 50)));
+    final apptsAsync = ref
+        .watch(patientAppointmentsProvider((patientId: widget.uid, limit: 50)));
 
     // Reset _generating when provider stops loading
     ref.listen(insightsNotifierProvider, (_, next) {
       if (!next.isLoading && _generating) setState(() => _generating = false);
     });
 
-    final allLoaded = medsAsync.hasValue && mealsAsync.hasValue && apptsAsync.hasValue;
+    final allLoaded =
+        medsAsync.hasValue && mealsAsync.hasValue && apptsAsync.hasValue;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
@@ -108,12 +110,16 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               const Row(children: [
                 Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
                 SizedBox(width: 10),
-                Text('Powered by Claude AI', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text('Powered by Claude AI',
+                    style: TextStyle(color: Colors.white70, fontSize: 12)),
               ]),
               const SizedBox(height: 10),
               const Text(
                 'Personalised Health\nInsights',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -131,25 +137,39 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: (!allLoaded || insightsState.isLoading || _generating)
+                  onPressed: (!allLoaded ||
+                          insightsState.isLoading ||
+                          _generating)
                       ? null
                       : () => _generate(
                             meds: medsAsync.asData?.value ?? const <Medicine>[],
-                            meals: mealsAsync.asData?.value ?? const <MealLog>[],
-                            activities: activityAsync.asData?.value ?? const <ActivityLog>[],
+                            meals:
+                                mealsAsync.asData?.value ?? const <MealLog>[],
+                            activities: activityAsync.asData?.value ??
+                                const <ActivityLog>[],
                             patient: patientAsync.asData?.value,
                             gamProfile: gamAsync.asData?.value,
-                            appts: apptsAsync.asData?.value ?? const <Appointment>[],
+                            appts: apptsAsync.asData?.value ??
+                                const <Appointment>[],
                           ),
                   icon: insightsState.isLoading
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.primary))
                       : const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: Text(insightsState.isLoading ? 'Analysing your data...' : 'Generate Insights', style: const TextStyle(fontWeight: FontWeight.w600)),
+                  label: Text(
+                      insightsState.isLoading
+                          ? 'Analysing your data...'
+                          : 'Generate Insights',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100)),
                   ),
                 ),
               ),
@@ -170,12 +190,16 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: AppColors.warning, size: 16),
+              HugeIcon(
+                  icon: HugeIcons.strokeRoundedInformationCircle,
+                  color: AppColors.warning,
+                  size: 16),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'These insights are informational only and not medical advice. Always consult your doctor before making health decisions.',
-                  style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.mutedForeground),
                 ),
               ),
             ],
@@ -191,7 +215,8 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               return const EmptyState(
                 icon: Icons.lightbulb_outline_rounded,
                 title: 'No Insights Yet',
-                subtitle: 'Tap "Generate Insights" to get AI-powered health recommendations.',
+                subtitle:
+                    'Tap "Generate Insights" to get AI-powered health recommendations.',
               );
             }
             return Column(
@@ -209,7 +234,8 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
               child: Column(children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Analysing your health data...', style: TextStyle(color: AppColors.mutedForeground)),
+                Text('Analysing your health data...',
+                    style: TextStyle(color: AppColors.mutedForeground)),
               ]),
             ),
           ),
@@ -218,19 +244,25 @@ class _InsightsContentState extends ConsumerState<_InsightsContent> {
             decoration: BoxDecoration(
                 color: AppColors.destructive.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.destructive.withValues(alpha: 0.3))),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                border: Border.all(
+                    color: AppColors.destructive.withValues(alpha: 0.3))),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Row(children: [
                 Icon(Icons.error_outline_rounded, color: AppColors.destructive),
                 SizedBox(width: 12),
-                Expanded(child: Text('Failed to generate insights. Check your connection and try again.', style: TextStyle(fontSize: 13))),
+                Expanded(
+                    child: Text(
+                        'Failed to generate insights. Check your connection and try again.',
+                        style: TextStyle(fontSize: 13))),
               ]),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => _generate(
                   meds: medsAsync.asData?.value ?? const <Medicine>[],
                   meals: mealsAsync.asData?.value ?? const <MealLog>[],
-                  activities: activityAsync.asData?.value ?? const <ActivityLog>[],
+                  activities:
+                      activityAsync.asData?.value ?? const <ActivityLog>[],
                   patient: patientAsync.asData?.value,
                   gamProfile: gamAsync.asData?.value,
                   appts: apptsAsync.asData?.value ?? const <Appointment>[],
@@ -267,39 +299,53 @@ class _InsightCard extends StatelessWidget {
           Row(children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8)),
               child: icon,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 insight.title,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style:
+                    const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20)),
               child: Text(
                 _categoryLabel(insight.category),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: color),
               ),
             ),
           ]),
           const SizedBox(height: 12),
-          Text(insight.body, style: const TextStyle(fontSize: 13, color: AppColors.foreground, height: 1.4)),
+          Text(insight.body,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.foreground, height: 1.4)),
           const SizedBox(height: 10),
           // Dynamic suggestion bg color — kept as Container
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8)),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.tips_and_updates_rounded, color: color, size: 14),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(insight.suggestion, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w500)),
+                  child: Text(insight.suggestion,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: color,
+                          fontWeight: FontWeight.w500)),
                 ),
               ],
             ),
@@ -311,21 +357,53 @@ class _InsightCard extends StatelessWidget {
 
   (Widget, Color) _categoryStyle(String category) {
     switch (category) {
-      case 'medication':   return (HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18), AppColors.primary);
-      case 'nutrition':    return (const Icon(Icons.restaurant_rounded, color: AppColors.warning, size: 18), AppColors.warning);
-      case 'activity':     return (const Icon(Icons.directions_walk_rounded, color: AppColors.success, size: 18), AppColors.success);
-      case 'appointments': return (const Icon(Icons.calendar_month_rounded, color: AppColors.primary, size: 18), AppColors.primary);
-      default:             return (const Icon(Icons.lightbulb_rounded, color: Color(0xFF0EA5E9), size: 18), const Color(0xFF0EA5E9));
+      case 'medication':
+        return (
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedMedicine01,
+              color: AppColors.primary,
+              size: 18),
+          AppColors.primary
+        );
+      case 'nutrition':
+        return (
+          const Icon(Icons.restaurant_rounded,
+              color: AppColors.warning, size: 18),
+          AppColors.warning
+        );
+      case 'activity':
+        return (
+          const Icon(Icons.directions_walk_rounded,
+              color: AppColors.success, size: 18),
+          AppColors.success
+        );
+      case 'appointments':
+        return (
+          const Icon(Icons.calendar_month_rounded,
+              color: AppColors.primary, size: 18),
+          AppColors.primary
+        );
+      default:
+        return (
+          const Icon(Icons.lightbulb_rounded,
+              color: Color(0xFF0EA5E9), size: 18),
+          const Color(0xFF0EA5E9)
+        );
     }
   }
 
   String _categoryLabel(String category) {
     switch (category) {
-      case 'medication': return 'Medication';
-      case 'nutrition':  return 'Nutrition';
-      case 'activity':   return 'Activity';
-      case 'appointments': return 'Appointments';
-      default: return 'General';
+      case 'medication':
+        return 'Medication';
+      case 'nutrition':
+        return 'Nutrition';
+      case 'activity':
+        return 'Activity';
+      case 'appointments':
+        return 'Appointments';
+      default:
+        return 'General';
     }
   }
 }

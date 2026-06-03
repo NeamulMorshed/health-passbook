@@ -3,45 +3,68 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Primary green brand — #0F9D77
-  static const primary         = Color(0xFF0F9D77);
-  static const primaryLight    = Color(0xFF3DB896);
-  static const primaryDark     = Color(0xFF0B7A5E);
-  static const primaryTint     = Color(0xFFE8F5F1);
-  static const primaryXLight   = Color(0xFFF2FAF7);
+  static const primary = Color(0xFF0F9D77);
+  static const primaryLight = Color(0xFF3DB896);
+  static const primaryDark = Color(0xFF0B7A5E);
+  static const primaryTint = Color(0xFFE8F5F1);
+  static const primaryXLight = Color(0xFFF2FAF7);
 
   // Page and surface
-  static const pageBackground  = Color(0xFFF2F2F0);
-  static const surface         = Color(0xFFFFFFFF);
-  static const surfaceSubtle   = Color(0xFFF7F7F5);
+  static const pageBackground = Color(0xFFF2F2F0);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceSubtle = Color(0xFFF7F7F5);
 
   // Text
-  static const textPrimary     = Color(0xFF111827);
-  static const textSecondary   = Color(0xFF6B7280);
-  static const textTertiary    = Color(0xFF9CA3AF);
-  static const textOnPrimary   = Color(0xFFFFFFFF);
+  // Phase 9 (a11y): bumped one step darker so all three tiers pass WCAG AA
+  // (4.5:1 for normal text) against white/pageBackground/surfaceSubtle.
+  // textTertiary was #9CA3AF (gray-400, ~2.85:1 on white — failed AA).
+  static const textPrimary = Color(0xFF111827);
+  static const textSecondary = Color(0xFF4B5563); // gray-600, ~7.34:1 on white
+  static const textTertiary = Color(0xFF6B7280); // gray-500, ~4.84:1 on white
+  static const textOnPrimary = Color(0xFFFFFFFF);
 
   // Borders
-  static const border          = Color(0xFFE5E5E3);
-  static const borderStrong    = Color(0xFFD1D5DB);
+  static const border = Color(0xFFE5E5E3);
+  static const borderStrong = Color(0xFFD1D5DB);
 
   // Semantic
-  static const success         = Color(0xFF16A34A);
-  static const successLight    = Color(0xFFDCFCE7);
-  static const warning         = Color(0xFFD97706);
-  static const warningLight    = Color(0xFFFEF3C7);
-  static const destructive     = Color(0xFFDC2626);
+  static const success = Color(0xFF16A34A);
+  static const successLight = Color(0xFFDCFCE7);
+  static const warning = Color(0xFFD97706);
+  static const warningLight = Color(0xFFFEF3C7);
+  static const destructive = Color(0xFFDC2626);
   static const destructiveLight = Color(0xFFFEE2E2);
-  static const info            = Color(0xFF3B82F6);
-  static const infoLight       = Color(0xFFEFF6FF);
+  static const info = Color(0xFF3B82F6);
+  static const infoLight = Color(0xFFEFF6FF);
+
+  // Caregiver / family member accent — amber #F59E0B
+  static const caregiver = Color(0xFFF59E0B);
+  static const caregiverLight = Color(0xFFFEF3C7);
+
+  // Invite / sharing accent — indigo #7C3AED
+  static const inviteAccent = Color(0xFF7C3AED);
+  static const inviteAccentLight = Color(0xFFEDE9FE);
 
   // Legacy aliases — keeps existing screens compiling without any changes
-  static const background      = pageBackground;
-  static const muted           = surfaceSubtle;
+  static const background = pageBackground;
+  static const muted = surfaceSubtle;
   static const mutedForeground = textSecondary;
-  static const foreground      = textPrimary;
-  static const cardForeground  = textPrimary;
-  static const doctorPrimary   = primary;
-  static const doctorLight     = primaryTint;
+  static const foreground = textPrimary;
+  static const cardForeground = textPrimary;
+  static const doctorPrimary = primary;
+  static const doctorLight = primaryTint;
+}
+
+class AppShadows {
+  /// Soft ambient shadow for the single elevated hero card per screen (green states).
+  static const List<BoxShadow> hero = [
+    BoxShadow(color: Color(0x1A0F9D77), blurRadius: 16, offset: Offset(0, 4)),
+  ];
+
+  /// Amber-tinted variant for the "catch up" hero state.
+  static const List<BoxShadow> heroWarning = [
+    BoxShadow(color: Color(0x1AD97706), blurRadius: 16, offset: Offset(0, 4)),
+  ];
 }
 
 class AppTheme {
@@ -49,7 +72,6 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.pageBackground,
-
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
@@ -57,24 +79,58 @@ class AppTheme {
         surface: AppColors.surface,
         error: AppColors.destructive,
       ),
-
       textTheme: GoogleFonts.openSansTextTheme(
         ThemeData.light().textTheme,
       ).copyWith(
-        displayLarge:   GoogleFonts.openSans(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        displayMedium:  GoogleFonts.openSans(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        displaySmall:   GoogleFonts.openSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        headlineMedium: GoogleFonts.openSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-        headlineSmall:  GoogleFonts.openSans(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        titleLarge:     GoogleFonts.openSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        titleMedium:    GoogleFonts.openSans(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        bodyLarge:      GoogleFonts.openSans(fontSize: 16, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
-        bodyMedium:     GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
-        bodySmall:      GoogleFonts.openSans(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textSecondary),
-        labelLarge:     GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        labelSmall:     GoogleFonts.openSans(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textTertiary),
+        displayLarge: GoogleFonts.openSans(
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary),
+        displayMedium: GoogleFonts.openSans(
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary),
+        displaySmall: GoogleFonts.openSans(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary),
+        headlineMedium: GoogleFonts.openSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary),
+        headlineSmall: GoogleFonts.openSans(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary),
+        titleLarge: GoogleFonts.openSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary),
+        titleMedium: GoogleFonts.openSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary),
+        bodyLarge: GoogleFonts.openSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textPrimary),
+        bodyMedium: GoogleFonts.openSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textPrimary),
+        bodySmall: GoogleFonts.openSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textSecondary),
+        labelLarge: GoogleFonts.openSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary),
+        labelSmall: GoogleFonts.openSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textTertiary),
       ),
-
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
@@ -88,7 +144,6 @@ class AppTheme {
         ),
         iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 22),
       ),
-
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -98,7 +153,6 @@ class AppTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -114,7 +168,6 @@ class AppTheme {
           ),
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
@@ -129,7 +182,6 @@ class AppTheme {
           ),
         ),
       ),
-
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.primary,
@@ -139,7 +191,6 @@ class AppTheme {
           ),
         ),
       ),
-
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceSubtle,
@@ -161,12 +212,14 @@ class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.destructive, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.destructive, width: 2.0),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: GoogleFonts.openSans(fontSize: 15, color: AppColors.textTertiary),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        hintStyle:
+            GoogleFonts.openSans(fontSize: 15, color: AppColors.textTertiary),
       ),
-
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -189,35 +242,33 @@ class AppTheme {
           );
         }),
       ),
-
       tabBarTheme: TabBarThemeData(
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textTertiary,
         indicatorColor: AppColors.primary,
         dividerColor: AppColors.border,
-        labelStyle: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w400),
+        labelStyle:
+            GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelStyle:
+            GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w400),
       ),
-
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceSubtle,
         selectedColor: AppColors.primaryXLight,
         side: const BorderSide(color: AppColors.border, width: 0.5),
-        labelStyle: GoogleFonts.openSans(fontSize: 12, color: AppColors.textPrimary),
+        labelStyle:
+            GoogleFonts.openSans(fontSize: 12, color: AppColors.textPrimary),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       ),
-
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
         thickness: 0.5,
         space: 0,
       ),
-
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         shape: StadiumBorder(),
       ),
-
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(

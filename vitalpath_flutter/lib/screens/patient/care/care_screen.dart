@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../core/anim/reduced_motion.dart';
+import '../../../core/widgets/dose_undo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
@@ -19,15 +20,18 @@ import 'scan_prescription_screen.dart';
 import 'add_family_member_screen.dart';
 
 class CareScreen extends ConsumerStatefulWidget {
-  const CareScreen({super.key});
+  final String? initialMemberId;
+  const CareScreen({super.key, this.initialMemberId});
   @override
   ConsumerState<CareScreen> createState() => _CareScreenState();
 }
 
-class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProviderStateMixin {
+class _CareScreenState extends ConsumerState<CareScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
   // null = primary user ("Me"), non-null = active family member
   FamilyMember? _activeMember;
+  bool _initialMemberSet = false;
 
   @override
   void initState() {
@@ -47,15 +51,40 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
     final userAsync = ref.watch(currentUserProvider);
 
     return userAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const Scaffold(body: Center(child: EmptyState(icon: Icons.error_outline_rounded, title: 'Something went wrong', subtitle: 'Pull to refresh or try again.'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (_, __) => const Scaffold(
+          body: Center(
+              child: EmptyState(
+                  icon: Icons.error_outline_rounded,
+                  title: 'Something went wrong',
+                  subtitle: 'Pull to refresh or try again.'))),
       data: (user) {
         if (user == null) {
           WidgetsBinding.instance.addPostFrameCallback(
-            (_) { if (context.mounted) context.go('/user-select'); },
+            (_) {
+              if (context.mounted) context.go('/user-select');
+            },
           );
           return const Scaffold(body: SizedBox.shrink());
         }
+
+        // Auto-select family member when navigating from home chip
+        if (widget.initialMemberId != null && !_initialMemberSet) {
+          final members =
+              ref.watch(familyMembersProvider(user.uid)).asData?.value ?? [];
+          final match =
+              members.where((m) => m.id == widget.initialMemberId).firstOrNull;
+          if (match != null) {
+            _initialMemberSet = true;
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) {
+                if (mounted) setState(() => _activeMember = match);
+              },
+            );
+          }
+        }
+
         return Scaffold(
           backgroundColor: AppColors.pageBackground,
           appBar: AppBar(
@@ -71,8 +100,22 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               indicatorColor: AppColors.primary,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600),
               tabs: [
-                Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: _tabCtrl.index == 0 ? AppColors.primary : AppColors.mutedForeground, size: 20), text: 'Medicines'),
-                Tab(icon: HugeIcon(icon: HugeIcons.strokeRoundedApple, color: _tabCtrl.index == 1 ? AppColors.primary : AppColors.mutedForeground, size: 20), text: 'Food'),
+                Tab(
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedPillBottle,
+                        color: _tabCtrl.index == 0
+                            ? AppColors.primary
+                            : AppColors.mutedForeground,
+                        size: 20),
+                    text: 'Medicines'),
+                Tab(
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedApple,
+                        color: _tabCtrl.index == 1
+                            ? AppColors.primary
+                            : AppColors.mutedForeground,
+                        size: 20),
+                    text: 'Food'),
               ],
             ),
           ),
@@ -82,7 +125,8 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               if (_activeMember != null)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.08),
                     border: const Border(
@@ -90,7 +134,10 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                     ),
                   ),
                   child: Row(children: [
-                    HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 15),
+                    HugeIcon(
+                        icon: HugeIcons.strokeRoundedUser,
+                        color: AppColors.primary,
+                        size: 15),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -118,7 +165,8 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                     _MedicineTab(
                       uid: user.uid,
                       activeMember: _activeMember,
-                      onSwitcherChanged: (m) => setState(() => _activeMember = m),
+                      onSwitcherChanged: (m) =>
+                          setState(() => _activeMember = m),
                     ),
                     _FoodTab(uid: user.uid),
                   ],
@@ -135,15 +183,20 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
               }
             },
             backgroundColor: AppColors.primary,
-            icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.white, size: 20),
-            label: Text(_tabCtrl.index == 0 ? 'Add Medicine' : 'Log Meal', style: const TextStyle(color: Colors.white)),
+            icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedPlusSign,
+                color: Colors.white,
+                size: 20),
+            label: Text(_tabCtrl.index == 0 ? 'Add Medicine' : 'Log Meal',
+                style: const TextStyle(color: Colors.white)),
           ),
         );
       },
     );
   }
 
-  void _showMedicineAddChoice(BuildContext context, String uid, FamilyMember? activeMember) {
+  void _showMedicineAddChoice(
+      BuildContext context, String uid, FamilyMember? activeMember) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -155,21 +208,19 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                     color: AppColors.border,
                     borderRadius: BorderRadius.circular(2)),
               ),
               const SizedBox(height: 16),
               const Text('Add Medicine',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               const Text('How would you like to add a medicine?',
                   style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mutedForeground)),
+                      fontSize: 13, color: AppColors.mutedForeground)),
               const SizedBox(height: 20),
               ListTile(
                 shape: RoundedRectangleBorder(
@@ -180,15 +231,20 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8)),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedBarcodeScan, color: AppColors.primary, size: 22),
+                  child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedBarcodeScan,
+                      color: AppColors.primary,
+                      size: 22),
                 ),
                 title: const Text('Scan Prescription',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600)),
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 subtitle: const Text('Take a photo and we\'ll read it for you',
                     style: TextStyle(fontSize: 12)),
-                trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
+                trailing: HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    color: AppColors.mutedForeground,
+                    size: 14),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -212,15 +268,20 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
                   decoration: BoxDecoration(
                       color: AppColors.border,
                       borderRadius: BorderRadius.circular(8)),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: AppColors.mutedForeground, size: 18),
+                  child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedPencilEdit01,
+                      color: AppColors.mutedForeground,
+                      size: 18),
                 ),
                 title: const Text('Add Manually',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600)),
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 subtitle: const Text('Enter medicine details yourself',
                     style: TextStyle(fontSize: 12)),
-                trailing: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.mutedForeground, size: 14),
+                trailing: HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    color: AppColors.mutedForeground,
+                    size: 14),
                 onTap: () {
                   Navigator.pop(context);
                   _showMedicineSheet(context, uid, activeMember: activeMember);
@@ -251,7 +312,8 @@ class _CareScreenState extends ConsumerState<CareScreen> with SingleTickerProvid
   }
 }
 
-void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String mealId) {
+void _confirmDeleteMeal(
+    BuildContext context, WidgetRef ref, String uid, String mealId) {
   showDialog(
     context: context,
     builder: (dialogCtx) => AlertDialog(
@@ -266,17 +328,17 @@ void _confirmDeleteMeal(BuildContext context, WidgetRef ref, String uid, String 
               onPressed: () async {
                 Navigator.pop(dialogCtx);
                 try {
-                  await ref.read(mealNotifierProvider.notifier).delete(uid, mealId);
+                  await ref
+                      .read(mealNotifierProvider.notifier)
+                      .delete(uid, mealId);
                 } catch (_) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Failed to delete meal. Please try again.'),
-                      behavior: SnackBarBehavior.floating,
-                    ));
+                    AppSnackBar.error(context, 'Failed to delete meal. Please try again.');
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.destructive),
               child: const Text('Delete'),
             ),
             const SizedBox(height: 4),
@@ -300,17 +362,20 @@ void showMedicineSheet(BuildContext context, String uid,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) =>
-        _MedicineSheet(uid: uid, existing: existing, familyMember: familyMember),
+    builder: (_) => _MedicineSheet(
+        uid: uid, existing: existing, familyMember: familyMember),
   );
 }
 
-void showLogMealSheet(BuildContext context, String uid, {MealLog? existing, String? initialType}) {
+void showLogMealSheet(BuildContext context, String uid,
+    {MealLog? existing, String? initialType}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _MealSheet(uid: uid, existing: existing, initialType: initialType),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) =>
+        _MealSheet(uid: uid, existing: existing, initialType: initialType),
   );
 }
 
@@ -319,8 +384,10 @@ void _showMedDetailSheet(BuildContext context, Medicine med, String uid,
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => _MedDetailSheet(med: med, uid: uid, familyMember: familyMember),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (_) =>
+        _MedDetailSheet(med: med, uid: uid, familyMember: familyMember),
   );
 }
 
@@ -328,7 +395,8 @@ void _showMealDetailSheet(BuildContext context, MealLog meal, String uid) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (_) => _MealDetailSheet(meal: meal, uid: uid),
   );
 }
@@ -405,14 +473,17 @@ class _MedicineTab extends ConsumerWidget {
         Expanded(
           child: medsAsync.when(
             loading: () => const _ShimmerCardList(height: 140),
-            error: (e, _) =>
-                EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
+            error: (e, _) => EmptyState(
+                icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
             data: (meds) {
               final memberName = activeMember?.name.split(' ').first;
               if (meds.isEmpty) {
                 return EmptyState(
                   icon: Icons.medication_outlined,
-                  iconWidget: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 40),
+                  iconWidget: HugeIcon(
+                      icon: HugeIcons.strokeRoundedMedicine01,
+                      color: AppColors.mutedForeground,
+                      size: 40),
                   title: activeMember == null
                       ? 'No Medicines Yet'
                       : 'No Medicines for $memberName',
@@ -487,9 +558,7 @@ class _SwitcherChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary
-              : AppColors.muted,
+          color: isSelected ? AppColors.primary : AppColors.muted,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
@@ -513,7 +582,8 @@ class _SwitcherChip extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : AppColors.foreground)),
+                        color:
+                            isSelected ? Colors.white : AppColors.foreground)),
               ),
             const SizedBox(width: 6),
             Text(label,
@@ -548,7 +618,10 @@ class _AddMemberChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: AppColors.primary.withValues(alpha: 0.8), size: 14),
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedPlusSign,
+                color: AppColors.primary.withValues(alpha: 0.8),
+                size: 14),
             const SizedBox(width: 4),
             Text('Add member',
                 style: TextStyle(
@@ -567,7 +640,8 @@ class _MedCard extends ConsumerStatefulWidget {
   final String uid;
   final FamilyMember? familyMember;
   final VoidCallback? onTap;
-  const _MedCard({required this.med, required this.uid, this.familyMember, this.onTap});
+  const _MedCard(
+      {required this.med, required this.uid, this.familyMember, this.onTap});
   @override
   ConsumerState<_MedCard> createState() => _MedCardState();
 }
@@ -578,20 +652,27 @@ class _MedCardState extends ConsumerState<_MedCard> {
   Future<void> _logDose() async {
     if (_isTaking) return;
     setState(() => _isTaking = true);
-    HapticFeedback.mediumImpact();
+    safeHaptic(context, medium: true);
     try {
       final fm = widget.familyMember;
       if (fm != null) {
-        await ref.read(familyMedicinePatchProvider).logDose(widget.uid, fm.id, widget.med.id);
+        final patch = ref.read(familyMedicinePatchProvider);
+        await logDoseWithUndo(
+          context,
+          record: () => patch.recordDose(widget.uid, fm.id, widget.med.id),
+          undo: (ts) => patch.unlogDose(widget.uid, fm.id, widget.med.id, ts),
+          // family path: no HP
+        );
       } else {
-        final hp = await ref.read(medicineNotifierProvider.notifier).logDose(widget.uid, widget.med.id);
-        if (hp > 0 && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('+$hp HP  Dose logged!'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ));
-        }
+        final notifier = ref.read(medicineNotifierProvider.notifier);
+        await logDoseWithUndo(
+          context,
+          record: () => notifier.recordDose(widget.uid, widget.med.id,
+              medicine: widget.med),
+          undo: (ts) => notifier.unlogDose(widget.uid, widget.med.id, ts,
+              medicine: widget.med),
+          awardHp: () => notifier.awardDoseHp(widget.uid),
+        );
       }
     } finally {
       if (mounted) setState(() => _isTaking = false);
@@ -611,17 +692,33 @@ class _MedCardState extends ConsumerState<_MedCard> {
 
     // Header badge
     final StatusBadge badge;
+    final String badgeKey;
     if (fullyTaken) {
       badge = StatusBadge.success('All Taken');
+      badgeKey = 'taken';
     } else if (hasMissed && !hasDue) {
       badge = StatusBadge.danger('Missed');
+      badgeKey = 'missed';
     } else if (hasDue) {
       badge = StatusBadge.warning('Due Now');
+      badgeKey = 'due';
     } else if (asNeeded && !med.fullyTakenToday) {
       badge = StatusBadge.warning('Pending');
+      badgeKey = 'pending';
     } else {
       badge = StatusBadge.info('Upcoming');
+      badgeKey = 'upcoming';
     }
+    // Check-off feedback: badge scales+fades in when its state changes
+    // (e.g. → "All Taken"). Instant when reduced motion is on.
+    final animatedBadge = AnimatedSwitcher(
+      duration: prefersReducedMotion(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      transitionBuilder: (child, anim) => ScaleTransition(
+          scale: anim, child: FadeTransition(opacity: anim, child: child)),
+      child: KeyedSubtree(key: ValueKey(badgeKey), child: badge),
+    );
 
     return BentoCard(
       onTap: widget.onTap,
@@ -635,32 +732,62 @@ class _MedCardState extends ConsumerState<_MedCard> {
               decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8)),
-              child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
+              child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMedicine01,
+                  color: AppColors.primary,
+                  size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(med.name,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text(med.dosage,
-                    style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(med.name,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+                    Text(med.dosage,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.mutedForeground)),
+                  ]),
             ),
-            badge,
+            animatedBadge,
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical, color: AppColors.mutedForeground, size: 20),
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMoreVertical,
+                  color: AppColors.mutedForeground,
+                  size: 20),
               onSelected: (v) {
                 if (v == 'edit') {
-                  showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
+                  showMedicineSheet(context, uid,
+                      existing: med, familyMember: familyMember);
                 } else if (v == 'delete') {
                   _confirmDelete(context);
                 }
               },
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'edit', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 18), const SizedBox(width: 8), const Text('Edit')])),
+                PopupMenuItem(
+                    value: 'edit',
+                    child: Row(children: [
+                      HugeIcon(
+                          icon: HugeIcons.strokeRoundedPencilEdit01,
+                          color: Colors.black,
+                          size: 18),
+                      const SizedBox(width: 8),
+                      const Text('Edit')
+                    ])),
                 if (widget.med.prescribedBy == null)
-                  PopupMenuItem(value: 'delete', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18), const SizedBox(width: 8), const Text('Remove', style: TextStyle(color: AppColors.destructive))])),
+                  PopupMenuItem(
+                      value: 'delete',
+                      child: Row(children: [
+                        HugeIcon(
+                            icon: HugeIcons.strokeRoundedDelete01,
+                            color: AppColors.destructive,
+                            size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Remove',
+                            style: TextStyle(color: AppColors.destructive))
+                      ])),
               ],
             ),
           ]),
@@ -680,12 +807,16 @@ class _MedCardState extends ConsumerState<_MedCard> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: slots.map((slot) => _SlotChip(
-                slot: slot,
-                onTake: (slot.isDue || slot.isMissed) && !slot.isTaken && !_isTaking
-                    ? _logDose
-                    : null,
-              )).toList(),
+              children: slots
+                  .map((slot) => _SlotChip(
+                        slot: slot,
+                        onTake: (slot.isDue || slot.isMissed) &&
+                                !slot.isTaken &&
+                                !_isTaking
+                            ? _logDose
+                            : null,
+                      ))
+                  .toList(),
             ),
           ],
 
@@ -695,10 +826,18 @@ class _MedCardState extends ConsumerState<_MedCard> {
             ElevatedButton.icon(
               onPressed: _isTaking ? null : _logDose,
               icon: _isTaking
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : HugeIcon(
+                      icon: HugeIcons.strokeRoundedTick01,
+                      color: Colors.white,
+                      size: 16),
               label: const Text('Mark as Taken'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 40)),
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 40)),
             ),
           ],
         ],
@@ -729,8 +868,10 @@ class _MedCardState extends ConsumerState<_MedCard> {
                             setDialogState(() => removing = true);
                             try {
                               if (widget.familyMember != null) {
-                                await ref.read(familyMedicinePatchProvider).delete(
-                                    widget.uid, widget.familyMember!.id, widget.med.id);
+                                await ref
+                                    .read(familyMedicinePatchProvider)
+                                    .delete(widget.uid, widget.familyMember!.id,
+                                        widget.med.id);
                               } else {
                                 await ref
                                     .read(medicineNotifierProvider.notifier)
@@ -738,35 +879,31 @@ class _MedCardState extends ConsumerState<_MedCard> {
                               }
                               if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                  content: Text('${widget.med.name} removed'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 2),
-                                ));
+                                AppSnackBar.success(context, '${widget.med.name} removed');
                               }
                             } catch (_) {
                               setDialogState(() => removing = false);
                               if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                               if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                  content: Text('Failed to remove medicine. Please try again.'),
-                                  behavior: SnackBarBehavior.floating,
-                                ));
+                                AppSnackBar.error(context, 'Failed to remove medicine. Please try again.');
                               }
                             }
                           },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.destructive),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.destructive),
                     child: removing
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
                         : const Text('Remove'),
                   ),
                   const SizedBox(height: 4),
                   Center(
                     child: TextButton(
-                      onPressed: removing ? null : () => Navigator.pop(dialogCtx),
+                      onPressed:
+                          removing ? null : () => Navigator.pop(dialogCtx),
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -798,32 +935,38 @@ class _SlotChip extends StatelessWidget {
       bg = AppColors.success.withValues(alpha: 0.1);
       fg = AppColors.success;
       label = slot.shortTime;
-      icon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: fg, size: 14);
+      icon = HugeIcon(
+          icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: fg, size: 14);
     } else if (slot.isMissed) {
       bg = AppColors.warning.withValues(alpha: 0.1);
       fg = AppColors.warning;
       label = 'Missed · ${slot.shortTime}';
-      icon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: fg, size: 14);
+      icon = HugeIcon(
+          icon: HugeIcons.strokeRoundedAlertDiamond, color: fg, size: 14);
     } else if (slot.isDue) {
       bg = AppColors.primary;
       fg = Colors.white;
       label = 'Take · ${slot.shortTime}';
-      icon = HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: fg, size: 14);
+      icon = HugeIcon(
+          icon: HugeIcons.strokeRoundedMedicine01, color: fg, size: 14);
     } else {
       bg = AppColors.muted;
       fg = AppColors.mutedForeground;
       label = slot.shortTime;
-      icon = HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: fg, size: 13);
+      icon =
+          HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: fg, size: 13);
     }
 
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         icon,
         const SizedBox(width: 5),
         Text(label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
       ]),
     );
 
@@ -840,14 +983,17 @@ class _InfoChip extends StatelessWidget {
   const _InfoChip(this.icon, this.label);
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 12, color: AppColors.mutedForeground),
-      const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-    ]),
-  );
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+            color: AppColors.muted, borderRadius: BorderRadius.circular(20)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 12, color: AppColors.mutedForeground),
+          const SizedBox(width: 4),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.mutedForeground)),
+        ]),
+      );
 }
 
 // ─── Food Tab ──────────────────────────────────────────────────────────────────
@@ -861,7 +1007,8 @@ class _FoodTab extends ConsumerWidget {
 
     return mealsAsync.when(
       loading: () => const _ShimmerCardList(height: 74),
-      error: (e, _) => EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
+      error: (e, _) =>
+          EmptyState(icon: Icons.error_outline, title: 'Error', subtitle: '$e'),
       data: (meals) {
         final totalCal = meals.fold(0, (s, m) => s + (m.calories ?? 0));
         return Column(
@@ -872,15 +1019,38 @@ class _FoodTab extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _NutrientStat('Calories', '$totalCal', 'kcal', AppColors.warning),
-                  _NutrientStat('Protein', meals.fold(0.0, (s, m) => s + (m.protein ?? 0)).toStringAsFixed(0), 'g', AppColors.primary),
-                  _NutrientStat('Carbs', meals.fold(0.0, (s, m) => s + (m.carbs ?? 0)).toStringAsFixed(0), 'g', AppColors.success),
-                  _NutrientStat('Fat', meals.fold(0.0, (s, m) => s + (m.fat ?? 0)).toStringAsFixed(0), 'g', AppColors.destructive),
+                  _NutrientStat(
+                      'Calories', '$totalCal', 'kcal', AppColors.warning),
+                  _NutrientStat(
+                      'Protein',
+                      meals
+                          .fold(0.0, (s, m) => s + (m.protein ?? 0))
+                          .toStringAsFixed(0),
+                      'g',
+                      AppColors.primary),
+                  _NutrientStat(
+                      'Carbs',
+                      meals
+                          .fold(0.0, (s, m) => s + (m.carbs ?? 0))
+                          .toStringAsFixed(0),
+                      'g',
+                      AppColors.success),
+                  _NutrientStat(
+                      'Fat',
+                      meals
+                          .fold(0.0, (s, m) => s + (m.fat ?? 0))
+                          .toStringAsFixed(0),
+                      'g',
+                      AppColors.destructive),
                 ],
               ),
             ),
             if (meals.isEmpty)
-              const Expanded(child: EmptyState(icon: Icons.restaurant_outlined, title: 'No Meals Logged', subtitle: 'Log your first meal for today.'))
+              const Expanded(
+                  child: EmptyState(
+                      icon: Icons.restaurant_outlined,
+                      title: 'No Meals Logged',
+                      subtitle: 'Log your first meal for today.'))
             else
               Expanded(
                 child: ListView.separated(
@@ -907,10 +1077,16 @@ class _NutrientStat extends StatelessWidget {
   const _NutrientStat(this.label, this.value, this.unit, this.color);
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
-    Text(unit, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-    Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-  ]);
+        Text(value,
+            style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+        Text(unit,
+            style: const TextStyle(
+                fontSize: 12, color: AppColors.mutedForeground)),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12, color: AppColors.mutedForeground)),
+      ]);
 }
 
 class _MealCard extends ConsumerWidget {
@@ -937,19 +1113,31 @@ class _MealCard extends ConsumerWidget {
           Row(children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10)),
               child: Icon(icon, color: AppColors.warning, size: 22),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(meal.description, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-              if (meal.calories != null)
-                Text('${meal.calories} kcal', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-            ])),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(meal.description,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  if (meal.calories != null)
+                    Text('${meal.calories} kcal',
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.mutedForeground)),
+                ])),
             StatusBadge.warning(meal.mealType),
             const SizedBox(width: 4),
             PopupMenuButton<String>(
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedMoreVertical, color: AppColors.mutedForeground, size: 20),
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMoreVertical,
+                  color: AppColors.mutedForeground,
+                  size: 20),
               onSelected: (v) {
                 if (v == 'edit') {
                   showLogMealSheet(context, uid, existing: meal);
@@ -958,14 +1146,34 @@ class _MealCard extends ConsumerWidget {
                 }
               },
               itemBuilder: (_) => [
-                PopupMenuItem(value: 'edit', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 18), const SizedBox(width: 8), const Text('Edit')])),
-                PopupMenuItem(value: 'delete', child: Row(children: [HugeIcon(icon: HugeIcons.strokeRoundedDelete01, color: AppColors.destructive, size: 18), const SizedBox(width: 8), const Text('Delete', style: TextStyle(color: AppColors.destructive))])),
+                PopupMenuItem(
+                    value: 'edit',
+                    child: Row(children: [
+                      HugeIcon(
+                          icon: HugeIcons.strokeRoundedPencilEdit01,
+                          color: Colors.black,
+                          size: 18),
+                      const SizedBox(width: 8),
+                      const Text('Edit')
+                    ])),
+                PopupMenuItem(
+                    value: 'delete',
+                    child: Row(children: [
+                      HugeIcon(
+                          icon: HugeIcons.strokeRoundedDelete01,
+                          color: AppColors.destructive,
+                          size: 18),
+                      const SizedBox(width: 8),
+                      const Text('Delete',
+                          style: TextStyle(color: AppColors.destructive))
+                    ])),
               ],
             ),
           ]),
           if (meal.reminderTime != null) ...[
             const SizedBox(height: 8),
-            _InfoChip(Icons.alarm_rounded, '${meal.reminderTime} (${meal.reminderRepeat})'),
+            _InfoChip(Icons.alarm_rounded,
+                '${meal.reminderTime} (${meal.reminderRepeat})'),
           ],
         ],
       ),
@@ -979,7 +1187,8 @@ class _MedDetailSheet extends ConsumerWidget {
   final Medicine med;
   final String uid;
   final FamilyMember? familyMember;
-  const _MedDetailSheet({required this.med, required this.uid, this.familyMember});
+  const _MedDetailSheet(
+      {required this.med, required this.uid, this.familyMember});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1018,8 +1227,11 @@ class _MedDetailSheet extends ConsumerWidget {
             // Drag handle
             Center(
               child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
@@ -1032,13 +1244,23 @@ class _MedDetailSheet extends ConsumerWidget {
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedMedicine01,
+                    color: AppColors.primary,
+                    size: 20),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(med.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                Text(med.dosage, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-              ])),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(med.name,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700)),
+                    Text(med.dosage,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.mutedForeground)),
+                  ])),
               badge,
             ]),
 
@@ -1047,19 +1269,27 @@ class _MedDetailSheet extends ConsumerWidget {
             const SizedBox(height: 20),
 
             // Details grid
-            _DetailRow(icon: Icons.repeat_rounded, label: 'Frequency', value: med.frequency),
+            _DetailRow(
+                icon: Icons.repeat_rounded,
+                label: 'Frequency',
+                value: med.frequency),
             if (med.prescribedBy != null)
-              _DetailRow(icon: Icons.person_rounded, label: 'Prescribed by', value: 'Dr. ${med.prescribedBy}'),
+              _DetailRow(
+                  icon: Icons.person_rounded,
+                  label: 'Prescribed by',
+                  value: 'Dr. ${med.prescribedBy}'),
             _DetailRow(
               icon: Icons.calendar_today_rounded,
               label: 'Start date',
-              value: '${med.startDate.day}/${med.startDate.month}/${med.startDate.year}',
+              value:
+                  '${med.startDate.day}/${med.startDate.month}/${med.startDate.year}',
             ),
             if (med.endDate != null)
               _DetailRow(
                 icon: Icons.event_rounded,
                 label: 'End date',
-                value: '${med.endDate!.day}/${med.endDate!.month}/${med.endDate!.year}',
+                value:
+                    '${med.endDate!.day}/${med.endDate!.month}/${med.endDate!.year}',
               ),
             if (med.reminderTimes.isNotEmpty)
               _DetailRow(
@@ -1069,7 +1299,15 @@ class _MedDetailSheet extends ConsumerWidget {
                     ? 'Every day'
                     : med.reminderDays.isEmpty
                         ? 'Daily'
-                        : const ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                        : const [
+                            'Sun',
+                            'Mon',
+                            'Tue',
+                            'Wed',
+                            'Thu',
+                            'Fri',
+                            'Sat'
+                          ]
                             .asMap()
                             .entries
                             .where((e) => med.reminderDays.contains(e.key))
@@ -1077,7 +1315,8 @@ class _MedDetailSheet extends ConsumerWidget {
                             .join(', '),
               ),
             if (med.notes != null && med.notes!.isNotEmpty)
-              _DetailRow(icon: Icons.notes_rounded, label: 'Notes', value: med.notes!),
+              _DetailRow(
+                  icon: Icons.notes_rounded, label: 'Notes', value: med.notes!),
 
             // Prescription photo
             if (med.scannedPhotoUrl != null) ...[
@@ -1150,8 +1389,7 @@ class _MedDetailSheet extends ConsumerWidget {
               const SizedBox(height: 4),
               const Text('Tap to view full size',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground)),
+                      fontSize: 12, color: AppColors.mutedForeground)),
             ],
 
             // Today's doses
@@ -1165,30 +1403,46 @@ class _MedDetailSheet extends ConsumerWidget {
                 final Widget icon;
                 final String label;
                 if (slot.isTaken) {
-                  bg = AppColors.success.withValues(alpha: 0.08); fg = AppColors.success;
+                  bg = AppColors.success.withValues(alpha: 0.08);
+                  fg = AppColors.success;
                   label = 'Taken';
-                  icon = HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: fg, size: 16);
+                  icon = HugeIcon(
+                      icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                      color: fg,
+                      size: 16);
                 } else if (slot.isMissed) {
-                  bg = AppColors.warning.withValues(alpha: 0.08); fg = AppColors.warning;
+                  bg = AppColors.warning.withValues(alpha: 0.08);
+                  fg = AppColors.warning;
                   label = 'Missed';
-                  icon = HugeIcon(icon: HugeIcons.strokeRoundedAlertDiamond, color: fg, size: 16);
+                  icon = HugeIcon(
+                      icon: HugeIcons.strokeRoundedAlertDiamond,
+                      color: fg,
+                      size: 16);
                 } else if (slot.isDue) {
-                  bg = AppColors.primary.withValues(alpha: 0.08); fg = AppColors.primary;
+                  bg = AppColors.primary.withValues(alpha: 0.08);
+                  fg = AppColors.primary;
                   label = 'Due now';
                   icon = Icon(Icons.alarm_rounded, size: 16, color: fg);
                 } else {
-                  bg = AppColors.muted; fg = AppColors.mutedForeground;
+                  bg = AppColors.muted;
+                  fg = AppColors.mutedForeground;
                   label = 'Upcoming';
                   icon = Icon(Icons.schedule_rounded, size: 16, color: fg);
                 }
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                      color: bg, borderRadius: BorderRadius.circular(10)),
                   child: Row(children: [
                     icon,
                     const SizedBox(width: 10),
-                    Text(slot.displayTime, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: fg)),
+                    Text(slot.displayTime,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: fg)),
                     const Spacer(),
                     Text(label, style: TextStyle(fontSize: 12, color: fg)),
                   ]),
@@ -1201,7 +1455,8 @@ class _MedDetailSheet extends ConsumerWidget {
             _DetailRow(
               icon: Icons.history_rounded,
               label: 'Total doses logged',
-              value: '${med.loggedDoses.length} dose${med.loggedDoses.length == 1 ? '' : 's'}',
+              value:
+                  '${med.loggedDoses.length} dose${med.loggedDoses.length == 1 ? '' : 's'}',
             ),
 
             const SizedBox(height: 28),
@@ -1212,35 +1467,45 @@ class _MedDetailSheet extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
-                    showMedicineSheet(context, uid, existing: med, familyMember: familyMember);
+                    showMedicineSheet(context, uid,
+                        existing: med, familyMember: familyMember);
                   },
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
+                  icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedPencilEdit01,
+                      color: Colors.black,
+                      size: 16),
                   label: const Text('Edit'),
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                  style:
+                      OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
               ),
-              if (med.hasDueSlot || (med.hasNoScheduledTimes && !fullyTaken)) ...[
+              if (med.hasDueSlot ||
+                  (med.hasNoScheduledTimes && !fullyTaken)) ...[
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       if (familyMember != null) {
-                        await ref.read(familyMedicinePatchProvider).logDose(uid, familyMember!.id, med.id);
+                        await ref
+                            .read(familyMedicinePatchProvider)
+                            .logDose(uid, familyMember!.id, med.id);
                       } else {
-                        final hp = await ref.read(medicineNotifierProvider.notifier).logDose(uid, med.id);
+                        final hp = await ref
+                            .read(medicineNotifierProvider.notifier)
+                            .logDose(uid, med.id);
                         if (hp > 0 && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('+$hp HP  Dose logged!'),
-                            duration: const Duration(seconds: 2),
-                            behavior: SnackBarBehavior.floating,
-                          ));
+                          AppSnackBar.success(context, '+$hp HP  Dose logged!');
                         }
                       }
                       if (context.mounted) Navigator.pop(context);
                     },
-                    icon: HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedTick01,
+                        color: Colors.white,
+                        size: 16),
                     label: const Text('Mark as Taken'),
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
+                    style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 44)),
                   ),
                 ),
               ],
@@ -1286,8 +1551,11 @@ class _MealDetailSheet extends StatelessWidget {
             // Drag handle
             Center(
               child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
@@ -1303,10 +1571,17 @@ class _MealDetailSheet extends StatelessWidget {
                 child: Icon(icon, color: AppColors.warning, size: 28),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(meal.description, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-                Text('Logged as ${meal.mealType}', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-              ])),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text(meal.description,
+                        style: const TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.w700)),
+                    Text('Logged as ${meal.mealType}',
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.mutedForeground)),
+                  ])),
               StatusBadge.warning(meal.mealType),
             ]),
 
@@ -1318,13 +1593,31 @@ class _MealDetailSheet extends StatelessWidget {
             BentoSectionHeader(title: 'Nutrition'),
             const SizedBox(height: 12),
             Row(children: [
-              _NutritionTile('Calories', meal.calories != null ? '${meal.calories}' : '--', 'kcal', AppColors.warning),
+              _NutritionTile(
+                  'Calories',
+                  meal.calories != null ? '${meal.calories}' : '--',
+                  'kcal',
+                  AppColors.warning),
               const SizedBox(width: 10),
-              _NutritionTile('Protein', meal.protein != null ? meal.protein!.toStringAsFixed(1) : '--', 'g', AppColors.primary),
+              _NutritionTile(
+                  'Protein',
+                  meal.protein != null
+                      ? meal.protein!.toStringAsFixed(1)
+                      : '--',
+                  'g',
+                  AppColors.primary),
               const SizedBox(width: 10),
-              _NutritionTile('Carbs', meal.carbs != null ? meal.carbs!.toStringAsFixed(1) : '--', 'g', AppColors.success),
+              _NutritionTile(
+                  'Carbs',
+                  meal.carbs != null ? meal.carbs!.toStringAsFixed(1) : '--',
+                  'g',
+                  AppColors.success),
               const SizedBox(width: 10),
-              _NutritionTile('Fat', meal.fat != null ? meal.fat!.toStringAsFixed(1) : '--', 'g', AppColors.destructive),
+              _NutritionTile(
+                  'Fat',
+                  meal.fat != null ? meal.fat!.toStringAsFixed(1) : '--',
+                  'g',
+                  AppColors.destructive),
             ]),
 
             const SizedBox(height: 20),
@@ -1335,10 +1628,14 @@ class _MealDetailSheet extends StatelessWidget {
             _DetailRow(
               icon: Icons.access_time_rounded,
               label: 'Logged at',
-              value: '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}  •  ${meal.loggedAt.day}/${meal.loggedAt.month}/${meal.loggedAt.year}',
+              value:
+                  '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}  •  ${meal.loggedAt.day}/${meal.loggedAt.month}/${meal.loggedAt.year}',
             ),
             if (meal.reminderTime != null)
-              _DetailRow(icon: Icons.alarm_rounded, label: 'Reminder', value: '${meal.reminderTime} (${meal.reminderRepeat})'),
+              _DetailRow(
+                  icon: Icons.alarm_rounded,
+                  label: 'Reminder',
+                  value: '${meal.reminderTime} (${meal.reminderRepeat})'),
 
             const SizedBox(height: 28),
 
@@ -1348,9 +1645,13 @@ class _MealDetailSheet extends StatelessWidget {
                 Navigator.pop(context);
                 showLogMealSheet(context, uid, existing: meal);
               },
-              icon: HugeIcon(icon: HugeIcons.strokeRoundedPencilEdit01, color: Colors.black, size: 16),
+              icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedPencilEdit01,
+                  color: Colors.black,
+                  size: 16),
               label: const Text('Edit Meal'),
-              style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 44)),
+              style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44)),
             ),
           ],
         ),
@@ -1364,23 +1665,28 @@ class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _DetailRow({required this.icon, required this.label, required this.value});
+  const _DetailRow(
+      {required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 14),
-    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, size: 16, color: AppColors.mutedForeground),
-      const SizedBox(width: 10),
-      SizedBox(
-        width: 110,
-        child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-      ),
-      Expanded(
-        child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-      ),
-    ]),
-  );
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 16, color: AppColors.mutedForeground),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 110,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, color: AppColors.mutedForeground)),
+          ),
+          Expanded(
+            child: Text(value,
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          ),
+        ]),
+      );
 }
 
 // Nutrition tile for meal detail
@@ -1391,20 +1697,26 @@ class _NutritionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(children: [
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
-        Text(unit, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.7))),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-      ]),
-    ),
-  );
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(children: [
+            Text(value,
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+            Text(unit,
+                style: TextStyle(
+                    fontSize: 12, color: color.withValues(alpha: 0.7))),
+            const SizedBox(height: 2),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.mutedForeground)),
+          ]),
+        ),
+      );
 }
 
 // ─── Medicine Sheet (Add + Edit) ───────────────────────────────────────────────
@@ -1441,7 +1753,9 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     if (med != null && med.reminderTimes.isNotEmpty) {
       _reminderTimes = med.reminderTimes.map((s) {
         final parts = s.split(':');
-        return TimeOfDay(hour: int.tryParse(parts[0]) ?? 8, minute: int.tryParse(parts[1]) ?? 0);
+        return TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 8,
+            minute: int.tryParse(parts[1]) ?? 0);
       }).toList();
     } else {
       _reminderTimes = _defaultTimesFor(_freq);
@@ -1449,38 +1763,55 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
   }
 
   @override
-  void dispose() { _nameCtrl.dispose(); _dosageCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _nameCtrl.dispose();
+    _dosageCtrl.dispose();
+    super.dispose();
+  }
 
   int _reminderCountFor(String freq) => switch (freq) {
-    AppConstants.freqOnce   => 1,
-    AppConstants.freqTwice  => 2,
-    AppConstants.freqThrice => 3,
-    AppConstants.freqWeekly => 1,
-    _                       => 0,
-  };
+        AppConstants.freqOnce => 1,
+        AppConstants.freqTwice => 2,
+        AppConstants.freqThrice => 3,
+        AppConstants.freqWeekly => 1,
+        _ => 0,
+      };
 
   List<TimeOfDay> _defaultTimesFor(String freq) => switch (freq) {
-    AppConstants.freqTwice  => [const TimeOfDay(hour: 8, minute: 0), const TimeOfDay(hour: 20, minute: 0)],
-    AppConstants.freqThrice => [const TimeOfDay(hour: 8, minute: 0), const TimeOfDay(hour: 14, minute: 0), const TimeOfDay(hour: 20, minute: 0)],
-    _                       => [const TimeOfDay(hour: 8, minute: 0)],
-  };
+        AppConstants.freqTwice => [
+            const TimeOfDay(hour: 8, minute: 0),
+            const TimeOfDay(hour: 20, minute: 0)
+          ],
+        AppConstants.freqThrice => [
+            const TimeOfDay(hour: 8, minute: 0),
+            const TimeOfDay(hour: 14, minute: 0),
+            const TimeOfDay(hour: 20, minute: 0)
+          ],
+        _ => [const TimeOfDay(hour: 8, minute: 0)],
+      };
 
   void _onFreqChanged(String freq) {
     setState(() {
       _freq = freq;
       final count = _reminderCountFor(freq);
       final defaults = _defaultTimesFor(freq);
-      _reminderTimes = List.generate(count, (i) => i < _reminderTimes.length ? _reminderTimes[i] : defaults[i < defaults.length ? i : 0]);
+      _reminderTimes = List.generate(
+          count,
+          (i) => i < _reminderTimes.length
+              ? _reminderTimes[i]
+              : defaults[i < defaults.length ? i : 0]);
     });
   }
 
   Future<void> _pickTime(int index) async {
-    final picked = await showTimePicker(context: context, initialTime: _reminderTimes[index]);
+    final picked = await showTimePicker(
+        context: context, initialTime: _reminderTimes[index]);
     if (picked != null) setState(() => _reminderTimes[index] = picked);
   }
 
   List<String> get _reminderTimeStrings => _reminderTimes
-      .map((t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}')
+      .map((t) =>
+          '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}')
       .toList();
 
   void _save() async {
@@ -1489,12 +1820,12 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     if (!_formKey.currentState!.validate()) return;
 
     final count = _reminderCountFor(_freq);
-    final times = count > 0 ? _reminderTimeStrings.take(count).toList() : <String>[];
+    final times =
+        count > 0 ? _reminderTimeStrings.take(count).toList() : <String>[];
 
     // H-C4: validate at least one reminder day is selected (when reminders apply)
     if (count > 0 && _reminderDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one reminder day')));
+      AppSnackBar.info(context, 'Select at least one reminder day');
       return;
     }
 
@@ -1505,16 +1836,23 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
     if (!_isEdit) {
       List<Medicine> existing;
       if (fm != null) {
-        existing = ref.read(familyMemberMedicinesProvider((uid: widget.uid, memberId: fm.id))).asData?.value ?? [];
+        existing = ref
+                .read(familyMemberMedicinesProvider(
+                    (uid: widget.uid, memberId: fm.id)))
+                .asData
+                ?.value ??
+            [];
       } else {
         existing = ref.read(medicinesProvider(widget.uid)).asData?.value ?? [];
       }
-      final isDuplicate = existing.any((m) => m.name.trim().toLowerCase() == newName);
+      final isDuplicate =
+          existing.any((m) => m.name.trim().toLowerCase() == newName);
       if (isDuplicate) {
         final addAnyway = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Duplicate Medicine', style: TextStyle(fontWeight: FontWeight.w600)),
+            title: const Text('Duplicate Medicine',
+                style: TextStyle(fontWeight: FontWeight.w600)),
             content: Text(
               '${_nameCtrl.text.trim()} is already in the medicines list. Add it again?',
             ),
@@ -1523,10 +1861,14 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Add Anyway')),
+                  ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Add Anyway')),
                   const SizedBox(height: 4),
                   Center(
-                    child: TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel')),
                   ),
                 ],
               ),
@@ -1554,7 +1896,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
           });
         } else {
           await patch.add(
-            widget.uid, fm.id,
+            widget.uid,
+            fm.id,
             name: _nameCtrl.text.trim(),
             dosage: _dosageCtrl.text.trim(),
             frequency: _freq,
@@ -1567,18 +1910,25 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
         // Primary user
         if (_isEdit) {
           await ref.read(medicineNotifierProvider.notifier).update(
-            widget.uid, widget.existing!.id,
-            name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-            frequency: _freq, reminderTimes: times,
-            reminderRepeat: 'daily', reminderDays: _reminderDays,
-          );
+                widget.uid,
+                widget.existing!.id,
+                name: _nameCtrl.text.trim(),
+                dosage: _dosageCtrl.text.trim(),
+                frequency: _freq,
+                reminderTimes: times,
+                reminderRepeat: 'daily',
+                reminderDays: _reminderDays,
+              );
         } else {
           await ref.read(medicineNotifierProvider.notifier).add(
-            widget.uid,
-            name: _nameCtrl.text.trim(), dosage: _dosageCtrl.text.trim(),
-            frequency: _freq, reminderTimes: times,
-            reminderRepeat: 'daily', reminderDays: _reminderDays,
-          );
+                widget.uid,
+                name: _nameCtrl.text.trim(),
+                dosage: _dosageCtrl.text.trim(),
+                frequency: _freq,
+                reminderTimes: times,
+                reminderRepeat: 'daily',
+                reminderDays: _reminderDays,
+              );
         }
       }
       if (mounted) Navigator.pop(context);
@@ -1592,7 +1942,8 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
   Widget build(BuildContext context) {
     final count = _reminderCountFor(_freq);
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -1602,18 +1953,42 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                Center(
+                    child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 20),
-                Text(_isEdit ? 'Edit Medicine' : 'Add Medicine', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Text(_isEdit ? 'Edit Medicine' : 'Add Medicine',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 20),
-                TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Medicine Name', hintText: 'e.g. Metformin'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
+                TextFormField(
+                    controller: _nameCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Medicine Name', hintText: 'e.g. Metformin'),
+                    validator: (v) =>
+                        (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
-                TextFormField(controller: _dosageCtrl, decoration: const InputDecoration(labelText: 'Dosage', hintText: 'e.g. 500mg'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
+                TextFormField(
+                    controller: _dosageCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'Dosage', hintText: 'e.g. 500mg'),
+                    validator: (v) =>
+                        (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: _freq,
                   decoration: const InputDecoration(labelText: 'Frequency'),
-                  items: [AppConstants.freqOnce, AppConstants.freqTwice, AppConstants.freqThrice, AppConstants.freqAsNeeded, AppConstants.freqWeekly]
+                  items: [
+                    AppConstants.freqOnce,
+                    AppConstants.freqTwice,
+                    AppConstants.freqThrice,
+                    AppConstants.freqAsNeeded,
+                    AppConstants.freqWeekly
+                  ]
                       .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                       .toList(),
                   onChanged: (v) => _onFreqChanged(v!),
@@ -1621,34 +1996,55 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                 if (count > 0) ...[
                   const SizedBox(height: 16),
                   Row(children: [
-                    const Icon(Icons.alarm_rounded, size: 16, color: AppColors.primary),
+                    const Icon(Icons.alarm_rounded,
+                        size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
-                    Text('Reminder${count > 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text('Reminder${count > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                   ]),
                   const SizedBox(height: 8),
-                  ...List.generate(count, (i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: GestureDetector(
-                      onTap: () => _pickTime(i),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                        ),
-                        child: Row(children: [
-                          const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
-                          const SizedBox(width: 10),
-                          Text(count > 1 ? 'Dose ${i + 1}' : 'Reminder time', style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
-                          const Spacer(),
-                          Text(_reminderTimes[i].format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
-                        ]),
-                      ),
-                    ),
-                  )),
+                  ...List.generate(
+                      count,
+                      (i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: GestureDetector(
+                              onTap: () => _pickTime(i),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.2)),
+                                ),
+                                child: Row(children: [
+                                  const Icon(Icons.access_time_rounded,
+                                      size: 18, color: AppColors.primary),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                      count > 1
+                                          ? 'Dose ${i + 1}'
+                                          : 'Reminder time',
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.mutedForeground)),
+                                  const Spacer(),
+                                  Text(_reminderTimes[i].format(context),
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primary)),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.chevron_right_rounded,
+                                      size: 16, color: AppColors.primary),
+                                ]),
+                              ),
+                            ),
+                          )),
                   const SizedBox(height: 12),
                   _DayPickerWidget(
                     selectedDays: _reminderDays,
@@ -1657,7 +2053,9 @@ class _MedicineSheetState extends ConsumerState<_MedicineSheet> {
                 ],
                 const SizedBox(height: 20),
                 // C-C1: disable button while saving
-                GradientButton(label: _isEdit ? 'Save Changes' : 'Add Medicine', onPressed: _saving ? null : _save),
+                GradientButton(
+                    label: _isEdit ? 'Save Changes' : 'Add Medicine',
+                    onPressed: _saving ? null : _save),
                 const SizedBox(height: 8),
               ],
             ),
@@ -1690,6 +2088,7 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   late String _reminderRepeat;
   late List<int> _reminderDays;
   final _formKey = GlobalKey<FormState>();
+  bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -1697,17 +2096,19 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   void initState() {
     super.initState();
     final meal = widget.existing;
-    _descCtrl    = TextEditingController(text: meal?.description ?? '');
-    _calCtrl     = TextEditingController(text: meal?.calories?.toString() ?? '');
+    _descCtrl = TextEditingController(text: meal?.description ?? '');
+    _calCtrl = TextEditingController(text: meal?.calories?.toString() ?? '');
     _proteinCtrl = TextEditingController(text: meal?.protein?.toString() ?? '');
-    _carbsCtrl   = TextEditingController(text: meal?.carbs?.toString() ?? '');
-    _fatCtrl     = TextEditingController(text: meal?.fat?.toString() ?? '');
+    _carbsCtrl = TextEditingController(text: meal?.carbs?.toString() ?? '');
+    _fatCtrl = TextEditingController(text: meal?.fat?.toString() ?? '');
     _type = meal?.mealType ?? widget.initialType ?? AppConstants.mealBreakfast;
     _reminderRepeat = meal?.reminderRepeat ?? 'once';
     _reminderDays = meal?.reminderDays ?? [0, 1, 2, 3, 4, 5, 6];
     if (meal?.reminderTime != null) {
       final parts = meal!.reminderTime!.split(':');
-      _reminderTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 7, minute: int.tryParse(parts[1]) ?? 30);
+      _reminderTime = TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? 7,
+          minute: int.tryParse(parts[1]) ?? 30);
       _setReminder = true;
     } else {
       _reminderTime = const TimeOfDay(hour: 7, minute: 30);
@@ -1726,15 +2127,15 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
   }
 
   Future<void> _pickReminderTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _reminderTime);
+    final picked =
+        await showTimePicker(context: context, initialTime: _reminderTime);
     if (picked != null) {
       setState(() => _reminderTime = picked);
       final now = TimeOfDay.now();
-      final isPast = picked.hour < now.hour || (picked.hour == now.hour && picked.minute <= now.minute);
+      final isPast = picked.hour < now.hour ||
+          (picked.hour == now.hour && picked.minute <= now.minute);
       if (isPast && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This time has already passed today — the reminder will fire tomorrow.')),
-        );
+        AppSnackBar.info(context, 'This time has already passed today — the reminder will fire tomorrow.');
       }
     }
   }
@@ -1744,40 +2145,59 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
 
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_saving) return;
+    setState(() => _saving = true);
     final reminderTime = _setReminder ? _reminderTimeString : null;
     final repeat = _setReminder ? _reminderRepeat : 'once';
-
     final days = _setReminder && repeat == 'daily' ? _reminderDays : <int>[];
-    if (_isEdit) {
-      await ref.read(mealNotifierProvider.notifier).update(
-        widget.uid, widget.existing!.id,
-        mealType: _type, description: _descCtrl.text.trim(),
-        calories: int.tryParse(_calCtrl.text),
-        protein: double.tryParse(_proteinCtrl.text),
-        carbs: double.tryParse(_carbsCtrl.text),
-        fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
-      );
-    } else {
-      await ref.read(mealNotifierProvider.notifier).add(
-        widget.uid,
-        mealType: _type, description: _descCtrl.text.trim(),
-        calories: int.tryParse(_calCtrl.text),
-        protein: double.tryParse(_proteinCtrl.text),
-        carbs: double.tryParse(_carbsCtrl.text),
-        fat: double.tryParse(_fatCtrl.text),
-        reminderTime: reminderTime, reminderRepeat: repeat, reminderDays: days,
-      );
-      final hp = await ref.read(gamificationServiceProvider).awardMealLog(widget.uid);
-      if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
+    try {
+      if (_isEdit) {
+        await ref.read(mealNotifierProvider.notifier).update(
+              widget.uid,
+              widget.existing!.id,
+              mealType: _type,
+              description: _descCtrl.text.trim(),
+              calories: int.tryParse(_calCtrl.text),
+              protein: double.tryParse(_proteinCtrl.text),
+              carbs: double.tryParse(_carbsCtrl.text),
+              fat: double.tryParse(_fatCtrl.text),
+              reminderTime: reminderTime,
+              reminderRepeat: repeat,
+              reminderDays: days,
+            );
+      } else {
+        await ref.read(mealNotifierProvider.notifier).add(
+              widget.uid,
+              mealType: _type,
+              description: _descCtrl.text.trim(),
+              calories: int.tryParse(_calCtrl.text),
+              protein: double.tryParse(_proteinCtrl.text),
+              carbs: double.tryParse(_carbsCtrl.text),
+              fat: double.tryParse(_fatCtrl.text),
+              reminderTime: reminderTime,
+              reminderRepeat: repeat,
+              reminderDays: days,
+            );
+        final hp = await ref
+            .read(gamificationServiceProvider)
+            .awardMealLog(widget.uid);
+        if (hp > 0 && mounted) showAppSnack(context, '+$hp HP  Meal logged!');
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.error(context, 'Failed to save meal. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -1787,49 +2207,108 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                Center(
+                    child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(2)))),
                 const SizedBox(height: 20),
-                Text(_isEdit ? 'Edit Meal' : 'Log Meal', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Text(_isEdit ? 'Edit Meal' : 'Log Meal',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
                 // Meal type selector
                 Wrap(
-                  spacing: 8, runSpacing: 8,
-                  children: [AppConstants.mealBreakfast, AppConstants.mealLunch, AppConstants.mealDinner, AppConstants.mealSnack].map((t) {
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    AppConstants.mealBreakfast,
+                    AppConstants.mealLunch,
+                    AppConstants.mealDinner,
+                    AppConstants.mealSnack
+                  ].map((t) {
                     final sel = _type == t;
                     return GestureDetector(
                       onTap: () => setState(() => _type = t),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(color: sel ? AppColors.primary : AppColors.muted, borderRadius: BorderRadius.circular(8)),
-                        child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                            color: sel ? AppColors.primary : AppColors.muted,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(t,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: sel
+                                    ? Colors.white
+                                    : AppColors.mutedForeground)),
                       ),
                     );
                   }).toList(),
                 ),
                 const SizedBox(height: 14),
-                TextFormField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'What did you eat?', hintText: 'e.g. Rice with vegetables'), validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null),
+                TextFormField(
+                    controller: _descCtrl,
+                    decoration: const InputDecoration(
+                        labelText: 'What did you eat?',
+                        hintText: 'e.g. Rice with vegetables'),
+                    validator: (v) =>
+                        (v?.trim().isEmpty ?? true) ? 'Required' : null),
                 const SizedBox(height: 12),
                 Row(children: [
-                  Expanded(child: TextFormField(controller: _calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories (kcal)'))),
+                  Expanded(
+                      child: TextFormField(
+                          controller: _calCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                              labelText: 'Calories (kcal)'))),
                   const SizedBox(width: 10),
-                  Expanded(child: TextFormField(controller: _proteinCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Protein (g)'))),
+                  Expanded(
+                      child: TextFormField(
+                          controller: _proteinCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration:
+                              const InputDecoration(labelText: 'Protein (g)'))),
                 ]),
                 const SizedBox(height: 12),
                 Row(children: [
-                  Expanded(child: TextFormField(controller: _carbsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Carbs (g)'))),
+                  Expanded(
+                      child: TextFormField(
+                          controller: _carbsCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration:
+                              const InputDecoration(labelText: 'Carbs (g)'))),
                   const SizedBox(width: 10),
-                  Expanded(child: TextFormField(controller: _fatCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Fat (g)'))),
+                  Expanded(
+                      child: TextFormField(
+                          controller: _fatCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration:
+                              const InputDecoration(labelText: 'Fat (g)'))),
                 ]),
                 const SizedBox(height: 16),
                 // Reminder toggle
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: AppColors.muted,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border)),
                   child: Row(children: [
-                    const Icon(Icons.alarm_rounded, size: 18, color: AppColors.mutedForeground),
+                    const Icon(Icons.alarm_rounded,
+                        size: 18, color: AppColors.mutedForeground),
                     const SizedBox(width: 10),
-                    const Expanded(child: Text('Set meal reminder', style: TextStyle(fontSize: 13))),
-                    Switch(value: _setReminder, onChanged: (v) => setState(() => _setReminder = v), activeThumbColor: AppColors.primary),
+                    const Expanded(
+                        child: Text('Set meal reminder',
+                            style: TextStyle(fontSize: 13))),
+                    Switch(
+                        value: _setReminder,
+                        onChanged: (v) => setState(() => _setReminder = v),
+                        activeThumbColor: AppColors.primary),
                   ]),
                 ),
                 if (_setReminder) ...[
@@ -1837,35 +2316,62 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   GestureDetector(
                     onTap: _pickReminderTime,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.primary.withValues(alpha: 0.2))),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.2))),
                       child: Row(children: [
-                        const Icon(Icons.access_time_rounded, size: 18, color: AppColors.primary),
+                        const Icon(Icons.access_time_rounded,
+                            size: 18, color: AppColors.primary),
                         const SizedBox(width: 10),
-                        const Text('Remind me at', style: TextStyle(fontSize: 13, color: AppColors.mutedForeground)),
+                        const Text('Remind me at',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.mutedForeground)),
                         const Spacer(),
-                        Text(_reminderTime.format(context), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                        Text(_reminderTime.format(context),
+                            style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary)),
                         const SizedBox(width: 4),
-                        const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                        const Icon(Icons.chevron_right_rounded,
+                            size: 16, color: AppColors.primary),
                       ]),
                     ),
                   ),
                   const SizedBox(height: 8),
                   // Repeat selector
                   Row(children: [
-                    const Icon(Icons.repeat_rounded, size: 16, color: AppColors.mutedForeground),
+                    const Icon(Icons.repeat_rounded,
+                        size: 16, color: AppColors.mutedForeground),
                     const SizedBox(width: 6),
-                    const Text('Repeat', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Text('Repeat',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 12),
-                    ...[('once', 'Once'), ('daily', 'Recurring')].map(((String, String) opt) {
+                    ...[('once', 'Once'), ('daily', 'Recurring')]
+                        .map(((String, String) opt) {
                       final sel = _reminderRepeat == opt.$1;
                       return GestureDetector(
                         onTap: () => setState(() => _reminderRepeat = opt.$1),
                         child: Container(
                           margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(color: sel ? AppColors.primary : AppColors.muted, borderRadius: BorderRadius.circular(8)),
-                          child: Text(opt.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: sel ? Colors.white : AppColors.mutedForeground)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                              color: sel ? AppColors.primary : AppColors.muted,
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Text(opt.$2,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: sel
+                                      ? Colors.white
+                                      : AppColors.mutedForeground)),
                         ),
                       );
                     }),
@@ -1880,7 +2386,10 @@ class _MealSheetState extends ConsumerState<_MealSheet> {
                   ],
                 ],
                 const SizedBox(height: 20),
-                GradientButton(label: _isEdit ? 'Save Changes' : 'Log Meal', onPressed: _save),
+                GradientButton(
+                    label: _isEdit ? 'Save Changes' : 'Log Meal',
+                    onPressed: _saving ? null : _save,
+                    isLoading: _saving),
                 const SizedBox(height: 8),
               ],
             ),
@@ -1944,11 +2453,14 @@ class _DayPickerWidget extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: selectedDays.isEmpty ? AppColors.mutedForeground : AppColors.foreground,
+                  color: selectedDays.isEmpty
+                      ? AppColors.mutedForeground
+                      : AppColors.foreground,
                 ),
               ),
             ),
-            Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.mutedForeground),
+            Icon(Icons.calendar_month_rounded,
+                size: 18, color: AppColors.mutedForeground),
           ]),
           const SizedBox(height: 12),
           Row(
@@ -1975,7 +2487,8 @@ class _DayPickerWidget extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: selected ? Colors.white : AppColors.mutedForeground,
+                        color:
+                            selected ? Colors.white : AppColors.mutedForeground,
                       ),
                     ),
                   ),

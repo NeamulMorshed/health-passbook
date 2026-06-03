@@ -7,13 +7,14 @@ class MealLog {
   final String description;
   final int? calories;
   final double? protein; // grams
-  final double? carbs;   // grams
-  final double? fat;     // grams
+  final double? carbs; // grams
+  final double? fat; // grams
   final DateTime loggedAt;
   final String? photoUrl;
-  final String? reminderTime;   // "HH:mm" e.g. "07:30", null if no reminder
-  final String reminderRepeat;  // 'once' | 'daily'
-  final List<int> reminderDays; // 0=Sun, 1=Mon, …, 6=Sat; used when reminderRepeat == 'daily'
+  final String? reminderTime; // "HH:mm" e.g. "07:30", null if no reminder
+  final String reminderRepeat; // 'once' | 'daily'
+  final List<int>
+      reminderDays; // 0=Sun, 1=Mon, …, 6=Sat; used when reminderRepeat == 'daily'
 
   const MealLog({
     required this.id,

@@ -13,7 +13,8 @@ import '../../providers/patient_provider.dart';
 class CaregiverSetupScreen extends ConsumerStatefulWidget {
   const CaregiverSetupScreen({super.key});
   @override
-  ConsumerState<CaregiverSetupScreen> createState() => _CaregiverSetupScreenState();
+  ConsumerState<CaregiverSetupScreen> createState() =>
+      _CaregiverSetupScreenState();
 }
 
 class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
@@ -39,9 +40,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
   void _next() {
     if (_page == 0 && _nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your family member's name.")),
-      );
+      AppSnackBar.info(context, "Please enter your family member's name.");
       return;
     }
     if (_page < 2) {
@@ -79,25 +78,21 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
       // Fix H — Save the first family member including the doctor note.
       await ref.read(familyMemberNotifierProvider.notifier).add(
-        uid,
-        name: _nameCtrl.text.trim(),
-        relationship: _relationship,
-        dateOfBirth: _dob,
-        note: _doctorNoteCtrl.text.trim(),
-      );
+            uid,
+            name: _nameCtrl.text.trim(),
+            relationship: _relationship,
+            dateOfBirth: _dob,
+            note: _doctorNoteCtrl.text.trim(),
+          );
 
       // Mark caregiver onboarding complete
       await ref.read(authRepositoryProvider).markOnboardingComplete(uid);
 
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/caregiver/home');
     } catch (e) {
       // Fix H — surface Firestore errors to the user.
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Failed to save your setup. Please check your connection and try again.')),
-        );
+        AppSnackBar.error(context, 'Failed to save your setup. Please check your connection and try again.');
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -106,12 +101,12 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const steps = ['Who you care for', 'Their Doctor', 'All Set'];
+    const steps = ['Who you look after', 'Care Notes', 'All Set'];
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
       appBar: AppBar(
-        title: const Text('Caregiver Setup'),
+        title: const Text('Family Health Setup'),
         automaticallyImplyLeading: false,
         leading: _page > 0
             ? IconButton(
@@ -127,25 +122,28 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
           // ── Progress bar ──────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: List.generate(3, (i) => Expanded(
-                child: Container(
-                  height: 4,
-                  margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
-                  decoration: BoxDecoration(
-                    color: i <= _page
-                        ? const Color(0xFFF59E0B)
-                        : AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ))),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(
+                  children: List.generate(
+                      3,
+                      (i) => Expanded(
+                            child: Container(
+                              height: 4,
+                              margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                              decoration: BoxDecoration(
+                                color: i <= _page
+                                    ? AppColors.caregiver
+                                    : AppColors.border,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ))),
               const SizedBox(height: 6),
               Text(
                 'Step ${_page + 1} of 3 — ${steps[_page]}',
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground),
+                    fontSize: 12, color: AppColors.mutedForeground),
               ),
             ]),
           ),
@@ -161,7 +159,8 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                   dob: _dob,
                   onDobChanged: (d) => setState(() => _dob = d),
                   relationship: _relationship,
-                  onRelationshipChanged: (r) => setState(() => _relationship = r),
+                  onRelationshipChanged: (r) =>
+                      setState(() => _relationship = r),
                 ),
                 _Step2(doctorNoteCtrl: _doctorNoteCtrl),
                 const _Step3(),
@@ -178,8 +177,8 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                     ? 'Next'
                     : _page == 1
                         ? 'Next'
-                        : 'Start Caring',
-                colors: const [Color(0xFFF59E0B), Color(0xFFD97706)],
+                        : 'Get Started',
+                colors: const [AppColors.caregiver, AppColors.warning],
                 onPressed: _next,
                 isLoading: _saving,
               ),
@@ -189,8 +188,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                   onPressed: _skip,
                   child: Text(
                     _page < 2 ? 'Skip this step' : 'Skip',
-                    style: const TextStyle(
-                        color: AppColors.mutedForeground),
+                    style: const TextStyle(color: AppColors.mutedForeground),
                   ),
                 ),
               ],
@@ -224,8 +222,8 @@ class _Step1 extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       children: [
         _infoBox(
-          'Tell us about the person you\'re caring for so we can set up their health profile.',
-          const Color(0xFFF59E0B),
+          'Tell us about the family member you\'re looking after so we can set up their health profile.',
+          AppColors.caregiver,
         ),
         const SizedBox(height: 24),
         _label('Their Full Name *'),
@@ -248,14 +246,10 @@ class _Step1 extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? const Color(0xFFF59E0B)
-                      : AppColors.muted,
+                  color: selected ? AppColors.caregiver : AppColors.muted,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: selected
-                        ? const Color(0xFFF59E0B)
-                        : AppColors.border,
+                    color: selected ? AppColors.caregiver : AppColors.border,
                   ),
                 ),
                 child: Text(
@@ -308,7 +302,10 @@ class _Step1 extends StatelessWidget {
                 if (dob != null)
                   GestureDetector(
                     onTap: () => onDobChanged(null),
-                    child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 16),
+                    child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedCancel01,
+                        color: AppColors.mutedForeground,
+                        size: 16),
                   ),
               ],
             ),
@@ -319,7 +316,7 @@ class _Step1 extends StatelessWidget {
   }
 }
 
-// ── Step 2: Their Doctor ───────────────────────────────────────────────────────
+// ── Step 2: Care Notes ────────────────────────────────────────────────────────
 class _Step2 extends StatelessWidget {
   final TextEditingController doctorNoteCtrl;
   const _Step2({required this.doctorNoteCtrl});
@@ -331,16 +328,20 @@ class _Step2 extends StatelessWidget {
       children: [
         _infoBox(
           'Optional — you can always connect with doctors from the Care tab later.',
-          const Color(0xFFF59E0B),
+          AppColors.caregiver,
         ),
         const SizedBox(height: 28),
         BentoCard(
           padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedHospital01, color: const Color(0xFFF59E0B), size: 28),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedHospital01,
+                color: AppColors.caregiver,
+                size: 28),
             const SizedBox(height: 12),
             const Text(
-              'Connect with their doctor',
+              'Notes about their care',
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -348,37 +349,44 @@ class _Step2 extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Once inside the app, go to Care → My Doctors to search for and connect with their healthcare provider. Doctors can then send prescriptions and approve appointment requests directly.',
+              'Jot down anything useful — their doctor\'s name, hospital, or any care reminders. You can connect with their doctor from inside the app via Care → My Doctors.',
               style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.mutedForeground,
-                  height: 1.5),
+                  fontSize: 13, color: AppColors.mutedForeground, height: 1.5),
             ),
           ]),
         ),
         const SizedBox(height: 24),
-        _label('Doctor name or notes (optional)'),
+        _label('Notes about their doctors (optional)'),
         TextField(
           controller: doctorNoteCtrl,
           decoration: const InputDecoration(
-              hintText: 'e.g. Dr. Mehnaz – City General Hospital'),
+              hintText: 'e.g. Dr. Mehnaz – City General, call before visits'),
           maxLines: 2,
         ),
         const SizedBox(height: 24),
         _featureTile(
-          Icons.search_rounded,
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedSearch01,
+              color: AppColors.caregiver,
+              size: 16),
           'Search by name or hospital',
           'Find any verified doctor on Omra',
         ),
         const SizedBox(height: 10),
         _featureTile(
-          Icons.send_rounded,
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedSent,
+              color: AppColors.caregiver,
+              size: 16),
           'Request a connection',
           'The doctor confirms and joins your care circle',
         ),
         const SizedBox(height: 10),
         _featureTile(
-          Icons.description_rounded,
+          HugeIcon(
+              icon: HugeIcons.strokeRoundedNote,
+              color: AppColors.caregiver,
+              size: 16),
           'Receive prescriptions instantly',
           'Digital prescriptions arrive in the app',
         ),
@@ -386,19 +394,20 @@ class _Step2 extends StatelessWidget {
     );
   }
 
-  Widget _featureTile(IconData icon, String title, String subtitle) =>
+  Widget _featureTile(Widget icon, String title, String subtitle) =>
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+            color: AppColors.caregiver.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFFF59E0B)),
+          child: icon,
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(title,
                 style: const TextStyle(
                     fontSize: 13,
@@ -406,8 +415,7 @@ class _Step2 extends StatelessWidget {
                     color: AppColors.foreground)),
             Text(subtitle,
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground)),
+                    fontSize: 12, color: AppColors.mutedForeground)),
           ]),
         ),
       ]);
@@ -450,11 +458,14 @@ class _Step3State extends State<_Step3> {
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              color: AppColors.caregiver.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: const Color(0xFFF59E0B), size: 44),
+              child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedHeartCheck,
+                  color: AppColors.caregiver,
+                  size: 44),
             ),
           ),
         ),
@@ -474,9 +485,7 @@ class _Step3State extends State<_Step3> {
             'Omra will help you stay on top of\ntheir medicines, meals, and appointments.',
             textAlign: TextAlign.center,
             style: TextStyle(
-                fontSize: 14,
-                color: AppColors.mutedForeground,
-                height: 1.5),
+                fontSize: 14, color: AppColors.mutedForeground, height: 1.5),
           ),
         ),
         const SizedBox(height: 32),
@@ -486,57 +495,60 @@ class _Step3State extends State<_Step3> {
           decoration: BoxDecoration(
             color: _notifGranted
                 ? AppColors.success.withValues(alpha: 0.06)
-                : const Color(0xFFF59E0B).withValues(alpha: 0.06),
+                : AppColors.caregiver.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _notifGranted
                   ? AppColors.success.withValues(alpha: 0.25)
-                  : const Color(0xFFF59E0B).withValues(alpha: 0.25),
+                  : AppColors.caregiver.withValues(alpha: 0.25),
             ),
           ),
           child: Row(children: [
-            HugeIcon(icon: HugeIcons.strokeRoundedBellDot, color: _notifGranted ? AppColors.success : const Color(0xFFF59E0B), size: 24),
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedBellDot,
+                color: _notifGranted ? AppColors.success : AppColors.caregiver,
+                size: 24),
             const SizedBox(width: 14),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(
-                  _notifGranted
-                      ? 'Reminders enabled'
-                      : 'Enable medicine reminders',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: _notifGranted
-                          ? AppColors.success
-                          : const Color(0xFFF59E0B)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _notifGranted
-                      ? 'You\'ll be notified when it\'s time for their medicine.'
-                      : 'Get alerted when it\'s time for their medicine.',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground),
-                ),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _notifGranted
+                          ? 'Reminders enabled'
+                          : 'Enable medicine reminders',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _notifGranted
+                              ? AppColors.success
+                              : AppColors.caregiver),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _notifGranted
+                          ? 'You\'ll be notified when it\'s time for their medicine.'
+                          : 'Get alerted when it\'s time for their medicine.',
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground),
+                    ),
+                  ]),
             ),
             if (!_notifGranted) ...[
               const SizedBox(width: 10),
               TextButton(
                 onPressed: _requestNotifications,
                 style: TextButton.styleFrom(
-                  backgroundColor:
-                      const Color(0xFFF59E0B).withValues(alpha: 0.12),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  backgroundColor: AppColors.caregiver.withValues(alpha: 0.12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(100)),
                 ),
                 child: const Text('Allow',
                     style: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFFF59E0B),
+                        color: AppColors.caregiver,
                         fontWeight: FontWeight.w600)),
               ),
             ],
@@ -544,14 +556,28 @@ class _Step3State extends State<_Step3> {
         ),
         const SizedBox(height: 20),
         // Feature summary tiles — kept as Container (custom color border)
-        _summaryTile(HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 20), AppColors.primary,
-            'Medicine Tracker', 'Log and schedule their daily medications'),
+        _summaryTile(
+            HugeIcon(
+                icon: HugeIcons.strokeRoundedMedicine01,
+                color: AppColors.primary,
+                size: 20),
+            AppColors.primary,
+            'Medicine Tracker',
+            'Log and schedule their daily medications'),
         const SizedBox(height: 10),
-        _summaryTile(const Icon(Icons.restaurant_rounded, color: AppColors.success, size: 20), AppColors.success,
-            'Meal Logging', 'Track breakfast, lunch, and dinner'),
+        _summaryTile(
+            const Icon(Icons.restaurant_rounded,
+                color: AppColors.success, size: 20),
+            AppColors.success,
+            'Meal Logging',
+            'Track breakfast, lunch, and dinner'),
         const SizedBox(height: 10),
-        _summaryTile(const Icon(Icons.calendar_month_rounded, color: Color(0xFFF59E0B), size: 20), const Color(0xFFF59E0B),
-            'Appointments', 'Book and manage doctor visits'),
+        _summaryTile(
+            const Icon(Icons.calendar_month_rounded,
+                color: AppColors.caregiver, size: 20),
+            AppColors.caregiver,
+            'Appointments',
+            'Book and manage doctor visits'),
       ],
     );
   }
@@ -569,16 +595,14 @@ class _Step3State extends State<_Step3> {
           icon,
           const SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title,
                   style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: color)),
+                      fontSize: 13, fontWeight: FontWeight.w600, color: color)),
               Text(subtitle,
                   style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mutedForeground)),
+                      fontSize: 12, color: AppColors.mutedForeground)),
             ]),
           ),
         ]),
@@ -601,10 +625,12 @@ Widget _infoBox(String text, Color color) => Container(
           color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12)),
       child: Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, color: color, size: 18),
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedInformationCircle,
+            color: color,
+            size: 18),
         const SizedBox(width: 10),
         Expanded(
-            child: Text(text,
-                style: TextStyle(fontSize: 13, color: color))),
+            child: Text(text, style: TextStyle(fontSize: 13, color: color))),
       ]),
     );

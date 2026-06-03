@@ -1,4 +1,8 @@
 class AppConstants {
+  // App version — single source of truth for UI display.
+  // Keep in sync with pubspec.yaml version on every release.
+  static const appVersion = '2.12.0';
+
   // Firestore collections
   static const colUsers = 'users';
   static const colPatients = 'patients';
@@ -14,7 +18,15 @@ class AppConstants {
   static const colVitals = 'vitals';
 
   // Family member relationships
-  static const relationships = ['Son', 'Daughter', 'Mother', 'Father', 'Spouse', 'Sibling', 'Other'];
+  static const relationships = [
+    'Son',
+    'Daughter',
+    'Mother',
+    'Father',
+    'Spouse',
+    'Sibling',
+    'Other'
+  ];
 
   // User types
   static const typePatient = 'patient';
@@ -51,13 +63,22 @@ class AppConstants {
   static const notifChannelMedicine = 'medicine_reminders';
   static const notifChannelAppointment = 'appointment_reminders';
   static const notifChannelGeneral = 'general';
+  static const notifChannelMeal = 'meal_reminders';
 
   // SharedPreferences keys
   static const prefUserType = 'user_type';
   static const prefOnboardingDone = 'onboarding_done';
   static const prefFaceIdEnabled = 'face_id_enabled';
   static const prefOnboardingTourDone = 'onboarding_tour_done';
+  static const prefDisclaimerAccepted = 'disclaimerAccepted';
 
   // Cities for doctor search
-  static const cities = ['All', 'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna'];
+  static const cities = [
+    'All',
+    'Dhaka',
+    'Chittagong',
+    'Sylhet',
+    'Rajshahi',
+    'Khulna'
+  ];
 }

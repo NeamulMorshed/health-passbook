@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
@@ -41,9 +42,7 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
 
   void _nextStep() {
     if (_step == 0 && _relationship == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a relationship')),
-      );
+      AppSnackBar.info(context, 'Please select a relationship');
       return;
     }
     setState(() => _step++);
@@ -65,8 +64,7 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
         context: context,
         builder: (dialogCtx) => AlertDialog(
           title: const Text('Invite already sent'),
-          content: Text(
-              'An invite was already sent to $email. Send again?'),
+          content: Text('An invite was already sent to $email. Send again?'),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
             Column(
@@ -98,7 +96,8 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
       relationship: _relationship!,
       permissions: _permissions,
       notifSettings: const CaregiverNotifSettings(),
-      personalMessage: _msgCtrl.text.trim().isEmpty ? null : _msgCtrl.text.trim(),
+      personalMessage:
+          _msgCtrl.text.trim().isEmpty ? null : _msgCtrl.text.trim(),
     );
     // C-IC1: mounted check after async gap
     if (!mounted) return;
@@ -120,15 +119,20 @@ class _InviteCaregiverScreenState extends ConsumerState<InviteCaregiverScreen> {
       child: Scaffold(
         backgroundColor: AppColors.pageBackground,
         appBar: AppBar(
-          title: Text(_sent ? 'Invite Sent' : 'Invite a Caregiver'),
+          title: Text(_sent ? 'Invite Sent' : 'Invite a Family Member'),
           leading: _step > 0 && !_sent
               ? IconButton(
-                  icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, color: Colors.black, size: 18),
+                  icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowLeft01,
+                      color: Colors.black,
+                      size: 18),
                   onPressed: () => setState(() => _step--),
                 )
               : null,
         ),
-        body: _sent ? _ConfirmationView(email: _emailCtrl.text.trim()) : _stepBody(),
+        body: _sent
+            ? _ConfirmationView(email: _emailCtrl.text.trim())
+            : _stepBody(),
       ),
     );
   }
@@ -200,7 +204,10 @@ class _StepIndicator extends StatelessWidget {
                   ),
                   child: Center(
                     child: done
-                        ? HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 14)
+                        ? HugeIcon(
+                            icon: HugeIcons.strokeRoundedTick01,
+                            color: Colors.white,
+                            size: 14)
                         : Text(
                             '${i + 1}',
                             style: TextStyle(
@@ -237,16 +244,14 @@ class _Step1 extends StatelessWidget {
   final VoidCallback onNext;
 
   const _Step1(
-      {required this.selected,
-      required this.onSelect,
-      required this.onNext});
+      {required this.selected, required this.onSelect, required this.onNext});
 
   static const _options = [
     ('spouse', Icons.favorite_rounded, 'Spouse / Partner'),
     ('parent', Icons.elderly_rounded, 'Parent'),
     ('child', Icons.child_care_rounded, 'Child / Adult child'),
     ('sibling', Icons.people_rounded, 'Sibling'),
-    ('professional', Icons.medical_services_rounded, 'Professional Caregiver'),
+    ('professional', Icons.medical_services_rounded, 'Professional Carer'),
     ('other', Icons.person_rounded, 'Other'),
   ];
 
@@ -256,14 +261,10 @@ class _Step1 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Who are you inviting?',
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         const Text('Choose the relationship so we can set smart defaults.',
-            style: TextStyle(
-                fontSize: 14,
-                color: AppColors.mutedForeground)),
+            style: TextStyle(fontSize: 14, color: AppColors.mutedForeground)),
         const SizedBox(height: 24),
         ..._options.map((o) {
           final (value, icon, label) = o;
@@ -272,8 +273,7 @@ class _Step1 extends StatelessWidget {
             onTap: () => onSelect(value),
             child: Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.06)
@@ -295,15 +295,17 @@ class _Step1 extends StatelessWidget {
                   child: Text(label,
                       style: TextStyle(
                           fontSize: 15,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
                               ? AppColors.primary
                               : AppColors.foreground)),
                 ),
                 if (isSelected)
-                  HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 20),
+                  HugeIcon(
+                      icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                      color: AppColors.primary,
+                      size: 20),
               ]),
             ),
           );
@@ -313,8 +315,7 @@ class _Step1 extends StatelessWidget {
           width: double.infinity,
           child: FilledButton(
             onPressed: onNext,
-            child: const Text('Next',
-                style: TextStyle(fontSize: 15)),
+            child: const Text('Next', style: TextStyle(fontSize: 15)),
           ),
         ),
       ],
@@ -340,59 +341,55 @@ class _Step2 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('What can they see?',
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
         const Text('You can change this anytime.',
-            style: TextStyle(
-                fontSize: 14,
-                color: AppColors.mutedForeground)),
+            style: TextStyle(fontSize: 14, color: AppColors.mutedForeground)),
         const SizedBox(height: 24),
-
         _PermRow(
-          icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.mutedForeground, size: 20),
+          icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedMedicine01,
+              color: AppColors.mutedForeground,
+              size: 20),
           label: 'Medicines & dose tracking',
           value: permissions.medicines,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(medicines: v)),
+          onChanged: (v) => onChange(permissions.copyWith(medicines: v)),
         ),
         _PermRow(
-          icon: const Icon(Icons.monitor_heart_rounded, size: 20, color: AppColors.mutedForeground),
+          icon: const Icon(Icons.monitor_heart_rounded,
+              size: 20, color: AppColors.mutedForeground),
           label: 'Vitals & readings',
           value: permissions.vitals,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(vitals: v)),
+          onChanged: (v) => onChange(permissions.copyWith(vitals: v)),
         ),
         _PermRow(
-          icon: const Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.mutedForeground),
+          icon: const Icon(Icons.calendar_today_rounded,
+              size: 20, color: AppColors.mutedForeground),
           label: 'Upcoming appointments',
           value: permissions.appointments,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(appointments: v)),
+          onChanged: (v) => onChange(permissions.copyWith(appointments: v)),
         ),
         _PermRow(
-          icon: const Icon(Icons.receipt_long_rounded, size: 20, color: AppColors.mutedForeground),
+          icon: const Icon(Icons.receipt_long_rounded,
+              size: 20, color: AppColors.mutedForeground),
           label: 'Prescriptions',
           value: permissions.prescriptions,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(prescriptions: v)),
+          onChanged: (v) => onChange(permissions.copyWith(prescriptions: v)),
         ),
         _PermRow(
-          icon: const Icon(Icons.restaurant_rounded, size: 20, color: AppColors.mutedForeground),
+          icon: const Icon(Icons.restaurant_rounded,
+              size: 20, color: AppColors.mutedForeground),
           label: 'Meal logs',
           value: permissions.mealLogs,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(mealLogs: v)),
+          onChanged: (v) => onChange(permissions.copyWith(mealLogs: v)),
         ),
         _PermRow(
-          icon: const Icon(Icons.directions_run_rounded, size: 20, color: AppColors.mutedForeground),
+          icon: const Icon(Icons.directions_run_rounded,
+              size: 20, color: AppColors.mutedForeground),
           label: 'Activity logs',
           value: permissions.activityLogs,
-          onChanged: (v) =>
-              onChange(permissions.copyWith(activityLogs: v)),
+          onChanged: (v) => onChange(permissions.copyWith(activityLogs: v)),
         ),
-
         const SizedBox(height: 20),
         BentoCard(
           color: AppColors.muted,
@@ -401,9 +398,7 @@ class _Step2 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('They will NOT be able to:',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               SizedBox(height: 6),
               _CantDoRow('Edit your health data'),
               _CantDoRow('Book appointments for you'),
@@ -411,14 +406,12 @@ class _Step2 extends StatelessWidget {
             ],
           ),
         ),
-
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
             onPressed: onNext,
-            child: const Text('Next',
-                style: TextStyle(fontSize: 15)),
+            child: const Text('Next', style: TextStyle(fontSize: 15)),
           ),
         ),
       ],
@@ -449,8 +442,7 @@ class _PermRow extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           secondary: icon,
-          title: Text(label,
-              style: const TextStyle(fontSize: 14)),
+          title: Text(label, style: const TextStyle(fontSize: 14)),
           activeThumbColor: AppColors.primary,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14),
           dense: true,
@@ -474,8 +466,7 @@ class _CantDoRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(text,
             style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.mutedForeground)),
+                fontSize: 12, color: AppColors.mutedForeground)),
       ]),
     );
   }
@@ -506,21 +497,14 @@ class _Step3 extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('How do you want to invite them?',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700)),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
-              'Enter the email they use (or will use) to register on VitalPath.',
-              style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.mutedForeground)),
+              'Enter the email they use (or will use) to register on Omra.',
+              style: TextStyle(fontSize: 14, color: AppColors.mutedForeground)),
           const SizedBox(height: 24),
-
           const Text('Email address',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: emailCtrl,
@@ -528,10 +512,10 @@ class _Step3 extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'their@email.com',
               prefixIcon: const Icon(Icons.email_outlined, size: 20),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 14),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) {
@@ -545,12 +529,9 @@ class _Step3 extends StatelessWidget {
               return null;
             },
           ),
-
           const SizedBox(height: 20),
           const Text('Personal message (optional)',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: msgCtrl,
@@ -558,12 +539,11 @@ class _Step3 extends StatelessWidget {
             decoration: InputDecoration(
               hintText:
                   "I'd like you to be able to check on me through the app...",
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               contentPadding: const EdgeInsets.all(14),
             ),
           ),
-
           const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
@@ -575,8 +555,7 @@ class _Step3 extends StatelessWidget {
                       width: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('Send Invite',
-                      style: TextStyle(fontSize: 15)),
+                  : const Text('Send Invite', style: TextStyle(fontSize: 15)),
             ),
           ),
         ],
@@ -606,33 +585,31 @@ class _ConfirmationView extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 48),
+              child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                  color: AppColors.primary,
+                  size: 48),
             ),
           ),
           const SizedBox(height: 24),
           const Text('Invite Sent!',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700)),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
           Text(
-            'Once $email accepts, they\'ll appear in your Care Circle.',
+            'Once $email accepts, they\'ll be able to view your health data.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.mutedForeground),
+            style:
+                const TextStyle(fontSize: 14, color: AppColors.mutedForeground),
           ),
           const SizedBox(height: 6),
           const Text(
             'Invite expires in 7 days.',
-            style: TextStyle(
-                fontSize: 12,
-                color: AppColors.mutedForeground),
+            style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
           ),
           const SizedBox(height: 32),
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Back to Care Circle'),
+            child: const Text('Back to Health Circle'),
           ),
         ],
       ),

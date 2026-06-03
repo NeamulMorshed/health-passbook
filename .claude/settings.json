@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(echo \"$CLAUDE_TOOL_INPUT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if echo \"$FILE\" | grep -q 'vitalpath_flutter.*\\.dart'; then cd \"/Users/nahid/Figma Exports/Exploration Work in Claude/Health Passbook/Health Passbook/vitalpath_flutter\" && flutter analyze --no-fatal-infos 2>&1 | tail -25; fi"
+          },
+          {
+            "type": "command",
+            "command": "FILE=$(echo \"$CLAUDE_TOOL_INPUT\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if echo \"$FILE\" | grep -q 'vitalpath_flutter.*\\.dart'; then dart format --output=none --set-exit-if-changed \"$FILE\" 2>&1; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
@@ -22,68 +23,90 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.pageBackground,
-      body: SafeArea(
-        child: LoadingOverlay(
-          isLoading: _loading,
-          message: 'Preparing your account...',
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 32),
+        backgroundColor: AppColors.pageBackground,
+        body: SafeArea(
+          child: LoadingOverlay(
+            isLoading: _loading,
+            message: 'Preparing your account...',
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: SvgPicture.asset('assets/icons/Icon.svg',
+                        width: 32, height: 32),
+                  ),
+                  const SizedBox(height: 28),
+                  const Text('Welcome to\nOmra',
+                      style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.foreground,
+                          height: 1.2)),
+                  const SizedBox(height: 10),
+                  const Text('How are you using Omra today?',
+                      style: TextStyle(
+                          fontSize: 15, color: AppColors.mutedForeground)),
+                  const SizedBox(height: 48),
+                  _RoleCard(
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedUser,
+                        color: AppColors.primary,
+                        size: 28),
+                    color: AppColors.primary,
+                    title: 'I\'m a Patient',
+                    subtitle:
+                        'Track medicines, meals, activity\nand connect with your doctor',
+                    onTap: () => _handleRoleSelected('patient'),
+                    isSelected: _selectedRole == 'patient',
+                  ),
+                  const SizedBox(height: 16),
+                  _RoleCard(
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedHealth,
+                        color: AppColors.primary,
+                        size: 28),
+                    color: AppColors.primary,
+                    title: 'I\'m a Doctor',
+                    subtitle:
+                        'Manage patients, appointments\nand write prescriptions',
+                    onTap: () => _handleRoleSelected('doctor'),
+                    isSelected: _selectedRole == 'doctor',
+                  ),
+                  const SizedBox(height: 16),
+                  _RoleCard(
+                    icon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedGroup,
+                        color: AppColors.caregiver,
+                        size: 28),
+                    color: AppColors.caregiver,
+                    title: 'I\'m a Family Member',
+                    subtitle:
+                        'Monitor medicines, meals, vitals\nand appointments for loved ones',
+                    onTap: () => _handleRoleSelected('caregiver'),
+                    isSelected: _selectedRole == 'caregiver',
+                  ),
+                  const Spacer(),
+                  const Center(
+                    child: Text(
+                        'By continuing you agree to our Terms & Privacy Policy',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.mutedForeground)),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 28),
-              const Text('Welcome to\nOmra', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.foreground, height: 1.2)),
-              const SizedBox(height: 10),
-              const Text('How are you using Omra today?', style: TextStyle(fontSize: 15, color: AppColors.mutedForeground)),
-              const SizedBox(height: 48),
-              _RoleCard(
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: 28),
-                color: AppColors.primary,
-                title: 'I\'m a Patient',
-                subtitle: 'Track medicines, meals, activity\nand connect with your doctor',
-                onTap: () => _handleRoleSelected('patient'),
-                isSelected: _selectedRole == 'patient',
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: AppColors.primary, size: 28),
-                color: AppColors.primary,
-                title: 'I\'m a Doctor',
-                subtitle: 'Manage patients, appointments\nand write prescriptions',
-                onTap: () => _handleRoleSelected('doctor'),
-                isSelected: _selectedRole == 'doctor',
-              ),
-              const SizedBox(height: 16),
-              _RoleCard(
-                icon: const Icon(Icons.family_restroom_rounded, color: Color(0xFFF59E0B), size: 28),
-                color: const Color(0xFFF59E0B),
-                title: 'I\'m a Caregiver',
-                subtitle: 'Manage health for your family\nand connect with their doctors',
-                onTap: () => _handleRoleSelected('caregiver'),
-                isSelected: _selectedRole == 'caregiver',
-              ),
-              const Spacer(),
-              const Center(
-                child: Text('By continuing you agree to our Terms & Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: AppColors.mutedForeground)),
-              ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
-        ),
-      ),
-    ));
+        ));
   }
 
   void _handleRoleSelected(String userType) async {
@@ -104,23 +127,65 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
         if (result is AuthSuccess) {
           // Existing profile — navigate to the appropriate destination.
           final user = result.user;
-          if (user.userType == UserType.doctor) {
-            if (!user.onboardingComplete) {
-              context.go('/doc/onboarding/profile');
-            } else {
-              context.go('/doc/dashboard');
-            }
-          } else if (user.userType == UserType.caregiver) {
-            if (!user.onboardingComplete) {
-              context.go('/onboarding/caregiver-setup');
-            } else {
-              context.go('/home');
-            }
-          } else if (!user.onboardingComplete) {
-            context.go('/onboarding/permissions');
-          } else {
-            context.go('/auth/faceid');
+
+          // Detect role mismatch: user tapped one role card but their account
+          // is registered under a different role. Surface a dialog rather than
+          // silently landing them in the wrong portal.
+          final selectedType = userType == 'doctor'
+              ? UserType.doctor
+              : userType == 'caregiver'
+                  ? UserType.caregiver
+                  : UserType.patient;
+
+          if (user.userType != selectedType) {
+            setState(() => _loading = false);
+            final storedLabel = user.userType == UserType.doctor
+                ? 'Doctor'
+                : user.userType == UserType.caregiver
+                    ? 'Family Member'
+                    : 'Patient';
+            showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Account Already Registered'),
+                content: Text(
+                  'This account is already registered as a $storedLabel. '
+                  'You\'ll be taken to your $storedLabel dashboard.',
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                actions: [
+                  Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text('Continue as $storedLabel'),
+                        ),
+                        const SizedBox(height: 4),
+                        Center(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Use a different account'),
+                          ),
+                        ),
+                      ]),
+                ],
+              ),
+            ).then((confirmed) async {
+              if (!mounted) return;
+              if (confirmed == true) {
+                _navigateForExistingUser(user);
+              } else {
+                // Sign out so they can log in with the correct account.
+                await ref.read(authRepositoryProvider).signOut();
+                if (mounted)
+                  context.go('/auth/login', extra: {'userType': userType});
+              }
+            });
+            return;
           }
+
+          _navigateForExistingUser(user);
         } else if (result is AuthNewUser) {
           final parsedType = userType == 'doctor'
               ? UserType.doctor
@@ -139,13 +204,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
           } catch (e) {
             if (mounted) {
               setState(() => _loading = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Failed to set up your account. Please check your connection and try again.',
-                  ),
-                ),
-              );
+              AppSnackBar.error(context, 'Failed to set up your account. Please check your connection and try again.');
             }
             return;
           }
@@ -166,8 +225,22 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
       context.go('/auth/login', extra: {'userType': userType});
     }
   }
-}
 
+  void _navigateForExistingUser(AppUser user) {
+    if (user.userType == UserType.doctor) {
+      context.go(user.onboardingComplete
+          ? '/doc/dashboard'
+          : '/doc/onboarding/profile');
+    } else if (user.userType == UserType.caregiver) {
+      context.go(user.onboardingComplete
+          ? '/caregiver/home'
+          : '/onboarding/caregiver-setup');
+    } else {
+      context.go(
+          user.onboardingComplete ? '/auth/faceid' : '/onboarding/permissions');
+    }
+  }
+}
 
 class _RoleCard extends StatelessWidget {
   final Widget icon;
@@ -198,17 +271,24 @@ class _RoleCard extends StatelessWidget {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.primary : color.withValues(alpha: 0.25),
+                color: isSelected ? color : color.withValues(alpha: 0.25),
                 width: isSelected ? 2 : 1.5,
               ),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: color.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   width: 56,
                   height: 56,
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14)),
                   child: Center(child: icon),
                 ),
                 const SizedBox(width: 18),
@@ -216,13 +296,24 @@ class _RoleCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.foreground)),
+                      Text(title,
+                          style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.foreground)),
                       const SizedBox(height: 4),
-                      Text(subtitle, style: const TextStyle(fontSize: 13, color: AppColors.mutedForeground, height: 1.4)),
+                      Text(subtitle,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.mutedForeground,
+                              height: 1.4)),
                     ],
                   ),
                 ),
-                HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: color, size: 20),
+                HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    color: color,
+                    size: 20),
               ],
             ),
           ),
@@ -231,8 +322,12 @@ class _RoleCard extends StatelessWidget {
               top: 12,
               right: 12,
               child: Container(
-                decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.primary, size: 20),
+                decoration: const BoxDecoration(
+                    color: AppColors.surface, shape: BoxShape.circle),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                    color: color,
+                    size: 20),
               ),
             ),
         ],

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -40,14 +41,14 @@ class ScannedMedicine {
 
   factory ScannedMedicine.fromMap(Map<String, dynamic> map) {
     return ScannedMedicine(
-      name:      (map['name']      as String?)?.trim() ?? '',
-      dosage:    (map['dosage']    as String?)?.trim().isNotEmpty == true
-                     ? (map['dosage'] as String).trim()
-                     : 'As directed',
+      name: (map['name'] as String?)?.trim() ?? '',
+      dosage: (map['dosage'] as String?)?.trim().isNotEmpty == true
+          ? (map['dosage'] as String).trim()
+          : 'As directed',
       frequency: _normalise((map['frequency'] as String?) ?? ''),
-      duration:  (map['duration']  as String?)?.trim(),
-      notes:     (map['notes']     as String?)?.trim(),
-      uncertain: (map['uncertain'] as bool?)   ?? false,
+      duration: (map['duration'] as String?)?.trim(),
+      notes: (map['notes'] as String?)?.trim(),
+      uncertain: (map['uncertain'] as bool?) ?? false,
     );
   }
 
@@ -57,7 +58,10 @@ class ScannedMedicine {
     if (l.contains('twice') || l.contains('two') || l == 'bd' || l == 'bid') {
       return AppConstants.freqTwice;
     }
-    if (l.contains('three') || l.contains('thrice') || l == 'tds' || l == 'tid') {
+    if (l.contains('three') ||
+        l.contains('thrice') ||
+        l == 'tds' ||
+        l == 'tid') {
       return AppConstants.freqThrice;
     }
     if (l.contains('need') || l == 'prn' || l == 'sos') {
@@ -82,9 +86,9 @@ class PrescriptionAiService {
   String _mediaType(File file) {
     final ext = file.path.split('.').last.toLowerCase();
     const map = {
-      'jpg':  'image/jpeg',
+      'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
-      'png':  'image/png',
+      'png': 'image/png',
       'webp': 'image/webp',
       'heic': 'image/heic',
     };
@@ -112,47 +116,60 @@ class PrescriptionAiService {
       if (compressed != null) processFile = File(compressed.path);
     }
 
-    final bytes  = await processFile.readAsBytes();
-    final b64    = base64Encode(bytes);
+    final bytes = await () async {
+      try {
+        return await processFile.readAsBytes();
+      } on FileSystemException catch (e) {
+        throw Exception('Could not read image file: ${e.message}');
+      }
+    }();
+    final b64 = base64Encode(bytes);
 
-    final response = await http
-        .post(
-          Uri.parse(_endpoint),
-          headers: {
-            'Content-Type':      'application/json',
-            'x-api-key':         kClaudeApiKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: jsonEncode({
-            'model':      _model,
-            'max_tokens': _maxTokens,
-            'messages': [
-              {
-                'role': 'user',
-                'content': [
-                  {
-                    'type': 'image',
-                    'source': {
-                      'type':       'base64',
-                      // PR1: Use dynamic media type instead of hardcoded 'image/jpeg'.
-                      'media_type': _mediaType(imageFile),
-                      'data':        b64,
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse(_endpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': kClaudeApiKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: jsonEncode({
+              'model': _model,
+              'max_tokens': _maxTokens,
+              'messages': [
+                {
+                  'role': 'user',
+                  'content': [
+                    {
+                      'type': 'image',
+                      'source': {
+                        'type': 'base64',
+                        // PR1: Use dynamic media type instead of hardcoded 'image/jpeg'.
+                        'media_type': _mediaType(imageFile),
+                        'data': b64,
+                      },
                     },
-                  },
-                  {'type': 'text', 'text': _prompt},
-                ],
-              },
-            ],
-          }),
-        )
-        .timeout(const Duration(seconds: 30));
+                    {'type': 'text', 'text': _prompt},
+                  ],
+                },
+              ],
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+    } on TimeoutException {
+      throw Exception('Prescription scan timed out. Please try again.');
+    }
 
     if (response.statusCode != 200) {
       throw Exception('AI scan failed — HTTP ${response.statusCode}');
     }
 
-    final body    = jsonDecode(response.body) as Map<String, dynamic>;
-    final rawText = (body['content'] as List).first['text'] as String;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final contentList = body['content'] as List? ?? [];
+    if (contentList.isEmpty) throw Exception('Empty content in AI response');
+    final rawText = contentList.first['text'] as String? ?? '';
 
     // Claude is asked to return bare JSON, but add a safety net for fences.
     final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(rawText);

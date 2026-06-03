@@ -8,6 +8,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:permission_handler/permission_handler.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../../core/widgets/bento_card.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../providers/patient_provider.dart';
@@ -52,7 +53,8 @@ enum _ScanState { capture, processing, review }
 class ScanPrescriptionScreen extends ConsumerStatefulWidget {
   final String uid;
   final FamilyMember? familyMember;
-  const ScanPrescriptionScreen({super.key, required this.uid, this.familyMember});
+  const ScanPrescriptionScreen(
+      {super.key, required this.uid, this.familyMember});
 
   @override
   ConsumerState<ScanPrescriptionScreen> createState() =>
@@ -91,9 +93,7 @@ class _ScanPrescriptionScreenState
       final status = await Permission.camera.request();
       if (!status.isGranted) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Camera permission is required to scan prescriptions.')),
-          );
+          AppSnackBar.info(context, 'Camera permission is required to scan prescriptions.');
         }
         return;
       }
@@ -135,11 +135,11 @@ class _ScanPrescriptionScreenState
                     if (m.notes != null) m.notes!,
                   ];
                   return _ScannedEntry(
-                    initialName:   m.name,
+                    initialName: m.name,
                     initialDosage: m.dosage,
-                    initialNotes:  noteParts.join(' · '),
-                    frequency:     m.frequency,
-                    isUncertain:   m.uncertain,
+                    initialNotes: noteParts.join(' · '),
+                    frequency: m.frequency,
+                    isUncertain: m.uncertain,
                   );
                 }));
               _state = _ScanState.review;
@@ -174,7 +174,9 @@ class _ScanPrescriptionScreenState
       unawaited(_checkInteractions());
     } catch (_) {
       setState(() {
-        _entries..clear()..add(_ScannedEntry());
+        _entries
+          ..clear()
+          ..add(_ScannedEntry());
         _state = _ScanState.review;
       });
     }
@@ -191,8 +193,7 @@ class _ScanPrescriptionScreenState
         .toList();
 
     // Extract prescribing doctor name from full text
-    final doctorRx = RegExp(
-        r'\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
+    final doctorRx = RegExp(r'\bDr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
         caseSensitive: false);
     final doctorMatch = doctorRx.firstMatch(text);
     _prescribedBy = doctorMatch?.group(1)?.trim();
@@ -203,16 +204,16 @@ class _ScanPrescriptionScreenState
         caseSensitive: false);
 
     final freqMap = {
-      RegExp(r'\b(once daily|od|1x|once a day|1 time)\b',
-          caseSensitive: false): AppConstants.freqOnce,
+      RegExp(r'\b(once daily|od|1x|once a day|1 time)\b', caseSensitive: false):
+          AppConstants.freqOnce,
       RegExp(r'\b(twice|bd|bid|twice daily|2x|2 times)\b',
           caseSensitive: false): AppConstants.freqTwice,
       RegExp(r'\b(tds|tid|3x|3 times|thrice|three times)\b',
           caseSensitive: false): AppConstants.freqThrice,
       RegExp(r'\b(as needed|prn|sos|when needed|on demand)\b',
           caseSensitive: false): AppConstants.freqAsNeeded,
-      RegExp(r'\b(weekly|once a week|ow|per week)\b',
-          caseSensitive: false): AppConstants.freqWeekly,
+      RegExp(r'\b(weekly|once a week|ow|per week)\b', caseSensitive: false):
+          AppConstants.freqWeekly,
     };
 
     for (int i = 0; i < lines.length; i++) {
@@ -226,7 +227,7 @@ class _ScanPrescriptionScreenState
       final rawName = line.substring(0, dosageMatch.start).trim();
       final name = rawName
           .replaceAll(RegExp(r'^\d+[\.\)]\s*'), '') // remove "1. " numbering
-          .replaceAll(RegExp(r'^[-•*]\s*'), '')       // remove bullet
+          .replaceAll(RegExp(r'^[-•*]\s*'), '') // remove bullet
           .trim();
 
       // Frequency: check current line then the next two lines
@@ -276,7 +277,8 @@ class _ScanPrescriptionScreenState
         .map((e) => e.name.text.trim())
         .where((n) => n.isNotEmpty)
         .toList();
-    if (newNames.isEmpty) return; // Need ≥1 new + possibly existing to form a pair.
+    if (newNames.isEmpty)
+      return; // Need ≥1 new + possibly existing to form a pair.
 
     if (!mounted) return;
     setState(() {
@@ -291,8 +293,8 @@ class _ScanPrescriptionScreenState
               .toList();
       final allNames = [...newNames, ...existingNames];
 
-      final result = await DrugInteractionService.instance
-          .checkInteractions(allNames);
+      final result =
+          await DrugInteractionService.instance.checkInteractions(allNames);
 
       if (!mounted) return;
       // C-SP3: discard result if entries changed (user retook the photo)
@@ -318,14 +320,13 @@ class _ScanPrescriptionScreenState
     // Validate: at least one entry must have a name
     final valid = _entries.any((e) => e.name.text.trim().isNotEmpty);
     if (!valid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter at least one medicine name.')),
-      );
+      AppSnackBar.info(context, 'Enter at least one medicine name.');
       return;
     }
 
     // Check for duplicates against existing medicines
-    final existingMeds = ref.read(medicinesProvider(widget.uid)).valueOrNull ?? [];
+    final existingMeds =
+        ref.read(medicinesProvider(widget.uid)).valueOrNull ?? [];
     final entryNames = _entries
         .map((e) => e.name.text.trim().toLowerCase())
         .where((n) => n.isNotEmpty)
@@ -347,10 +348,14 @@ class _ScanPrescriptionScreenState
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ElevatedButton(onPressed: () => Navigator.pop(dialogCtx, true), child: const Text('Add Anyway')),
+                ElevatedButton(
+                    onPressed: () => Navigator.pop(dialogCtx, true),
+                    child: const Text('Add Anyway')),
                 const SizedBox(height: 4),
                 Center(
-                  child: TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text('Cancel')),
+                  child: TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: const Text('Cancel')),
                 ),
               ],
             ),
@@ -380,12 +385,12 @@ class _ScanPrescriptionScreenState
         final dosage = entry.dosage.text.trim().isEmpty
             ? 'As directed'
             : entry.dosage.text.trim();
-        final notes = entry.notes.text.trim().isEmpty
-            ? null
-            : entry.notes.text.trim();
+        final notes =
+            entry.notes.text.trim().isEmpty ? null : entry.notes.text.trim();
         if (fm != null) {
           await ref.read(familyMedicinePatchProvider).add(
-                widget.uid, fm.id,
+                widget.uid,
+                fm.id,
                 name: name,
                 dosage: dosage,
                 frequency: entry.frequency,
@@ -408,9 +413,7 @@ class _ScanPrescriptionScreenState
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Some medicines could not be saved: $e')),
-        );
+        AppSnackBar.error(context, 'Some medicines could not be saved: $e');
       }
     } finally {
       // H-SP1: always reset saving flag
@@ -434,29 +437,31 @@ class _ScanPrescriptionScreenState
                 color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: HugeIcon(icon: HugeIcons.strokeRoundedBarcodeScan, color: AppColors.primary, size: 56),
+              child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedBarcodeScan,
+                  color: AppColors.primary,
+                  size: 56),
             ),
             const SizedBox(height: 24),
             const Text(
               'Scan your prescription',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             const Text(
               'Take a photo or upload from your gallery.\nWe\'ll read the medicine details for you.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.mutedForeground),
+              style: TextStyle(fontSize: 14, color: AppColors.mutedForeground),
             ),
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _pickImage(ImageSource.camera),
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedCamera01, color: Colors.black, size: 20),
+                icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedCamera01,
+                    color: Colors.black,
+                    size: 20),
                 label: const Text('Take a Photo'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
@@ -482,8 +487,7 @@ class _ScanPrescriptionScreenState
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text('or',
                     style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mutedForeground)),
+                        fontSize: 12, color: AppColors.mutedForeground)),
               ),
               Expanded(child: Divider()),
             ]),
@@ -492,8 +496,7 @@ class _ScanPrescriptionScreenState
               onPressed: () => Navigator.pop(context),
               child: const Text('Add medicine manually instead',
                   style: TextStyle(
-                      color: AppColors.mutedForeground,
-                      fontSize: 13)),
+                      color: AppColors.mutedForeground, fontSize: 13)),
             ),
           ],
         ),
@@ -521,16 +524,13 @@ class _ScanPrescriptionScreenState
               SizedBox(height: 24),
               Text(
                 'Reading prescription…',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 8),
               Text(
                 'This usually takes a few seconds.',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.mutedForeground),
+                style:
+                    TextStyle(fontSize: 13, color: AppColors.mutedForeground),
               ),
             ],
           ),
@@ -542,8 +542,8 @@ class _ScanPrescriptionScreenState
   // ── State C/D: Review (with or without pre-filled data) ───────────────────
 
   Widget _buildReview() {
-    final hasOcrData = _entries.any((e) =>
-        e.name.text.isNotEmpty || e.dosage.text.isNotEmpty);
+    final hasOcrData =
+        _entries.any((e) => e.name.text.isNotEmpty || e.dosage.text.isNotEmpty);
 
     return Column(
       children: [
@@ -557,7 +557,9 @@ class _ScanPrescriptionScreenState
           child: Row(children: [
             Icon(
               hasOcrData
-                  ? (_usedAi ? Icons.smart_toy_rounded : Icons.auto_fix_high_rounded)
+                  ? (_usedAi
+                      ? Icons.smart_toy_rounded
+                      : Icons.auto_fix_high_rounded)
                   : Icons.warning_amber_rounded,
               size: 16,
               color: hasOcrData ? AppColors.success : AppColors.warning,
@@ -615,9 +617,8 @@ class _ScanPrescriptionScreenState
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text('Tap to view full',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white)),
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white)),
                       ),
                     ),
                   ),
@@ -626,23 +627,27 @@ class _ScanPrescriptionScreenState
               ],
 
               // Medicine entry cards
-              ...List.generate(_entries.length, (i) => _EntryCard(
-                    index: i,
-                    entry: _entries[i],
-                    canRemove: _entries.length > 1,
-                    onRemove: () => setState(() {
-                      _entries[i].dispose();
-                      _entries.removeAt(i);
-                    }),
-                    onChanged: () => setState(() {}),
-                  )),
+              ...List.generate(
+                  _entries.length,
+                  (i) => _EntryCard(
+                        index: i,
+                        entry: _entries[i],
+                        canRemove: _entries.length > 1,
+                        onRemove: () => setState(() {
+                          _entries[i].dispose();
+                          _entries.removeAt(i);
+                        }),
+                        onChanged: () => setState(() {}),
+                      )),
 
               // Add another medicine
               const SizedBox(height: 4),
               OutlinedButton.icon(
-                onPressed: () =>
-                    setState(() => _entries.add(_ScannedEntry())),
-                icon: HugeIcon(icon: HugeIcons.strokeRoundedPlusSign, color: Colors.black, size: 18),
+                onPressed: () => setState(() => _entries.add(_ScannedEntry())),
+                icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedPlusSign,
+                    color: Colors.black,
+                    size: 18),
                 label: const Text('Add another medicine'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 44),
@@ -700,9 +705,9 @@ class _ScanPrescriptionScreenState
         ],
       ),
       body: switch (_state) {
-        _ScanState.capture    => _buildCapture(),
+        _ScanState.capture => _buildCapture(),
         _ScanState.processing => _buildProcessing(),
-        _ScanState.review     => _buildReview(),
+        _ScanState.review => _buildReview(),
       },
       floatingActionButton: _state == _ScanState.review
           ? FloatingActionButton.extended(
@@ -715,7 +720,10 @@ class _ScanPrescriptionScreenState
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2),
                     )
-                  : HugeIcon(icon: HugeIcons.strokeRoundedTick01, color: Colors.white, size: 16),
+                  : HugeIcon(
+                      icon: HugeIcons.strokeRoundedTick01,
+                      color: Colors.white,
+                      size: 16),
               label: Text(
                 _isSaving ? 'Saving…' : 'Save Medicines',
                 style: const TextStyle(color: Colors.white),
@@ -769,13 +777,15 @@ class _EntryCardState extends State<_EntryCard> {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 16),
+                child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedMedicine01,
+                    color: AppColors.primary,
+                    size: 16),
               ),
               const SizedBox(width: 10),
               Text('Medicine ${widget.index + 1}',
                   style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                      fontSize: 13, fontWeight: FontWeight.w600)),
               if (uncertain) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -796,7 +806,10 @@ class _EntryCardState extends State<_EntryCard> {
               if (widget.canRemove)
                 GestureDetector(
                   onTap: widget.onRemove,
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, color: AppColors.mutedForeground, size: 18),
+                  child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      color: AppColors.mutedForeground,
+                      size: 18),
                 ),
             ]),
             const SizedBox(height: 14),
@@ -841,11 +854,7 @@ class _EntryCardState extends State<_EntryCard> {
                 AppConstants.freqThrice,
                 AppConstants.freqAsNeeded,
                 AppConstants.freqWeekly,
-              ]
-                  .map((f) => DropdownMenuItem(
-                      value: f,
-                      child: Text(f)))
-                  .toList(),
+              ].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
               onChanged: (v) {
                 if (v != null) {
                   setState(() => entry.frequency = v);

@@ -11,29 +11,64 @@ class PatientShell extends StatelessWidget {
 
   static final _tabs = [
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedHome01, color: AppColors.primary, size: _kSize),
-      label: 'Home', route: '/home',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedHome01,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedHome01,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Home',
+      route: '/home',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedPillBottle, color: AppColors.primary, size: _kSize),
-      label: 'Medicines', route: '/care',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedPillBottle,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedPillBottle,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Medicines',
+      route: '/care',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedActivity01, color: AppColors.primary, size: _kSize),
-      label: 'Vitals', route: '/vitals',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedActivity01,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedActivity01,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Vitals',
+      route: '/vitals',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedCalendar01, color: AppColors.primary, size: _kSize),
-      label: 'Visits', route: '/appointments',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedCalendar01,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedCalendar01,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Visits',
+      route: '/appointments',
     ),
     _TabItem(
-      icon:         HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.textTertiary, size: _kSize),
-      selectedIcon: HugeIcon(icon: HugeIcons.strokeRoundedUser, color: AppColors.primary, size: _kSize),
-      label: 'Profile', route: '/profile',
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedUser,
+          color: AppColors.textTertiary,
+          size: _kSize),
+      selectedIcon: HugeIcon(
+          icon: HugeIcons.strokeRoundedUser,
+          color: AppColors.primary,
+          size: _kSize),
+      label: 'Profile',
+      route: '/profile',
     ),
   ];
 
@@ -62,22 +97,26 @@ class PatientShell extends StatelessWidget {
         decoration: const BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
-          boxShadow: [BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          )],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 8,
+              offset: Offset(0, -2),
+            )
+          ],
         ),
         child: NavigationBar(
           selectedIndex: idx,
           onDestinationSelected: (i) => context.go(_tabs[i].route),
           backgroundColor: AppColors.surface,
           elevation: 0,
-          destinations: _tabs.map((t) => NavigationDestination(
-            icon: t.icon,
-            selectedIcon: t.selectedIcon,
-            label: t.label,
-          )).toList(),
+          destinations: _tabs
+              .map((t) => NavigationDestination(
+                    icon: t.icon,
+                    selectedIcon: t.selectedIcon,
+                    label: t.label,
+                  ))
+              .toList(),
         ),
       ),
     );
@@ -89,5 +128,9 @@ class _TabItem {
   final Widget selectedIcon;
   final String label;
   final String route;
-  const _TabItem({required this.icon, required this.selectedIcon, required this.label, required this.route});
+  const _TabItem(
+      {required this.icon,
+      required this.selectedIcon,
+      required this.label,
+      required this.route});
 }

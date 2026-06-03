@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_repository.dart';
@@ -10,7 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 
-const _kOnboardingShownKey = 'onboarding_shown';
+const _kOnboardingShownKey = 'onboarding_shown_v2';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -117,9 +116,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // timeout so we never block the splash indefinitely.
     String? uid = ref.read(firebaseAuthStateProvider).asData?.value?.uid;
     if (uid == null) {
-      final streamFuture = ref
-          .read(firebaseAuthStateProvider.future)
-          .then((u) => u?.uid);
+      final streamFuture =
+          ref.read(firebaseAuthStateProvider.future).then((u) => u?.uid);
       final timeoutFuture =
           Future<String?>.delayed(const Duration(seconds: 3), () => null);
       uid = await Future.any([streamFuture, timeoutFuture]);
@@ -148,7 +146,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           if (!user.onboardingComplete) {
             context.go('/onboarding/caregiver-setup');
           } else {
-            context.go('/home');
+            context.go('/caregiver/home');
           }
         } else if (!user.onboardingComplete) {
           context.go('/onboarding/permissions');
@@ -178,13 +176,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (_onboardingShown) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SvgPicture.asset(
-              'assets/icons/Starting logo.svg',
-              width: 184,
-              height: 36,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _navigate,
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SvgPicture.asset(
+                'assets/icons/Starting logo.svg',
+                width: 184,
+                height: 36,
+              ),
             ),
           ),
         ),
@@ -193,22 +195,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     final splashData = [
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 56),
         color: AppColors.primary,
-        title: 'Omra',
-        subtitle: 'Your health, in harmony',
+        title: 'Take Care of Your Health Every Day',
+        subtitle:
+            'Track medicines, meals, and appointments easily in one simple place.',
       ),
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: AppColors.success, size: 56),
         color: AppColors.success,
-        title: 'Smart Health Tracking',
-        subtitle: 'Medicines, meals, and activity\nall in one place',
+        title: 'Stay Close to Your Patients',
+        subtitle: 'Manage appointments and patient updates with ease.',
       ),
       _SplashData(
-        icon: HugeIcon(icon: HugeIcons.strokeRoundedGroup, color: AppColors.primary, size: 56),
         color: AppColors.primary,
-        title: 'Doctor Connect',
-        subtitle: 'Book appointments and receive\nprescriptions instantly',
+        title: 'Care for Loved Ones Anytime',
+        subtitle:
+            'Stay updated on your family\'s health and daily care routines.',
       ),
     ];
 
@@ -216,127 +217,128 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: ScaleTransition(
-            scale: _scaleAnim,
-            child: Column(
-              children: [
-                // ── Centre content ──────────────────────────────────────────
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _step == 0
-                          ? SvgPicture.asset(
-                              'assets/icons/Starting logo.svg',
-                              width: 184,
-                              height: 36,
-                            )
-                          : Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
-                                color: data.color.withValues(alpha: 0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(child: data.icon),
-                            ),
-                      const SizedBox(height: 32),
-                      if (_step > 0)
-                        Text(
-                          data.title,
-                          style: const TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.foreground,
-                          ),
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _nextStep,
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Column(
+                children: [
+                  // ── Centre content ──────────────────────────────────────────
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          _step == 0
+                              ? 'assets/icons/Take Care of Your Health Every Day.svg'
+                              : _step == 1
+                                  ? 'assets/icons/Stay Close to Your Patients.svg'
+                                  : 'assets/icons/Care for Loved Ones Anytime.svg',
+                          width: 280,
+                          height: 220,
                         ),
-                      if (_step > 0) const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          data.subtitle,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.mutedForeground,
-                            height: 1.55,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ── Bottom section: dots + buttons ──────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Page indicator dots
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          3,
-                          (i) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: i == _step ? 24 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: i == _step
-                                  ? data.color
-                                  : data.color.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-
-                      // Next / Get Started button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          onPressed: _nextStep,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100)),
-                          ),
+                        const SizedBox(height: 32),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
                           child: Text(
-                            _step < 2 ? 'Next' : 'Get Started',
+                            data.title,
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.foreground,
+                            ),
                           ),
                         ),
-                      ),
-
-                      // Skip link — slides 0 and 1 only
-                      if (_step < 2) ...[
                         const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _navigate,
-                          child: const Text(
-                            'Skip',
-                            style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.mutedForeground),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            data.subtitle,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: AppColors.mutedForeground,
+                              height: 1.55,
+                            ),
                           ),
                         ),
-                      ] else
-                        const SizedBox(height: 48),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  // ── Bottom section: dots + buttons ──────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Page indicator dots
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            3,
+                            (i) => AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: i == _step ? 24 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: i == _step
+                                    ? data.color
+                                    : data.color.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // Next / Get Started button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _nextStep,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100)),
+                            ),
+                            child: Text(
+                              _step < 2 ? 'Next' : 'Get Started',
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ),
+
+                        // Skip link — slides 0 and 1 only
+                        if (_step < 2) ...[
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _navigate,
+                            child: const Text(
+                              'Skip',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.mutedForeground),
+                            ),
+                          ),
+                        ] else
+                          const SizedBox(height: 48),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -346,13 +348,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 }
 
 class _SplashData {
-  final Widget icon;
   final Color color;
   final String title;
   final String subtitle;
 
   const _SplashData({
-    required this.icon,
     required this.color,
     required this.title,
     required this.subtitle,

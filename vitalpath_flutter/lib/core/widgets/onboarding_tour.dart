@@ -38,25 +38,34 @@ class _TourSheetState extends State<_TourSheet> {
       icon: Icon(Icons.favorite_rounded, size: 36, color: AppColors.primary),
       color: AppColors.primary,
       title: 'Your daily health summary',
-      body: 'The Home screen shows you exactly how your day is going — medicines taken, meals logged, steps walked, and upcoming appointments.',
+      body:
+          'The Home screen shows you exactly how your day is going — medicines taken, meals logged, steps walked, and upcoming appointments.',
     ),
     _TourStep(
-      icon: HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.success, size: 36),
+      icon: HugeIcon(
+          icon: HugeIcons.strokeRoundedMedicine01,
+          color: AppColors.success,
+          size: 36),
       color: AppColors.success,
       title: 'Log medicines and meals',
-      body: 'Tap the Care tab to add your medicines, log breakfast, lunch and dinner, and see your family member\'s health at a glance.',
+      body:
+          'Tap the Care tab to add your medicines, log breakfast, lunch and dinner, and see your family member\'s health at a glance.',
     ),
     _TourStep(
-      icon: Icon(Icons.directions_walk_rounded, size: 36, color: Color(0xFF0EA5E9)),
+      icon: Icon(Icons.directions_walk_rounded,
+          size: 36, color: Color(0xFF0EA5E9)),
       color: Color(0xFF0EA5E9),
       title: 'Track your activity',
-      body: 'Use Activity to track walks, runs, yoga, gym sessions and more. See a weekly chart of your progress over time.',
+      body:
+          'Use Activity to track walks, runs, yoga, gym sessions and more. See a weekly chart of your progress over time.',
     ),
     _TourStep(
-      icon: Icon(Icons.local_hospital_rounded, size: 36, color: AppColors.primary),
+      icon: Icon(Icons.local_hospital_rounded,
+          size: 36, color: AppColors.primary),
       color: AppColors.primary,
       title: 'Connect with doctors',
-      body: 'Find and connect with your doctor from My Doctors. They can send you prescriptions and approve appointments directly in the app.',
+      body:
+          'Find and connect with your doctor from My Doctors. They can send you prescriptions and approve appointments directly in the app.',
     ),
   ];
 
@@ -151,16 +160,18 @@ class _TourSheetState extends State<_TourSheet> {
           // Dot indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_steps.length, (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: i == _page ? 20 : 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: i == _page ? step.color : AppColors.border,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            )),
+            children: List.generate(
+                _steps.length,
+                (i) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: i == _page ? 20 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: i == _page ? step.color : AppColors.border,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    )),
           ),
 
           const SizedBox(height: 24),
@@ -189,8 +200,7 @@ class _TourSheetState extends State<_TourSheet> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Skip tour',
-                style: TextStyle(
-                    color: AppColors.mutedForeground)),
+                style: TextStyle(color: AppColors.mutedForeground)),
           ),
         ]),
       ),

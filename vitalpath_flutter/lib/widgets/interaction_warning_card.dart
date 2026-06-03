@@ -58,9 +58,7 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
         SizedBox(width: 10),
         Text(
           'Checking for drug interactions…',
-          style: TextStyle(
-              fontSize: 12,
-              color: AppColors.mutedForeground),
+          style: TextStyle(fontSize: 12, color: AppColors.mutedForeground),
         ),
       ]),
     );
@@ -77,7 +75,10 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(children: [
-        HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle01, color: AppColors.success, size: 15),
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+            color: AppColors.success,
+            size: 15),
         SizedBox(width: 8),
         Text(
           'No known drug interactions detected.',
@@ -93,19 +94,17 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
   // ── Interaction list ──────────────────────────────────────────────────────
 
   Widget _buildWarningList() {
-    final hasMajor = widget.interactions
-        .any((i) => i.severity == InteractionSeverity.major);
+    final hasMajor =
+        widget.interactions.any((i) => i.severity == InteractionSeverity.major);
 
-    final preview  = widget.interactions.take(_previewCount).toList();
-    final rest     = widget.interactions.skip(_previewCount).toList();
-    final shown    = _expanded ? widget.interactions : preview;
+    final preview = widget.interactions.take(_previewCount).toList();
+    final rest = widget.interactions.skip(_previewCount).toList();
+    final shown = _expanded ? widget.interactions : preview;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        color: hasMajor
-            ? AppColors.destructiveLight
-            : AppColors.warningLight,
+        color: hasMajor ? AppColors.destructiveLight : AppColors.warningLight,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: hasMajor
@@ -121,9 +120,7 @@ class _InteractionWarningCardState extends State<InteractionWarningCard> {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
             child: Row(children: [
               Icon(
-                hasMajor
-                    ? Icons.warning_rounded
-                    : Icons.info_outline_rounded,
+                hasMajor ? Icons.warning_rounded : Icons.info_outline_rounded,
                 size: 15,
                 color: hasMajor ? AppColors.destructive : AppColors.warning,
               ),
@@ -187,7 +184,7 @@ class _InteractionRowState extends State<_InteractionRow> {
 
   @override
   Widget build(BuildContext context) {
-    final i     = widget.interaction;
+    final i = widget.interaction;
     final color = _severityColor(i.severity);
 
     return GestureDetector(
@@ -205,8 +202,7 @@ class _InteractionRowState extends State<_InteractionRow> {
           children: [
             Row(children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(4),
@@ -214,9 +210,7 @@ class _InteractionRowState extends State<_InteractionRow> {
                 child: Text(
                   i.severity.label,
                   style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: color),
+                      fontSize: 9, fontWeight: FontWeight.w700, color: color),
                 ),
               ),
               const SizedBox(width: 8),
@@ -232,25 +226,28 @@ class _InteractionRowState extends State<_InteractionRow> {
                 ),
               ),
               _showDetail
-                  ? HugeIcon(icon: HugeIcons.strokeRoundedArrowUp01, color: AppColors.mutedForeground, size: 16)
-                  : HugeIcon(icon: HugeIcons.strokeRoundedArrowDown01, color: AppColors.mutedForeground, size: 16),
+                  ? HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowUp01,
+                      color: AppColors.mutedForeground,
+                      size: 16)
+                  : HugeIcon(
+                      icon: HugeIcons.strokeRoundedArrowDown01,
+                      color: AppColors.mutedForeground,
+                      size: 16),
             ]),
             if (_showDetail) ...[
               const SizedBox(height: 6),
               Text(
                 i.description,
                 style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.cardForeground,
-                    height: 1.5),
+                    fontSize: 11, color: AppColors.cardForeground, height: 1.5),
               ),
               if (i.source.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Source: ${i.source}',
                   style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.mutedForeground),
+                      fontSize: 10, color: AppColors.mutedForeground),
                 ),
               ],
             ],
@@ -262,10 +259,14 @@ class _InteractionRowState extends State<_InteractionRow> {
 
   Color _severityColor(InteractionSeverity s) {
     switch (s) {
-      case InteractionSeverity.major:    return AppColors.destructive;
-      case InteractionSeverity.moderate: return AppColors.warning;
-      case InteractionSeverity.minor:    return const Color(0xFFD97706);
-      case InteractionSeverity.unknown:  return AppColors.primary;
+      case InteractionSeverity.major:
+        return AppColors.destructive;
+      case InteractionSeverity.moderate:
+        return AppColors.warning;
+      case InteractionSeverity.minor:
+        return const Color(0xFFD97706);
+      case InteractionSeverity.unknown:
+        return AppColors.primary;
     }
   }
 

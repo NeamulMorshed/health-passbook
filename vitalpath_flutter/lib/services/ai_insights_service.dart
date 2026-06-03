@@ -62,7 +62,9 @@ class AiInsightsService {
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final text = (data['content'] as List).first['text'] as String;
+    final contentList = data['content'] as List? ?? [];
+    if (contentList.isEmpty) throw Exception('Empty content in AI response');
+    final text = contentList.first['text'] as String? ?? '';
 
     // A3: Robust JSON extraction using last { and last } indices.
     final start = text.lastIndexOf('{');
@@ -73,7 +75,11 @@ class AiInsightsService {
     final jsonStr = text.substring(start, end + 1);
 
     final parsed = jsonDecode(jsonStr) as Map<String, dynamic>;
-    final insights = (parsed['insights'] as List<dynamic>)
+    final rawInsights = parsed['insights'];
+    if (rawInsights == null || rawInsights is! List) {
+      throw Exception('Missing or invalid insights array in AI response');
+    }
+    final insights = rawInsights
         .map((e) => HealthInsight.fromMap(e as Map<String, dynamic>))
         .toList();
 
@@ -122,7 +128,9 @@ Be encouraging, positive, and specific. Do not diagnose or prescribe.''';
     return [
       HealthInsight(
         category: 'medication',
-        title: adherence >= 80 ? 'Great Medicine Adherence' : 'Improve Medicine Routine',
+        title: adherence >= 80
+            ? 'Great Medicine Adherence'
+            : 'Improve Medicine Routine',
         body: adherence >= 80
             ? 'You\'ve taken ${adherence.toStringAsFixed(0)}% of your medicines this week — excellent consistency!'
             : 'Your medicine adherence is at ${adherence.toStringAsFixed(0)}% this week. Consistency is key to effectiveness.',
@@ -143,8 +151,10 @@ Be encouraging, positive, and specific. Do not diagnose or prescribe.''';
       HealthInsight(
         category: 'nutrition',
         title: 'Calorie Awareness',
-        body: 'You\'re averaging $calories kcal/day. ${calories > 2500 ? 'That\'s on the higher side for most adults.' : 'Stay mindful of nutritional balance alongside calories.'}',
-        suggestion: 'Log every meal in the Care tab to get a clearer picture of your nutrition patterns.',
+        body:
+            'You\'re averaging $calories kcal/day. ${calories > 2500 ? 'That\'s on the higher side for most adults.' : 'Stay mindful of nutritional balance alongside calories.'}',
+        suggestion:
+            'Log every meal in the Care tab to get a clearer picture of your nutrition patterns.',
       ),
     ];
   }

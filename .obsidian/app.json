@@ -1,0 +1,10 @@
+{
+  "useMarkdownLinks": false,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "60 - Sessions",
+  "attachmentFolderPath": "70 - Reference/Assets",
+  "promptDelete": true,
+  "trashOption": "local",
+  "safeMode": false,
+  "showUnsupportedFiles": false
+}

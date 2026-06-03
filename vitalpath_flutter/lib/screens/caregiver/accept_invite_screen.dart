@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/bento_card.dart';
+import '../../../core/widgets/app_widgets.dart';
+import '../../../models/app_user.dart';
 import '../../../models/caregiver_connection.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/caregiver_provider.dart';
@@ -20,9 +21,79 @@ class AcceptInviteScreen extends ConsumerStatefulWidget {
 class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
   bool _processing = false;
 
+  Future<void> _accept() async {
+    if (_processing) return;
+    setState(() => _processing = true);
+    final notifier = ref.read(inviteResponseNotifierProvider.notifier);
+    final connection = widget.connection;
+    try {
+      final user = await ref.read(currentUserProvider.future);
+      if (user == null) {
+        if (mounted) {
+          AppSnackBar.error(context, 'Session expired. Please sign in again.');
+          setState(() => _processing = false);
+        }
+        return;
+      }
+      await notifier.accept(
+        connectionId: connection.id,
+        patientId: connection.patientId,
+        caregiverUid: user.uid,
+        caregiverName: user.name,
+        permissions: connection.permissions,
+      );
+      if (mounted) {
+        if (user.userType == UserType.caregiver) {
+          context.go('/caregiver/home');
+        } else if (user.userType == UserType.doctor) {
+          context.go('/doc/dashboard');
+        } else {
+          context.go('/home');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.error(
+          context,
+          'Failed to accept invite. Please try again.',
+          onRetry: _accept,
+        );
+        setState(() => _processing = false);
+      }
+    }
+  }
+
+  Future<void> _decline() async {
+    if (_processing) return;
+    setState(() => _processing = true);
+    final notifier = ref.read(inviteResponseNotifierProvider.notifier);
+    final connection = widget.connection;
+    try {
+      await notifier.decline(connection.id);
+      if (mounted) {
+        final cu = ref.read(currentUserProvider).asData?.value;
+        if (cu?.userType == UserType.caregiver) {
+          context.go('/caregiver/home');
+        } else if (cu?.userType == UserType.doctor) {
+          context.go('/doc/dashboard');
+        } else {
+          context.go('/home');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.error(
+          context,
+          'Failed to decline invite. Please try again.',
+          onRetry: _decline,
+        );
+        setState(() => _processing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final notifier = ref.read(inviteResponseNotifierProvider.notifier);
     final connection = widget.connection;
 
     // C-6: check invite status before allowing accept/decline
@@ -30,7 +101,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
-      appBar: AppBar(title: const Text('Care Circle Invite')),
+      appBar: AppBar(title: const Text('Health Sharing Invite')),
       body: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
@@ -42,7 +113,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: AppColors.caregiver.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -51,7 +122,7 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                     style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary),
+                        color: AppColors.caregiver),
                   ),
                 ),
               ),
@@ -62,13 +133,11 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
                   children: [
                     Text(connection.patientName,
                         style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700)),
+                            fontSize: 18, fontWeight: FontWeight.w700)),
                     Text(
-                        'Invites you as ${connection.relationship.relationshipLabel}',
+                        'Wants to share their health with you (as their ${connection.relationship.relationshipLabel})',
                         style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mutedForeground)),
+                            fontSize: 13, color: AppColors.mutedForeground)),
                   ],
                 ),
               ),
@@ -89,10 +158,8 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             ],
 
             const SizedBox(height: 28),
-            const Text('If you accept, you will be able to see:',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600)),
+            const Text("You'll be able to view their health information:",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             _permissionList(connection.permissions),
 
@@ -100,10 +167,9 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             BentoCard(
               color: AppColors.muted,
               child: const Text(
-                'You will not be able to edit any health data.',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedForeground),
+                'You can view but not edit their health data. Only they and their doctor can make changes.',
+                style:
+                    TextStyle(fontSize: 12, color: AppColors.mutedForeground),
               ),
             ),
 
@@ -113,75 +179,37 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
             if (isAlreadyActioned) ...[
               BentoCard(
                 child: Text(
-                  'This invite has already been ${connection.status}.',
+                  'This invite has already been ${connection.status == 'connected' ? 'accepted' : 'declined'}.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.mutedForeground),
+                      fontSize: 14, color: AppColors.mutedForeground),
                 ),
               ),
-            ] else if (_processing)
-              const Center(child: CircularProgressIndicator())
-            else ...[
+            ] else ...[
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  // C-6b: try/catch with error snackbar; navigate only on success
-                  onPressed: () async {
-                    setState(() => _processing = true);
-                    try {
-                      final user = await ref.read(currentUserProvider.future);
-                      if (user == null) {
-                        if (mounted) setState(() => _processing = false);
-                        return;
-                      }
-                      await notifier.accept(
-                        connectionId: connection.id,
-                        caregiverUid: user.uid,
-                        caregiverName: user.name,
-                      );
-                      if (context.mounted) context.go('/home');
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  'Failed to accept invite. Please try again.')));
-                      }
-                    } finally {
-                      if (mounted) setState(() => _processing = false);
-                    }
-                  },
-                  child: const Text('Accept Invite',
-                      style: TextStyle(fontSize: 15)),
+                  onPressed: _processing ? null : _accept,
+                  child: _processing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Accept & Start Monitoring',
+                          style: TextStyle(fontSize: 15)),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  // C-6b: try/catch with error snackbar; navigate only on success
-                  onPressed: () async {
-                    setState(() => _processing = true);
-                    try {
-                      await notifier.decline(connection.id);
-                      if (context.mounted) context.go('/home');
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  'Failed to decline invite. Please try again.')));
-                      }
-                    } finally {
-                      if (mounted) setState(() => _processing = false);
-                    }
-                  },
+                  onPressed: _processing ? null : _decline,
                   style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.destructive,
                       side: const BorderSide(color: AppColors.destructive)),
-                  child: const Text('Decline',
-                      style: TextStyle(fontSize: 15)),
+                  child: const Text('Not Now', style: TextStyle(fontSize: 15)),
                 ),
               ),
             ],
@@ -194,12 +222,54 @@ class _AcceptInviteScreenState extends ConsumerState<AcceptInviteScreen> {
 
   Widget _permissionList(CaregiverPermissions p) {
     final items = <(bool, Widget, String)>[
-      (p.medicines, HugeIcon(icon: HugeIcons.strokeRoundedMedicine01, color: AppColors.primary, size: 18), 'Medicines & dose tracking'),
-      (p.vitals, const Icon(Icons.monitor_heart_rounded, size: 18, color: AppColors.primary), 'Vitals & readings'),
-      (p.appointments, const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary), 'Upcoming appointments'),
-      (p.prescriptions, const Icon(Icons.receipt_long_rounded, size: 18, color: AppColors.primary), 'Prescriptions'),
-      (p.mealLogs, const Icon(Icons.restaurant_rounded, size: 18, color: AppColors.primary), 'Meal logs'),
-      (p.activityLogs, const Icon(Icons.directions_run_rounded, size: 18, color: AppColors.primary), 'Activity logs'),
+      (
+        p.medicines,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedMedicine01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Medicines & dose tracking'
+      ),
+      (
+        p.vitals,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedPulse01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Vitals & readings'
+      ),
+      (
+        p.appointments,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedCalendar01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Upcoming appointments'
+      ),
+      (
+        p.prescriptions,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedMedicine01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Prescriptions'
+      ),
+      (
+        p.mealLogs,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedRestaurant01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Meal logs'
+      ),
+      (
+        p.activityLogs,
+        HugeIcon(
+            icon: HugeIcons.strokeRoundedActivity01,
+            color: AppColors.caregiver,
+            size: 18),
+        'Activity logs'
+      ),
     ];
     return Column(
       children: items

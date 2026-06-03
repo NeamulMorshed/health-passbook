@@ -238,22 +238,26 @@ class BentoFeaturedCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: tags.map((tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 0.5),
-                ),
-                child: Text(
-                  tag,
-                  style: GoogleFonts.openSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              )).toList(),
+              children: tags
+                  .map((tag) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(20),
+                          border:
+                              Border.all(color: AppColors.border, width: 0.5),
+                        ),
+                        child: Text(
+                          tag,
+                          style: GoogleFonts.openSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ))
+                  .toList(),
             ),
           ],
         ],
@@ -327,7 +331,10 @@ class BentoSettingsTile extends StatelessWidget {
                   ),
                 ),
                 trailing ??
-                    HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, color: AppColors.textTertiary, size: 16),
+                    HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        color: AppColors.textTertiary,
+                        size: 16),
               ],
             ),
           ),

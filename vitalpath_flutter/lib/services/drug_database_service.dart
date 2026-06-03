@@ -52,9 +52,11 @@ class DrugDatabaseService {
 
   Future<void> load() async {
     if (_loaded) return;
-    final raw = await rootBundle.loadString('assets/data/bangladesh_drugs.json');
+    final raw =
+        await rootBundle.loadString('assets/data/bangladesh_drugs.json');
     final list = jsonDecode(raw) as List;
-    _drugs = list.map((e) => DrugEntry.fromMap(e as Map<String, dynamic>)).toList();
+    _drugs =
+        list.map((e) => DrugEntry.fromMap(e as Map<String, dynamic>)).toList();
     _loaded = true;
   }
 
@@ -71,14 +73,16 @@ class DrugDatabaseService {
       // Check generic name
       final genScore = _similarity(query, drug.generic.toLowerCase());
       if (genScore > (best?.confidence ?? threshold - 0.001)) {
-        best = DrugMatch(drug: drug, confidence: genScore, matchedTerm: drug.generic);
+        best = DrugMatch(
+            drug: drug, confidence: genScore, matchedTerm: drug.generic);
       }
 
       // Check each brand name
       for (final brand in drug.brands) {
         final brandScore = _similarity(query, brand.toLowerCase());
         if (brandScore > (best?.confidence ?? threshold - 0.001)) {
-          best = DrugMatch(drug: drug, confidence: brandScore, matchedTerm: brand);
+          best =
+              DrugMatch(drug: drug, confidence: brandScore, matchedTerm: brand);
         }
       }
     }

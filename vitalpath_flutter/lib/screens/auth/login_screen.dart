@@ -67,7 +67,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   // ── Google sign-in ──────────────────────────────────────────────────────────
 
   Future<void> _signInWithGoogle() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     final result = await ref.read(authRepositoryProvider).signInWithGoogle();
     if (!mounted) return;
@@ -79,7 +82,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submitEmail() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
@@ -97,14 +103,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         uid: result.uid,
         name: result.displayName ?? email.split('@').first,
         phone: '',
-        userType:
-            widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
+        userType: widget.userType == 'doctor'
+            ? UserType.doctor
+            : widget.userType == 'caregiver'
+                ? UserType.caregiver
+                : UserType.patient,
         createdAt: DateTime.now(),
       );
       try {
         await repo.createProfile(newUser);
       } catch (e) {
-        if (mounted) setState(() { _loading = false; _error = 'Failed to create profile. Please try again.'; });
+        if (mounted)
+          setState(() {
+            _loading = false;
+            _error = 'Failed to create profile. Please try again.';
+          });
         return;
       }
       if (!mounted) return;
@@ -126,13 +139,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             uid: uid,
             name: displayName ?? 'New User',
             phone: '',
-            userType: widget.userType == 'doctor' ? UserType.doctor : UserType.patient,
+            userType: widget.userType == 'doctor'
+                ? UserType.doctor
+                : widget.userType == 'caregiver'
+                    ? UserType.caregiver
+                    : UserType.patient,
             createdAt: DateTime.now(),
           );
           ref.read(authRepositoryProvider).createProfile(newUser).then((_) {
             if (mounted) _navigateForUser(newUser);
           }).catchError((e) {
-            if (mounted) setState(() { _loading = false; _error = 'Failed to create profile. Please try again.'; });
+            if (mounted)
+              setState(() {
+                _loading = false;
+                _error = 'Failed to create profile. Please try again.';
+              });
           });
         } else {
           context.go('/user-select');
@@ -142,7 +163,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _loading = false);
 
       case AuthFailure(:final message):
-        setState(() { _loading = false; _error = message; });
+        setState(() {
+          _loading = false;
+          _error = message;
+        });
     }
   }
 
@@ -155,6 +179,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) context.go('/doc/onboarding/profile');
       } else {
         if (mounted) context.go('/doc/dashboard');
+      }
+    } else if (user.userType == UserType.caregiver) {
+      if (!user.onboardingComplete) {
+        if (mounted) context.go('/onboarding/caregiver-setup');
+      } else {
+        if (mounted) context.go('/caregiver/home');
       }
     } else if (!user.onboardingComplete) {
       if (mounted) context.go('/onboarding/permissions');
@@ -188,7 +218,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: HugeIcon(icon: HugeIcons.strokeRoundedHeartCheck, color: AppColors.primary, size: 32),
+                  child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedHeartCheck,
+                      color: AppColors.primary,
+                      size: 32),
                 ),
                 const SizedBox(height: 28),
 
@@ -220,7 +253,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+                      border:
+                          Border.all(color: Colors.red.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,8 +285,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: OutlinedButton(
                     onPressed: _loading ? null : _signInWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(
-                          color: AppColors.border, width: 1.5),
+                      side:
+                          const BorderSide(color: AppColors.border, width: 1.5),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(100)),
                       backgroundColor: AppColors.muted,
@@ -286,7 +320,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'or',
                       style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.mutedForeground.withValues(alpha: 0.7)),
+                          color:
+                              AppColors.mutedForeground.withValues(alpha: 0.7)),
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.border)),
@@ -370,11 +405,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             _loading ? null : _submitEmail(),
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: HugeIcon(icon: HugeIcons.strokeRoundedLock, color: Colors.black, size: 20),
+                          prefixIcon: HugeIcon(
+                              icon: HugeIcons.strokeRoundedLock,
+                              color: Colors.black,
+                              size: 20),
                           suffixIcon: IconButton(
                             icon: _obscurePassword
-                                ? HugeIcon(icon: HugeIcons.strokeRoundedEye, color: Colors.black, size: 20)
-                                : HugeIcon(icon: HugeIcons.strokeRoundedViewOff, color: Colors.black, size: 20),
+                                ? HugeIcon(
+                                    icon: HugeIcons.strokeRoundedEye,
+                                    color: Colors.black,
+                                    size: 20)
+                                : HugeIcon(
+                                    icon: HugeIcons.strokeRoundedViewOff,
+                                    color: Colors.black,
+                                    size: 20),
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
                           ),
@@ -400,8 +444,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: Text(
                         _isRegisterMode ? 'Create Account' : 'Sign In',
                         style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600),
+                            fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -412,8 +455,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? 'Already have an account? '
                           : "Don't have an account? ",
                       style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.mutedForeground),
+                          fontSize: 13, color: AppColors.mutedForeground),
                     ),
                     GestureDetector(
                       onTap: () => setState(() {
@@ -442,8 +484,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: const Text(
                         '← Back',
                         style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.mutedForeground),
+                            fontSize: 13, color: AppColors.mutedForeground),
                       ),
                     ),
                   ),
@@ -462,7 +503,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 1.6,
                       ),
                       children: [
-                        const TextSpan(text: 'By continuing you agree to our\n'),
+                        const TextSpan(
+                            text: 'By continuing you agree to our\n'),
                         TextSpan(
                           text: 'Terms of Service',
                           style: const TextStyle(
@@ -512,7 +554,9 @@ class _GoogleGlyphPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
     final r = size.width / 2;
-    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = r * 0.38;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = r * 0.38;
 
     paint.color = const Color(0xFF4285F4);
     canvas.drawArc(Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.72),

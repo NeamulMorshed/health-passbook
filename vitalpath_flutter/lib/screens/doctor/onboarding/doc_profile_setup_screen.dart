@@ -14,8 +14,7 @@ class DocProfileSetupScreen extends ConsumerStatefulWidget {
       _DocProfileSetupScreenState();
 }
 
-class _DocProfileSetupScreenState
-    extends ConsumerState<DocProfileSetupScreen> {
+class _DocProfileSetupScreenState extends ConsumerState<DocProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _saving = false;
 
@@ -90,8 +89,10 @@ class _DocProfileSetupScreenState
         'licenseNo': _licenseCtrl.text.trim(),
         'hospital': _hospitalCtrl.text.trim(),
         'acceptingNewPatients': _accepting,
-        'availableHours': _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim(),
-        'consultationFee': _feeCtrl.text.trim().isEmpty ? null : _feeCtrl.text.trim(),
+        'availableHours':
+            _hoursCtrl.text.trim().isEmpty ? null : _hoursCtrl.text.trim(),
+        'consultationFee':
+            _feeCtrl.text.trim().isEmpty ? null : _feeCtrl.text.trim(),
         'city': _cityCtrl.text.trim().isEmpty ? null : _cityCtrl.text.trim(),
       });
 
@@ -136,7 +137,10 @@ class _DocProfileSetupScreenState
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child: HugeIcon(icon: HugeIcons.strokeRoundedHealth, color: Colors.white, size: 28),
+                        child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedHealth,
+                            color: Colors.white,
+                            size: 28),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -155,8 +159,7 @@ class _DocProfileSetupScreenState
                           Text(
                             'Complete your details to get started.',
                             style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.mutedForeground),
+                                fontSize: 13, color: AppColors.mutedForeground),
                           ),
                         ],
                       ),
@@ -182,15 +185,13 @@ class _DocProfileSetupScreenState
                   controller: _phoneCtrl,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                        RegExp(r'[\d\+\-\s\(\)]'))
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\s\(\)]'))
                   ],
                   decoration:
                       const InputDecoration(hintText: '+1 (555) 000-0000'),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty
-                          ? 'Mobile number is required'
-                          : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Mobile number is required'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -201,9 +202,7 @@ class _DocProfileSetupScreenState
                   decoration: const InputDecoration(),
                   isExpanded: true,
                   items: _specialties
-                      .map((s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s)))
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
                   validator: (v) =>
                       v == null ? 'Please select your specialty' : null,
@@ -214,8 +213,7 @@ class _DocProfileSetupScreenState
                 _label('Medical License Number'),
                 TextFormField(
                   controller: _licenseCtrl,
-                  decoration:
-                      const InputDecoration(hintText: 'e.g. MD-123456'),
+                  decoration: const InputDecoration(hintText: 'e.g. MD-123456'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'License number is required'
                       : null,
@@ -237,14 +235,16 @@ class _DocProfileSetupScreenState
                 _label('Available Hours (optional)'),
                 TextFormField(
                   controller: _hoursCtrl,
-                  decoration: const InputDecoration(hintText: 'e.g. Mon–Fri 9am–5pm'),
+                  decoration:
+                      const InputDecoration(hintText: 'e.g. Mon–Fri 9am–5pm'),
                 ),
                 const SizedBox(height: 16),
 
                 _label('Consultation Fee (optional)'),
                 TextFormField(
                   controller: _feeCtrl,
-                  decoration: const InputDecoration(hintText: 'e.g. \$50 / Free'),
+                  decoration:
+                      const InputDecoration(hintText: 'e.g. \$50 / Free'),
                 ),
                 const SizedBox(height: 16),
 
@@ -256,14 +256,18 @@ class _DocProfileSetupScreenState
                 const SizedBox(height: 16),
 
                 BentoCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Row(children: [
-                    const Expanded(child: Text('Accepting New Patients',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
+                    const Expanded(
+                        child: Text('Accepting New Patients',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w500))),
                     Switch(
                       value: _accepting,
                       activeThumbColor: AppColors.primary,
-                      activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                      activeTrackColor:
+                          AppColors.primary.withValues(alpha: 0.4),
                       onChanged: (v) => setState(() => _accepting = v),
                     ),
                   ]),
