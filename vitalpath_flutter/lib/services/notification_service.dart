@@ -177,6 +177,10 @@ class NotificationService {
       _ => null,
     };
 
+    final androidImpl = _local.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    final canExact = await androidImpl?.canScheduleExactNotifications() ?? false;
+
     await _local.zonedSchedule(
       id,
       effectiveTitle,
@@ -194,7 +198,9 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: components,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: canExact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexact,
       payload: channel,
     );
 

@@ -40,7 +40,7 @@ class _UserSelectScreenState extends ConsumerState<UserSelectScreen> {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: SvgPicture.asset('assets/icons/icon.svg',
+                    child: SvgPicture.asset('assets/icons/Icon.svg',
                         width: 32, height: 32),
                   ),
                   const SizedBox(height: 28),
