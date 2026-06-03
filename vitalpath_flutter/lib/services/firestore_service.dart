@@ -622,6 +622,7 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
+        .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
         .map((s) {
@@ -634,8 +635,7 @@ class FirestoreService {
             }
           })
           .whereType<Appointment>()
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          .toList();
       return appts;
     });
   }
@@ -644,6 +644,7 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
+        .orderBy('createdAt', descending: true)
         .limit(100)
         .snapshots()
         .map((s) {
@@ -656,8 +657,7 @@ class FirestoreService {
             }
           })
           .whereType<Appointment>()
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          .toList();
       return appts;
     });
   }
@@ -766,6 +766,25 @@ class FirestoreService {
       if (doctorId != null) {
         await _cleanupConnectionIfInactive(patientId, doctorId);
       }
+    }
+
+    if (status == AppointmentStatus.completed && patientId != null) {
+      // Write in-app notification to patient
+      final completedNotif = <String, dynamic>{
+        'title': 'Appointment Completed',
+        'body': doctorName != null
+            ? 'Dr. $doctorName has completed your appointment.'
+            : 'Your appointment has been completed.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+      await _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4())
+          .set(completedNotif);
     }
   }
 

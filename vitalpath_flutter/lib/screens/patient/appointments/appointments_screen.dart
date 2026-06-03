@@ -370,6 +370,12 @@ class _ApptCard extends ConsumerWidget {
                       );
                   if (context.mounted) {
                     Navigator.of(context).pop(); // dismiss loading dialog
+                    final state = ref.read(appointmentNotifierProvider);
+                    if (state is AsyncError) {
+                      showAppSnack(context,
+                          'Failed to cancel. Check your connection and try again.');
+                      return;
+                    }
                     showAppSnack(
                         context,
                         isConfirmed

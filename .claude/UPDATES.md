@@ -3,6 +3,21 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-03 · v2.12.0+42 (bug audit — read-only, no code changes)
+**Focus:** Full bug audit of in-app notification system and Visits (appointments) page. No code changes this session.
+**Findings (8 bugs, no fixes applied yet):**
+- BUG-N1: Caregiver NotifBell reads `patients/{caregiverUid}/notifications` → PERMISSION_DENIED → bell always 0, screen always empty
+- BUG-N2: Meal reminders controlled by wrong pref key (`notif_doctors` not `notif_meals`) — `_channelPrefKeys` maps `notifChannelGeneral → 'notif_doctors'`; "Meal Reminders" toggle has no scheduling effect
+- BUG-N3: `markAllNotificationsRead` uses dual `.where()` — requires composite Firestore index; silently fails without it
+- BUG-N4: Appointment notification tap does nothing (no deep-link navigation to `/appointments`)
+- BUG-V1: Patient cancel shows "Appointment cancelled" success snack even on Firestore failure (no `state is AsyncError` check, unlike doctor-side)
+- BUG-V2: `watchPatientAppointments` uses `.limit()` without `.orderBy()` → wrong set returned when > limit appointments exist
+- BUG-V3: Doctor marking appointment completed sends no in-app notification to patient
+- BUG-V4: Doctor cancel notification body missing doctor name (doctorName not passed to `updateAppointmentStatus`)
+- BUG-V5: No cancel option + no explanation within 24h of confirmed appointment
+**Next:** Fix the 8 bugs above. Priority: N1, N2, V1, V2 first (most user-facing impact).
+
+---
 ## 2026-06-03 · v2.12.0+42 (crash fixes — 3 Crashlytics issues)
 **Focus:** Fix all 3 active crashes from Firebase Crashlytics dashboard. No feature changes.
 **Changed:**
