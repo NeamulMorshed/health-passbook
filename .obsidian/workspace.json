@@ -191,18 +191,19 @@
   },
   "active": "de293f1d8cb97574",
   "lastOpenFiles": [
+    "vitalpath_flutter/firebase-debug.log",
+    "vitalpath_flutter/build/app/intermediates/shrunk_resources_proto_format/release/minifyReleaseWithR8/shrunk-resources-proto-format-release.ap_",
+    "vitalpath_flutter/build/app/outputs/mapping/release/resources.txt",
+    "vitalpath_flutter/build/app/intermediates/r8_metadata/release/minifyReleaseWithR8/r8-metadata.dat",
+    "vitalpath_flutter/build/app/intermediates/merged_java_res/release/minifyReleaseWithR8/base.jar",
+    "vitalpath_flutter/build/app/outputs/mapping/release/configuration.txt",
+    "vitalpath_flutter/build/app/intermediates/r8_art_profile/release/minifyReleaseWithR8/baseline-prof.txt",
+    "vitalpath_flutter/build/app/intermediates/dex/release/minifyReleaseWithR8/classes.dex",
+    "vitalpath_flutter/build/app/intermediates/dex/release/minifyReleaseWithR8/classes2.dex",
+    "vitalpath_flutter/build/app/outputs/mapping/release/mapping.txt",
+    "vitalpath_flutter/build/app/outputs/mapping/release/usage.txt",
     "00 - Home/Dashboard.md",
     "50 - UX + Design/UX_Audit_2026-06-01.md",
-    "vitalpath_flutter/firebase-debug.log",
-    "vitalpath_flutter/build/app/outputs/flutter-apk/app-release.apk.sha1",
-    "vitalpath_flutter/build/app/outputs/flutter-apk/app-release.apk",
-    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release/createReleaseApkListingFileRedirect/redirect.txt",
-    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release/createReleaseApkListingFileRedirect",
-    "vitalpath_flutter/build/app/intermediates/apk_ide_redirect_file/release",
-    "vitalpath_flutter/build/app/outputs/apk/release/output-metadata.json",
-    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/1/app-release.dm",
-    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/0/app-release.dm",
-    "vitalpath_flutter/build/app/outputs/apk/release/baselineProfiles/1",
     "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxxhdpi-v4/ic_launcher_round.png",
     "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxxhdpi-v4/ic_launcher.png",
     "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxhdpi-v4/ic_launcher_round.png",
@@ -236,7 +237,6 @@
     "70 - Reference/Templates/Session.md",
     "30 - Architecture/Architecture Overview.md",
     "20 - Features/Backlog.md",
-    "50 - UX + Design/Personas.md",
-    "40 - Security/S-06 FCM Caregiver UID Bug.md"
+    "50 - UX + Design/Personas.md"
   ]
 }

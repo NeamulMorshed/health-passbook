@@ -3,6 +3,17 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-03 · v2.12.0+42 (crash fixes — 3 Crashlytics issues)
+**Focus:** Fix all 3 active crashes from Firebase Crashlytics dashboard. No feature changes.
+**Changed:**
+- `lib/screens/user_select/user_select_screen.dart` — fixed `assets/icons/icon.svg` → `assets/icons/Icon.svg` (case mismatch; Android FS is case-sensitive; crashed for all users on user-select screen — 20 events, 3 users).
+- `lib/services/notification_service.dart` — `scheduleReminder()` now calls `canScheduleExactNotifications()` at runtime; falls back to `AndroidScheduleMode.inexact` when exact alarms not permitted (Android 12+ `exact_alarms_not_permitted` crash — 21 events, 1 user).
+- `lib/main.dart` — added `GoogleFonts.config.allowRuntimeFetching = false` before `runApp`; prevents `_httpFetchFontAndSaveToDevice` crash on offline/restricted-network devices (2 events, 1 user). Cached fonts still render; others fall back to system font.
+**Build:** `flutter analyze` → 0 new errors/warnings. APK built and distributed to `neamul.morshed.nahid@gmail.com` via Firebase App Distribution.
+**Commit:** `d29862b` on `feature/ux-audit-improvements`.
+**Next:** Create `testers` group in Firebase App Distribution console for future bulk distributes.
+
+---
 ## 2026-06-02 · v2.12.0+41 (P3 explainability — tier 4 of P0–P3; multi-role deferred)
 **Focus:** Final tier. Per scope decision, implemented the low-risk explainability piece; **multi-role (G-8) deferred** to its own brainstorm→spec→build cycle (architectural change to recently-stabilized auth/routing — high regression risk, warrants isolated effort + careful auth testing).
 **Changed (G-5 needs-attention explainability):**
