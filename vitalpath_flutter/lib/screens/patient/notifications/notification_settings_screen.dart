@@ -66,10 +66,9 @@ class _NotificationSettingsScreenState
     setState(() => _meals = value);
     await _save(_keyMeals, value);
     if (!value) {
-      // Meal reminders share the general channel — cancel tracked IDs only.
       await ref
           .read(notificationServiceProvider)
-          .cancelAllForChannel(AppConstants.notifChannelGeneral);
+          .cancelAllForChannel(AppConstants.notifChannelMeal);
     }
   }
 

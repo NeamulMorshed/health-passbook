@@ -63,6 +63,7 @@ class AppConstants {
   static const notifChannelMedicine = 'medicine_reminders';
   static const notifChannelAppointment = 'appointment_reminders';
   static const notifChannelGeneral = 'general';
+  static const notifChannelMeal = 'meal_reminders';
 
   // SharedPreferences keys
   static const prefUserType = 'user_type';

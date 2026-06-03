@@ -108,10 +108,10 @@ class _VitalsContent extends ConsumerWidget {
                     unit: 'mmHg',
                     icon: HugeIcon(
                         icon: HugeIcons.strokeRoundedDroplet,
-                        color: const Color(0xFF3B82F6),
+                        color: AppColors.info,
                         size: 20),
-                    iconBgColor: const Color(0xFFEFF6FF),
-                    iconColor: const Color(0xFF3B82F6),
+                    iconBgColor: AppColors.infoLight,
+                    iconColor: AppColors.info,
                     onTap: () =>
                         _showHistorySheet(context, VitalType.bpSystolic),
                   ),

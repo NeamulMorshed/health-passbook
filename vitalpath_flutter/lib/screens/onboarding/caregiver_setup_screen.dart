@@ -178,7 +178,7 @@ class _CaregiverSetupScreenState extends ConsumerState<CaregiverSetupScreen> {
                     : _page == 1
                         ? 'Next'
                         : 'Get Started',
-                colors: const [AppColors.caregiver, Color(0xFFD97706)],
+                colors: const [AppColors.caregiver, AppColors.warning],
                 onPressed: _next,
                 isLoading: _saving,
               ),

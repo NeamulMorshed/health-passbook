@@ -3,6 +3,105 @@
 <!-- Format per entry: ## YYYY-MM-DD · vX.X.X+N then bullets for changed/next -->
 
 ---
+## 2026-06-03 · v2.12.0+42 (8-bug fix: notifications + visits page)
+**Focus:** Fix all 8 bugs found in previous audit session. No features added.
+**Changed:**
+- `lib/services/firestore_service.dart` — V2: added `.orderBy('createdAt', descending: true)` before `.limit()` in `watchPatientAppointments` and `watchDoctorAppointments` (removed redundant client-side sort). V3: `updateAppointmentStatus` now writes in-app notification for `completed` status. V4: `updateAppointmentStatus` now accepts and uses `doctorName` for cancel notification body. N3: added composite index comment above dual-where query in `markAllNotificationsRead`.
+- `lib/providers/doctor_provider.dart` — V3+V4: `DoctorAppointmentNotifier.cancel()` + `.complete()` now accept and pass `doctorName`/`patientId` through to firestore layer.
+- `lib/screens/doctor/appointments/doc_appointments_screen.dart` — V3+V4: `_confirmCancel` passes `appt.doctorName`; `_confirmComplete` passes `appt.patientId` + `appt.doctorName`.
+- `lib/screens/patient/appointments/appointments_screen.dart` — V1: patient cancel now checks `state is AsyncError` before showing success snack. V5: confirmed appointments within 24h now show info row "Cancellations require 24h notice."
+- `lib/screens/patient/notifications/notifications_screen.dart` — N4: `_onNotifTap` now navigates on tap (appointment→/appointments, medicine/meal→/care). N3: error snack now fires when `markAllRead` fails (via rethrow in provider).
+- `lib/providers/patient_provider.dart` — N3: `NotificationNotifier.markAllRead` now rethrows after logging so screen's catch block can show error snack.
+- `lib/core/constants/app_constants.dart` — N2: added `notifChannelMeal = 'meal_reminders'` constant.
+- `lib/services/notification_service.dart` — N2: added `notifChannelMeal` to `_channelPrefKeys` (mapped to `'notif_meals'`), added `_createChannel` call in `initialize()`, added route mapping to `_routeForChannel`.
+- `lib/providers/patient_provider.dart` — N2: meal reminder scheduling now uses `notifChannelMeal` instead of `notifChannelGeneral`.
+- `lib/screens/patient/notifications/notification_settings_screen.dart` — N2: `_onMealsToggle` cancels `notifChannelMeal` (not `notifChannelGeneral`).
+- `lib/core/widgets/notif_bell.dart` — N1: returns `SizedBox.shrink()` for non-patient users (prevents PERMISSION_DENIED for caregiver/doctor UIDs).
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info. No pubspec changes.
+**Next:** PR for entire `feature/ux-audit-improvements` branch (covers P0–P3 UX audit + crash fixes + 8 bug fixes).
+
+---
+## 2026-06-03 · v2.12.0+42 (bug audit — read-only, no code changes)
+**Focus:** Full bug audit of in-app notification system and Visits (appointments) page. No code changes this session.
+**Findings (8 bugs, no fixes applied yet):**
+- BUG-N1: Caregiver NotifBell reads `patients/{caregiverUid}/notifications` → PERMISSION_DENIED → bell always 0, screen always empty
+- BUG-N2: Meal reminders controlled by wrong pref key (`notif_doctors` not `notif_meals`) — `_channelPrefKeys` maps `notifChannelGeneral → 'notif_doctors'`; "Meal Reminders" toggle has no scheduling effect
+- BUG-N3: `markAllNotificationsRead` uses dual `.where()` — requires composite Firestore index; silently fails without it
+- BUG-N4: Appointment notification tap does nothing (no deep-link navigation to `/appointments`)
+- BUG-V1: Patient cancel shows "Appointment cancelled" success snack even on Firestore failure (no `state is AsyncError` check, unlike doctor-side)
+- BUG-V2: `watchPatientAppointments` uses `.limit()` without `.orderBy()` → wrong set returned when > limit appointments exist
+- BUG-V3: Doctor marking appointment completed sends no in-app notification to patient
+- BUG-V4: Doctor cancel notification body missing doctor name (doctorName not passed to `updateAppointmentStatus`)
+- BUG-V5: No cancel option + no explanation within 24h of confirmed appointment
+**Next:** Fix the 8 bugs above. Priority: N1, N2, V1, V2 first (most user-facing impact).
+
+---
+## 2026-06-03 · v2.12.0+42 (crash fixes — 3 Crashlytics issues)
+**Focus:** Fix all 3 active crashes from Firebase Crashlytics dashboard. No feature changes.
+**Changed:**
+- `lib/screens/user_select/user_select_screen.dart` — fixed `assets/icons/icon.svg` → `assets/icons/Icon.svg` (case mismatch; Android FS is case-sensitive; crashed for all users on user-select screen — 20 events, 3 users).
+- `lib/services/notification_service.dart` — `scheduleReminder()` now calls `canScheduleExactNotifications()` at runtime; falls back to `AndroidScheduleMode.inexact` when exact alarms not permitted (Android 12+ `exact_alarms_not_permitted` crash — 21 events, 1 user).
+- `lib/main.dart` — added `GoogleFonts.config.allowRuntimeFetching = false` before `runApp`; prevents `_httpFetchFontAndSaveToDevice` crash on offline/restricted-network devices (2 events, 1 user). Cached fonts still render; others fall back to system font.
+**Build:** `flutter analyze` → 0 new errors/warnings. APK built and distributed to `neamul.morshed.nahid@gmail.com` via Firebase App Distribution.
+**Commit:** `d29862b` on `feature/ux-audit-improvements`.
+**Next:** Create `testers` group in Firebase App Distribution console for future bulk distributes.
+
+---
+## 2026-06-02 · v2.12.0+41 (P3 explainability — tier 4 of P0–P3; multi-role deferred)
+**Focus:** Final tier. Per scope decision, implemented the low-risk explainability piece; **multi-role (G-8) deferred** to its own brainstorm→spec→build cycle (architectural change to recently-stabilized auth/routing — high regression risk, warrants isolated effort + careful auth testing).
+**Changed (G-5 needs-attention explainability):**
+- `lib/models/patient_attention.dart` — added `mostRecentAbnormalAt` (DateTime?, optional).
+- `lib/providers/doctor_attention_provider.dart` — populates it from `abnormal.first.recordedAt`.
+- `lib/screens/doctor/dashboard/doc_dashboard_screen.dart` — adherence pill now reads "…% adherence · 7-day"; abnormal-vital pill appends relative time ("BP 165/95 · 2d ago"). Added `_relativeTime` helper. Doctor now sees *why now / since when*, not just a flag.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 info. `flutter test` → 11/11.
+**Deferred to dedicated efforts:** (1) Multi-role accounts without forced sign-out (G-8). (2) Full Material→HugeIcons migration (258 usages, see P2 entry).
+**Next:** PR for P0+P1+P2+P3 (branch `feature/ux-audit-improvements`).
+
+---
+## 2026-06-02 · v2.12.0+41 (P2 consistency debt — tier 3 of P0–P3)
+**Focus:** Mechanical consistency cleanup (safe/verifiable scope). Plan: `docs/superpowers/plans/2026-06-02-p2-consistency.md`. Branch `feature/ux-audit-improvements`.
+**Audit correction:** The original audit's "194 Material icons" was a grep artifact (`grep Icons.` also matched `HugeIcons.strokeRounded*`). Real Material-icon usage = **258 across 40 files / ~110 distinct glyphs**.
+**Changed:**
+- `lib/core/utils/greeting.dart` — NEW. `greetingForHour()`. Replaced 3 duplicated `_greeting()` helpers (patient/caregiver/doctor). Doctor gains the 4th "Good Night" branch (cross-portal consistency).
+- Exact raw-hex → `AppColors` tokens across 5 screens: `0xFF7C3AED`→inviteAccent (×10), `0xFFD97706`→warning, `0xFF3B82F6`→info, `0xFFEFF6FF`→infoLight. Google brand colors + decorative-gradient hex (5B21B6/8B5CF6/6366F1/0EA5E9/4338CA/22C55E/…) intentionally left raw (no exact token).
+**Deferred (own dedicated pass):** the 258 Material-icon → HugeIcons migration. `Icon(Icons.X)` → `HugeIcon(icon:…, color:, size:)` is an API change (not a rename) with `const` cascades + appearance-preservation needs across 40 files; a *partial* swap creates a worse half-consistent state. Needs a verified Material→HugeIcons mapping table. ~110 distinct glyphs; many niche (medical/food/fitness) lack clean twins.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 info. `flutter test` → 11/11.
+**Next:** P3 (multi-role without forced sign-out; needs-attention explainability), then the dedicated icon-migration pass, then PR.
+
+---
+## 2026-06-02 · v2.12.0+41 (P1 flow/heuristic gaps — tier 2 of P0–P3)
+**Focus:** Second tier of the UX-audit program (brainstorm→spec→plan→build via superpowers). Branch `feature/ux-audit-improvements` (continues from P0). Spec/plan: `docs/superpowers/specs/2026-06-02-p1-flow-heuristic-design.md`, `docs/superpowers/plans/2026-06-02-p1-flow-heuristic.md`.
+**Changed (NEW):**
+- `lib/core/widgets/dose_undo.dart` — NEW. `logDoseWithUndo` — records a dose, shows an "Undo" SnackBar (~4s), then reverses it (if undone) or awards HP. **Deferred-HP** design: HP/streak awarded only after the undo window closes → no HP-farming, no gamification reverse needed.
+- `lib/core/widgets/skeleton.dart` — NEW. `SkeletonBox` (shimmer, truly static under reduced motion) + `DashboardSkeleton`. 3 widget tests.
+**Changed (G-2 undo plumbing):**
+- `lib/services/firestore_service.dart` — `logDose(at:)`, NEW `unlogDose` (arrayRemove), `incrementPillCount` (txn) + family `logFamilyMemberDose(at:)` / `unlogFamilyMemberDose`.
+- `lib/providers/patient_provider.dart` — `recordDose`→DateTime (no HP), `awardDoseHp`, `unlogDose`; family `recordDose`/`unlogDose`.
+- `lib/screens/patient/care/care_screen.dart`, `patient/home/home_screen.dart`, `caregiver/home/caregiver_home_screen.dart` — dose buttons now use `logDoseWithUndo` (patient = HP, family = no HP).
+**Changed (Nielsen #1 + G-1):**
+- 3 dashboards — bare `CircularProgressIndicator` first-load → `DashboardSkeleton`.
+- `patient/home/home_screen.dart` — light reorder: Upcoming Tasks #2, Refill #3, Awareness #4 (most-urgent above fold).
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info. `flutter test` → 11/11 pass.
+**Next:** P2 (consistency debt: 194 Material icons→HugeIcons, 44 raw hex→tokens, dedupe greeting helpers), then P3 (multi-role without forced sign-out, needs-attention explainability). Manual smoke: undo (log→undo removes dose + no HP; log→wait awards HP), skeletons on cold load.
+
+---
+## 2026-06-02 · v2.12.0+41 (P0 emotion/generic-UI uplift — tier 1 of P0–P3)
+**Focus:** First tier of the UX-audit improvement program. New deep audit (`50 - UX + Design/UX_Audit_2026-06-01.md`, fresh score 7.4/10) drove a brainstorm→spec→plan→build cycle via superpowers skills + ui-ux-pro-max visual companion. Branch: `feature/ux-audit-improvements`.
+**Spec/plan:** `docs/superpowers/specs/2026-06-01-p0-emotion-ui-design.md`, `docs/superpowers/plans/2026-06-01-p0-emotion-ui.md`
+**Changed (NEW):**
+- `lib/core/widgets/status_hero_card.dart` — NEW. `StatusHeroCard` + `StatusHeroData` + `.schedule` variant + `ScheduleRow`. The single elevated daily-status hero per home screen (animated ring, status pill, all-done pulse). 5 widget tests.
+- `lib/core/anim/reduced_motion.dart` — NEW. `prefersReducedMotion(context)` + `safeHaptic(context)`. 2 unit tests.
+- `lib/core/theme/app_theme.dart` — `AppShadows.hero` / `.heroWarning` depth tokens.
+**Changed (screens):**
+- `lib/screens/patient/home/home_screen.dart` — status hero at top (ring + "mark dose" action, on-track/all-done/catch-up states); removed redundant `_DailySnapshotRow` + `_SnapshotChip` (folded into hero); AI insights card de-gradiented → `primaryXLight` on-brand + below fold; refresh toast.
+- `lib/screens/caregiver/home/caregiver_home_screen.dart` — `_DailySummaryBanner` upgraded to `StatusHeroCard` (G-6: dominant "is she OK" glance); refresh toast.
+- `lib/screens/doctor/dashboard/doc_dashboard_screen.dart` — `StatusHeroCard.schedule` today's-appointments hero (G-4 closed); refresh toast.
+- `lib/screens/patient/care/care_screen.dart` — `HapticFeedback.mediumImpact` → reduced-motion-safe `safeHaptic`; status badge scale/fade on state change (check-off feedback).
+- `.claude/DESIGN_SYSTEM.md` — documented StatusHeroCard, AppShadows elevation tier (one-hero-per-screen rule), Motion & Haptics section.
+**Build:** `flutter analyze` → 0 errors, 0 warnings, 32 pre-existing info (baseline unchanged). `flutter test` → 8/8 pass.
+**Next:** P1 (flow/heuristic gaps — mark-taken undo, skeleton loaders, patient-home reorder), then P2 (consistency debt: 194 Material icons→HugeIcons, 44 raw hex→tokens), then P3 (multi-role, needs-attention explainability). Manual visual smoke on 3 home screens before merge.
+
+---
 ## 2026-06-01 · v2.12.0+41 (QA audit + 32-issue fix sweep)
 **Focus:** Full QA audit via 5 parallel investigator agents, then systematic fix of all real bugs found
 **QA findings (verified false positives — NOT fixed):** C-04 gamification null crash (single-statement if/return is correct Dart), H-15 stale HP (resetWeek doesn't reset HP), H-14 FCM payload null (already handled), C-03 disclaimer race (already fixed via main.dart prefs pre-load)

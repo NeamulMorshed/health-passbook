@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
+import '../../models/app_user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
 import '../theme/app_theme.dart';
@@ -13,8 +14,10 @@ class NotifBell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uid = ref.watch(currentUserProvider).asData?.value?.uid;
-    if (uid == null) return const SizedBox.shrink();
+    final user = ref.watch(currentUserProvider).asData?.value;
+    if (user == null) return const SizedBox.shrink();
+    if (user.userType != UserType.patient) return const SizedBox.shrink();
+    final uid = user.uid;
     final count = ref
             .watch(notificationsProvider(uid))
             .asData

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'app/router.dart';
@@ -21,6 +22,11 @@ Future<void> main() async {
   // (e.g. from background isolates, async gaps) also get routed to Crashlytics.
   await runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Prevent runtime font fetching — avoids _httpFetchFontAndSaveToDevice
+    // crashes on devices with no/restricted network access.
+    // Cached fonts still render; others fall back to system font.
+    GoogleFonts.config.allowRuntimeFetching = false;
 
     // Lock to portrait orientation
     await SystemChrome.setPreferredOrientations([

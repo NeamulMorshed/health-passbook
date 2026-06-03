@@ -13,6 +13,9 @@ class PatientAttention {
   /// Human-readable label for the most recent abnormal vital, e.g. "BP 165/95".
   final String? mostRecentAbnormalLabel;
 
+  /// When the most recent abnormal vital was recorded (for "since when" context).
+  final DateTime? mostRecentAbnormalAt;
+
   const PatientAttention({
     required this.patientId,
     required this.patientName,
@@ -20,6 +23,7 @@ class PatientAttention {
     this.adherencePct,
     required this.abnormalVitalsCount,
     this.mostRecentAbnormalLabel,
+    this.mostRecentAbnormalAt,
   });
 
   /// True when this patient qualifies for the "Needs Attention" section.

@@ -44,7 +44,7 @@ final _cgMealsProvider =
 // ── Accent colours — warm amber, distinct from doctor (primary blue) ──────────
 
 const _kAmber = AppColors.caregiver;
-const _kAmberDark = Color(0xFFD97706);
+const _kAmberDark = AppColors.warning;
 
 String _timeAgo(DateTime dt) {
   final diff = DateTime.now().difference(dt);

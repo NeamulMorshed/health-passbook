@@ -232,15 +232,29 @@ class FirestoreService {
         .set(medicine.toMap());
   }
 
-  Future<void> logDose(String patientId, String medicineId) async {
+  Future<void> logDose(String patientId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses':
-          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogDose(
+      String patientId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -411,7 +425,9 @@ class FirestoreService {
   }
 
   Future<void> logFamilyMemberDose(
-      String uid, String memberId, String medicineId) async {
+      String uid, String memberId, String medicineId,
+      {DateTime? at}) async {
+    final ts = at ?? DateTime.now();
     await _db
         .collection(AppConstants.colPatients)
         .doc(uid)
@@ -420,8 +436,22 @@ class FirestoreService {
         .collection(AppConstants.colMedicines)
         .doc(medicineId)
         .update({
-      'loggedDoses':
-          FieldValue.arrayUnion([Timestamp.fromDate(DateTime.now())]),
+      'loggedDoses': FieldValue.arrayUnion([Timestamp.fromDate(ts)]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> unlogFamilyMemberDose(
+      String uid, String memberId, String medicineId, DateTime at) async {
+    await _db
+        .collection(AppConstants.colPatients)
+        .doc(uid)
+        .collection(AppConstants.colFamilyMembers)
+        .doc(memberId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId)
+        .update({
+      'loggedDoses': FieldValue.arrayRemove([Timestamp.fromDate(at)]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -535,6 +565,8 @@ class FirestoreService {
   Future<void> markAllNotificationsRead(String patientId) async {
     // F10: Filter by createdAt <= now() so notifications that arrive between
     // the query and batch write are not incorrectly marked as read.
+    // Requires composite index: notifications collection, isRead ASC + createdAt ASC.
+    // If missing, this query throws failed-precondition and markAllRead silently fails.
     final snap = await _db
         .collection(AppConstants.colPatients)
         .doc(patientId)
@@ -592,6 +624,7 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colAppointments)
         .where('patientId', isEqualTo: patientId)
+        .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
         .map((s) {
@@ -604,8 +637,7 @@ class FirestoreService {
             }
           })
           .whereType<Appointment>()
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          .toList();
       return appts;
     });
   }
@@ -614,6 +646,7 @@ class FirestoreService {
     return _db
         .collection(AppConstants.colAppointments)
         .where('doctorId', isEqualTo: doctorId)
+        .orderBy('createdAt', descending: true)
         .limit(100)
         .snapshots()
         .map((s) {
@@ -626,8 +659,7 @@ class FirestoreService {
             }
           })
           .whereType<Appointment>()
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          .toList();
       return appts;
     });
   }
@@ -736,6 +768,25 @@ class FirestoreService {
       if (doctorId != null) {
         await _cleanupConnectionIfInactive(patientId, doctorId);
       }
+    }
+
+    if (status == AppointmentStatus.completed && patientId != null) {
+      // Write in-app notification to patient
+      final completedNotif = <String, dynamic>{
+        'title': 'Appointment Completed',
+        'body': doctorName != null
+            ? 'Dr. $doctorName has completed your appointment.'
+            : 'Your appointment has been completed.',
+        'type': NotificationType.appointment.value,
+        'isRead': false,
+        'createdAt': Timestamp.fromDate(DateTime.now()),
+      };
+      await _db
+          .collection(AppConstants.colPatients)
+          .doc(patientId)
+          .collection(AppConstants.colNotifications)
+          .doc(_uuid.v4())
+          .set(completedNotif);
     }
   }
 
@@ -1032,6 +1083,21 @@ class FirestoreService {
       final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
       if (current == null || current <= 0) return;
       tx.update(ref, {'pillsRemaining': current - 1});
+    });
+  }
+
+  Future<void> incrementPillCount(String patientId, String medicineId) async {
+    final ref = _db
+        .collection(AppConstants.colPatients)
+        .doc(patientId)
+        .collection(AppConstants.colMedicines)
+        .doc(medicineId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      if (!snap.exists) return;
+      final current = (snap.data()?['pillsRemaining'] as num?)?.toInt();
+      if (current == null) return;
+      tx.update(ref, {'pillsRemaining': current + 1});
     });
   }
 }

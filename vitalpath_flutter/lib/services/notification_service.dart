@@ -25,6 +25,7 @@ const _channelPrefKeys = {
   AppConstants.notifChannelMedicine: 'notif_medicines',
   AppConstants.notifChannelAppointment: 'notif_appointments',
   AppConstants.notifChannelGeneral: 'notif_doctors',
+  AppConstants.notifChannelMeal: 'notif_meals',
 };
 
 // Prefix for the per-channel set of scheduled notification IDs.
@@ -68,6 +69,8 @@ class NotificationService {
         'Appointment Reminders', 'Appointment updates and reminders');
     await _createChannel(AppConstants.notifChannelGeneral, 'General',
         'General app notifications');
+    await _createChannel(AppConstants.notifChannelMeal,
+        'Meal Reminders', 'Reminders to log your meals');
 
     // ── Foreground FCM messages ───────────────────────────────────────────
     FirebaseMessaging.onMessage.listen((message) {
@@ -177,6 +180,10 @@ class NotificationService {
       _ => null,
     };
 
+    final androidImpl = _local.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    final canExact = await androidImpl?.canScheduleExactNotifications() ?? false;
+
     await _local.zonedSchedule(
       id,
       effectiveTitle,
@@ -194,7 +201,9 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: components,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: canExact
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexact,
       payload: channel,
     );
 
@@ -380,6 +389,7 @@ class NotificationService {
     return switch (channel) {
       AppConstants.notifChannelMedicine => '/medicines',
       AppConstants.notifChannelAppointment => '/appointments',
+      AppConstants.notifChannelMeal => '/care',
       _ => '/notifications',
     };
   }

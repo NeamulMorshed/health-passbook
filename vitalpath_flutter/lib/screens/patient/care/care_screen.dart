@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../../core/anim/reduced_motion.dart';
+import '../../../core/widgets/dose_undo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
@@ -651,20 +652,27 @@ class _MedCardState extends ConsumerState<_MedCard> {
   Future<void> _logDose() async {
     if (_isTaking) return;
     setState(() => _isTaking = true);
-    HapticFeedback.mediumImpact();
+    safeHaptic(context, medium: true);
     try {
       final fm = widget.familyMember;
       if (fm != null) {
-        await ref
-            .read(familyMedicinePatchProvider)
-            .logDose(widget.uid, fm.id, widget.med.id);
+        final patch = ref.read(familyMedicinePatchProvider);
+        await logDoseWithUndo(
+          context,
+          record: () => patch.recordDose(widget.uid, fm.id, widget.med.id),
+          undo: (ts) => patch.unlogDose(widget.uid, fm.id, widget.med.id, ts),
+          // family path: no HP
+        );
       } else {
-        final hp = await ref
-            .read(medicineNotifierProvider.notifier)
-            .logDose(widget.uid, widget.med.id);
-        if (hp > 0 && mounted) {
-          AppSnackBar.success(context, '+$hp HP  Dose logged!');
-        }
+        final notifier = ref.read(medicineNotifierProvider.notifier);
+        await logDoseWithUndo(
+          context,
+          record: () => notifier.recordDose(widget.uid, widget.med.id,
+              medicine: widget.med),
+          undo: (ts) => notifier.unlogDose(widget.uid, widget.med.id, ts,
+              medicine: widget.med),
+          awardHp: () => notifier.awardDoseHp(widget.uid),
+        );
       }
     } finally {
       if (mounted) setState(() => _isTaking = false);
@@ -684,17 +692,33 @@ class _MedCardState extends ConsumerState<_MedCard> {
 
     // Header badge
     final StatusBadge badge;
+    final String badgeKey;
     if (fullyTaken) {
       badge = StatusBadge.success('All Taken');
+      badgeKey = 'taken';
     } else if (hasMissed && !hasDue) {
       badge = StatusBadge.danger('Missed');
+      badgeKey = 'missed';
     } else if (hasDue) {
       badge = StatusBadge.warning('Due Now');
+      badgeKey = 'due';
     } else if (asNeeded && !med.fullyTakenToday) {
       badge = StatusBadge.warning('Pending');
+      badgeKey = 'pending';
     } else {
       badge = StatusBadge.info('Upcoming');
+      badgeKey = 'upcoming';
     }
+    // Check-off feedback: badge scales+fades in when its state changes
+    // (e.g. → "All Taken"). Instant when reduced motion is on.
+    final animatedBadge = AnimatedSwitcher(
+      duration: prefersReducedMotion(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      transitionBuilder: (child, anim) => ScaleTransition(
+          scale: anim, child: FadeTransition(opacity: anim, child: child)),
+      child: KeyedSubtree(key: ValueKey(badgeKey), child: badge),
+    );
 
     return BentoCard(
       onTap: widget.onTap,
@@ -726,7 +750,7 @@ class _MedCardState extends ConsumerState<_MedCard> {
                             fontSize: 13, color: AppColors.mutedForeground)),
                   ]),
             ),
-            badge,
+            animatedBadge,
             const SizedBox(width: 4),
             PopupMenuButton<String>(
               icon: HugeIcon(

@@ -43,7 +43,7 @@ class DoctorShell extends StatelessWidget {
           icon: HugeIcons.strokeRoundedCalendar01,
           color: AppColors.primary,
           size: _kSize),
-      label: 'Visits',
+      label: 'Appointments',
       route: '/doc/appointments',
     ),
     _TabItem(

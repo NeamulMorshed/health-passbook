@@ -158,6 +158,55 @@ BentoSectionHeader(
 - Title: OpenSans 15px w600 `AppColors.textPrimary`
 - Action: OpenSans 13px w500 `AppColors.textSecondary`
 
+### StatusHeroCard (daily status hero — ONE per screen)
+<!-- Source: lib/core/widgets/status_hero_card.dart -->
+```dart
+// Ring + action variant (patient / caregiver)
+StatusHeroCard(
+  data: StatusHeroData(
+    fraction: 0.66, ringLabel: '2/3', pillLabel: 'ON TRACK',
+    tone: HeroTone.positive,          // positive = green, warning = amber
+    title: '1 more to go today',
+    subtitle: 'You\'re on track with your medicines.',
+    actionLabel: 'Mark next dose taken', // null → no button
+  ),
+  onAction: () => context.go('/care'),
+)
+
+// Schedule variant (doctor dashboard)
+StatusHeroCard.schedule(
+  dateLabel: 'Mon, Jun 1',
+  rows: [ScheduleRow(time: '09:30', name: 'Aisha', status: 'Confirmed', confirmed: true)],
+  onOpen: () => context.go('/doc/appointments'),
+)
+```
+- The single **elevated + tinted** card per screen. Uses `AppShadows.hero` (green) / `AppShadows.heroWarning` (amber catch-up).
+- Animated progress ring (300ms fill); all-done state does one gentle scale pulse + medium haptic.
+- `tone: HeroTone.warning` is for "behind / catch up" — **amber, never red, never alarming** (chronic-care principle).
+- All motion + haptics auto-disable under reduced motion (see Motion section).
+
+---
+
+## Elevation & Depth
+<!-- Source: lib/core/theme/app_theme.dart — AppShadows -->
+| Token | Shadow | Usage |
+|-------|--------|-------|
+| `AppShadows.hero` | `#0F9D77 @ 10%`, blur 16, y+4 | The one elevated green hero card per screen |
+| `AppShadows.heroWarning` | `#D97706 @ 10%`, blur 16, y+4 | Amber "catch up" hero state |
+
+**Depth-tier rule:** exactly **one** elevated + tinted hero card per screen (the `StatusHeroCard`). All other cards stay flat `AppColors.surface` + 0.5px `AppColors.border`. Do not add shadows to secondary cards — it flattens the hierarchy the hero creates.
+
+---
+
+## Motion & Haptics
+<!-- Source: lib/core/anim/reduced_motion.dart -->
+- Micro-interactions are **150–300ms** (`Curves.easeOut`).
+- **Always** gate animations + haptics behind reduced motion:
+  - `prefersReducedMotion(context)` → true when OS "reduce motion" is on; apply changes instantly.
+  - `safeHaptic(context, medium: true)` → fires haptic only when reduced motion is OFF.
+- Established motions: hero ring fill (300ms), all-done ring pulse + medium haptic, dose-badge scale/fade on state change (220ms), "Updated just now" toast after pull-to-refresh.
+- **Do not** add continuous/decorative animation. No confetti. No AI-style neon gradients (healthcare anti-pattern).
+
 ---
 
 ## Icon Rules

@@ -267,6 +267,28 @@ class _ApptCard extends ConsumerWidget {
                 ),
               ),
             ],
+            if (appt.isConfirmed &&
+                appt.scheduledAt != null &&
+                appt.scheduledAt!.difference(DateTime.now()).inHours <= 24 &&
+                !appt.isCancelled) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  HugeIcon(
+                      icon: HugeIcons.strokeRoundedInformationCircle,
+                      size: 14,
+                      color: AppColors.mutedForeground),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Cancellations require 24h notice. Contact your doctor directly.',
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.mutedForeground),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             // 7a: Messaging available once the appointment is confirmed
             // (and through completion). Hidden for pending/cancelled.
             if (appt.isConfirmed || appt.isCompleted) ...[
@@ -370,6 +392,12 @@ class _ApptCard extends ConsumerWidget {
                       );
                   if (context.mounted) {
                     Navigator.of(context).pop(); // dismiss loading dialog
+                    final state = ref.read(appointmentNotifierProvider);
+                    if (state is AsyncError) {
+                      showAppSnack(context,
+                          'Failed to cancel. Check your connection and try again.');
+                      return;
+                    }
                     showAppSnack(
                         context,
                         isConfirmed

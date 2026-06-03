@@ -12,6 +12,9 @@ import '../../../models/app_user.dart';
 import '../../../models/appointment.dart';
 import '../../../models/patient_attention.dart';
 import '../../../core/widgets/freshness_timestamp.dart';
+import '../../../core/widgets/status_hero_card.dart';
+import '../../../core/widgets/skeleton.dart';
+import '../../../core/utils/greeting.dart';
 
 final _docLastRefreshedProvider =
     StateProvider<DateTime>((_) => DateTime.now());
@@ -25,7 +28,7 @@ class DocDashboardScreen extends ConsumerWidget {
 
     return userAsync.when(
       loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+          const Scaffold(body: SafeArea(child: DashboardSkeleton())),
       error: (_, __) => const Scaffold(
           body: Center(
               child: EmptyState(
@@ -60,7 +63,7 @@ class DocDashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _greeting(),
+                  greetingForHour(),
                   style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -96,102 +99,154 @@ class DocDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-          body: apptsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, __) => Center(
-                child: EmptyState(
-              icon: Icons.error_outline_rounded,
-              title: 'Failed to load',
-              subtitle: 'Unable to load appointments. Pull to refresh.',
-            )),
-            data: (appts) {
-              final pending = appts.where((a) => a.isPending).toList();
-              final confirmed = appts.where((a) => a.isConfirmed).toList();
-              final patientCount = patientCountAsync.asData?.value ?? 0;
-              final now = DateTime.now();
-              final todayStart = DateTime(now.year, now.month, now.day);
-              final todayEnd = todayStart.add(const Duration(days: 1));
-              final todayCount = confirmed
-                  .where((a) =>
-                      a.scheduledAt != null &&
-                      !a.scheduledAt!.isBefore(todayStart) &&
-                      a.scheduledAt!.isBefore(todayEnd))
-                  .length;
+          body: apptsAsync.isLoading
+              ? const DashboardSkeleton()
+              : Builder(builder: (context) {
+                  // Decouple: appointments failure shows an inline banner;
+                  // stats, actions, and Needs Attention still render.
+                  final appts = apptsAsync.asData?.value ?? [];
+                  final apptsError = apptsAsync.hasError;
+                  final pending = appts.where((a) => a.isPending).toList();
+                  final confirmed = appts.where((a) => a.isConfirmed).toList();
+                  final patientCount = patientCountAsync.asData?.value ?? 0;
+                  final now = DateTime.now();
+                  final todayStart = DateTime(now.year, now.month, now.day);
+                  final todayEnd = todayStart.add(const Duration(days: 1));
+                  final todayCount = confirmed
+                      .where((a) =>
+                          a.scheduledAt != null &&
+                          !a.scheduledAt!.isBefore(todayStart) &&
+                          a.scheduledAt!.isBefore(todayEnd))
+                      .length;
 
-              return RefreshIndicator(
-                color: AppColors.primary,
-                onRefresh: () async {
-                  ref.invalidate(patientsNeedingAttentionProvider(user.uid));
-                  ref.invalidate(doctorAppointmentsProvider(user.uid));
-                  ref.read(_docLastRefreshedProvider.notifier).state =
-                      DateTime.now();
-                },
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                  children: [
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textTertiary),
+                  final todayAppts = [...confirmed, ...pending]
+                      .where((a) =>
+                          a.scheduledAt != null &&
+                          !a.scheduledAt!.isBefore(todayStart) &&
+                          a.scheduledAt!.isBefore(todayEnd))
+                      .toList()
+                    ..sort((x, y) => x.scheduledAt!.compareTo(y.scheduledAt!));
+                  final scheduleRows = todayAppts
+                      .map((a) => ScheduleRow(
+                            time: DateFormat('HH:mm').format(a.scheduledAt!),
+                            name: a.patientName,
+                            status: a.isConfirmed ? 'Confirmed' : 'Pending',
+                            confirmed: a.isConfirmed,
+                          ))
+                      .toList();
+
+                  return RefreshIndicator(
+                    color: AppColors.primary,
+                    onRefresh: () async {
+                      ref.invalidate(patientsNeedingAttentionProvider(user.uid));
+                      ref.invalidate(doctorAppointmentsProvider(user.uid));
+                      ref.read(_docLastRefreshedProvider.notifier).state =
+                          DateTime.now();
+                      if (context.mounted) {
+                        AppSnackBar.info(context, 'Updated just now');
+                      }
+                    },
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                      children: [
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppColors.textTertiary),
+                              ),
+                              FreshnessTimestamp(
+                                  lastUpdated:
+                                      ref.watch(_docLastRefreshedProvider)),
+                            ]),
+                        const SizedBox(height: 16),
+
+                        // Inline appointments error banner (pull to retry)
+                        if (apptsError) ...[
+                          BentoCard(
+                            color: AppColors.warningLight,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            child: Row(children: [
+                              HugeIcon(
+                                  icon: HugeIcons.strokeRoundedAlertDiamond,
+                                  color: AppColors.warning,
+                                  size: 18),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Could not load appointments. Pull down to retry.',
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.warning,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                            ]),
                           ),
-                          FreshnessTimestamp(
-                              lastUpdated:
-                                  ref.watch(_docLastRefreshedProvider)),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Stats — always visible even when appointments fail
+                        Row(children: [
+                          Expanded(
+                              child: BentoStatCard(
+                            label: 'Patients',
+                            value: '$patientCount',
+                            icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedGroup,
+                                color: AppColors.primary,
+                                size: 18),
+                            iconBgColor: AppColors.primaryTint,
+                            iconColor: AppColors.primary,
+                          )),
+                          const SizedBox(width: 10),
+                          Expanded(
+                              child: BentoStatCard(
+                            label: 'Today',
+                            value: '$todayCount',
+                            icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedCalendar01,
+                                color: AppColors.info,
+                                size: 18),
+                            iconBgColor: AppColors.infoLight,
+                            iconColor: AppColors.info,
+                          )),
+                          const SizedBox(width: 10),
+                          Expanded(
+                              child: BentoStatCard(
+                            label: 'Pending',
+                            value: '${pending.length}',
+                            icon: HugeIcon(
+                                icon: HugeIcons.strokeRoundedClock01,
+                                color: AppColors.warning,
+                                size: 18),
+                            iconBgColor: AppColors.warningLight,
+                            iconColor: AppColors.warning,
+                          )),
                         ]),
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                    // Stats
-                    Row(children: [
-                      Expanded(
-                          child: BentoStatCard(
-                        label: 'Patients',
-                        value: '$patientCount',
-                        icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedGroup,
-                            color: AppColors.primary,
-                            size: 18),
-                        iconBgColor: AppColors.primaryTint,
-                        iconColor: AppColors.primary,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: BentoStatCard(
-                        label: 'Today',
-                        value: '$todayCount',
-                        icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedCalendar01,
-                            color: AppColors.info,
-                            size: 18),
-                        iconBgColor: AppColors.infoLight,
-                        iconColor: AppColors.info,
-                      )),
-                      const SizedBox(width: 10),
-                      Expanded(
-                          child: BentoStatCard(
-                        label: 'Pending',
-                        value: '${pending.length}',
-                        icon: HugeIcon(
-                            icon: HugeIcons.strokeRoundedClock01,
-                            color: AppColors.warning,
-                            size: 18),
-                        iconBgColor: AppColors.warningLight,
-                        iconColor: AppColors.warning,
-                      )),
-                    ]),
-                    const SizedBox(height: 24),
+                        // Schedule hero — shows empty state if appointments errored
+                        StatusHeroCard.schedule(
+                          dateLabel:
+                              DateFormat('EEE, MMM d').format(DateTime.now()),
+                          rows: scheduleRows,
+                          onOpen: () => context.go('/doc/appointments'),
+                        ),
+                        const SizedBox(height: 24),
 
-                    // Needs Attention (position #3 per Dr. Rahman persona)
-                    if (patientCount > 0) ...[
-                      _NeedsAttentionSection(doctorId: user.uid),
-                      const SizedBox(height: 24),
-                    ],
+                        // Needs Attention — always visible (separate provider)
+                        if (patientCount > 0) ...[
+                          _NeedsAttentionSection(doctorId: user.uid),
+                          const SizedBox(height: 24),
+                        ],
 
-                    // Quick actions
-                    Row(children: [
-                      _ActionTile(
+                        // Quick actions
+                        Row(children: [
+                          _ActionTile(
                         icon: HugeIcon(
                             icon: HugeIcons.strokeRoundedGroup,
                             color: AppColors.primary,
@@ -267,19 +322,12 @@ class DocDashboardScreen extends ConsumerWidget {
                   ],
                 ),
               );
-            },
-          ),
+            }),
         );
       },
     );
   }
 
-  String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
 }
 
 class _ActionTile extends StatelessWidget {
@@ -434,13 +482,12 @@ class _PatientAttentionTile extends ConsumerWidget {
                         attention.adherencePct! < 50)
                       _Pill(
                         label:
-                            '${attention.adherencePct!.toStringAsFixed(0)}% adherence',
+                            '${attention.adherencePct!.toStringAsFixed(0)}% adherence · 7-day',
                         color: AppColors.warning,
                       ),
                     if (attention.abnormalVitalsCount > 0)
                       _Pill(
-                        label: attention.mostRecentAbnormalLabel ??
-                            '${attention.abnormalVitalsCount} abnormal vitals',
+                        label: _abnormalPillLabel(attention),
                         color: AppColors.warning,
                       ),
                   ],
@@ -457,6 +504,22 @@ class _PatientAttentionTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+// G-5 explainability: surface the most-recent abnormal reading + when it happened.
+String _abnormalPillLabel(PatientAttention a) {
+  final base = a.mostRecentAbnormalLabel ??
+      '${a.abnormalVitalsCount} abnormal vital${a.abnormalVitalsCount == 1 ? '' : 's'}';
+  final at = a.mostRecentAbnormalAt;
+  return at == null ? base : '$base · ${_relativeTime(at)}';
+}
+
+String _relativeTime(DateTime t) {
+  final d = DateTime.now().difference(t);
+  if (d.inMinutes < 60) return 'just now';
+  if (d.inHours < 24) return '${d.inHours}h ago';
+  if (d.inDays == 1) return 'yesterday';
+  return '${d.inDays}d ago';
 }
 
 class _Pill extends StatelessWidget {
