@@ -490,7 +490,7 @@ class MealNotifier extends StateNotifier<AsyncValue<void>> {
       hour: hour,
       minute: minute,
       repeat: repeat,
-      channel: AppConstants.notifChannelGeneral,
+      channel: AppConstants.notifChannelMeal,
     );
     final repeatLabel = repeat == 'daily' ? 'Daily' : 'Once';
     await _db.addNotification(

@@ -352,6 +352,7 @@ class _DocApptCard extends ConsumerWidget {
                         appt.id,
                         patientId: appt.patientId,
                         doctorId: appt.doctorId,
+                        doctorName: appt.doctorName,
                       );
                   if (!context.mounted) return;
                   final state = ref.read(doctorAppointmentNotifierProvider);
@@ -394,7 +395,11 @@ class _DocApptCard extends ConsumerWidget {
                   Navigator.pop(dialogCtx);
                   await ref
                       .read(doctorAppointmentNotifierProvider.notifier)
-                      .complete(appt.id);
+                      .complete(
+                        appt.id,
+                        patientId: appt.patientId,
+                        doctorName: appt.doctorName,
+                      );
                   if (!context.mounted) return;
                   final state = ref.read(doctorAppointmentNotifierProvider);
                   if (state is AsyncError) {

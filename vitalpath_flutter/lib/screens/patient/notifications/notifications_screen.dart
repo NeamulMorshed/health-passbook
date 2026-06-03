@@ -136,6 +136,24 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
         );
       }
+      // No navigation for permission requests — user stays in sheet interaction
+      return;
+    }
+
+    // Navigate based on notification type
+    switch (notif.type) {
+      case NotificationType.appointment:
+        context.push('/appointments');
+      case NotificationType.medicineReminder:
+        context.push('/care');
+      case NotificationType.mealReminder:
+        context.push('/care');
+      case NotificationType.general:
+        // No navigation for general notifications
+        break;
+      case NotificationType.permissionRequest:
+        // Already handled above
+        break;
     }
   }
 }

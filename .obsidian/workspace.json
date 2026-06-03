@@ -191,6 +191,8 @@
   },
   "active": "de293f1d8cb97574",
   "lastOpenFiles": [
+    "vitalpath_flutter/lib/services/notification_service.dart.tmp.56291.bed4dc48eca7",
+    "vitalpath_flutter/lib/screens/doctor/appointments/doc_appointments_screen.dart.tmp.56291.75ad9a0ece4c",
     "vitalpath_flutter/firebase-debug.log",
     "vitalpath_flutter/build/app/intermediates/shrunk_resources_proto_format/release/minifyReleaseWithR8/shrunk-resources-proto-format-release.ap_",
     "vitalpath_flutter/build/app/outputs/mapping/release/resources.txt",
@@ -200,8 +202,6 @@
     "vitalpath_flutter/build/app/intermediates/r8_art_profile/release/minifyReleaseWithR8/baseline-prof.txt",
     "vitalpath_flutter/build/app/intermediates/dex/release/minifyReleaseWithR8/classes.dex",
     "vitalpath_flutter/build/app/intermediates/dex/release/minifyReleaseWithR8/classes2.dex",
-    "vitalpath_flutter/build/app/outputs/mapping/release/mapping.txt",
-    "vitalpath_flutter/build/app/outputs/mapping/release/usage.txt",
     "00 - Home/Dashboard.md",
     "50 - UX + Design/UX_Audit_2026-06-01.md",
     "vitalpath_flutter/build/app/intermediates/packaged_res/release/packageReleaseResources/mipmap-xxxhdpi-v4/ic_launcher_round.png",
